@@ -428,9 +428,23 @@ function switchTab(id,btn){ document.querySelectorAll('.tab-panel').forEach(p=>p
 
 async function init(){
   try{
-    const [r1,r2]=await Promise.all([fetch('./data/weekly_data.json?t='+Date.now()),fetch('./data/history.json?t='+Date.now())]);
-    if(r1.ok) CUR=await r1.json();
-    if(r2.ok){ const _raw=await r2.json(); if(Array.isArray(_raw)){ HIST={}; _raw.forEach(e=>{const k=e.week||e.weekStart||e.periodStart; if(k) HIST[k]=e;}); }else{ HIST=_raw; } }
+    // v2 reads data from the upstream (original) quay-dashboard's public
+    // GitHub Pages — by_campaign + everything else is produced there, no need
+    // to duplicate the fetcher + secrets. Falls back to local copy if upstream
+    // is unreachable (e.g. when developing offline).
+    const UPSTREAM = 'https://twigs002.github.io/quay-dashboard/data';
+    const tryFetch = async (paths) => {
+      for (const url of paths) {
+        try { const r = await fetch(url+'?t='+Date.now()); if (r.ok) return r; } catch {}
+      }
+      return null;
+    };
+    const [r1,r2]=await Promise.all([
+      tryFetch([UPSTREAM+'/weekly_data.json', './data/weekly_data.json']),
+      tryFetch([UPSTREAM+'/history.json',     './data/history.json']),
+    ]);
+    if(r1 && r1.ok) CUR=await r1.json();
+    if(r2 && r2.ok){ const _raw=await r2.json(); if(Array.isArray(_raw)){ HIST={}; _raw.forEach(e=>{const k=e.week||e.weekStart||e.periodStart; if(k) HIST[k]=e;}); }else{ HIST=_raw; } }
   }catch(e){ err('Could not load data files.'); }
   if(CUR){
     const curKey=CUR.week||CUR.periodStart; if(curKey&&!HIST[curKey]) HIST[curKey]=CUR;
@@ -616,7 +630,9 @@ async function renderDaily(){
   // 1) Try dedicated daily_data.json first
   let dailyData=null;
   try{
-    const r=await fetch('./data/daily_data.json?t='+Date.now());
+    // Same upstream sourcing as the weekly/history files.
+    const r=await fetch('https://twigs002.github.io/quay-dashboard/data/daily_data.json?t='+Date.now())
+      .catch(()=>fetch('./data/daily_data.json?t='+Date.now()));
     if(r.ok){
       const raw=await r.json();
       dailyData=Array.isArray(raw)?raw.find(e=>e.date===dateVal):(raw[dateVal]||null);
