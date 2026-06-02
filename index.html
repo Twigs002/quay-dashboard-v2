@@ -175,7 +175,7 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
   --ov-danger:var(--ov-q-red);--ov-danger-bg:var(--ov-q-red-tint);
   --ov-num:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
 }
-#tab-exec.active{background:var(--ov-bg);margin:-22px -28px 0;padding:28px 28px 60px;min-height:calc(100vh - 70px);font-family:var(--ov-num);color:var(--ov-text)}
+#tab-exec.active{background:var(--ov-bg);margin:0;padding:28px;border-radius:20px;font-family:var(--ov-num);color:var(--ov-text)}
 /* Header */
 .ov-header{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:24px;flex-wrap:wrap}
 .ov-title{display:flex;flex-direction:column;gap:8px}
@@ -195,7 +195,7 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
 @media (max-width:1100px){.ov-hero{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:600px){.ov-hero{grid-template-columns:1fr}}
 .ov-stat{background:var(--ov-card);border-radius:var(--ov-radius-lg);padding:22px 24px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;box-shadow:var(--ov-shadow)}
-.ov-stat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:8px;color:#fff}
+.ov-stat-icon{font-size:30px;line-height:1;margin-bottom:10px;display:inline-block}
 .ov-stat-lbl{font-size:11px;font-weight:700;color:var(--ov-text-muted);text-transform:uppercase;letter-spacing:.6px}
 .ov-stat-val{font-family:var(--ov-num);font-variant-numeric:tabular-nums;font-weight:800;color:var(--ov-text);letter-spacing:-1px;line-height:1;margin:4px 0 6px;font-size:30px}
 .ov-stat-meta{font-size:11px;color:var(--ov-text-soft);font-weight:500;margin-top:2px}
@@ -206,11 +206,12 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
 .ov-trend.neu{background:#EBEEF5;color:var(--ov-text-soft)}
 .ov-trend .pct{display:none;margin-left:2px}
 .ov-trend:hover .pct{display:inline}
-/* Colour the 4 hero cards distinctly (Taskati uses 4 different colours) */
-.ov-stat-calls    .ov-stat-icon{background:var(--ov-q-blue)}
-.ov-stat-success  .ov-stat-icon{background:var(--ov-q-yellow);color:var(--ov-q-blue-dk)}
-.ov-stat-leads    .ov-stat-icon{background:var(--ov-q-sky);color:var(--ov-q-blue-dk)}
-.ov-stat-callers  .ov-stat-icon{background:var(--ov-q-red)}
+/* Each hero card gets a thin coloured top accent stripe (a la report design) */
+.ov-stat::before{content:'';position:absolute;left:0;right:0;top:0;height:4px;border-radius:var(--ov-radius-lg) var(--ov-radius-lg) 0 0}
+.ov-stat-calls::before   {background:var(--ov-q-blue)}
+.ov-stat-success::before {background:var(--ov-q-yellow)}
+.ov-stat-leads::before   {background:var(--ov-q-sky)}
+.ov-stat-callers::before {background:var(--ov-q-red)}
 
 /* Section grid: 2 cols, varying spans */
 .ov-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:18px}
@@ -333,7 +334,7 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
         <div class="ov-stat-meta"><span id="ek-calls-trend"></span> <span id="ek-calls-sub" style="color:var(--ov-text-soft);font-weight:500">—</span></div>
       </div>
       <div class="ov-stat ov-stat-success">
-        <div class="ov-stat-icon">⭐</div>
+        <div class="ov-stat-icon">🏆</div>
         <div class="ov-stat-lbl">Avg Success Rate</div>
         <div class="ov-stat-val" id="ek-sr">—</div>
         <div class="ov-stat-meta"><span id="ek-sr-trend"></span> <span style="color:var(--ov-text-soft);font-weight:500">vs prev period</span></div>
