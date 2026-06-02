@@ -158,88 +158,129 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   OVERVIEW V2 — clean & corporate (Linear/Stripe feel)
+   OVERVIEW V2 — Taskati-style report (soft lavender bg, big white cards,
+   multi-colour palette using Quay 1 brand + complementary accents)
    ═══════════════════════════════════════════════════════════════════════════ */
 :root{
-  --ov-bg:#FAFBFC;--ov-card:#FFFFFF;--ov-border:#EAECF0;
-  --ov-shadow:0 1px 2px rgba(0,0,0,.04),0 1px 3px rgba(0,0,0,.06);
-  --ov-shadow-hover:0 4px 12px rgba(0,0,0,.08);
-  --ov-radius:14px;--ov-radius-lg:18px;
-  --ov-text:#0F172A;--ov-text-muted:#64748B;--ov-text-soft:#94A3B8;
-  --ov-accent:#3D5BA6;--ov-accent-dk:#2E4480;--ov-accent-tint:#EEF2FB;
-  --ov-success:#0A8F5B;--ov-success-bg:#E8F5EF;
-  --ov-danger:#C0392B;--ov-danger-bg:#FCEDEB;
-  --ov-warn:#B45309;--ov-warn-bg:#FEF3C7;
+  --ov-bg:#EEF0FA;--ov-card:#FFFFFF;--ov-border:#E5E7F2;
+  --ov-shadow:0 1px 3px rgba(40,55,100,.04),0 4px 12px rgba(40,55,100,.05);
+  --ov-radius:16px;--ov-radius-lg:24px;
+  --ov-text:#1A1F36;--ov-text-muted:#6B7A99;--ov-text-soft:#A0AEC0;
+  /* Quay 1 official brand palette */
+  --ov-q-blue:#3D5BA6;--ov-q-blue-dk:#2E4480;--ov-q-blue-l:#5C75BC;--ov-q-blue-tint:#E5EAF3;
+  --ov-q-yellow:#FDC503;--ov-q-yellow-dk:#C9A000;--ov-q-yellow-tint:#FFF1B8;
+  --ov-q-sky:#98C5ED;--ov-q-sky-dk:#6FA9DE;--ov-q-sky-tint:#E8F2FB;
+  --ov-q-red:#D20A03;--ov-q-red-dk:#A60800;--ov-q-red-tint:#FCE2E0;
+  --ov-success:#0A8F5B;--ov-success-bg:#E1F4EB;
+  --ov-danger:var(--ov-q-red);--ov-danger-bg:var(--ov-q-red-tint);
   --ov-num:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
 }
-#tab-exec.active{background:var(--ov-bg);margin:-22px -28px 0;padding:28px 28px 60px;min-height:calc(100vh - 70px);font-family:var(--ov-num)}
-.ov-header{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;margin-bottom:28px;flex-wrap:wrap}
-.ov-title h1{font-family:var(--ov-num);font-size:26px;font-weight:700;color:var(--ov-text);letter-spacing:-0.5px;margin:0;line-height:1.15}
-.ov-title .ov-sub{margin:6px 0 0;font-size:13px;color:var(--ov-text-muted);font-weight:500}
-.ov-period{display:flex;gap:6px;flex-wrap:wrap}
-.ov-chip{background:var(--ov-card);border:1px solid var(--ov-border);color:var(--ov-text-muted);padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--ov-num)}
-.ov-chip:hover{color:var(--ov-text);border-color:#CBD5E1;background:#FAFBFC}
-.ov-chip.active{background:var(--ov-text);color:#fff;border-color:var(--ov-text)}
-.ov-chip-secondary{background:transparent}
-.ov-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-@media (max-width:900px){.ov-hero{grid-template-columns:repeat(2,1fr)}}
-.ov-stat{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:22px 24px;display:flex;flex-direction:column;gap:6px;transition:box-shadow .15s,transform .15s}
-.ov-stat:hover{box-shadow:var(--ov-shadow-hover);transform:translateY(-1px)}
-.ov-stat-lbl{font-size:11px;font-weight:600;color:var(--ov-text-muted);text-transform:uppercase;letter-spacing:0.6px}
-.ov-stat-val{font-family:var(--ov-num);font-variant-numeric:tabular-nums;font-size:34px;font-weight:700;color:var(--ov-text);letter-spacing:-1px;line-height:1.1;margin:4px 0 2px}
-.ov-stat-trend{font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums}
-.ov-stat-trend.up{color:var(--ov-success)}
-.ov-stat-trend.down{color:var(--ov-danger)}
-.ov-stat-trend.neu{color:var(--ov-text-soft)}
-.ov-stat-meta{font-size:11px;color:var(--ov-text-soft);margin-top:auto;font-weight:500}
-.ov-stat-primary{background:linear-gradient(135deg,var(--ov-accent) 0%,var(--ov-accent-dk) 100%);border-color:var(--ov-accent-dk)}
-.ov-stat-primary .ov-stat-lbl{color:rgba(255,255,255,.7)}
-.ov-stat-primary .ov-stat-val{color:#fff}
-.ov-stat-primary .ov-stat-meta{color:rgba(255,255,255,.5)}
-.ov-stat-primary .ov-stat-trend.up{color:#6EE7B7}
-.ov-stat-primary .ov-stat-trend.down{color:#FCA5A5}
-.ov-bento{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
-@media (max-width:1100px){.ov-bento{grid-template-columns:repeat(2,1fr)}}
-.ov-card{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:22px 24px;display:flex;flex-direction:column;gap:14px}
-.ov-card-trend,.ov-card-sources{grid-column:span 2}
-.ov-card-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
-.ov-card-head h3{margin:0;font-size:13px;font-weight:700;color:var(--ov-text);letter-spacing:0;text-transform:uppercase;letter-spacing:.4px}
+#tab-exec.active{background:var(--ov-bg);margin:-22px -28px 0;padding:28px 28px 60px;min-height:calc(100vh - 70px);font-family:var(--ov-num);color:var(--ov-text)}
+/* Header */
+.ov-header{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:24px;flex-wrap:wrap}
+.ov-title{display:flex;flex-direction:column;gap:8px}
+.ov-title h1{font-family:var(--ov-num);font-size:30px;font-weight:800;color:var(--ov-text);letter-spacing:-0.9px;margin:0;line-height:1.1}
+.ov-title .ov-sub{margin:4px 0 0;font-size:13px;color:var(--ov-text-muted);font-weight:500}
+/* Taskati-style period tabs: plain text + underline for active */
+.ov-period{display:flex;gap:18px;align-items:center}
+.ov-chip{background:transparent;border:0;color:var(--ov-text-muted);padding:8px 2px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--ov-num);position:relative}
+.ov-chip:hover{color:var(--ov-text)}
+.ov-chip.active{color:var(--ov-q-blue);font-weight:700}
+.ov-chip.active::after{content:'';position:absolute;left:0;right:0;bottom:-4px;height:3px;background:var(--ov-q-blue);border-radius:2px}
+.ov-chip-secondary{background:var(--ov-q-blue);color:#fff;border:0;padding:9px 16px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--ov-num);transition:.15s}
+.ov-chip-secondary:hover{background:var(--ov-q-blue-dk)}
+
+/* Hero — Taskati style: 4 colourful mini-cards in a row */
+.ov-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px}
+@media (max-width:1100px){.ov-hero{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:600px){.ov-hero{grid-template-columns:1fr}}
+.ov-stat{background:var(--ov-card);border-radius:var(--ov-radius-lg);padding:22px 24px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;box-shadow:var(--ov-shadow)}
+.ov-stat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:8px;color:#fff}
+.ov-stat-lbl{font-size:11px;font-weight:700;color:var(--ov-text-muted);text-transform:uppercase;letter-spacing:.6px}
+.ov-stat-val{font-family:var(--ov-num);font-variant-numeric:tabular-nums;font-weight:800;color:var(--ov-text);letter-spacing:-1px;line-height:1;margin:4px 0 6px;font-size:30px}
+.ov-stat-meta{font-size:11px;color:var(--ov-text-soft);font-weight:500;margin-top:2px}
+/* Quiet trend chip — icon only, % visible on hover */
+.ov-trend{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;font-variant-numeric:tabular-nums;cursor:help}
+.ov-trend.up{background:var(--ov-success-bg);color:var(--ov-success)}
+.ov-trend.down{background:var(--ov-danger-bg);color:var(--ov-danger)}
+.ov-trend.neu{background:#EBEEF5;color:var(--ov-text-soft)}
+.ov-trend .pct{display:none;margin-left:2px}
+.ov-trend:hover .pct{display:inline}
+/* Colour the 4 hero cards distinctly (Taskati uses 4 different colours) */
+.ov-stat-calls    .ov-stat-icon{background:var(--ov-q-blue)}
+.ov-stat-success  .ov-stat-icon{background:var(--ov-q-yellow);color:var(--ov-q-blue-dk)}
+.ov-stat-leads    .ov-stat-icon{background:var(--ov-q-sky);color:var(--ov-q-blue-dk)}
+.ov-stat-callers  .ov-stat-icon{background:var(--ov-q-red)}
+
+/* Section grid: 2 cols, varying spans */
+.ov-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:18px}
+@media (max-width:1100px){.ov-grid{grid-template-columns:1fr}}
+.ov-card{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:24px 26px}
+.ov-card-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:18px}
+.ov-card-head h3{margin:0;font-size:11px;font-weight:700;color:var(--ov-text);text-transform:uppercase;letter-spacing:1px}
 .ov-card-sub{font-size:11px;color:var(--ov-text-soft);font-weight:500}
+
+/* Donut card for sources */
+.ov-donut-wrap{display:flex;gap:24px;align-items:center}
+.ov-donut-chart{position:relative;width:160px;height:160px;flex-shrink:0}
+.ov-donut-chart canvas{width:100%!important;height:100%!important}
+.ov-donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.ov-donut-center .num{font-size:24px;font-weight:700;color:var(--ov-text);font-variant-numeric:tabular-nums;letter-spacing:-.5px;line-height:1}
+.ov-donut-center .lbl{font-size:9px;font-weight:700;color:var(--ov-text-soft);text-transform:uppercase;letter-spacing:.6px;margin-top:2px}
+.ov-donut-legend{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
+.ov-legend-row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px}
+.ov-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block;margin-right:8px}
+.ov-legend-name{display:flex;align-items:center;color:var(--ov-text);font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ov-legend-val{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ov-text);font-size:13px}
+
+/* Insight cards (Top Performer, Best Source, At Risk) */
+.ov-insights{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:18px}
+@media (max-width:1100px){.ov-insights{grid-template-columns:1fr}}
+.ov-insight-icon{width:36px;height:36px;border-radius:10px;background:var(--ov-q-blue-tint);color:var(--ov-q-blue);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;margin-bottom:14px}
+.ov-insight-icon.success{background:var(--ov-success-bg);color:var(--ov-success)}
+.ov-insight-icon.warn{background:#FEF3C7;color:#B45309}
 .ov-big-name{font-family:var(--ov-num);font-size:22px;font-weight:700;color:var(--ov-text);letter-spacing:-0.4px;margin:0;line-height:1.2}
-.ov-big-num{font-family:var(--ov-num);font-variant-numeric:tabular-nums;font-size:28px;font-weight:700;color:var(--ov-accent);letter-spacing:-0.8px;line-height:1}
+.ov-big-num{font-family:var(--ov-num);font-variant-numeric:tabular-nums;font-size:28px;font-weight:700;color:var(--ov-q-blue);letter-spacing:-0.6px;line-height:1;margin-top:2px}
 .ov-big-num.success{color:var(--ov-success)}
-.ov-meta-line{font-size:11px;color:var(--ov-text-muted);font-weight:500;margin-top:2px}
-.ov-risk-list{display:flex;flex-direction:column;gap:4px}
-.ov-risk-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--ov-border);font-size:12px}
+.ov-meta-line{font-size:11px;color:var(--ov-text-muted);font-weight:500;margin-top:4px;display:flex;gap:8px;align-items:center}
+.ov-pill{display:inline-block;padding:2px 8px;border-radius:6px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;background:#EBEEF5;color:var(--ov-text-muted)}
+.ov-pill.rm{background:#E5EAF3;color:#1E2E5C}
+.ov-pill.fancy{background:#F4ECF7;color:#5B3FA6}
+
+.ov-risk-list{display:flex;flex-direction:column;gap:0}
+.ov-risk-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px dashed var(--ov-border);font-size:12px;gap:10px}
 .ov-risk-item:last-child{border-bottom:0}
 .ov-risk-item .agent{font-weight:600;color:var(--ov-text);font-family:var(--ov-num)}
-.ov-risk-item .reason{color:var(--ov-danger);font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
+.ov-risk-item .reason{color:var(--ov-danger);font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;text-align:right;flex-shrink:0}
 .ov-empty{font-size:12px;color:var(--ov-text-soft);padding:18px 0;text-align:center;font-weight:500}
-.ov-source-row{display:grid;grid-template-columns:160px 1fr 90px;align-items:center;gap:14px;margin-bottom:12px}
-.ov-source-row:last-child{margin-bottom:0}
-.ov-source-row .lbl{font-size:12px;font-weight:600;color:var(--ov-text);font-family:var(--ov-num)}
-.ov-bar-track{background:#F1F5F9;height:10px;border-radius:5px;overflow:hidden}
-.ov-bar-fill{background:linear-gradient(90deg,var(--ov-accent) 0%,var(--ov-accent-dk) 100%);height:100%;transition:width .5s;border-radius:5px}
-.ov-source-row .val{font-family:var(--ov-num);font-variant-numeric:tabular-nums;font-size:13px;font-weight:700;color:var(--ov-text);text-align:right}
-.ov-source-row .val .calls{display:block;font-size:10px;color:var(--ov-text-soft);font-weight:500}
-.ov-leaderboard{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:22px 24px;margin-bottom:24px}
-.ov-table{width:100%;border-collapse:collapse;font-family:var(--ov-num);font-variant-numeric:tabular-nums}
-.ov-table th{text-align:left;font-size:10px;font-weight:700;color:var(--ov-text-muted);text-transform:uppercase;letter-spacing:.6px;padding:10px 12px;border-bottom:1px solid var(--ov-border)}
-.ov-table td{padding:14px 12px;font-size:13px;color:var(--ov-text);border-bottom:1px solid var(--ov-border)}
-.ov-table tr:last-child td{border-bottom:0}
-.ov-table .rank{color:var(--ov-text-soft);font-size:11px;font-weight:700;width:30px}
-.ov-table .agent{font-weight:600}
-.ov-table .pill{display:inline-block;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;background:#F1F5F9;color:var(--ov-text-muted)}
-.ov-table .pill.rm{background:var(--ov-accent-tint);color:var(--ov-accent-dk)}
-.ov-table .pill.fancy{background:#F5F0FB;color:#5B3FA6}
-.ov-more{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius);margin-bottom:16px;overflow:hidden}
-.ov-more summary{padding:16px 22px;cursor:pointer;font-size:13px;font-weight:700;color:var(--ov-text-muted);list-style:none;display:flex;justify-content:space-between;align-items:center;text-transform:uppercase;letter-spacing:.4px}
+
+/* Trend chart card */
+.ov-chart-card{padding:24px 26px}
+.ov-chart-wrap{position:relative;height:220px}
+
+/* Leaderboard — list with avatar + progress bar */
+.ov-leaderboard{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:24px 26px;margin-bottom:18px}
+.ov-lb-list{display:flex;flex-direction:column;gap:14px;margin-top:18px}
+.ov-lb-row{display:grid;grid-template-columns:24px 38px 1fr 60px 90px 80px;align-items:center;gap:14px}
+@media (max-width:700px){.ov-lb-row{grid-template-columns:24px 38px 1fr 90px}.ov-lb-progress,.ov-lb-stat{display:none}}
+.ov-lb-rank{font-size:11px;font-weight:700;color:var(--ov-text-soft);font-variant-numeric:tabular-nums}
+.ov-lb-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.5px;font-family:var(--ov-num)}
+.ov-lb-name{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ov-lb-name .nm{font-size:13px;font-weight:600;color:var(--ov-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ov-lb-name .meta{font-size:10px;color:var(--ov-text-soft);font-weight:500}
+.ov-lb-stat{font-size:12px;font-weight:600;color:var(--ov-text-muted);font-variant-numeric:tabular-nums;text-align:right}
+.ov-lb-stat strong{color:var(--ov-text);font-weight:700}
+.ov-lb-progress{background:#EBEEF5;height:6px;border-radius:3px;overflow:hidden}
+.ov-lb-progress-fill{background:linear-gradient(90deg,var(--ov-q-blue) 0%,var(--ov-q-blue-l) 100%);height:100%;border-radius:3px;transition:width .4s}
+
+/* Collapsible details */
+.ov-more{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius);margin-bottom:14px;overflow:hidden}
+.ov-more summary{padding:18px 24px;cursor:pointer;font-size:11px;font-weight:700;color:var(--ov-text-muted);list-style:none;display:flex;justify-content:space-between;align-items:center;text-transform:uppercase;letter-spacing:.8px}
 .ov-more summary::-webkit-details-marker{display:none}
 .ov-more summary::after{content:'+';font-size:20px;line-height:1;color:var(--ov-text-soft)}
 .ov-more[open] summary{color:var(--ov-text);border-bottom:1px solid var(--ov-border)}
 .ov-more[open] summary::after{content:'–'}
 .ov-more-body{padding:24px}
-.ov-chart-wrap{position:relative;height:200px}
 </style>
 </head>
 <body>
@@ -285,60 +326,64 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
     </header>
 
     <section class="ov-hero">
-      <div class="ov-stat ov-stat-primary">
+      <div class="ov-stat ov-stat-calls">
+        <div class="ov-stat-icon">📞</div>
         <div class="ov-stat-lbl">Total Calls</div>
         <div class="ov-stat-val" id="ek-calls">—</div>
-        <div class="ov-stat-trend" id="ek-calls-trend"></div>
-        <div class="ov-stat-meta" id="ek-calls-sub">—</div>
+        <div class="ov-stat-meta"><span id="ek-calls-trend"></span> <span id="ek-calls-sub" style="color:var(--ov-text-soft);font-weight:500">—</span></div>
       </div>
-      <div class="ov-stat">
+      <div class="ov-stat ov-stat-success">
+        <div class="ov-stat-icon">⭐</div>
         <div class="ov-stat-lbl">Avg Success Rate</div>
         <div class="ov-stat-val" id="ek-sr">—</div>
-        <div class="ov-stat-trend" id="ek-sr-trend"></div>
-        <div class="ov-stat-meta" id="ek-sr-meta">vs prev period</div>
+        <div class="ov-stat-meta"><span id="ek-sr-trend"></span> <span style="color:var(--ov-text-soft);font-weight:500">vs prev period</span></div>
       </div>
-      <div class="ov-stat">
+      <div class="ov-stat ov-stat-leads">
+        <div class="ov-stat-icon">🎯</div>
         <div class="ov-stat-lbl">Total Leads</div>
         <div class="ov-stat-val" id="ek-success">—</div>
-        <div class="ov-stat-trend" id="ek-success-trend"></div>
-        <div class="ov-stat-meta">Seller · Rental · Email</div>
+        <div class="ov-stat-meta"><span id="ek-success-trend"></span> <span style="color:var(--ov-text-soft);font-weight:500">Seller · Rental · Email</span></div>
       </div>
-      <div class="ov-stat">
+      <div class="ov-stat ov-stat-callers">
+        <div class="ov-stat-icon">👥</div>
         <div class="ov-stat-lbl">Active Callers</div>
         <div class="ov-stat-val" id="ek-callers">—</div>
-        <div class="ov-stat-trend" id="ek-callers-trend"></div>
-        <div class="ov-stat-meta" id="ek-callers-meta">RM + Fancy combined</div>
+        <div class="ov-stat-meta"><span id="ek-callers-trend"></span> <span style="color:var(--ov-text-soft);font-weight:500">RM + Fancy combined</span></div>
       </div>
     </section>
 
-    <section class="ov-bento">
-      <div class="ov-card ov-card-trend">
+    <section class="ov-grid">
+      <div class="ov-card ov-chart-card">
         <div class="ov-card-head"><h3>Weekly Trend</h3><span class="ov-card-sub">Calls &amp; Success Rate — last 12 weeks</span></div>
         <div class="ov-chart-wrap"><canvas id="ov-chart-trend"></canvas></div>
       </div>
       <div class="ov-card">
+        <div class="ov-card-head"><h3>Lead Sources</h3><span class="ov-card-sub">share of calls</span></div>
+        <div class="ov-donut-wrap" id="ov-sources-donut-wrap"><div class="ov-empty">—</div></div>
+      </div>
+    </section>
+
+    <section class="ov-insights">
+      <div class="ov-card">
+        <div class="ov-insight-icon success">🏆</div>
         <div class="ov-card-head"><h3>Top Performer</h3><span class="ov-card-sub">most calls</span></div>
         <div id="ov-top-perf"><div class="ov-empty">—</div></div>
       </div>
       <div class="ov-card">
+        <div class="ov-insight-icon">🎯</div>
         <div class="ov-card-head"><h3>Best Converting Source</h3><span class="ov-card-sub">success rate leader</span></div>
         <div id="ov-best-src"><div class="ov-empty">—</div></div>
       </div>
       <div class="ov-card">
+        <div class="ov-insight-icon warn">⚠️</div>
         <div class="ov-card-head"><h3>At Risk</h3><span class="ov-card-sub">below targets</span></div>
         <div id="ov-at-risk" class="ov-risk-list"><div class="ov-empty">—</div></div>
-      </div>
-      <div class="ov-card ov-card-sources">
-        <div class="ov-card-head"><h3>Lead Sources by Conversion</h3><span class="ov-card-sub">success rate per source — this period</span></div>
-        <div id="ov-source-bars"><div class="ov-empty">—</div></div>
       </div>
     </section>
 
     <section class="ov-leaderboard">
-      <div class="ov-card-head" style="margin-bottom:16px"><h3>Top 10 Performers</h3><span class="ov-card-sub">ranked by calls — click All Staff for the full list</span></div>
-      <table class="ov-table"><thead><tr>
-        <th>Rank</th><th>Agent</th><th>Group</th><th>Calls</th><th>Success</th><th>Success %</th><th>Seller</th><th>Rental</th><th>Email</th>
-      </tr></thead><tbody id="ov-leaderboard-rows"></tbody></table>
+      <div class="ov-card-head" style="margin-bottom:6px"><h3>Top 10 Performers</h3><span class="ov-card-sub">ranked by calls — click All Staff for the full list</span></div>
+      <div class="ov-lb-list" id="ov-leaderboard-rows"></div>
     </section>
 
     <details class="ov-more"><summary>Historical breakdown</summary><div class="ov-more-body" id="exec-breakdown"></div></details>
@@ -683,59 +728,42 @@ function renderExec(){
   })[execPeriod] || 'Period';
   document.getElementById('ov-context').textContent = `${periodLabel} · ${from} → ${to}`;
 
-  // --- Hero stat values ---
-  const setStat = (valId, trendId, value, prevKey, opts={}) => {
-    const v = document.getElementById(valId); if (v) v.textContent = value;
-    const tr_el = document.getElementById(trendId);
-    if (tr_el) {
-      if (!prev) { tr_el.innerHTML = '<span class="ov-stat-trend neu">no baseline</span>'; return; }
-      const pv = prev[prevKey];
-      if (pv == null || pv === 0) { tr_el.innerHTML = '<span class="ov-stat-trend neu">no baseline</span>'; return; }
-      const cur = typeof value === 'string' ? parseFloat(value.replace(/[^\d.-]/g,'')) : value;
-      const delta = ((cur - pv) / Math.abs(pv)) * 100;
-      const cls = Math.abs(delta) < 0.05 ? 'neu' : (delta > 0 ? 'up' : 'down');
-      const arrow = cls==='up'?'▲':cls==='down'?'▼':'▬';
-      const ppLabel = opts.isPct ? ' vs ' + (pv*100).toFixed(1)+'%' : '';
-      tr_el.innerHTML = `<span class="ov-stat-trend ${cls}">${arrow} ${Math.abs(delta).toFixed(1)}%</span>${ppLabel?' <span style="color:var(--ov-text-soft);font-weight:500">'+ppLabel+'</span>':''}`;
-    }
+  // --- Hero stat values + quiet trend chips (icon only, % on hover) ---
+  // Renders a small pill: ▲/▼/▬ inside a colored chip; the % is hidden until
+  // hover. Tooltip shows the full delta sentence for clarity.
+  const chip = (cur, prev_val, opts={}) => {
+    if (prev_val == null || prev_val === 0) return '<span class="ov-trend neu" title="No baseline">—</span>';
+    let delta;
+    if (opts.isPct) delta = (cur - prev_val) * 100;            // pp delta
+    else            delta = ((cur - prev_val) / Math.abs(prev_val)) * 100;
+    const abs = Math.abs(delta);
+    if (abs < 0.05) return '<span class="ov-trend neu" title="No change">▬</span>';
+    const cls = delta > 0 ? 'up' : 'down';
+    const arrow = delta > 0 ? '▲' : '▼';
+    const unit = opts.isPct ? 'pp' : '%';
+    const tip = (delta>0?'+':'') + delta.toFixed(1) + unit + ' vs previous period';
+    return `<span class="ov-trend ${cls}" title="${tip}">${arrow}<span class="pct">${abs.toFixed(1)}${unit}</span></span>`;
   };
-  // numeric value used for delta
-  setStat('ek-calls', 'ek-calls-trend', tCalls.toLocaleString(), 'tCalls');
-  // override: pass raw number so trend uses raw
   document.getElementById('ek-calls').textContent = tCalls.toLocaleString();
-  document.getElementById('ek-calls-sub').textContent = 'in ' + entries.length + ' week' + (entries.length===1?'':'s');
+  document.getElementById('ek-calls-trend').innerHTML = prev ? chip(tCalls, prev.tCalls) : '';
+  document.getElementById('ek-calls-sub').textContent = entries.length + (entries.length===1?' week':' weeks');
 
   document.getElementById('ek-sr').textContent = pct(avgSR);
-  const srTrend = document.getElementById('ek-sr-trend');
-  if (prev) {
-    const pv = prev.avgSR;
-    if (pv == null || pv === 0) { srTrend.innerHTML = '<span class="ov-stat-trend neu">no baseline</span>'; }
-    else {
-      const ppDelta = (avgSR - pv) * 100;
-      const cls = Math.abs(ppDelta) < 0.05 ? 'neu' : (ppDelta > 0 ? 'up' : 'down');
-      const arrow = cls==='up'?'▲':cls==='down'?'▼':'▬';
-      srTrend.innerHTML = `<span class="ov-stat-trend ${cls}">${arrow} ${Math.abs(ppDelta).toFixed(1)}pp</span>`;
-    }
-  } else { srTrend.innerHTML = '<span class="ov-stat-trend neu">no baseline</span>'; }
+  document.getElementById('ek-sr-trend').innerHTML = prev ? chip(avgSR, prev.avgSR, {isPct:true}) : '';
 
   document.getElementById('ek-success').textContent = tSuccess.toLocaleString();
-  document.getElementById('ek-success-trend').innerHTML = tr(tSuccess, 'tSuc');
+  document.getElementById('ek-success-trend').innerHTML = prev ? chip(tSuccess, prev.tSuc) : '';
 
   document.getElementById('ek-callers').textContent = tCallers;
-  document.getElementById('ek-callers-trend').innerHTML = tr(tCallers, 'tCallers');
+  document.getElementById('ek-callers-trend').innerHTML = prev ? chip(tCallers, prev.tCallers) : '';
 
   // --- Top Performer ---
   const topPerf = [...execAgents].sort((a,b)=>b.calls-a.calls)[0];
   if (topPerf) {
     document.getElementById('ov-top-perf').innerHTML = `
-      <div>
-        <div class="ov-big-name">${esc(topPerf.name)}</div>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:6px"><span class="ov-table pill ${topPerf._grp==='RM'?'rm':'fancy'}">${topPerf._grp}</span><span class="ov-meta-line">success: ${pct(sr(topPerf))}</span></div>
-      </div>
-      <div style="margin-top:12px">
-        <div class="ov-big-num">${topPerf.calls.toLocaleString()}</div>
-        <div class="ov-meta-line">calls placed${entries.length>1?' across '+entries.length+' weeks':''}</div>
-      </div>`;
+      <div class="ov-big-name">${esc(topPerf.name)}</div>
+      <div class="ov-big-num">${topPerf.calls.toLocaleString()}<span style="font-size:13px;font-weight:600;color:var(--ov-text-muted);margin-left:6px">calls</span></div>
+      <div class="ov-meta-line"><span class="ov-pill ${topPerf._grp==='RM'?'rm':'fancy'}">${topPerf._grp}</span><span>success ${pct(sr(topPerf))}</span></div>`;
   } else { document.getElementById('ov-top-perf').innerHTML = '<div class="ov-empty">No data in this period.</div>'; }
 
   // --- Best Converting Source ---
@@ -745,23 +773,23 @@ function renderExec(){
   if (srcRanked.length) {
     const best = srcRanked[0];
     document.getElementById('ov-best-src').innerHTML = `
-      <div><div class="ov-big-name">${esc(best.source)}</div><div class="ov-meta-line" style="margin-top:6px">${best.calls.toLocaleString()} calls in this period</div></div>
-      <div style="margin-top:12px"><div class="ov-big-num success">${pct(best.rate)}</div><div class="ov-meta-line">success rate</div></div>`;
+      <div class="ov-big-name">${esc(best.source)}</div>
+      <div class="ov-big-num success">${pct(best.rate)}</div>
+      <div class="ov-meta-line"><span>${best.calls.toLocaleString()} calls · ${best.success} successes</span></div>`;
   } else { document.getElementById('ov-best-src').innerHTML = `<div class="ov-empty">Awaiting backfill — by_campaign data not in history yet.</div>`; }
 
   // --- At Risk ---
-  const cphTarget = B.rm.cph;     // 45
   const atRisk = execAgents.filter(d => {
     const bench = d._grp==='RM' ? B.rm : B.fancy;
-    const lowCph = cph(d) < bench.cph * 0.7;     // 30% below
-    const lowSr  = d.calls > 50 && sr(d) < bench.sr * 0.5;  // half target with meaningful sample
+    const lowCph = cph(d) < bench.cph * 0.7;
+    const lowSr  = d.calls > 50 && sr(d) < bench.sr * 0.5;
     return lowCph || lowSr;
-  }).slice(0, 5);
+  }).slice(0, 4);
   if (atRisk.length) {
     document.getElementById('ov-at-risk').innerHTML = atRisk.map(d=>{
       const bench = d._grp==='RM' ? B.rm : B.fancy;
       const reasons = [];
-      if (cph(d) < bench.cph * 0.7) reasons.push(`${f1(cph(d))}/hr (target ${bench.cph})`);
+      if (cph(d) < bench.cph * 0.7) reasons.push(`${f1(cph(d))}/hr`);
       if (d.calls > 50 && sr(d) < bench.sr * 0.5) reasons.push(`${pct(sr(d))} success`);
       return `<div class="ov-risk-item"><span class="agent">${esc(d.name)}</span><span class="reason">${reasons.join(' · ')}</span></div>`;
     }).join('');
@@ -769,36 +797,28 @@ function renderExec(){
     document.getElementById('ov-at-risk').innerHTML = '<div class="ov-empty">Everyone above thresholds. 🎯</div>';
   }
 
-  // --- Source Bars ---
-  if (srcRanked.length) {
-    const maxRate = Math.max(...srcRanked.map(s=>s.rate));
-    document.getElementById('ov-source-bars').innerHTML = srcRanked.map(s=>{
-      const w = maxRate > 0 ? Math.round((s.rate/maxRate)*100) : 0;
-      return `<div class="ov-source-row">
-        <span class="lbl">${esc(s.source)}</span>
-        <div class="ov-bar-track"><div class="ov-bar-fill" style="width:${w}%"></div></div>
-        <span class="val">${pct(s.rate)}<span class="calls">${s.calls.toLocaleString()} calls</span></span>
-      </div>`;
-    }).join('');
-  } else {
-    document.getElementById('ov-source-bars').innerHTML = '<div class="ov-empty" style="padding:24px 0">No source data available for this period (waiting on by_campaign backfill).</div>';
-  }
+  // --- Lead Sources donut ---
+  renderSourceDonut(srcRanked);
 
-  // --- Top 10 leaderboard ---
+  // --- Top 10 leaderboard (avatar + progress) ---
   const top10 = [...execAgents].sort((a,b)=>b.calls-a.calls).slice(0,10);
-  document.getElementById('ov-leaderboard-rows').innerHTML = top10.length ? top10.map((d,i)=>`
-    <tr>
-      <td class="rank">#${i+1}</td>
-      <td class="agent">${esc(d.name)}</td>
-      <td><span class="pill ${d._grp==='RM'?'rm':'fancy'}">${d._grp}</span></td>
-      <td>${d.calls.toLocaleString()}</td>
-      <td>${d.success}</td>
-      <td>${pct(sr(d))}</td>
-      <td>${d.seller||0}</td>
-      <td>${d.rental||0}</td>
-      <td>${d.email||0}</td>
-    </tr>
-  `).join('') : '<tr><td colspan="9" style="text-align:center;color:var(--ov-text-soft);padding:24px">No agent data for this period.</td></tr>';
+  const leaderMax = top10.length ? top10[0].calls : 0;
+  document.getElementById('ov-leaderboard-rows').innerHTML = top10.length ? top10.map((d,i)=>{
+    const initials = (d.name||'').split(/\s+/).map(s=>s[0]).filter(Boolean).slice(0,2).join('').toUpperCase();
+    // Quay brand palette only — Blue / Yellow / Sky / Red + shades for variety across 10 avatars
+    const palette = ['#3D5BA6','#FDC503','#98C5ED','#D20A03','#2E4480','#C9A000','#6FA9DE','#A60800','#5C75BC','#1E2E5C'];
+    let h=0; for (let j=0;j<d.name.length;j++) h=(h*31+d.name.charCodeAt(j))|0;
+    const color = palette[Math.abs(h)%palette.length];
+    const pctOfMax = leaderMax > 0 ? Math.round((d.calls/leaderMax)*100) : 0;
+    return `<div class="ov-lb-row">
+      <span class="ov-lb-rank">#${i+1}</span>
+      <div class="ov-lb-avatar" style="background:${color}">${esc(initials)}</div>
+      <div class="ov-lb-name"><span class="nm">${esc(d.name)}</span><span class="meta"><span class="ov-pill ${d._grp==='RM'?'rm':'fancy'}">${d._grp}</span> · success ${pct(sr(d))}</span></div>
+      <div class="ov-lb-stat"><strong>${d.calls.toLocaleString()}</strong></div>
+      <div class="ov-lb-progress"><div class="ov-lb-progress-fill" style="width:${pctOfMax}%"></div></div>
+      <div class="ov-lb-stat">${(d.seller||0)+(d.rental||0)+(d.email||0)} <span style="font-weight:500">leads</span></div>
+    </div>`;
+  }).join('') : '<div class="ov-empty">No agent data for this period.</div>';
 
   // --- Weekly trend chart ---
   renderOverviewTrendChart();
@@ -843,6 +863,51 @@ function renderExec(){
   document.getElementById('exec-breakdown').innerHTML=weeklyHTML+monthlyHTML+topHTML;
   requestAnimationFrame(renderMonthlyCharts);
 }
+function renderSourceDonut(srcRanked){
+  const wrap = document.getElementById('ov-sources-donut-wrap');
+  if (!wrap) return;
+  if (!srcRanked || !srcRanked.length){
+    wrap.innerHTML = '<div class="ov-empty">Awaiting backfill — by_campaign data not in history yet.</div>';
+    if (execCharts['ov-donut']){ execCharts['ov-donut'].destroy(); delete execCharts['ov-donut']; }
+    return;
+  }
+  // Sort by calls (volume), not success rate, for the donut share view.
+  const byCalls = [...srcRanked].sort((a,b)=>b.calls-a.calls);
+  const totalCalls = byCalls.reduce((a,s)=>a+s.calls, 0);
+  // Quay brand palette
+  const slices = ['#3D5BA6','#FDC503','#98C5ED','#D20A03','#2E4480','#C9A000'];
+  // Render canvas + legend HTML
+  wrap.innerHTML = `
+    <div class="ov-donut-chart">
+      <canvas id="ov-donut"></canvas>
+      <div class="ov-donut-center">
+        <div class="num">${(totalCalls/1000).toFixed(1)}k</div>
+        <div class="lbl">calls</div>
+      </div>
+    </div>
+    <div class="ov-donut-legend">
+      ${byCalls.slice(0,6).map((s,i)=>{
+        const shareCalls = totalCalls > 0 ? (s.calls/totalCalls)*100 : 0;
+        return `<div class="ov-legend-row">
+          <span class="ov-legend-name"><span class="ov-legend-dot" style="background:${slices[i%slices.length]}"></span>${esc(s.source)}</span>
+          <span class="ov-legend-val">${shareCalls.toFixed(0)}%</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  const ctx = document.getElementById('ov-donut');
+  if (execCharts['ov-donut']){ execCharts['ov-donut'].destroy(); }
+  execCharts['ov-donut'] = new Chart(ctx, {
+    type:'doughnut',
+    data:{
+      labels: byCalls.map(s=>s.source),
+      datasets:[{ data: byCalls.map(s=>s.calls), backgroundColor: byCalls.map((_,i)=>slices[i%slices.length]), borderWidth: 0, hoverOffset: 6 }],
+    },
+    options:{
+      cutout:'68%', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{backgroundColor:'#0F172A', padding:10, callbacks:{ label:c => ' ' + c.label + ': ' + c.parsed.toLocaleString() + ' calls (' + ((c.parsed/totalCalls)*100).toFixed(0) + '%)' }} },
+    },
+  });
+}
 function renderOverviewTrendChart(){
   // Last 12 weeks (or whatever exists), oldest -> newest.
   const allWeeks = Object.entries(HIST).sort(([a],[b])=>a.localeCompare(b)).slice(-12);
@@ -856,8 +921,8 @@ function renderOverviewTrendChart(){
   execCharts['ov-chart-trend'] = new Chart(ctx, {
     type:'line',
     data:{ labels, datasets:[
-      { label:'Calls', data:calls, yAxisID:'y',  borderColor:'#3D5BA6', backgroundColor:'rgba(61,91,166,.10)', borderWidth:2, fill:true, tension:.35, pointRadius:3, pointBackgroundColor:'#3D5BA6' },
-      { label:'Success %', data:succPct, yAxisID:'y1', borderColor:'#0A8F5B', backgroundColor:'transparent', borderWidth:2, borderDash:[5,4], tension:.35, pointRadius:3, pointBackgroundColor:'#0A8F5B' },
+      { label:'Calls', data:calls, yAxisID:'y',  borderColor:'#3D5BA6', backgroundColor:'rgba(61,91,166,.10)', borderWidth:2.5, fill:true, tension:.35, pointRadius:3, pointBackgroundColor:'#3D5BA6' },
+      { label:'Success %', data:succPct, yAxisID:'y1', borderColor:'#C9A000', backgroundColor:'transparent', borderWidth:2.5, borderDash:[5,4], tension:.35, pointRadius:3, pointBackgroundColor:'#FDC503' },
     ]},
     options:{
       responsive:true, maintainAspectRatio:false,
@@ -867,7 +932,7 @@ function renderOverviewTrendChart(){
       scales:{
         x:{ grid:{display:false}, ticks:{font:{size:10,family:"'Inter',sans-serif"},color:'#94A3B8'} },
         y:{ beginAtZero:true, grid:{color:'rgba(0,0,0,.04)'}, ticks:{font:{size:10,family:"'Inter',sans-serif"},color:'#94A3B8', callback:v => v>=1000?(v/1000).toFixed(1)+'k':v} },
-        y1:{ beginAtZero:true, position:'right', grid:{display:false}, ticks:{font:{size:10,family:"'Inter',sans-serif"},color:'#0A8F5B', callback:v=>v.toFixed(1)+'%'} },
+        y1:{ beginAtZero:true, position:'right', grid:{display:false}, ticks:{font:{size:10,family:"'Inter',sans-serif"},color:'#C9A000', callback:v=>v.toFixed(1)+'%'} },
       },
     },
   });
