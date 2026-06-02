@@ -186,26 +186,25 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
 .ov-chip{background:transparent;border:0;color:var(--ov-text-muted);padding:8px 2px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--ov-num);position:relative}
 .ov-chip:hover{color:var(--ov-text)}
 .ov-chip.active{color:var(--ov-q-blue);font-weight:700}
-.ov-chip.active::after{content:'';position:absolute;left:0;right:0;bottom:-4px;height:3px;background:var(--ov-q-blue);border-radius:2px}
+.ov-chip.active::after{content:'';position:absolute;left:50%;bottom:-4px;width:24px;height:3px;background:var(--ov-q-blue);border-radius:2px;transform:translateX(-50%)}
 .ov-chip-secondary{background:var(--ov-q-blue);color:#fff;border:0;padding:9px 16px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--ov-num);transition:.15s}
 .ov-chip-secondary:hover{background:var(--ov-q-blue-dk)}
 
 /* Hero — Taskati style: 4 colourful mini-cards in a row */
-.ov-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px}
+.ov-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
 @media (max-width:1100px){.ov-hero{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:600px){.ov-hero{grid-template-columns:1fr}}
-.ov-stat{background:var(--ov-card);border-radius:var(--ov-radius-lg);padding:22px 24px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;box-shadow:var(--ov-shadow)}
-.ov-stat-icon{font-size:30px;line-height:1;margin-bottom:10px;display:inline-block}
+.ov-stat{background:var(--ov-card);border-radius:var(--ov-radius-lg);padding:24px;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden;box-shadow:var(--ov-shadow);min-height:160px}
+.ov-stat-icon{font-size:30px;line-height:1;display:inline-block;margin:0}
 .ov-stat-lbl{font-size:11px;font-weight:700;color:var(--ov-text-muted);text-transform:uppercase;letter-spacing:.6px}
-.ov-stat-val{font-family:var(--ov-num);font-variant-numeric:tabular-nums;font-weight:800;color:var(--ov-text);letter-spacing:-1px;line-height:1;margin:4px 0 6px;font-size:30px}
-.ov-stat-meta{font-size:11px;color:var(--ov-text-soft);font-weight:500;margin-top:2px}
+.ov-stat-val{font-family:var(--ov-num);font-variant-numeric:tabular-nums;font-weight:800;color:var(--ov-text);letter-spacing:-1px;line-height:1;margin:0;font-size:30px}
+.ov-stat-meta{font-size:11px;color:var(--ov-text-soft);font-weight:500;margin:0;margin-top:auto;min-height:18px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 /* Quiet trend chip — icon only, % visible on hover */
-.ov-trend{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;font-variant-numeric:tabular-nums;cursor:help}
+.ov-trend{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;font-variant-numeric:tabular-nums}
 .ov-trend.up{background:var(--ov-success-bg);color:var(--ov-success)}
 .ov-trend.down{background:var(--ov-danger-bg);color:var(--ov-danger)}
 .ov-trend.neu{background:#EBEEF5;color:var(--ov-text-soft)}
-.ov-trend .pct{display:none;margin-left:2px}
-.ov-trend:hover .pct{display:inline}
+.ov-trend .pct{margin-left:1px}
 /* Each hero card gets a thin coloured top accent stripe (a la report design) */
 .ov-stat::before{content:'';position:absolute;left:0;right:0;top:0;height:4px;border-radius:var(--ov-radius-lg) var(--ov-radius-lg) 0 0}
 .ov-stat-calls::before   {background:var(--ov-q-blue)}
@@ -214,9 +213,9 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
 .ov-stat-callers::before {background:var(--ov-q-red)}
 
 /* Section grid: 2 cols, varying spans */
-.ov-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:18px}
+.ov-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:24px}
 @media (max-width:1100px){.ov-grid{grid-template-columns:1fr}}
-.ov-card{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:24px 26px}
+.ov-card{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:24px}
 .ov-card-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:18px}
 .ov-card-head h3{margin:0;font-size:11px;font-weight:700;color:var(--ov-text);text-transform:uppercase;letter-spacing:1px}
 .ov-card-sub{font-size:11px;color:var(--ov-text-soft);font-weight:500}
@@ -235,18 +234,18 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
 .ov-legend-val{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ov-text);font-size:13px}
 
 /* Insight cards (Top Performer, Best Source, At Risk) */
-.ov-insights{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:18px}
+.ov-insights{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
 @media (max-width:1100px){.ov-insights{grid-template-columns:1fr}}
 .ov-insight-icon{width:36px;height:36px;border-radius:10px;background:var(--ov-q-blue-tint);color:var(--ov-q-blue);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;margin-bottom:14px}
 .ov-insight-icon.success{background:var(--ov-success-bg);color:var(--ov-success)}
-.ov-insight-icon.warn{background:#FEF3C7;color:#B45309}
+.ov-insight-icon.warn{background:var(--ov-q-red-tint);color:var(--ov-q-red)}
 .ov-big-name{font-family:var(--ov-num);font-size:22px;font-weight:700;color:var(--ov-text);letter-spacing:-0.4px;margin:0;line-height:1.2}
 .ov-big-num{font-family:var(--ov-num);font-variant-numeric:tabular-nums;font-size:28px;font-weight:700;color:var(--ov-q-blue);letter-spacing:-0.6px;line-height:1;margin-top:2px}
 .ov-big-num.success{color:var(--ov-success)}
 .ov-meta-line{font-size:11px;color:var(--ov-text-muted);font-weight:500;margin-top:4px;display:flex;gap:8px;align-items:center}
 .ov-pill{display:inline-block;padding:2px 8px;border-radius:6px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;background:#EBEEF5;color:var(--ov-text-muted)}
-.ov-pill.rm{background:#E5EAF3;color:#1E2E5C}
-.ov-pill.fancy{background:#F4ECF7;color:#5B3FA6}
+.ov-pill.rm{background:var(--ov-q-blue-tint);color:var(--ov-q-blue-dk)}
+.ov-pill.fancy{background:var(--ov-q-sky-tint);color:var(--ov-q-blue-dk)}
 
 .ov-risk-list{display:flex;flex-direction:column;gap:0}
 .ov-risk-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px dashed var(--ov-border);font-size:12px;gap:10px}
@@ -260,10 +259,10 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
 .ov-chart-wrap{position:relative;height:220px}
 
 /* Leaderboard — list with avatar + progress bar */
-.ov-leaderboard{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:24px 26px;margin-bottom:18px}
+.ov-leaderboard{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:24px;margin-bottom:24px}
 .ov-lb-list{display:flex;flex-direction:column;gap:14px;margin-top:18px}
-.ov-lb-row{display:grid;grid-template-columns:24px 38px 1fr 60px 90px 80px;align-items:center;gap:14px}
-@media (max-width:700px){.ov-lb-row{grid-template-columns:24px 38px 1fr 90px}.ov-lb-progress,.ov-lb-stat{display:none}}
+.ov-lb-row{display:grid;grid-template-columns:24px 38px 1.4fr 90px 80px 80px;align-items:center;gap:14px}
+@media (max-width:700px){.ov-lb-row{grid-template-columns:24px 38px 1fr 70px}.ov-lb-progress,.ov-lb-leads{display:none}}
 .ov-lb-rank{font-size:11px;font-weight:700;color:var(--ov-text-soft);font-variant-numeric:tabular-nums}
 .ov-lb-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.5px;font-family:var(--ov-num)}
 .ov-lb-name{display:flex;flex-direction:column;gap:2px;min-width:0}
@@ -322,7 +321,7 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
         <button class="ov-chip active" onclick="setExecPeriod('month',this)">This Month</button>
         <button class="ov-chip" onclick="setExecPeriod('quarter',this)">Last 90 Days</button>
         <button class="ov-chip" onclick="setExecPeriod('all',this)">All Time</button>
-        <button class="ov-chip ov-chip-secondary" onclick="exportExec()">Export ↓</button>
+        <button class="ov-chip ov-chip-secondary" onclick="exportExec()" aria-label="Export current period as CSV">Export ↓</button>
       </div>
     </header>
 
@@ -805,19 +804,20 @@ function renderExec(){
   const top10 = [...execAgents].sort((a,b)=>b.calls-a.calls).slice(0,10);
   const leaderMax = top10.length ? top10[0].calls : 0;
   document.getElementById('ov-leaderboard-rows').innerHTML = top10.length ? top10.map((d,i)=>{
-    const initials = (d.name||'').split(/\s+/).map(s=>s[0]).filter(Boolean).slice(0,2).join('').toUpperCase();
+    const safeName = d.name || '';
+    const initials = safeName.split(/\s+/).map(s=>s[0]).filter(Boolean).slice(0,2).join('').toUpperCase() || '?';
     // Quay brand palette only — Blue / Yellow / Sky / Red + shades for variety across 10 avatars
     const palette = ['#3D5BA6','#FDC503','#98C5ED','#D20A03','#2E4480','#C9A000','#6FA9DE','#A60800','#5C75BC','#1E2E5C'];
-    let h=0; for (let j=0;j<d.name.length;j++) h=(h*31+d.name.charCodeAt(j))|0;
+    let h=0; for (let j=0;j<safeName.length;j++) h=(h*31+safeName.charCodeAt(j))|0;
     const color = palette[Math.abs(h)%palette.length];
     const pctOfMax = leaderMax > 0 ? Math.round((d.calls/leaderMax)*100) : 0;
     return `<div class="ov-lb-row">
       <span class="ov-lb-rank">#${i+1}</span>
       <div class="ov-lb-avatar" style="background:${color}">${esc(initials)}</div>
       <div class="ov-lb-name"><span class="nm">${esc(d.name)}</span><span class="meta"><span class="ov-pill ${d._grp==='RM'?'rm':'fancy'}">${d._grp}</span> · success ${pct(sr(d))}</span></div>
-      <div class="ov-lb-stat"><strong>${d.calls.toLocaleString()}</strong></div>
       <div class="ov-lb-progress"><div class="ov-lb-progress-fill" style="width:${pctOfMax}%"></div></div>
-      <div class="ov-lb-stat">${(d.seller||0)+(d.rental||0)+(d.email||0)} <span style="font-weight:500">leads</span></div>
+      <div class="ov-lb-stat"><strong>${d.calls.toLocaleString()}</strong> <span style="font-weight:500">calls</span></div>
+      <div class="ov-lb-stat ov-lb-leads">${(d.seller||0)+(d.rental||0)+(d.email||0)} <span style="font-weight:500">leads</span></div>
     </div>`;
   }).join('') : '<div class="ov-empty">No agent data for this period.</div>';
 
@@ -942,7 +942,7 @@ function buildMonthlyData(){ const allHist=Object.entries(HIST).sort(([a],[b])=>
 
 function makeBarChart(canvasId,labels,values,color,borderColor,isPercent=false){ if(execCharts[canvasId]){ execCharts[canvasId].destroy(); delete execCharts[canvasId]; } const ctx=document.getElementById(canvasId); if(!ctx) return; execCharts[canvasId]=new Chart(ctx,{ type:'bar', data:{ labels, datasets:[{ data:values, backgroundColor:color, borderColor:borderColor, borderWidth:2, borderRadius:6, borderSkipped:false }] }, options:{ responsive:true, maintainAspectRatio:true, aspectRatio:1.8, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>' '+(isPercent?c.parsed.y.toFixed(1)+'%':c.parsed.y.toLocaleString())}} }, scales:{ x:{grid:{display:false},ticks:{font:{size:10,family:'Montserrat'},color:'#6B7A99'}}, y:{beginAtZero:true, max:isPercent?100:undefined, grid:{color:'rgba(0,0,0,.05)'}, ticks:{font:{size:9,family:'Montserrat'},color:'#6B7A99', callback:v=>isPercent?v+'%':(v>=1000?(v/1000).toFixed(1)+'k':v)}} } } }); }
 
-function renderMonthlyCharts(){ const monthMap=buildMonthlyData(); const entries=Object.entries(monthMap); if(!entries.length) return; const labels=entries.map(([ym])=>{ try{ const [y,m]=ym.split('-'); return new Date(+y,+m-1,1).toLocaleDateString('en-ZA',{month:'short',year:'2-digit'}); }catch{return ym;} }); makeBarChart('ch-calls',labels,entries.map(([,m])=>m.calls),'rgba(61,91,166,.75)','#3D5BA6'); makeBarChart('ch-leads',labels,entries.map(([,m])=>m.leads),'rgba(26,138,74,.75)','#1A8A4A'); makeBarChart('ch-email',labels,entries.map(([,m])=>m.email),'rgba(253,197,3,.85)','#C9A000'); makeBarChart('ch-rental',labels,entries.map(([,m])=>m.rental),'rgba(152,197,237,.9)','#5B9FD4'); if(Object.keys(ctMonthData).length){ const dfPct=entries.map(([ym])=>{ const ct=ctMonthData[ym]; if(!ct||!ct.ctH) return null; return ct.ctH>0?Math.min(100,(ct.dfH/ct.ctH)*100):null; }); } makeBarChart('ch-dfpct',labels,entries.map(([ym])=>{const s=monthTeamStats(ym);return s?Math.round(s.workH):0;}),'rgba(59,130,246,.75)','#3B82F6'); }
+function renderMonthlyCharts(){ const monthMap=buildMonthlyData(); const entries=Object.entries(monthMap); if(!entries.length) return; const labels=entries.map(([ym])=>{ try{ const [y,m]=ym.split('-'); return new Date(+y,+m-1,1).toLocaleDateString('en-ZA',{month:'short',year:'2-digit'}); }catch{return ym;} }); makeBarChart('ch-calls',labels,entries.map(([,m])=>m.calls),'rgba(61,91,166,.75)','#3D5BA6'); makeBarChart('ch-leads',labels,entries.map(([,m])=>m.leads),'rgba(26,138,74,.75)','#1A8A4A'); makeBarChart('ch-email',labels,entries.map(([,m])=>m.email),'rgba(253,197,3,.85)','#C9A000'); makeBarChart('ch-rental',labels,entries.map(([,m])=>m.rental),'rgba(152,197,237,.85)','#98C5ED'); if(Object.keys(ctMonthData).length){ const dfPct=entries.map(([ym])=>{ const ct=ctMonthData[ym]; if(!ct||!ct.ctH) return null; return ct.ctH>0?Math.min(100,(ct.dfH/ct.ctH)*100):null; }); } makeBarChart('ch-dfpct',labels,entries.map(([ym])=>{const s=monthTeamStats(ym);return s?Math.round(s.workH):0;}),'rgba(61,91,166,.75)','#3D5BA6'); }
 
 function exportMonthly(){ const allHist=Object.entries(HIST).sort(([a],[b])=>b.localeCompare(a)); const monthMap={}; allHist.forEach(([week,v])=>{ const wDate=new Date(week+'T00:00:00'); const monday=new Date(wDate); monday.setDate(wDate.getDate()-wDate.getDay()+(wDate.getDay()===0?-6:1)); const monStr=monday.toISOString().split('T')[0]; const ym=monStr.substring(0,7); if(!monthMap[ym]) monthMap[ym]={calls:0,success:0,seller:0,rental:0,email:0,workTime:0,rm:new Set(),fancy:new Set(),weeks:new Set()}; const m=monthMap[ym]; const all=[...(v.rm||[]),...(v.fancy||[])]; m.calls+=all.reduce((a,d)=>a+d.calls,0); m.success+=all.reduce((a,d)=>a+d.success,0); m.seller+=all.reduce((a,d)=>a+(d.seller||0),0); m.workTime+=all.reduce((a,d)=>a+(d.workTime||0),0); m.rental+=all.reduce((a,d)=>a+(d.rental||0),0); m.email+=all.reduce((a,d)=>a+(d.email||0),0); m.weeks.add(monStr); (v.rm||[]).forEach(d=>m.rm.add(d.name)); (v.fancy||[]).forEach(d=>m.fancy.add(d.name)); }); const hdr='Month,Weeks,RM Callers,Fancy Callers,Total Calls,Success Rate,Seller Leads,Rental Leads,Emails\n'; const rows=Object.entries(monthMap).sort(([a],[b])=>b.localeCompare(a)).map(([ym,m])=>{ const sRate=m.calls>0?(m.seller+m.rental+m.email)/m.calls:0; return `${fmtMonth(ym)},${m.weeks.size},${m.rm.size},${m.fancy.size},${m.calls},${pct(sRate)},${m.seller},${m.rental},${m.email}`; }).join('\n'); const blob=new Blob([hdr+rows],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`quay1_monthly_${today()}.csv`; a.click(); toast('📥 Monthly report exported!'); }
 
