@@ -175,12 +175,12 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
   --ov-danger:var(--ov-q-red);--ov-danger-bg:var(--ov-q-red-tint);
   --ov-num:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
 }
-#tab-exec.active{background:var(--ov-bg);margin:0;padding:28px;border-radius:20px;font-family:var(--ov-num);color:var(--ov-text)}
+#tab-exec.active{background:var(--ov-bg);margin:0;padding:0 28px 60px;border-radius:20px;font-family:var(--ov-num);color:var(--ov-text);min-height:calc(100vh - 100px)}
 /* Header — dark navy band, white text (sits on top of / matches the site header gradient) */
-.ov-header{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin:-28px -28px 24px;padding:28px 32px;flex-wrap:wrap;background:linear-gradient(135deg,var(--ov-q-blue-dk) 0%,#1E2E5C 100%);border-radius:20px 20px 0 0;color:#fff}
-.ov-title{display:flex;flex-direction:column;gap:8px}
-.ov-title h1{font-family:var(--ov-num);font-size:30px;font-weight:800;color:#fff;letter-spacing:-0.9px;margin:0;line-height:1.1}
-.ov-title .ov-sub{margin:4px 0 0;font-size:13px;color:rgba(255,255,255,.65);font-weight:500}
+.ov-header{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin:0 -28px 28px;padding:44px 40px 36px;flex-wrap:wrap;background:linear-gradient(135deg,var(--ov-q-blue-dk) 0%,#1E2E5C 100%);border-radius:20px 20px 0 0;color:#fff}
+.ov-title{display:flex;flex-direction:column;gap:6px}
+.ov-title h1{font-family:var(--ov-num);font-size:42px;font-weight:800;color:#fff;letter-spacing:-1.2px;margin:0;line-height:1.05}
+.ov-title .ov-sub{margin:8px 0 0;font-size:13px;color:rgba(255,255,255,.65);font-weight:500;letter-spacing:.2px}
 /* Period tabs: plain text + underline for active, white on dark */
 .ov-period{display:flex;gap:18px;align-items:center}
 .ov-chip{background:transparent;border:0;color:rgba(255,255,255,.55);padding:8px 2px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--ov-num);position:relative}
