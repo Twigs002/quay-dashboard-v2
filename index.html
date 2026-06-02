@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Quay 1 — Performance Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Permanent+Marker&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=Permanent+Marker&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{
@@ -156,6 +156,90 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
   .cc,.tw,.sc,.range-card,.ek,.exec-header{box-shadow:none;border:1px solid #ddd}
   body{background:#fff}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   OVERVIEW V2 — clean & corporate (Linear/Stripe feel)
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --ov-bg:#FAFBFC;--ov-card:#FFFFFF;--ov-border:#EAECF0;
+  --ov-shadow:0 1px 2px rgba(0,0,0,.04),0 1px 3px rgba(0,0,0,.06);
+  --ov-shadow-hover:0 4px 12px rgba(0,0,0,.08);
+  --ov-radius:14px;--ov-radius-lg:18px;
+  --ov-text:#0F172A;--ov-text-muted:#64748B;--ov-text-soft:#94A3B8;
+  --ov-accent:#3D5BA6;--ov-accent-dk:#2E4480;--ov-accent-tint:#EEF2FB;
+  --ov-success:#0A8F5B;--ov-success-bg:#E8F5EF;
+  --ov-danger:#C0392B;--ov-danger-bg:#FCEDEB;
+  --ov-warn:#B45309;--ov-warn-bg:#FEF3C7;
+  --ov-num:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+}
+#tab-exec.active{background:var(--ov-bg);margin:-22px -28px 0;padding:28px 28px 60px;min-height:calc(100vh - 70px);font-family:var(--ov-num)}
+.ov-header{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;margin-bottom:28px;flex-wrap:wrap}
+.ov-title h1{font-family:var(--ov-num);font-size:26px;font-weight:700;color:var(--ov-text);letter-spacing:-0.5px;margin:0;line-height:1.15}
+.ov-title .ov-sub{margin:6px 0 0;font-size:13px;color:var(--ov-text-muted);font-weight:500}
+.ov-period{display:flex;gap:6px;flex-wrap:wrap}
+.ov-chip{background:var(--ov-card);border:1px solid var(--ov-border);color:var(--ov-text-muted);padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--ov-num)}
+.ov-chip:hover{color:var(--ov-text);border-color:#CBD5E1;background:#FAFBFC}
+.ov-chip.active{background:var(--ov-text);color:#fff;border-color:var(--ov-text)}
+.ov-chip-secondary{background:transparent}
+.ov-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+@media (max-width:900px){.ov-hero{grid-template-columns:repeat(2,1fr)}}
+.ov-stat{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:22px 24px;display:flex;flex-direction:column;gap:6px;transition:box-shadow .15s,transform .15s}
+.ov-stat:hover{box-shadow:var(--ov-shadow-hover);transform:translateY(-1px)}
+.ov-stat-lbl{font-size:11px;font-weight:600;color:var(--ov-text-muted);text-transform:uppercase;letter-spacing:0.6px}
+.ov-stat-val{font-family:var(--ov-num);font-variant-numeric:tabular-nums;font-size:34px;font-weight:700;color:var(--ov-text);letter-spacing:-1px;line-height:1.1;margin:4px 0 2px}
+.ov-stat-trend{font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums}
+.ov-stat-trend.up{color:var(--ov-success)}
+.ov-stat-trend.down{color:var(--ov-danger)}
+.ov-stat-trend.neu{color:var(--ov-text-soft)}
+.ov-stat-meta{font-size:11px;color:var(--ov-text-soft);margin-top:auto;font-weight:500}
+.ov-stat-primary{background:linear-gradient(135deg,var(--ov-accent) 0%,var(--ov-accent-dk) 100%);border-color:var(--ov-accent-dk)}
+.ov-stat-primary .ov-stat-lbl{color:rgba(255,255,255,.7)}
+.ov-stat-primary .ov-stat-val{color:#fff}
+.ov-stat-primary .ov-stat-meta{color:rgba(255,255,255,.5)}
+.ov-stat-primary .ov-stat-trend.up{color:#6EE7B7}
+.ov-stat-primary .ov-stat-trend.down{color:#FCA5A5}
+.ov-bento{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+@media (max-width:1100px){.ov-bento{grid-template-columns:repeat(2,1fr)}}
+.ov-card{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:22px 24px;display:flex;flex-direction:column;gap:14px}
+.ov-card-trend,.ov-card-sources{grid-column:span 2}
+.ov-card-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.ov-card-head h3{margin:0;font-size:13px;font-weight:700;color:var(--ov-text);letter-spacing:0;text-transform:uppercase;letter-spacing:.4px}
+.ov-card-sub{font-size:11px;color:var(--ov-text-soft);font-weight:500}
+.ov-big-name{font-family:var(--ov-num);font-size:22px;font-weight:700;color:var(--ov-text);letter-spacing:-0.4px;margin:0;line-height:1.2}
+.ov-big-num{font-family:var(--ov-num);font-variant-numeric:tabular-nums;font-size:28px;font-weight:700;color:var(--ov-accent);letter-spacing:-0.8px;line-height:1}
+.ov-big-num.success{color:var(--ov-success)}
+.ov-meta-line{font-size:11px;color:var(--ov-text-muted);font-weight:500;margin-top:2px}
+.ov-risk-list{display:flex;flex-direction:column;gap:4px}
+.ov-risk-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--ov-border);font-size:12px}
+.ov-risk-item:last-child{border-bottom:0}
+.ov-risk-item .agent{font-weight:600;color:var(--ov-text);font-family:var(--ov-num)}
+.ov-risk-item .reason{color:var(--ov-danger);font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
+.ov-empty{font-size:12px;color:var(--ov-text-soft);padding:18px 0;text-align:center;font-weight:500}
+.ov-source-row{display:grid;grid-template-columns:160px 1fr 90px;align-items:center;gap:14px;margin-bottom:12px}
+.ov-source-row:last-child{margin-bottom:0}
+.ov-source-row .lbl{font-size:12px;font-weight:600;color:var(--ov-text);font-family:var(--ov-num)}
+.ov-bar-track{background:#F1F5F9;height:10px;border-radius:5px;overflow:hidden}
+.ov-bar-fill{background:linear-gradient(90deg,var(--ov-accent) 0%,var(--ov-accent-dk) 100%);height:100%;transition:width .5s;border-radius:5px}
+.ov-source-row .val{font-family:var(--ov-num);font-variant-numeric:tabular-nums;font-size:13px;font-weight:700;color:var(--ov-text);text-align:right}
+.ov-source-row .val .calls{display:block;font-size:10px;color:var(--ov-text-soft);font-weight:500}
+.ov-leaderboard{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:22px 24px;margin-bottom:24px}
+.ov-table{width:100%;border-collapse:collapse;font-family:var(--ov-num);font-variant-numeric:tabular-nums}
+.ov-table th{text-align:left;font-size:10px;font-weight:700;color:var(--ov-text-muted);text-transform:uppercase;letter-spacing:.6px;padding:10px 12px;border-bottom:1px solid var(--ov-border)}
+.ov-table td{padding:14px 12px;font-size:13px;color:var(--ov-text);border-bottom:1px solid var(--ov-border)}
+.ov-table tr:last-child td{border-bottom:0}
+.ov-table .rank{color:var(--ov-text-soft);font-size:11px;font-weight:700;width:30px}
+.ov-table .agent{font-weight:600}
+.ov-table .pill{display:inline-block;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;background:#F1F5F9;color:var(--ov-text-muted)}
+.ov-table .pill.rm{background:var(--ov-accent-tint);color:var(--ov-accent-dk)}
+.ov-table .pill.fancy{background:#F5F0FB;color:#5B3FA6}
+.ov-more{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius);margin-bottom:16px;overflow:hidden}
+.ov-more summary{padding:16px 22px;cursor:pointer;font-size:13px;font-weight:700;color:var(--ov-text-muted);list-style:none;display:flex;justify-content:space-between;align-items:center;text-transform:uppercase;letter-spacing:.4px}
+.ov-more summary::-webkit-details-marker{display:none}
+.ov-more summary::after{content:'+';font-size:20px;line-height:1;color:var(--ov-text-soft)}
+.ov-more[open] summary{color:var(--ov-text);border-bottom:1px solid var(--ov-border)}
+.ov-more[open] summary::after{content:'–'}
+.ov-more-body{padding:24px}
+.ov-chart-wrap{position:relative;height:200px}
 </style>
 </head>
 <body>
@@ -183,38 +267,88 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
     <button class="tab" onclick="switchTab('sources',this)">🎯 Lead Sources</button>
   </div>
 
-  <!-- ═══ OVERVIEW TAB ═══ -->
+  <!-- ═══ OVERVIEW TAB (v2 redesign) ═══ -->
   <div class="tab-panel active" id="tab-exec">
-    <div class="exec-header">
-      <div>
-        <h2>Executive Overview</h2>
-        <p>High-level calling performance summary for leadership</p>
+    <header class="ov-header">
+      <div class="ov-title">
+        <h1>Operational Overview</h1>
+        <p class="ov-sub" id="ov-context">—</p>
       </div>
-      <div class="exec-period">
-        <button class="ep-btn active" onclick="setExecPeriod('week',this)">This Week</button>
-        <button class="ep-btn" onclick="setExecPeriod('lastweek',this)">Last Week</button>
-        <button class="ep-btn" onclick="setExecPeriod('month',this)">This Month</button>
-        <button class="ep-btn" onclick="setExecPeriod('quarter',this)">Last 90 Days</button>
-        <button class="ep-btn" onclick="setExecPeriod('all',this)">All Time</button>
-        <button class="ep-btn" onclick="exportExec()" style="background:rgba(253,197,3,.15);border-color:var(--yellow);color:var(--yellow)">⬇ Export</button>
+      <div class="ov-period">
+        <button class="ov-chip" onclick="setExecPeriod('week',this)">This Week</button>
+        <button class="ov-chip" onclick="setExecPeriod('lastweek',this)">Last Week</button>
+        <button class="ov-chip active" onclick="setExecPeriod('month',this)">This Month</button>
+        <button class="ov-chip" onclick="setExecPeriod('quarter',this)">Last 90 Days</button>
+        <button class="ov-chip" onclick="setExecPeriod('all',this)">All Time</button>
+        <button class="ov-chip ov-chip-secondary" onclick="exportExec()">Export ↓</button>
       </div>
-    </div>
-    <div class="exec-kpis" id="exec-kpis">
-      <div class="ek"><div class="ek-icon">👥</div><div class="ek-val" id="ek-callers">—</div><div class="ek-lbl">Active Callers</div><div class="ek-sub">all combined</div></div>
-      <div class="ek yk"><div class="ek-icon">📞</div><div class="ek-val" id="ek-calls">—</div><div class="ek-lbl">Total Calls Made</div><div class="ek-sub" id="ek-calls-sub">—</div></div>
-      <div class="ek gk"><div class="ek-icon">🏠</div><div class="ek-val" id="ek-seller">—</div><div class="ek-lbl">Seller Leads</div><div class="ek-sub">this period</div></div>
-      <div class="ek rk"><div class="ek-icon">🏘</div><div class="ek-val" id="ek-rental">—</div><div class="ek-lbl">Rental Leads</div><div class="ek-sub">this period</div></div>
-      <div class="ek sk"><div class="ek-icon">📧</div><div class="ek-val" id="ek-email">—</div><div class="ek-lbl">Emails Collected</div><div class="ek-sub">contact data captured</div></div>
-      <div class="ek pk"><div class="ek-icon">🎯</div><div class="ek-val" id="ek-success">—</div><div class="ek-lbl">Total Successes</div><div class="ek-sub">seller + rental + emails</div></div>
-    </div>
-    <div id="exec-breakdown"><div class="no-data"><div class="ic">📊</div><p>Loading data…</p></div></div>
-    <div id="exec-charts">
+    </header>
+
+    <section class="ov-hero">
+      <div class="ov-stat ov-stat-primary">
+        <div class="ov-stat-lbl">Total Calls</div>
+        <div class="ov-stat-val" id="ek-calls">—</div>
+        <div class="ov-stat-trend" id="ek-calls-trend"></div>
+        <div class="ov-stat-meta" id="ek-calls-sub">—</div>
+      </div>
+      <div class="ov-stat">
+        <div class="ov-stat-lbl">Avg Success Rate</div>
+        <div class="ov-stat-val" id="ek-sr">—</div>
+        <div class="ov-stat-trend" id="ek-sr-trend"></div>
+        <div class="ov-stat-meta" id="ek-sr-meta">vs prev period</div>
+      </div>
+      <div class="ov-stat">
+        <div class="ov-stat-lbl">Total Leads</div>
+        <div class="ov-stat-val" id="ek-success">—</div>
+        <div class="ov-stat-trend" id="ek-success-trend"></div>
+        <div class="ov-stat-meta">Seller · Rental · Email</div>
+      </div>
+      <div class="ov-stat">
+        <div class="ov-stat-lbl">Active Callers</div>
+        <div class="ov-stat-val" id="ek-callers">—</div>
+        <div class="ov-stat-trend" id="ek-callers-trend"></div>
+        <div class="ov-stat-meta" id="ek-callers-meta">RM + Fancy combined</div>
+      </div>
+    </section>
+
+    <section class="ov-bento">
+      <div class="ov-card ov-card-trend">
+        <div class="ov-card-head"><h3>Weekly Trend</h3><span class="ov-card-sub">Calls &amp; Success Rate — last 12 weeks</span></div>
+        <div class="ov-chart-wrap"><canvas id="ov-chart-trend"></canvas></div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-card-head"><h3>Top Performer</h3><span class="ov-card-sub">most calls</span></div>
+        <div id="ov-top-perf"><div class="ov-empty">—</div></div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-card-head"><h3>Best Converting Source</h3><span class="ov-card-sub">success rate leader</span></div>
+        <div id="ov-best-src"><div class="ov-empty">—</div></div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-card-head"><h3>At Risk</h3><span class="ov-card-sub">below targets</span></div>
+        <div id="ov-at-risk" class="ov-risk-list"><div class="ov-empty">—</div></div>
+      </div>
+      <div class="ov-card ov-card-sources">
+        <div class="ov-card-head"><h3>Lead Sources by Conversion</h3><span class="ov-card-sub">success rate per source — this period</span></div>
+        <div id="ov-source-bars"><div class="ov-empty">—</div></div>
+      </div>
+    </section>
+
+    <section class="ov-leaderboard">
+      <div class="ov-card-head" style="margin-bottom:16px"><h3>Top 10 Performers</h3><span class="ov-card-sub">ranked by calls — click All Staff for the full list</span></div>
+      <table class="ov-table"><thead><tr>
+        <th>Rank</th><th>Agent</th><th>Group</th><th>Calls</th><th>Success</th><th>Success %</th><th>Seller</th><th>Rental</th><th>Email</th>
+      </tr></thead><tbody id="ov-leaderboard-rows"></tbody></table>
+    </section>
+
+    <details class="ov-more"><summary>Historical breakdown</summary><div class="ov-more-body" id="exec-breakdown"></div></details>
+    <details class="ov-more"><summary>Monthly trend charts</summary><div class="ov-more-body"><div id="exec-charts">
       <div class="cc"><div class="cc-title">📞 Calls by Month</div><div class="cc-sub">Total calls made — month over month</div><canvas id="ch-calls" style="max-height:240px"></canvas></div>
       <div class="cc"><div class="cc-title">🏆 Leads by Month</div><div class="cc-sub">Total seller + rental leads — month over month</div><canvas id="ch-leads" style="max-height:240px"></canvas></div>
       <div class="cc"><div class="cc-title">📧 Emails by Month</div><div class="cc-sub">Emails collected — month over month</div><canvas id="ch-email" style="max-height:240px"></canvas></div>
       <div class="cc"><div class="cc-title">🏠 Rentals by Month</div><div class="cc-sub">Rental leads specifically — month over month</div><canvas id="ch-rental" style="max-height:240px"></canvas></div>
       <div class="cc"><div class="cc-title">⏱ DialFire Work Time</div><div class="cc-sub">DialFire hours worked per month</div><canvas id="ch-dfpct" style="max-height:240px"></canvas></div>
-    </div>
+    </div></div></details>
   </div>
 
   <!-- ═══ ALL STAFF TAB ═══ -->
@@ -513,7 +647,7 @@ async function init(){
   buildPresets(); populateWeekSelects(); populateMonthSelects(); initDailyDate(); initMgrFilters(); initSources(); renderExec();
 }
 
-function setExecPeriod(p,btn){ execPeriod=p; document.querySelectorAll('.ep-btn').forEach(b=>b.classList.remove('active')); if(btn) btn.classList.add('active'); renderExec(); }
+function setExecPeriod(p,btn){ execPeriod=p; document.querySelectorAll('.ov-chip').forEach(b=>b.classList.remove('active')); document.querySelectorAll('.ep-btn').forEach(b=>b.classList.remove('active')); if(btn) btn.classList.add('active'); renderExec(); }
 
 function renderExec(){
   const t=today(); let from,to=t;
@@ -532,26 +666,142 @@ function renderExec(){
   const tEmails=execAgents.reduce((a,d)=>a+(d.email||0),0);
   const tSuccess=tSeller+tRental+tEmails;
   const avgSR=tCalls>0?execAgents.reduce((a,d)=>a+d.success,0)/tCalls:0;
-  // Compute previous-equivalent period for trend arrows
-  let prevFrom, prevTo;
-  if (execPeriod==='week' || execPeriod==='lastweek') {
-    prevTo = addDays(from, -1); prevFrom = addDays(prevTo, -6);
-  } else if (execPeriod==='month') {
-    prevFrom = firstOfMonth(-1); prevTo = lastOfMonth(-1);
-  } else if (execPeriod==='quarter') {
-    prevTo = addDays(from, -1); prevFrom = addDays(prevTo, -90);
-  } else {
-    prevFrom = prevTo = null;
-  }
-  const prev = (prevFrom && prevTo) ? _kpiTotals(prevFrom, prevTo) : null;
+  const tHr=execAgents.reduce((a,d)=>a+(d.workTime||0),0);
+  // Prev period for trends
+  const prev = (function(){
+    if (execPeriod==='week'||execPeriod==='lastweek'){ const pTo=addDays(from,-1); return _kpiTotals(addDays(pTo,-6),pTo); }
+    if (execPeriod==='month'){ return _kpiTotals(firstOfMonth(-1), lastOfMonth(-1)); }
+    if (execPeriod==='quarter'){ const pTo=addDays(from,-1); return _kpiTotals(addDays(pTo,-90),pTo); }
+    return null;
+  })();
   const tr = (cur, prevKey, opts) => prev ? trendArrow(cur, prev[prevKey], opts) : '';
-  document.getElementById('ek-callers').innerHTML=tCallers + tr(tCallers,'tCallers');
-  document.getElementById('ek-calls').innerHTML=tCalls.toLocaleString() + tr(tCalls,'tCalls');
-  document.getElementById('ek-calls-sub').innerHTML='avg success: '+pct(avgSR) + tr(avgSR,'avgSR',{decimals:1});
-  document.getElementById('ek-seller').innerHTML=tSeller.toLocaleString() + tr(tSeller,'tSeller');
-  document.getElementById('ek-rental').innerHTML=tRental.toLocaleString() + tr(tRental,'tRental');
-  document.getElementById('ek-email').innerHTML=tEmails.toLocaleString() + tr(tEmails,'tEmail');
-  document.getElementById('ek-success').innerHTML=tSuccess.toLocaleString() + tr(tSuccess,'tSuc');
+
+  // --- Header context line ---
+  const periodLabel = ({
+    week:'This Week',lastweek:'Last Week',month:'This Month so far',
+    quarter:'Last 90 Days','all':'All Time',
+  })[execPeriod] || 'Period';
+  document.getElementById('ov-context').textContent = `${periodLabel} · ${from} → ${to}`;
+
+  // --- Hero stat values ---
+  const setStat = (valId, trendId, value, prevKey, opts={}) => {
+    const v = document.getElementById(valId); if (v) v.textContent = value;
+    const tr_el = document.getElementById(trendId);
+    if (tr_el) {
+      if (!prev) { tr_el.innerHTML = '<span class="ov-stat-trend neu">no baseline</span>'; return; }
+      const pv = prev[prevKey];
+      if (pv == null || pv === 0) { tr_el.innerHTML = '<span class="ov-stat-trend neu">no baseline</span>'; return; }
+      const cur = typeof value === 'string' ? parseFloat(value.replace(/[^\d.-]/g,'')) : value;
+      const delta = ((cur - pv) / Math.abs(pv)) * 100;
+      const cls = Math.abs(delta) < 0.05 ? 'neu' : (delta > 0 ? 'up' : 'down');
+      const arrow = cls==='up'?'▲':cls==='down'?'▼':'▬';
+      const ppLabel = opts.isPct ? ' vs ' + (pv*100).toFixed(1)+'%' : '';
+      tr_el.innerHTML = `<span class="ov-stat-trend ${cls}">${arrow} ${Math.abs(delta).toFixed(1)}%</span>${ppLabel?' <span style="color:var(--ov-text-soft);font-weight:500">'+ppLabel+'</span>':''}`;
+    }
+  };
+  // numeric value used for delta
+  setStat('ek-calls', 'ek-calls-trend', tCalls.toLocaleString(), 'tCalls');
+  // override: pass raw number so trend uses raw
+  document.getElementById('ek-calls').textContent = tCalls.toLocaleString();
+  document.getElementById('ek-calls-sub').textContent = 'in ' + entries.length + ' week' + (entries.length===1?'':'s');
+
+  document.getElementById('ek-sr').textContent = pct(avgSR);
+  const srTrend = document.getElementById('ek-sr-trend');
+  if (prev) {
+    const pv = prev.avgSR;
+    if (pv == null || pv === 0) { srTrend.innerHTML = '<span class="ov-stat-trend neu">no baseline</span>'; }
+    else {
+      const ppDelta = (avgSR - pv) * 100;
+      const cls = Math.abs(ppDelta) < 0.05 ? 'neu' : (ppDelta > 0 ? 'up' : 'down');
+      const arrow = cls==='up'?'▲':cls==='down'?'▼':'▬';
+      srTrend.innerHTML = `<span class="ov-stat-trend ${cls}">${arrow} ${Math.abs(ppDelta).toFixed(1)}pp</span>`;
+    }
+  } else { srTrend.innerHTML = '<span class="ov-stat-trend neu">no baseline</span>'; }
+
+  document.getElementById('ek-success').textContent = tSuccess.toLocaleString();
+  document.getElementById('ek-success-trend').innerHTML = tr(tSuccess, 'tSuc');
+
+  document.getElementById('ek-callers').textContent = tCallers;
+  document.getElementById('ek-callers-trend').innerHTML = tr(tCallers, 'tCallers');
+
+  // --- Top Performer ---
+  const topPerf = [...execAgents].sort((a,b)=>b.calls-a.calls)[0];
+  if (topPerf) {
+    document.getElementById('ov-top-perf').innerHTML = `
+      <div>
+        <div class="ov-big-name">${esc(topPerf.name)}</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px"><span class="ov-table pill ${topPerf._grp==='RM'?'rm':'fancy'}">${topPerf._grp}</span><span class="ov-meta-line">success: ${pct(sr(topPerf))}</span></div>
+      </div>
+      <div style="margin-top:12px">
+        <div class="ov-big-num">${topPerf.calls.toLocaleString()}</div>
+        <div class="ov-meta-line">calls placed${entries.length>1?' across '+entries.length+' weeks':''}</div>
+      </div>`;
+  } else { document.getElementById('ov-top-perf').innerHTML = '<div class="ov-empty">No data in this period.</div>'; }
+
+  // --- Best Converting Source ---
+  const srcMap = {};
+  entries.forEach(e=>{ if (!e.by_campaign) return; Object.entries(e.by_campaign).forEach(([n,t])=>{ const s = classifySource(n); if(!srcMap[s]) srcMap[s]={calls:0,success:0}; srcMap[s].calls+=(t.calls||0); srcMap[s].success+=(t.success||0); }); });
+  const srcRanked = Object.entries(srcMap).filter(([,v])=>v.calls>=20).map(([s,v])=>({source:s, calls:v.calls, success:v.success, rate:v.calls?v.success/v.calls:0})).sort((a,b)=>b.rate-a.rate);
+  if (srcRanked.length) {
+    const best = srcRanked[0];
+    document.getElementById('ov-best-src').innerHTML = `
+      <div><div class="ov-big-name">${esc(best.source)}</div><div class="ov-meta-line" style="margin-top:6px">${best.calls.toLocaleString()} calls in this period</div></div>
+      <div style="margin-top:12px"><div class="ov-big-num success">${pct(best.rate)}</div><div class="ov-meta-line">success rate</div></div>`;
+  } else { document.getElementById('ov-best-src').innerHTML = `<div class="ov-empty">Awaiting backfill — by_campaign data not in history yet.</div>`; }
+
+  // --- At Risk ---
+  const cphTarget = B.rm.cph;     // 45
+  const atRisk = execAgents.filter(d => {
+    const bench = d._grp==='RM' ? B.rm : B.fancy;
+    const lowCph = cph(d) < bench.cph * 0.7;     // 30% below
+    const lowSr  = d.calls > 50 && sr(d) < bench.sr * 0.5;  // half target with meaningful sample
+    return lowCph || lowSr;
+  }).slice(0, 5);
+  if (atRisk.length) {
+    document.getElementById('ov-at-risk').innerHTML = atRisk.map(d=>{
+      const bench = d._grp==='RM' ? B.rm : B.fancy;
+      const reasons = [];
+      if (cph(d) < bench.cph * 0.7) reasons.push(`${f1(cph(d))}/hr (target ${bench.cph})`);
+      if (d.calls > 50 && sr(d) < bench.sr * 0.5) reasons.push(`${pct(sr(d))} success`);
+      return `<div class="ov-risk-item"><span class="agent">${esc(d.name)}</span><span class="reason">${reasons.join(' · ')}</span></div>`;
+    }).join('');
+  } else {
+    document.getElementById('ov-at-risk').innerHTML = '<div class="ov-empty">Everyone above thresholds. 🎯</div>';
+  }
+
+  // --- Source Bars ---
+  if (srcRanked.length) {
+    const maxRate = Math.max(...srcRanked.map(s=>s.rate));
+    document.getElementById('ov-source-bars').innerHTML = srcRanked.map(s=>{
+      const w = maxRate > 0 ? Math.round((s.rate/maxRate)*100) : 0;
+      return `<div class="ov-source-row">
+        <span class="lbl">${esc(s.source)}</span>
+        <div class="ov-bar-track"><div class="ov-bar-fill" style="width:${w}%"></div></div>
+        <span class="val">${pct(s.rate)}<span class="calls">${s.calls.toLocaleString()} calls</span></span>
+      </div>`;
+    }).join('');
+  } else {
+    document.getElementById('ov-source-bars').innerHTML = '<div class="ov-empty" style="padding:24px 0">No source data available for this period (waiting on by_campaign backfill).</div>';
+  }
+
+  // --- Top 10 leaderboard ---
+  const top10 = [...execAgents].sort((a,b)=>b.calls-a.calls).slice(0,10);
+  document.getElementById('ov-leaderboard-rows').innerHTML = top10.length ? top10.map((d,i)=>`
+    <tr>
+      <td class="rank">#${i+1}</td>
+      <td class="agent">${esc(d.name)}</td>
+      <td><span class="pill ${d._grp==='RM'?'rm':'fancy'}">${d._grp}</span></td>
+      <td>${d.calls.toLocaleString()}</td>
+      <td>${d.success}</td>
+      <td>${pct(sr(d))}</td>
+      <td>${d.seller||0}</td>
+      <td>${d.rental||0}</td>
+      <td>${d.email||0}</td>
+    </tr>
+  `).join('') : '<tr><td colspan="9" style="text-align:center;color:var(--ov-text-soft);padding:24px">No agent data for this period.</td></tr>';
+
+  // --- Weekly trend chart ---
+  renderOverviewTrendChart();
 
   const histEntries=Object.entries(HIST).filter(([d])=>toMonday(d)>=from&&toMonday(d)<=to).sort(([a],[b])=>b.localeCompare(a));
   let weeklyHTML='';
@@ -592,6 +842,35 @@ function renderExec(){
   const topHTML=sorted.length?`<div class="tw" style="margin-top:16px"><div class="th"><h2>🏆 Top Performers</h2></div><table><thead><tr><th>Rank</th><th>Agent</th><th>Group</th><th>Calls</th><th>Success Rate</th><th>Seller</th><th>Rental</th><th>Emails</th><th>Status</th></tr></thead><tbody>${sorted.map((d,i)=>{const bench=d._grp==='RM'?B.rm:B.fancy;return `<tr><td style="font-size:18px">${['🥇','🥈','🥉'][i]}</td><td class="ag">${esc(d.name)}</td><td><span class="mx ${d._grp==='RM'?'neu':'pur'}">${d._grp}</span></td><td><strong>${d.calls.toLocaleString()}</strong></td><td><span class="mx ${mc(sr(d),bench.sr)}">${pct(sr(d))}</span></td><td>${d.seller||0}</td><td>${d.rental||0}</td><td>${d.email||0}</td><td>${stHTML(stOf(d,bench))}</td></tr>`;}).join('')}</tbody></table></div>`:'';
   document.getElementById('exec-breakdown').innerHTML=weeklyHTML+monthlyHTML+topHTML;
   requestAnimationFrame(renderMonthlyCharts);
+}
+function renderOverviewTrendChart(){
+  // Last 12 weeks (or whatever exists), oldest -> newest.
+  const allWeeks = Object.entries(HIST).sort(([a],[b])=>a.localeCompare(b)).slice(-12);
+  if (!allWeeks.length){ return; }
+  const labels = allWeeks.map(([w])=>{ try{ const d=new Date(w+'T00:00:00'); return d.toLocaleDateString('en-ZA',{day:'numeric',month:'short'}); }catch{return w;} });
+  const calls  = allWeeks.map(([,v])=>{ const all=[...(v.rm||[]),...(v.fancy||[])]; return all.reduce((a,d)=>a+d.calls,0); });
+  const succPct= allWeeks.map(([,v])=>{ const all=[...(v.rm||[]),...(v.fancy||[])]; const c=all.reduce((a,d)=>a+d.calls,0); const s=all.reduce((a,d)=>a+d.success,0); return c>0?+(s/c*100).toFixed(2):0; });
+  const ctx = document.getElementById('ov-chart-trend');
+  if (!ctx) return;
+  if (execCharts['ov-chart-trend']){ execCharts['ov-chart-trend'].destroy(); }
+  execCharts['ov-chart-trend'] = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets:[
+      { label:'Calls', data:calls, yAxisID:'y',  borderColor:'#3D5BA6', backgroundColor:'rgba(61,91,166,.10)', borderWidth:2, fill:true, tension:.35, pointRadius:3, pointBackgroundColor:'#3D5BA6' },
+      { label:'Success %', data:succPct, yAxisID:'y1', borderColor:'#0A8F5B', backgroundColor:'transparent', borderWidth:2, borderDash:[5,4], tension:.35, pointRadius:3, pointBackgroundColor:'#0A8F5B' },
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{ legend:{display:true, position:'top', align:'end', labels:{boxWidth:10, boxHeight:10, font:{size:11,family:"'Inter',sans-serif",weight:'600'}, color:'#64748B'}},
+                tooltip:{backgroundColor:'#0F172A', titleFont:{size:12,family:"'Inter',sans-serif"}, bodyFont:{size:12,family:"'Inter',sans-serif"}, padding:10, displayColors:true, callbacks:{ label:c => ' ' + c.dataset.label + ': ' + (c.dataset.yAxisID==='y1'?c.parsed.y.toFixed(1)+'%':c.parsed.y.toLocaleString()) }} },
+      scales:{
+        x:{ grid:{display:false}, ticks:{font:{size:10,family:"'Inter',sans-serif"},color:'#94A3B8'} },
+        y:{ beginAtZero:true, grid:{color:'rgba(0,0,0,.04)'}, ticks:{font:{size:10,family:"'Inter',sans-serif"},color:'#94A3B8', callback:v => v>=1000?(v/1000).toFixed(1)+'k':v} },
+        y1:{ beginAtZero:true, position:'right', grid:{display:false}, ticks:{font:{size:10,family:"'Inter',sans-serif"},color:'#0A8F5B', callback:v=>v.toFixed(1)+'%'} },
+      },
+    },
+  });
 }
 function buildMonthlyData(){ const allHist=Object.entries(HIST).sort(([a],[b])=>a.localeCompare(b)); const monthMap={}; allHist.forEach(([week,v])=>{ const ym=week.substring(0,7); if(!monthMap[ym]) monthMap[ym]={calls:0,leads:0,email:0,rental:0,seller:0,workTime:0}; const m=monthMap[ym]; const all=[...(v.rm||[]),...(v.fancy||[])]; m.calls+=all.reduce((a,d)=>a+d.calls,0); m.leads+=all.reduce((a,d)=>a+(d.seller||0)+(d.rental||0),0); m.email+=all.reduce((a,d)=>a+(d.email||0),0); m.rental+=all.reduce((a,d)=>a+(d.rental||0),0); m.seller+=all.reduce((a,d)=>a+(d.seller||0),0); m.workTime+=all.reduce((a,d)=>a+(d.workTime||0),0); }); return monthMap; }
 
