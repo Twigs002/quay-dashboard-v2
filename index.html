@@ -60,6 +60,10 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
 .status{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700}
 .status.green{background:var(--green-l);color:var(--green)}.status.amber{background:var(--amber-l);color:var(--amber)}.status.red{background:var(--qred-l);color:var(--qred)}
 .mx{display:inline-block;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:800}
+.trend-arrow{display:inline-block;margin-left:6px;font-size:10px;font-weight:800;letter-spacing:.2px;vertical-align:baseline}
+.trend-arrow.up{color:#0a8f5b}
+.trend-arrow.down{color:#c0392b}
+.trend-arrow.neu{color:#8395B0}
 .mx.good{background:var(--green-l);color:var(--green)}.mx.warn{background:var(--amber-l);color:var(--amber)}.mx.bad{background:var(--qred-l);color:var(--qred)}.mx.neu{background:var(--sky-l);color:var(--brand)}.mx.pur{background:#EDE9FF;color:#5B3FA6}
 .leg{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px}
 .li{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:var(--muted)}
@@ -383,6 +387,60 @@ const SORTERS = {
   idlePct: d => Math.max(0,(d.workPct||0)-(d.talkPct||0)-(d.wrapPct||0)-(d.waitPct||0)),
 };
 const idle = d => Math.max(0,(d.workPct||0)-(d.talkPct||0)-(d.wrapPct||0)-(d.waitPct||0));
+
+// ═══════ TREND ARROWS (#3 build) ════════════════════════════════════════
+// trendArrow(current, previous, opts={higherIsBetter:true, isPercent:false})
+// Returns a small HTML span: ▲ green or ▼ red with the % change, or empty
+// string when previous is null/zero (no baseline).
+function trendArrow(curr, prev, opts={}){
+  const {higherIsBetter=true, decimals=1} = opts;
+  if (prev == null || prev === 0 || curr == null) return '';
+  const delta = ((curr - prev) / Math.abs(prev)) * 100;
+  if (Math.abs(delta) < 0.05) return '<span class="trend-arrow neu">▬ 0%</span>';
+  const isUp = delta > 0;
+  const isGood = higherIsBetter ? isUp : !isUp;
+  const arrow = isUp ? '▲' : '▼';
+  const cls   = isGood ? 'up' : 'down';
+  return `<span class="trend-arrow ${cls}" title="vs previous period">${arrow} ${Math.abs(delta).toFixed(decimals)}%</span>`;
+}
+// Compute KPI totals for the entries in a given [from, to] week range.
+// Returns null when no data falls in the range.
+function _kpiTotals(from, to){
+  const entries = getHistoryInRange(from, to);
+  if (!entries.length) return null;
+  const agents = aggregateAgents(entries);
+  const tCalls = agents.reduce((a,d)=>a+d.calls, 0);
+  const tSeller= agents.reduce((a,d)=>a+(d.seller||0), 0);
+  const tRental= agents.reduce((a,d)=>a+(d.rental||0), 0);
+  const tEmail = agents.reduce((a,d)=>a+(d.email||0), 0);
+  const tHr    = agents.reduce((a,d)=>a+(d.workTime||0), 0);
+  const tSuc   = tSeller + tRental + tEmail;
+  const tSucRaw= agents.reduce((a,d)=>a+d.success, 0);
+  const avgSR  = tCalls > 0 ? tSucRaw/tCalls : 0;
+  return { tCallers: agents.length, tCalls, tSeller, tRental, tEmail, tHr, tSuc, avgSR };
+}
+// Given [from, to], return the matching previous period for comparison.
+// If from-to is a full calendar month -> previous calendar month.
+// Otherwise -> the same-duration window ending the day before `from`.
+function _prevPeriod(from, to){
+  if (!from || !to) return null;
+  const fd = new Date(from+'T00:00:00');
+  const td = new Date(to+'T00:00:00');
+  if (typeof isMonthRange === 'function' && isMonthRange(from, to)) {
+    const m = fd.getMonth(), y = fd.getFullYear();
+    const pY = m === 0 ? y-1 : y;
+    const pM = m === 0 ? 11  : m-1;
+    const pStart = new Date(pY, pM, 1);
+    const pEnd   = new Date(pY, pM+1, 0);
+    const fmt = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    return { from: fmt(pStart), to: fmt(pEnd) };
+  }
+  const days = Math.round((td - fd)/86400000) + 1;
+  const pTo = new Date(fd); pTo.setDate(pTo.getDate()-1);
+  const pFrom = new Date(pTo); pFrom.setDate(pFrom.getDate() - (days-1));
+  const fmt = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  return { from: fmt(pFrom), to: fmt(pTo) };
+}
 function sortAgents(col){
   if(reportSort.col===col) reportSort.dir = reportSort.dir==='desc'?'asc':'desc';
   else { reportSort.col=col; reportSort.dir='desc'; }
@@ -474,13 +532,26 @@ function renderExec(){
   const tEmails=execAgents.reduce((a,d)=>a+(d.email||0),0);
   const tSuccess=tSeller+tRental+tEmails;
   const avgSR=tCalls>0?execAgents.reduce((a,d)=>a+d.success,0)/tCalls:0;
-  document.getElementById('ek-callers').textContent=tCallers;
-  document.getElementById('ek-calls').textContent=tCalls.toLocaleString();
-  document.getElementById('ek-calls-sub').textContent='avg success: '+pct(avgSR);
-  document.getElementById('ek-seller').textContent=tSeller.toLocaleString();
-  document.getElementById('ek-rental').textContent=tRental.toLocaleString();
-  document.getElementById('ek-email').textContent=tEmails.toLocaleString();
-  document.getElementById('ek-success').textContent=tSuccess.toLocaleString();
+  // Compute previous-equivalent period for trend arrows
+  let prevFrom, prevTo;
+  if (execPeriod==='week' || execPeriod==='lastweek') {
+    prevTo = addDays(from, -1); prevFrom = addDays(prevTo, -6);
+  } else if (execPeriod==='month') {
+    prevFrom = firstOfMonth(-1); prevTo = lastOfMonth(-1);
+  } else if (execPeriod==='quarter') {
+    prevTo = addDays(from, -1); prevFrom = addDays(prevTo, -90);
+  } else {
+    prevFrom = prevTo = null;
+  }
+  const prev = (prevFrom && prevTo) ? _kpiTotals(prevFrom, prevTo) : null;
+  const tr = (cur, prevKey, opts) => prev ? trendArrow(cur, prev[prevKey], opts) : '';
+  document.getElementById('ek-callers').innerHTML=tCallers + tr(tCallers,'tCallers');
+  document.getElementById('ek-calls').innerHTML=tCalls.toLocaleString() + tr(tCalls,'tCalls');
+  document.getElementById('ek-calls-sub').innerHTML='avg success: '+pct(avgSR) + tr(avgSR,'avgSR',{decimals:1});
+  document.getElementById('ek-seller').innerHTML=tSeller.toLocaleString() + tr(tSeller,'tSeller');
+  document.getElementById('ek-rental').innerHTML=tRental.toLocaleString() + tr(tRental,'tRental');
+  document.getElementById('ek-email').innerHTML=tEmails.toLocaleString() + tr(tEmails,'tEmail');
+  document.getElementById('ek-success').innerHTML=tSuccess.toLocaleString() + tr(tSuccess,'tSuc');
 
   const histEntries=Object.entries(HIST).filter(([d])=>toMonday(d)>=from&&toMonday(d)<=to).sort(([a],[b])=>b.localeCompare(a));
   let weeklyHTML='';
@@ -537,7 +608,7 @@ function setPreset(from,to,btn){ document.querySelectorAll('.preset-btn').forEac
 function applyRange(){ const from=document.getElementById('r-from').value; const to=document.getElementById('r-to').value; if(!from||!to){ toast('Please select a date range.'); return; } const entries=getHistoryInRange(from,to); if(!entries.length){ document.getElementById('report-content').innerHTML=`<div class="no-data"><div class="ic">📭</div><p>No data found for <strong>${from}</strong> → <strong>${to}</strong>.</p></div>`; return; } renderReport(entries,from,to); }
 function setView(v,btn){ reportView=v; document.querySelectorAll('.vt-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); const from=document.getElementById('r-from').value; const to=document.getElementById('r-to').value; if(from&&to) applyRange(); }
 
-function renderReport(entries,from,to){ const agents=applyReportSort(aggregateAgents(entries)); const weeks=entries.length; const monthly=isMonthRange(from,to); const callsTgt=monthly?B.callsPerMonth:B.callsPerWeek; const callsTgtLbl=monthly?'/mth':'/wk'; const callsTgtTip=monthly?`Target: ${B.dailyCalls.toLocaleString()}/day × ${B.workingDaysPerMonth} working days = ${B.callsPerMonth.toLocaleString()}/month`:`Target: ${B.dailyCalls.toLocaleString()}/day × 5 working days = ${B.callsPerWeek.toLocaleString()}/wk`; const dfTgt=monthly?B.dfHoursPerMonth:B.dfHoursPerWeek; const dfTgtLbl=monthly?'h/mth':'h/wk'; const dfTgtTip=monthly?`Target: minimum ${B.dfHoursPerMonth}h on DialFire per month (${B.dfHoursPerWeek}h/week × 4 weeks)`:`Target: minimum ${B.dfHoursPerWeek}h on DialFire per week`; const periodLbl=monthly?'month(s)':'week(s)'; const tC=agents.reduce((a,d)=>a+d.calls,0),tS=agents.reduce((a,d)=>a+d.success,0),tSel=agents.reduce((a,d)=>a+(d.seller||0),0),tRen=agents.reduce((a,d)=>a+(d.rental||0),0),tEm=agents.reduce((a,d)=>a+(d.email||0),0),tHr=agents.reduce((a,d)=>a+d.workTime,0); const avgSR=tC>0?(tSel+tRen+tEm)/tC:0; const kpis=`<div class="srow" style="margin-bottom:16px"><div class="sc blue"><div class="sc-lbl">Total Calls</div><div class="sc-val">${tC.toLocaleString()}</div><div class="sc-sub">${weeks} ${periodLbl}</div></div><div class="sc ${avgSR>=.17?'green':'red'}"><div class="sc-lbl">Avg Success Rate</div><div class="sc-val">${pct(avgSR)}</div></div><div class="sc yellow"><div class="sc-lbl">Seller Leads</div><div class="sc-val">${tSel}</div></div><div class="sc sky"><div class="sc-lbl">Rental Leads</div><div class="sc-val">${tRen}</div></div><div class="sc"><div class="sc-lbl">Emails</div><div class="sc-val">${tEm}</div></div><div class="sc"><div class="sc-lbl">Total DF Hours</div><div class="sc-val">${f1(tHr)}h</div></div></div>`; if(reportView==='overall'){ const SCS='cursor:pointer;user-select:none'; document.getElementById('report-content').innerHTML=kpis+`<div class="tw"><div class="th" style="display:flex;justify-content:space-between;align-items:center"><div><h2>All Callers — ${from} to ${to}</h2><div style="font-size:10px;color:var(--muted);margin-top:4px">Click any column header to sort.</div></div><button class="btn btn-yellow" style="padding:7px 14px;font-size:11px" onclick="exportOverall('${from}','${to}')">📥 Export CSV</button></div><table><thead><tr><th>${bh('')}#</th><th style="${SCS}" onclick="sortAgents('name')">${bh('')}Agent${sortArrow('name')}</th><th style="${SCS}" onclick="sortAgents('_grp')">${bh('')}Group${sortArrow('_grp')}</th><th style="${SCS}" onclick="sortAgents('_weeks')">${bh('')}Weeks${sortArrow('_weeks')}</th><th style="${SCS}" title="${callsTgtTip}" onclick="sortAgents('calls')">${bh('≥'+callsTgt.toLocaleString()+callsTgtLbl)}Calls${sortArrow('calls')}</th><th style="${SCS}" title="${dfTgtTip}" onclick="sortAgents('workTime')">${bh('≥'+dfTgt+dfTgtLbl)}DF Hrs${sortArrow('workTime')}</th><th style="${SCS}" title="Target: ${B.rm.cph} calls per hour" onclick="sortAgents('cph')">${bh('≥'+B.rm.cph+'/hr')}Calls/Hr${sortArrow('cph')}</th><th style="${SCS}" onclick="sortAgents('success')">${bh('')}Success${sortArrow('success')}</th><th style="${SCS}" title="Targets: RM ≥${(B.rm.sr*100).toFixed(0)}%, Fancy ≥${(B.fancy.sr*100).toFixed(0)}%" onclick="sortAgents('sr')">${bh('≥'+(B.rm.sr*100).toFixed(0)+'% RM / '+(B.fancy.sr*100).toFixed(0)+'% FC')}Success%${sortArrow('sr')}</th><th style="${SCS}" onclick="sortAgents('seller')">${bh('')}Seller${sortArrow('seller')}</th><th style="${SCS}" onclick="sortAgents('rental')">${bh('')}Rental${sortArrow('rental')}</th><th style="${SCS}" onclick="sortAgents('email')">${bh('')}Email${sortArrow('email')}</th><th style="${SCS}" title="Work% = workTime ÷ (workTime + pauseTime) × 100. % of total session NOT paused. Low Work% = too much paused time (long breaks, DND abuse). The 4 columns to the right (Talk/Wrap/Wait/Inactive) are all measured against this Work slice and should sum to ≈100%." onclick="sortAgents('workPct')">${bh('')}Work%${sortArrow('workPct')}</th><th style="${SCS}" title="Talk% = talkTime ÷ workTime × 100. Of the time spent working the dialler, what fraction was actually speaking to leads (DialFire connectTimeDialer). High Talk% = good, lots of conversations." onclick="sortAgents('talkPct')">${bh('')}Talk%${sortArrow('talkPct')}</th><th style="${SCS}" title="Wrap% = wrapTime ÷ workTime × 100. Of the work time, what fraction was post-call notes and wrap-up." onclick="sortAgents('wrapPct')">${bh('')}Wrap%${sortArrow('wrapPct')}</th><th style="${SCS}" title="Wait% = waitTime ÷ workTime × 100. Dialler latency between calls (system dialling, not the agent's fault). High Wait% can mean the dialler ran out of leads — a system issue, not a performance one." onclick="sortAgents('waitPct')">${bh('')}Wait%${sortArrow('waitPct')}</th><th style="${SCS}" title="Inactive% = Work% − Talk% − Wrap% − Wait%. True unaccounted work time: logged in, NOT paused, NOT on a call, NOT wrapping, NOT waiting for the dialler. Should be near zero on a clean session — high Inactive% is a red flag." onclick="sortAgents('idlePct')">${bh('')}Inactive%${sortArrow('idlePct')}</th></tr></thead><tbody>${agents.map((d,i)=>`<tr><td style="color:var(--muted);font-size:10px">${i+1}</td><td class="ag">${esc(d.name)}</td><td><span class="mx ${d._grp==='RM'?'neu':'pur'}">${d._grp}</span></td><td style="color:var(--muted)">${d._weeks}</td><td><strong>${d.calls.toLocaleString()}</strong></td><td><span class="mx ${mc(d.workTime,dfTgt)}">${f2(d.workTime)}h</span></td><td><span class="mx ${mc(cph(d),45)}">${f1(cph(d))}/hr</span></td><td>${d.success}</td><td><span class="mx ${mc(sr(d),d._grp==='RM'?.17:.20)}">${pct(sr(d))}</span></td><td>${d.seller||0}</td><td>${d.rental||0}</td><td>${d.email||0}</td><td>${(d.workPct||0).toFixed(1)}%</td><td>${(d.talkPct||0).toFixed(1)}%</td><td>${(d.wrapPct||0).toFixed(1)}%</td><td>${(d.waitPct||0).toFixed(1)}%</td><td>${idle(d).toFixed(1)}%</td></tr>`).join('')}</tbody></table></div>`; } else { document.getElementById('report-content').innerHTML=kpis+`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${agents.map(d=>`<div class="sc" style="border-left-color:${d._grp==='RM'?'var(--brand)':'#5B3FA6'}"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px"><div><div class="sc-val" style="font-size:15px">${esc(d.name)}</div><span class="mx ${d._grp==='RM'?'neu':'pur'}" style="margin-top:4px;display:inline-block">${d._grp}</span></div><span class="mx ${mc(sr(d),d._grp==='RM'?.17:.20)}">${pct(sr(d))}</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:11px"><div style="color:var(--muted)">Calls</div><div style="font-weight:700">${d.calls.toLocaleString()}</div><div style="color:var(--muted)">Calls/Hr</div><div style="font-weight:700">${f1(cph(d))}</div><div style="color:var(--muted)">DF Hours</div><div style="font-weight:700">${f2(d.workTime)}h</div><div style="color:var(--muted)">Seller</div><div style="font-weight:700">${d.seller||0}</div><div style="color:var(--muted)">Rental</div><div style="font-weight:700">${d.rental||0}</div><div style="color:var(--muted)">Email</div><div style="font-weight:700">${d.email||0}</div></div></div>`).join('')}</div>`; } }
+function renderReport(entries,from,to){ const agents=applyReportSort(aggregateAgents(entries)); const weeks=entries.length; const monthly=isMonthRange(from,to); const callsTgt=monthly?B.callsPerMonth:B.callsPerWeek; const callsTgtLbl=monthly?'/mth':'/wk'; const callsTgtTip=monthly?`Target: ${B.dailyCalls.toLocaleString()}/day × ${B.workingDaysPerMonth} working days = ${B.callsPerMonth.toLocaleString()}/month`:`Target: ${B.dailyCalls.toLocaleString()}/day × 5 working days = ${B.callsPerWeek.toLocaleString()}/wk`; const dfTgt=monthly?B.dfHoursPerMonth:B.dfHoursPerWeek; const dfTgtLbl=monthly?'h/mth':'h/wk'; const dfTgtTip=monthly?`Target: minimum ${B.dfHoursPerMonth}h on DialFire per month (${B.dfHoursPerWeek}h/week × 4 weeks)`:`Target: minimum ${B.dfHoursPerWeek}h on DialFire per week`; const periodLbl=monthly?'month(s)':'week(s)'; const tC=agents.reduce((a,d)=>a+d.calls,0),tS=agents.reduce((a,d)=>a+d.success,0),tSel=agents.reduce((a,d)=>a+(d.seller||0),0),tRen=agents.reduce((a,d)=>a+(d.rental||0),0),tEm=agents.reduce((a,d)=>a+(d.email||0),0),tHr=agents.reduce((a,d)=>a+d.workTime,0); const avgSR=tC>0?(tSel+tRen+tEm)/tC:0; const pP=_prevPeriod(from,to); const pK=pP?_kpiTotals(pP.from,pP.to):null; const _t=(c,k,o)=>pK?trendArrow(c,pK[k],o):''; const kpis=`<div class="srow" style="margin-bottom:16px"><div class="sc blue"><div class="sc-lbl">Total Calls</div><div class="sc-val">${tC.toLocaleString()}${_t(tC,'tCalls')}</div><div class="sc-sub">${weeks} ${periodLbl}</div></div><div class="sc ${avgSR>=.17?'green':'red'}"><div class="sc-lbl">Avg Success Rate</div><div class="sc-val">${pct(avgSR)}${_t(avgSR,'avgSR')}</div></div><div class="sc yellow"><div class="sc-lbl">Seller Leads</div><div class="sc-val">${tSel}${_t(tSel,'tSeller')}</div></div><div class="sc sky"><div class="sc-lbl">Rental Leads</div><div class="sc-val">${tRen}${_t(tRen,'tRental')}</div></div><div class="sc"><div class="sc-lbl">Emails</div><div class="sc-val">${tEm}${_t(tEm,'tEmail')}</div></div><div class="sc"><div class="sc-lbl">Total DF Hours</div><div class="sc-val">${f1(tHr)}h${_t(tHr,'tHr')}</div></div></div>`; if(reportView==='overall'){ const SCS='cursor:pointer;user-select:none'; document.getElementById('report-content').innerHTML=kpis+`<div class="tw"><div class="th" style="display:flex;justify-content:space-between;align-items:center"><div><h2>All Callers — ${from} to ${to}</h2><div style="font-size:10px;color:var(--muted);margin-top:4px">Click any column header to sort.</div></div><button class="btn btn-yellow" style="padding:7px 14px;font-size:11px" onclick="exportOverall('${from}','${to}')">📥 Export CSV</button></div><table><thead><tr><th>${bh('')}#</th><th style="${SCS}" onclick="sortAgents('name')">${bh('')}Agent${sortArrow('name')}</th><th style="${SCS}" onclick="sortAgents('_grp')">${bh('')}Group${sortArrow('_grp')}</th><th style="${SCS}" onclick="sortAgents('_weeks')">${bh('')}Weeks${sortArrow('_weeks')}</th><th style="${SCS}" title="${callsTgtTip}" onclick="sortAgents('calls')">${bh('≥'+callsTgt.toLocaleString()+callsTgtLbl)}Calls${sortArrow('calls')}</th><th style="${SCS}" title="${dfTgtTip}" onclick="sortAgents('workTime')">${bh('≥'+dfTgt+dfTgtLbl)}DF Hrs${sortArrow('workTime')}</th><th style="${SCS}" title="Target: ${B.rm.cph} calls per hour" onclick="sortAgents('cph')">${bh('≥'+B.rm.cph+'/hr')}Calls/Hr${sortArrow('cph')}</th><th style="${SCS}" onclick="sortAgents('success')">${bh('')}Success${sortArrow('success')}</th><th style="${SCS}" title="Targets: RM ≥${(B.rm.sr*100).toFixed(0)}%, Fancy ≥${(B.fancy.sr*100).toFixed(0)}%" onclick="sortAgents('sr')">${bh('≥'+(B.rm.sr*100).toFixed(0)+'% RM / '+(B.fancy.sr*100).toFixed(0)+'% FC')}Success%${sortArrow('sr')}</th><th style="${SCS}" onclick="sortAgents('seller')">${bh('')}Seller${sortArrow('seller')}</th><th style="${SCS}" onclick="sortAgents('rental')">${bh('')}Rental${sortArrow('rental')}</th><th style="${SCS}" onclick="sortAgents('email')">${bh('')}Email${sortArrow('email')}</th><th style="${SCS}" title="Work% = workTime ÷ (workTime + pauseTime) × 100. % of total session NOT paused. Low Work% = too much paused time (long breaks, DND abuse). The 4 columns to the right (Talk/Wrap/Wait/Inactive) are all measured against this Work slice and should sum to ≈100%." onclick="sortAgents('workPct')">${bh('')}Work%${sortArrow('workPct')}</th><th style="${SCS}" title="Talk% = talkTime ÷ workTime × 100. Of the time spent working the dialler, what fraction was actually speaking to leads (DialFire connectTimeDialer). High Talk% = good, lots of conversations." onclick="sortAgents('talkPct')">${bh('')}Talk%${sortArrow('talkPct')}</th><th style="${SCS}" title="Wrap% = wrapTime ÷ workTime × 100. Of the work time, what fraction was post-call notes and wrap-up." onclick="sortAgents('wrapPct')">${bh('')}Wrap%${sortArrow('wrapPct')}</th><th style="${SCS}" title="Wait% = waitTime ÷ workTime × 100. Dialler latency between calls (system dialling, not the agent's fault). High Wait% can mean the dialler ran out of leads — a system issue, not a performance one." onclick="sortAgents('waitPct')">${bh('')}Wait%${sortArrow('waitPct')}</th><th style="${SCS}" title="Inactive% = Work% − Talk% − Wrap% − Wait%. True unaccounted work time: logged in, NOT paused, NOT on a call, NOT wrapping, NOT waiting for the dialler. Should be near zero on a clean session — high Inactive% is a red flag." onclick="sortAgents('idlePct')">${bh('')}Inactive%${sortArrow('idlePct')}</th></tr></thead><tbody>${agents.map((d,i)=>`<tr><td style="color:var(--muted);font-size:10px">${i+1}</td><td class="ag">${esc(d.name)}</td><td><span class="mx ${d._grp==='RM'?'neu':'pur'}">${d._grp}</span></td><td style="color:var(--muted)">${d._weeks}</td><td><strong>${d.calls.toLocaleString()}</strong></td><td><span class="mx ${mc(d.workTime,dfTgt)}">${f2(d.workTime)}h</span></td><td><span class="mx ${mc(cph(d),45)}">${f1(cph(d))}/hr</span></td><td>${d.success}</td><td><span class="mx ${mc(sr(d),d._grp==='RM'?.17:.20)}">${pct(sr(d))}</span></td><td>${d.seller||0}</td><td>${d.rental||0}</td><td>${d.email||0}</td><td>${(d.workPct||0).toFixed(1)}%</td><td>${(d.talkPct||0).toFixed(1)}%</td><td>${(d.wrapPct||0).toFixed(1)}%</td><td>${(d.waitPct||0).toFixed(1)}%</td><td>${idle(d).toFixed(1)}%</td></tr>`).join('')}</tbody></table></div>`; } else { document.getElementById('report-content').innerHTML=kpis+`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${agents.map(d=>`<div class="sc" style="border-left-color:${d._grp==='RM'?'var(--brand)':'#5B3FA6'}"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px"><div><div class="sc-val" style="font-size:15px">${esc(d.name)}</div><span class="mx ${d._grp==='RM'?'neu':'pur'}" style="margin-top:4px;display:inline-block">${d._grp}</span></div><span class="mx ${mc(sr(d),d._grp==='RM'?.17:.20)}">${pct(sr(d))}</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:11px"><div style="color:var(--muted)">Calls</div><div style="font-weight:700">${d.calls.toLocaleString()}</div><div style="color:var(--muted)">Calls/Hr</div><div style="font-weight:700">${f1(cph(d))}</div><div style="color:var(--muted)">DF Hours</div><div style="font-weight:700">${f2(d.workTime)}h</div><div style="color:var(--muted)">Seller</div><div style="font-weight:700">${d.seller||0}</div><div style="color:var(--muted)">Rental</div><div style="font-weight:700">${d.rental||0}</div><div style="color:var(--muted)">Email</div><div style="font-weight:700">${d.email||0}</div></div></div>`).join('')}</div>`; } }
 
 function exportOverall(from,to){
   const entries=getHistoryInRange(from,to);
@@ -785,7 +856,9 @@ function _aggregateSources(from,to){
     name, source:v.source, calls:v.calls, success:v.success, seller:v.seller, rental:v.rental, email:v.email,
     workTime:+v.workTime.toFixed(2),
     successRate: v.calls > 0 ? v.success/v.calls : 0,
-  })).sort((a,b) => b.successRate - a.successRate);
+    callsPerHour: v.workTime > 0 ? v.calls / v.workTime : 0,
+    leadsPerHour: v.workTime > 0 ? v.success / v.workTime : 0,
+  })).sort((a,b) => b.callsPerHour - a.callsPerHour);                  // sort by productivity
   return {srcArr, campArr, weeksWithData, totalEntries: entries.length};
 }
 function renderSources(){
@@ -816,17 +889,25 @@ function renderSources(){
       <td>${s.seller}</td><td>${s.rental}</td><td>${s.email}</td>
       <td>${grand.calls>0 ? ((s.calls/grand.calls)*100).toFixed(1)+'%' : '-'}</td>
     </tr>`).join('')}</tbody></table></div>`;
-  // Per-campaign drilldown
-  const campTable = `<div class="tw" style="margin-top:18px"><div class="th"><h2>Per-Campaign Detail — sorted by success rate</h2></div>
+  // Per-campaign drilldown — campaign-vs-campaign productivity comparison (#2 build)
+  const campTable = `<div class="tw" style="margin-top:18px"><div class="th"><h2>Campaign vs Campaign — productivity (sorted by calls/hr)</h2><div style="font-size:10px;color:var(--muted);margin-top:4px">Productivity normalised per agent-hour — apples-to-apples comparison across campaigns of different sizes.</div></div>
     <table><thead><tr>
-      <th>#</th><th>Campaign</th><th>Source</th><th>Calls</th><th>Successes</th><th>Success %</th>
+      <th>#</th><th>Campaign</th><th>Source</th><th>DF Hrs</th>
+      <th title="Total calls placed against this campaign">Calls</th>
+      <th title="Calls per DialFire hour — campaign-level dialling intensity">Calls/Hr</th>
+      <th>Successes</th>
+      <th title="Successes per DialFire hour — campaign-level conversion productivity">Leads/Hr</th>
+      <th>Success %</th>
       <th>Seller</th><th>Rental</th><th>Email</th>
     </tr></thead><tbody>${campArr.map((c,i)=>`<tr>
       <td style="color:var(--muted);font-size:10px">${i+1}</td>
       <td class="ag">${esc(c.name)}</td>
       <td><span class="mx neu">${esc(c.source)}</span></td>
+      <td>${f2(c.workTime)}h</td>
       <td>${c.calls.toLocaleString()}</td>
+      <td><span class="mx ${mc(c.callsPerHour, 45)}">${f1(c.callsPerHour)}/hr</span></td>
       <td>${c.success.toLocaleString()}</td>
+      <td><span class="mx ${mc(c.leadsPerHour, 8)}">${f1(c.leadsPerHour)}/hr</span></td>
       <td><span class="mx ${mc(c.successRate,.17)}">${pct(c.successRate)}</span></td>
       <td>${c.seller}</td><td>${c.rental}</td><td>${c.email}</td>
     </tr>`).join('')}</tbody></table></div>`;
