@@ -176,19 +176,19 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
   --ov-num:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
 }
 #tab-exec.active{background:var(--ov-bg);margin:0;padding:28px;border-radius:20px;font-family:var(--ov-num);color:var(--ov-text)}
-/* Header */
-.ov-header{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:24px;flex-wrap:wrap}
+/* Header — dark navy band, white text (sits on top of / matches the site header gradient) */
+.ov-header{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin:-28px -28px 24px;padding:28px 32px;flex-wrap:wrap;background:linear-gradient(135deg,var(--ov-q-blue-dk) 0%,#1E2E5C 100%);border-radius:20px 20px 0 0;color:#fff}
 .ov-title{display:flex;flex-direction:column;gap:8px}
-.ov-title h1{font-family:var(--ov-num);font-size:30px;font-weight:800;color:var(--ov-text);letter-spacing:-0.9px;margin:0;line-height:1.1}
-.ov-title .ov-sub{margin:4px 0 0;font-size:13px;color:var(--ov-text-muted);font-weight:500}
-/* Taskati-style period tabs: plain text + underline for active */
+.ov-title h1{font-family:var(--ov-num);font-size:30px;font-weight:800;color:#fff;letter-spacing:-0.9px;margin:0;line-height:1.1}
+.ov-title .ov-sub{margin:4px 0 0;font-size:13px;color:rgba(255,255,255,.65);font-weight:500}
+/* Period tabs: plain text + underline for active, white on dark */
 .ov-period{display:flex;gap:18px;align-items:center}
-.ov-chip{background:transparent;border:0;color:var(--ov-text-muted);padding:8px 2px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--ov-num);position:relative}
-.ov-chip:hover{color:var(--ov-text)}
-.ov-chip.active{color:var(--ov-q-blue);font-weight:700}
-.ov-chip.active::after{content:'';position:absolute;left:50%;bottom:-4px;width:24px;height:3px;background:var(--ov-q-blue);border-radius:2px;transform:translateX(-50%)}
-.ov-chip-secondary{background:var(--ov-q-blue);color:#fff;border:0;padding:9px 16px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--ov-num);transition:.15s}
-.ov-chip-secondary:hover{background:var(--ov-q-blue-dk)}
+.ov-chip{background:transparent;border:0;color:rgba(255,255,255,.55);padding:8px 2px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--ov-num);position:relative}
+.ov-chip:hover{color:#fff}
+.ov-chip.active{color:var(--ov-q-yellow);font-weight:700}
+.ov-chip.active::after{content:'';position:absolute;left:50%;bottom:-6px;width:24px;height:3px;background:var(--ov-q-yellow);border-radius:2px;transform:translateX(-50%)}
+.ov-chip-secondary{background:var(--ov-q-yellow);color:var(--ov-q-blue-dk);border:0;padding:9px 16px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--ov-num);transition:.15s}
+.ov-chip-secondary:hover{background:var(--ov-q-yellow-dk);color:#fff}
 
 /* Hero — Taskati style: 4 colourful mini-cards in a row */
 .ov-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
