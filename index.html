@@ -287,10 +287,11 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
    ═══════════════════════════════════════════════════════════════════════════ */
 #tab-reports.active{background:var(--ov-bg);margin:0;padding:32px 28px 60px;border-radius:20px;font-family:var(--ov-num);color:var(--ov-text);min-height:calc(100vh - 100px)}
 
-/* Page header (matches Overview's ov-header) */
-.rep-header{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:24px;flex-wrap:wrap}
-.rep-title h1{font-family:var(--ov-num);font-size:34px;font-weight:800;color:var(--ov-text);letter-spacing:-1px;margin:0;line-height:1.1}
-.rep-title .rep-sub{margin:6px 0 0;font-size:13px;color:var(--ov-text-muted);font-weight:500}
+/* Page header — dark navy band, white text, rounded (matches Overview) */
+.rep-header{display:flex;justify-content:space-between;align-items:center;gap:24px;margin:0 0 28px;padding:28px 32px;flex-wrap:wrap;background:linear-gradient(135deg,var(--ov-q-blue) 0%,var(--ov-q-blue-dk) 100%);border-radius:var(--ov-radius-lg);color:#fff;box-shadow:var(--ov-shadow);position:relative;z-index:1}
+.rep-title{min-width:0}
+.rep-title h1{font-family:var(--ov-num);font-size:34px;font-weight:800;color:#fff;letter-spacing:-1px;margin:0;line-height:1.1}
+.rep-title .rep-sub{margin:6px 0 0;font-size:13px;color:rgba(255,255,255,.7);font-weight:500;letter-spacing:.2px}
 
 /* Filter card */
 #tab-reports .range-card{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:24px;margin-bottom:24px;box-shadow:var(--ov-shadow)}
