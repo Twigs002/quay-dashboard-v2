@@ -345,6 +345,53 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
 #tab-reports .mx.bad{background:var(--ov-q-red-tint);color:var(--ov-q-red)}
 #tab-reports .mx.neu{background:var(--ov-q-blue-tint);color:var(--ov-q-blue-dk)}
 #tab-reports .mx.pur{background:var(--ov-q-sky-tint);color:var(--ov-q-blue-dk)}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DAILY STATS TAB
+   ═══════════════════════════════════════════════════════════════════════════ */
+#tab-daily.active{background:var(--ov-bg);margin:0;padding:32px 28px 60px;border-radius:20px;font-family:var(--ov-num);color:var(--ov-text);min-height:calc(100vh - 100px)}
+#tab-daily .range-card{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:24px;margin-bottom:24px;box-shadow:var(--ov-shadow)}
+#tab-daily .range-card h2{font-size:11px;font-weight:700;color:var(--ov-text);text-transform:uppercase;letter-spacing:1px;margin:0 0 16px}
+.daily-controls{display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap}
+.daily-field{display:flex;flex-direction:column;gap:6px}
+.daily-field label{font-size:11px;font-weight:700;color:var(--ov-text-muted);text-transform:uppercase;letter-spacing:.5px}
+.daily-field input[type="date"]{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:8px;padding:10px 14px;font-size:13px;font-family:var(--ov-num);color:var(--ov-text)}
+.daily-presets{display:flex;gap:8px;flex-wrap:wrap;align-self:flex-end}
+#tab-daily .preset-btn{background:#F1F5F9;border:0;color:var(--ov-text-muted);padding:9px 14px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--ov-num);transition:.15s}
+#tab-daily .preset-btn:hover{background:#E5EAF3;color:var(--ov-text)}
+.daily-actions{display:flex;gap:8px;align-self:flex-end;margin-left:auto}
+#tab-daily .btn-primary{background:var(--ov-q-blue);color:#fff;border:0;padding:11px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--ov-num);transition:.15s}
+#tab-daily .btn-primary:hover{background:var(--ov-q-blue-dk)}
+#tab-daily .btn-ghost{background:transparent;color:var(--ov-q-blue);border:1px solid var(--ov-border);padding:11px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--ov-num);transition:.15s}
+#tab-daily .btn-ghost:hover{background:#F1F5F9}
+.daily-meta{font-size:11px;color:var(--ov-text-soft);margin-top:14px;font-weight:500}
+/* KPI cards: re-style daily-kpi to match the Taskati look */
+#tab-daily .daily-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+@media (max-width:900px){#tab-daily .daily-grid{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:560px){#tab-daily .daily-grid{grid-template-columns:repeat(2,1fr)}}
+#tab-daily .daily-kpi{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);box-shadow:var(--ov-shadow);padding:22px 20px;text-align:left;position:relative;overflow:hidden}
+#tab-daily .daily-kpi::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:var(--ov-q-blue)}
+#tab-daily .daily-kpi:nth-child(2)::before{background:var(--ov-q-yellow)}
+#tab-daily .daily-kpi:nth-child(3)::before{background:var(--ov-q-sky)}
+#tab-daily .daily-kpi:nth-child(4)::before{background:var(--ov-success)}
+#tab-daily .daily-kpi:nth-child(5)::before{background:var(--ov-q-red)}
+#tab-daily .daily-kpi .dkv{font-size:28px;font-weight:800;color:var(--ov-text);font-family:var(--ov-num);font-variant-numeric:tabular-nums;letter-spacing:-.8px;line-height:1;margin-top:4px}
+#tab-daily .daily-kpi .dkl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ov-text-muted);margin-top:8px}
+/* Daily table same as reports */
+#tab-daily .mgr-table-wrap,#tab-daily .tw{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:0;margin-bottom:24px;overflow:hidden;box-shadow:var(--ov-shadow)}
+#tab-daily table{width:100%;border-collapse:collapse;font-family:var(--ov-num);font-variant-numeric:tabular-nums}
+#tab-daily thead{background:#F8FAFC}
+#tab-daily th{text-align:left;font-size:10px;font-weight:700;color:var(--ov-text-muted);text-transform:uppercase;letter-spacing:.5px;padding:14px 12px;border-bottom:1px solid var(--ov-border)}
+#tab-daily td{padding:13px 12px;font-size:12px;color:var(--ov-text);border-bottom:1px solid var(--ov-border)}
+#tab-daily tbody tr:last-child td{border-bottom:0}
+#tab-daily tbody tr:hover{background:#FAFBFC}
+#tab-daily .ag{font-weight:600;color:var(--ov-text)}
+#tab-daily .mx{display:inline-block;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700}
+#tab-daily .mx.good{background:var(--ov-success-bg);color:var(--ov-success)}
+#tab-daily .mx.warn{background:var(--ov-q-yellow-tint);color:var(--ov-q-yellow-dk)}
+#tab-daily .mx.bad{background:var(--ov-q-red-tint);color:var(--ov-q-red)}
+#tab-daily .no-data{padding:60px 20px;text-align:center;color:var(--ov-text-soft);background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg)}
+#tab-daily .no-data .ic{font-size:42px;margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -549,23 +596,31 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
 
   <!-- ═══ DAILY STATS TAB ═══ -->
   <div class="tab-panel" id="tab-daily">
-    <div class="range-card" style="margin-bottom:14px">
-      <h2>📆 Daily Stats</h2>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
-        <div>
-          <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Date</label>
-          <input type="date" id="daily-date" style="padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:var(--light)">
+    <header class="rep-header">
+      <div class="rep-title">
+        <h1>Daily Stats</h1>
+        <p class="rep-sub">Pick any date and drill into per-caller performance for that day.</p>
+      </div>
+    </header>
+    <div class="range-card">
+      <h2>📆 Pick a Date</h2>
+      <div class="daily-controls">
+        <div class="daily-field">
+          <label>Date</label>
+          <input type="date" id="daily-date">
         </div>
-        <div style="display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap">
-          <button class="preset-btn" style="margin-top:18px" onclick="setDailyDate('today')">Today</button>
-          <button class="preset-btn" style="margin-top:18px" onclick="setDailyDate('yesterday')">Yesterday</button>
-          <button class="preset-btn" style="margin-top:18px" onclick="stepDailyDate(-1)">◀ Prev Day</button>
-          <button class="preset-btn" style="margin-top:18px" onclick="stepDailyDate(1)">Next Day ▶</button>
-          <button class="btn btn-yellow" style="margin-top:18px" onclick="renderDaily()">Load</button>
-          <button class="btn" style="margin-top:18px;background:var(--light);color:var(--brand);border:1px solid var(--brand)" onclick="exportDailyCSV()">&#11015; Export CSV</button>
+        <div class="daily-presets">
+          <button class="preset-btn" onclick="setDailyDate('today')">Today</button>
+          <button class="preset-btn" onclick="setDailyDate('yesterday')">Yesterday</button>
+          <button class="preset-btn" onclick="stepDailyDate(-1)">◀ Prev</button>
+          <button class="preset-btn" onclick="stepDailyDate(1)">Next ▶</button>
+        </div>
+        <div class="daily-actions">
+          <button class="btn-primary" onclick="renderDaily()">Load</button>
+          <button class="btn-ghost" onclick="exportDailyCSV()">⬇ Export CSV</button>
         </div>
       </div>
-      <div id="daily-available-dates" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
+      <div id="daily-available-dates" class="daily-meta"></div>
     </div>
     <div id="daily-kpis" class="daily-grid" style="display:none"></div>
     <div id="daily-table-wrap"><div class="no-data"><div class="ic">📆</div><p>Select a date above and click <strong>Load</strong> to see daily caller stats.</p></div></div>
