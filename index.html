@@ -392,6 +392,54 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
 #tab-daily .mx.bad{background:var(--ov-q-red-tint);color:var(--ov-q-red)}
 #tab-daily .no-data{padding:60px 20px;text-align:center;color:var(--ov-text-soft);background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg)}
 #tab-daily .no-data .ic{font-size:42px;margin-bottom:8px}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LEAD SOURCES TAB
+   ═══════════════════════════════════════════════════════════════════════════ */
+#tab-sources.active{background:var(--ov-bg);margin:0;padding:32px 28px 60px;border-radius:20px;font-family:var(--ov-num);color:var(--ov-text);min-height:calc(100vh - 100px)}
+#tab-sources .mgr-filters{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:24px;margin-bottom:24px;box-shadow:var(--ov-shadow)}
+#tab-sources .mgr-filters h2{font-size:34px;font-weight:800;color:var(--ov-text);letter-spacing:-1px;margin:0 0 4px;line-height:1.1}
+#tab-sources .mgr-filter-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-top:20px}
+#tab-sources label{font-size:11px;font-weight:700;color:var(--ov-text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px}
+#tab-sources input[type="date"]{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:8px;padding:10px 14px;font-size:13px;font-family:var(--ov-num);color:var(--ov-text)}
+#tab-sources .btn{background:var(--ov-q-blue);color:#fff;border:0;padding:11px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--ov-num);transition:.15s}
+#tab-sources .btn:hover{background:var(--ov-q-blue-dk)}
+#tab-sources .btn.btn-yellow{background:var(--ov-q-blue);color:#fff}
+#tab-sources .preset-btn{background:#F1F5F9;border:0;color:var(--ov-text-muted);padding:7px 14px;border-radius:999px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--ov-num);transition:.15s}
+#tab-sources .preset-btn:hover{background:#E5EAF3;color:var(--ov-text)}
+#tab-sources .tw{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:0;margin-bottom:24px;overflow:hidden;box-shadow:var(--ov-shadow)}
+#tab-sources .tw .th{padding:20px 24px 16px;border-bottom:1px solid var(--ov-border)}
+#tab-sources .tw .th h2{font-size:13px;font-weight:700;color:var(--ov-text);text-transform:uppercase;letter-spacing:.6px;margin:0}
+#tab-sources table{width:100%;border-collapse:collapse;font-family:var(--ov-num);font-variant-numeric:tabular-nums}
+#tab-sources thead{background:#F8FAFC}
+#tab-sources th{text-align:left;font-size:10px;font-weight:700;color:var(--ov-text-muted);text-transform:uppercase;letter-spacing:.5px;padding:14px 12px;border-bottom:1px solid var(--ov-border)}
+#tab-sources td{padding:13px 12px;font-size:12px;color:var(--ov-text);border-bottom:1px solid var(--ov-border)}
+#tab-sources tbody tr:last-child td{border-bottom:0}
+#tab-sources tbody tr:hover{background:#FAFBFC}
+#tab-sources .ag{font-weight:600;color:var(--ov-text)}
+#tab-sources .mx{display:inline-block;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700}
+#tab-sources .mx.good{background:var(--ov-success-bg);color:var(--ov-success)}
+#tab-sources .mx.warn{background:var(--ov-q-yellow-tint);color:var(--ov-q-yellow-dk)}
+#tab-sources .mx.bad{background:var(--ov-q-red-tint);color:var(--ov-q-red)}
+#tab-sources .mx.neu{background:var(--ov-q-blue-tint);color:var(--ov-q-blue-dk)}
+#tab-sources .no-data{padding:60px 20px;text-align:center;color:var(--ov-text-soft);background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg)}
+#tab-sources .no-data .ic{font-size:42px;margin-bottom:8px}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPARE + WORK TIME + MANAGER REPORTS — shared Taskati container
+   ═══════════════════════════════════════════════════════════════════════════ */
+#tab-compare.active,#tab-wt.active,#tab-mgr.active{background:var(--ov-bg);margin:0;padding:32px 28px 60px;border-radius:20px;font-family:var(--ov-num);color:var(--ov-text);min-height:calc(100vh - 100px)}
+#tab-compare .cmp-mode-bar,#tab-mgr .mgr-filters{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:18px 22px;margin-bottom:24px;box-shadow:var(--ov-shadow)}
+#tab-compare .cmp-mode-btn,#tab-wt .compare-controls button{background:#F1F5F9;border:0;color:var(--ov-text-muted);padding:9px 18px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--ov-num);transition:.15s}
+#tab-compare .cmp-mode-btn.active{background:var(--ov-q-blue);color:#fff}
+#tab-mgr .btn-yellow{background:var(--ov-q-blue)!important;color:#fff!important}
+#tab-mgr .btn-yellow:hover{background:var(--ov-q-blue-dk)!important}
+#tab-mgr .mgr-table-wrap,#tab-compare .compare-section,#tab-wt .wt-card{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:0;margin-bottom:24px;overflow:hidden;box-shadow:var(--ov-shadow)}
+#tab-compare table,#tab-wt table,#tab-mgr table{width:100%;border-collapse:collapse;font-family:var(--ov-num);font-variant-numeric:tabular-nums}
+#tab-compare thead,#tab-wt thead,#tab-mgr thead{background:#F8FAFC}
+#tab-compare th,#tab-wt th,#tab-mgr th{text-align:left;font-size:10px;font-weight:700;color:var(--ov-text-muted);text-transform:uppercase;letter-spacing:.5px;padding:14px 12px;border-bottom:1px solid var(--ov-border)}
+#tab-compare td,#tab-wt td,#tab-mgr td{padding:13px 12px;font-size:12px;color:var(--ov-text);border-bottom:1px solid var(--ov-border)}
+#tab-compare tbody tr:hover,#tab-wt tbody tr:hover,#tab-mgr tbody tr:hover{background:#FAFBFC}
 </style>
 </head>
 <body>
