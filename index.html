@@ -281,6 +281,70 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
 .ov-more[open] summary{color:var(--ov-text);border-bottom:1px solid var(--ov-border)}
 .ov-more[open] summary::after{content:'–'}
 .ov-more-body{padding:24px}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ALL STAFF TAB — Taskati-style refresh, same aesthetic as Overview
+   ═══════════════════════════════════════════════════════════════════════════ */
+#tab-reports.active{background:var(--ov-bg);margin:0;padding:32px 28px 60px;border-radius:20px;font-family:var(--ov-num);color:var(--ov-text);min-height:calc(100vh - 100px)}
+
+/* Page header (matches Overview's ov-header) */
+.rep-header{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:24px;flex-wrap:wrap}
+.rep-title h1{font-family:var(--ov-num);font-size:34px;font-weight:800;color:var(--ov-text);letter-spacing:-1px;margin:0;line-height:1.1}
+.rep-title .rep-sub{margin:6px 0 0;font-size:13px;color:var(--ov-text-muted);font-weight:500}
+
+/* Filter card */
+#tab-reports .range-card{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:24px;margin-bottom:24px;box-shadow:var(--ov-shadow)}
+#tab-reports .range-card h2{font-size:11px;font-weight:700;color:var(--ov-text);text-transform:uppercase;letter-spacing:1px;margin:0 0 16px;display:flex;align-items:center;gap:8px}
+#tab-reports .presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+#tab-reports .preset-btn{background:#F1F5F9;border:0;color:var(--ov-text-muted);padding:8px 14px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--ov-num);transition:.15s}
+#tab-reports .preset-btn:hover{background:#E5EAF3;color:var(--ov-text)}
+#tab-reports .preset-btn.active{background:var(--ov-q-blue);color:#fff}
+#tab-reports .range-inputs{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+#tab-reports .range-inputs label{font-size:11px;font-weight:700;color:var(--ov-text-muted);text-transform:uppercase;letter-spacing:.5px}
+#tab-reports .range-inputs input[type="date"]{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:8px;padding:10px 14px;font-size:13px;font-family:var(--ov-num);color:var(--ov-text)}
+#tab-reports .range-inputs .btn-yellow{background:var(--ov-q-blue);color:#fff;border:0;padding:11px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--ov-num);transition:.15s}
+#tab-reports .range-inputs .btn-yellow:hover{background:var(--ov-q-blue-dk)}
+
+/* View toggle pill bar */
+#tab-reports .view-toggle{display:inline-flex;gap:4px;padding:4px;background:var(--ov-card);border:1px solid var(--ov-border);border-radius:999px;margin-bottom:24px}
+#tab-reports .vt-btn{background:transparent;border:0;color:var(--ov-text-muted);padding:8px 18px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--ov-num);transition:.15s}
+#tab-reports .vt-btn:hover{color:var(--ov-text)}
+#tab-reports .vt-btn.active{background:var(--ov-q-blue);color:#fff}
+
+/* KPI cards (the .srow at top of report) */
+#tab-reports .srow{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:24px}
+@media (max-width:1100px){#tab-reports .srow{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:700px){#tab-reports .srow{grid-template-columns:repeat(2,1fr)}}
+#tab-reports .sc{background:var(--ov-card)!important;border:1px solid var(--ov-border)!important;border-radius:var(--ov-radius-lg)!important;padding:18px 20px!important;box-shadow:var(--ov-shadow);position:relative;overflow:hidden;min-height:96px}
+#tab-reports .sc::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:#94A3B8}
+#tab-reports .sc.blue::before  {background:var(--ov-q-blue)}
+#tab-reports .sc.yellow::before{background:var(--ov-q-yellow)}
+#tab-reports .sc.sky::before   {background:var(--ov-q-sky)}
+#tab-reports .sc.green::before {background:var(--ov-success)}
+#tab-reports .sc.red::before   {background:var(--ov-q-red)}
+#tab-reports .sc-lbl{font-size:10px;font-weight:700;color:var(--ov-text-muted);text-transform:uppercase;letter-spacing:.6px;margin-top:4px}
+#tab-reports .sc-val{font-family:var(--ov-num);font-variant-numeric:tabular-nums;font-weight:800;color:var(--ov-text);letter-spacing:-.8px;font-size:26px;margin:6px 0 2px;line-height:1}
+#tab-reports .sc-sub{font-size:10px;color:var(--ov-text-soft);font-weight:500}
+
+/* Table wrapper */
+#tab-reports .tw{background:var(--ov-card);border:1px solid var(--ov-border);border-radius:var(--ov-radius-lg);padding:0;margin-bottom:24px;overflow:hidden;box-shadow:var(--ov-shadow)}
+#tab-reports .tw .th{padding:20px 24px 16px;border-bottom:1px solid var(--ov-border);display:flex;justify-content:space-between;align-items:center;gap:16px}
+#tab-reports .tw .th h2{font-size:12px;font-weight:700;color:var(--ov-text);text-transform:uppercase;letter-spacing:.6px;margin:0}
+#tab-reports .tw .th .btn{background:var(--ov-q-blue);color:#fff;border:0;padding:8px 14px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--ov-num)}
+#tab-reports .tw .th .btn:hover{background:var(--ov-q-blue-dk)}
+#tab-reports table{width:100%;border-collapse:collapse;font-family:var(--ov-num);font-variant-numeric:tabular-nums}
+#tab-reports thead{background:#F8FAFC}
+#tab-reports th{text-align:left;font-size:10px;font-weight:700;color:var(--ov-text-muted);text-transform:uppercase;letter-spacing:.5px;padding:12px;border-bottom:1px solid var(--ov-border)}
+#tab-reports td{padding:13px 12px;font-size:12px;color:var(--ov-text);border-bottom:1px solid var(--ov-border)}
+#tab-reports tbody tr:last-child td{border-bottom:0}
+#tab-reports tbody tr:hover{background:#FAFBFC}
+#tab-reports .ag{font-weight:600;color:var(--ov-text)}
+#tab-reports .mx{display:inline-block;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700}
+#tab-reports .mx.good{background:var(--ov-success-bg);color:var(--ov-success)}
+#tab-reports .mx.warn{background:var(--ov-q-yellow-tint);color:var(--ov-q-yellow-dk)}
+#tab-reports .mx.bad{background:var(--ov-q-red-tint);color:var(--ov-q-red)}
+#tab-reports .mx.neu{background:var(--ov-q-blue-tint);color:var(--ov-q-blue-dk)}
+#tab-reports .mx.pur{background:var(--ov-q-sky-tint);color:var(--ov-q-blue-dk)}
 </style>
 </head>
 <body>
@@ -398,6 +462,12 @@ tbody td{padding:11px 14px;font-size:12px;white-space:nowrap}
 
   <!-- ═══ ALL STAFF TAB ═══ -->
   <div class="tab-panel" id="tab-reports">
+    <header class="rep-header">
+      <div class="rep-title">
+        <h1>All Staff Report</h1>
+        <p class="rep-sub">Filter by date range, drill into agent-level performance.</p>
+      </div>
+    </header>
     <div class="range-card">
       <h2>📅 Select Date Range</h2>
       <div class="presets" id="presets"></div>
