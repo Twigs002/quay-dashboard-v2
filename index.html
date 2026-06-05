@@ -16,14 +16,17 @@
 
 <script src="quay/data.js"></script>
 <script src="quay/lib.js"></script>
-<script src="quay/views.js"></script>
 <script>
-  // Wait for the data adapter to finish loading data/weekly_data.json
-  // + data/history.json before booting the app.
+  // views.js + app.js both capture `const Q = window.QUAY` at module-load
+  // time — so we must defer loading them until QUAY is populated by data.js.
+  // (lib.js doesn't reference QUAY, safe to load eagerly.)
   window.QUAY_READY.then(() => {
-    const s = document.createElement('script');
-    s.src = 'quay/app.js';
-    document.body.appendChild(s);
+    const load = src => new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = src; s.onload = res; s.onerror = rej;
+      document.body.appendChild(s);
+    });
+    return load('quay/views.js').then(() => load('quay/app.js'));
   }).catch(err => {
     document.getElementById('app').innerHTML =
       '<div style="padding:48px;font-family:sans-serif;color:#b1303a">' +
