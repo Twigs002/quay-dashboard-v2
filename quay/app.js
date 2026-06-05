@@ -57,7 +57,6 @@
               ${Object.entries(Q.PERIODS).map(([k, p]) =>
                 `<button data-period="${k}" class="${k === period ? 'active' : ''}">${p.label}</button>`).join('')}
             </div>
-            <button class="btn theme-toggle" id="btnTheme" title="Toggle light / dark"><span class="sun">☀</span><span class="moon">☾</span></button>
             <button class="btn" id="btnPrint" title="Print / save as PDF">${I.print} Print</button>
             <button class="btn btn-primary" id="btnExport" title="Download current tab as CSV">${I.download} Export CSV</button>
           </div>
@@ -71,7 +70,6 @@
       b.addEventListener('click', () => { period = b.dataset.period; shell(); }));
     document.getElementById('btnPrint').addEventListener('click', () => window.print());
     document.getElementById('btnExport').addEventListener('click', exportCurrentTab);
-    document.getElementById('btnTheme').addEventListener('click', toggleTheme);
 
     const appEl = document.getElementById('app');
     const tbtn = document.getElementById('navToggle');
@@ -372,24 +370,9 @@
     return csvCampaigns();
   }
 
-  // ---- Theme (light / dark) ----
-  function applyTheme(t) {
-    document.documentElement.setAttribute('data-theme', t);
-    localStorage.setItem('q1theme', t);
-  }
-  function toggleTheme() {
-    const cur = document.documentElement.getAttribute('data-theme') || 'light';
-    applyTheme(cur === 'dark' ? 'light' : 'dark');
-  }
-  // Apply saved theme (or follow OS) before first render — runs once.
-  (function initTheme() {
-    if (window.__q1themeInit) return;
-    window.__q1themeInit = true;
-    const saved = localStorage.getItem('q1theme');
-    if (saved === 'dark' || saved === 'light') { applyTheme(saved); return; }
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    applyTheme(prefersDark ? 'dark' : 'light');
-  })();
+  // Defensive: clear any leftover dark-mode state from earlier builds.
+  document.documentElement.removeAttribute('data-theme');
+  try { localStorage.removeItem('q1theme'); } catch (e) {}
 
   function downloadCSV(filename, rows) {
     const esc = v => {
