@@ -2,11 +2,12 @@
 
 (function () {
   const Q = window.QUAY, I = window.ICON, C = window.CHART, V = window.VIEWS;
+  const CFG = window.QUAY_CONFIG || {};
   const fmt = n => n.toLocaleString('en-ZA');
   const initials = name => name.split(' ').map(w => w[0]).slice(0, 2).join('');
 
   let period = 'this-week';
-  let tab = 'overview';
+  let tab = 'leadership';
   // nav preference: 'auto' (collapse on narrow), 'open' (force expanded), 'collapsed' (force rail)
   let navPref = localStorage.getItem('q1nav') || 'auto';
   const AUTO_BP = 1080;
@@ -14,13 +15,14 @@
     navPref === 'open' ? false : navPref === 'collapsed' ? true : window.innerWidth < AUTO_BP;
 
   const TABS = [
-    { id: 'overview', label: 'Overview',        icon: I.trophy,   title: 'Operational Overview', sub: 'A single view of call-floor performance' },
-    { id: 'staff',    label: 'All Staff',       icon: I.calendar, title: 'All Staff Report',     sub: 'Drill into agent-level performance' },
-    { id: 'compare',  label: 'Compare',         icon: I.scale,    title: 'Period Comparison',    sub: 'Week vs week · month vs month' },
-    { id: 'worktime', label: 'Work Time',       icon: I.clock,    title: 'Work Time & Efficiency', sub: 'DialFire dialler time vs clocked-in time' },
-    { id: 'daily',    label: 'Daily Stats',     icon: I.cal2,     title: 'Daily Stats',          sub: 'Per-caller performance for a single day' },
-    { id: 'manager',  label: 'Manager Reports', icon: I.chart,    title: 'Manager Reports',      sub: 'Filter by date range and campaign' },
-    { id: 'sources',  label: 'Lead Sources',    icon: I.target,   title: 'Lead Source Efficacy', sub: 'Which source converts best' },
+    { id: 'leadership', label: 'Leadership',     icon: I.medal,    title: 'Leadership Overview',  sub: 'Strategic snapshot for directors · revenue, targets, red flags' },
+    { id: 'overview',   label: 'Overview',       icon: I.trophy,   title: 'Operational Overview', sub: 'A single view of call-floor performance' },
+    { id: 'staff',      label: 'All Staff',      icon: I.calendar, title: 'All Staff Report',     sub: 'Drill into agent-level performance' },
+    { id: 'compare',    label: 'Compare',        icon: I.scale,    title: 'Period Comparison',    sub: 'Week vs week · month vs month' },
+    { id: 'worktime',   label: 'Work Time',      icon: I.clock,    title: 'Work Time & Efficiency', sub: 'DialFire dialler time vs clocked-in time' },
+    { id: 'daily',      label: 'Daily Stats',    icon: I.cal2,     title: 'Daily Stats',          sub: 'Per-caller performance for a single day' },
+    { id: 'manager',    label: 'Manager Reports',icon: I.chart,    title: 'Manager Reports',      sub: 'Filter by date range and campaign' },
+    { id: 'sources',    label: 'Lead Sources',   icon: I.target,   title: 'Lead Source Efficacy', sub: 'Which source converts best' },
   ];
 
   // ---------------------------------------------------- SHELL
@@ -105,7 +107,8 @@
   // ---------------------------------------------------- ROUTER
   function render() {
     const host = document.getElementById('content');
-    if (tab === 'overview')      { host.innerHTML = overview(); afterOverview(); }
+    if (tab === 'leadership')    { host.innerHTML = leadership(); afterLeadership(); }
+    else if (tab === 'overview') { host.innerHTML = overview(); afterOverview(); }
     else if (tab === 'staff')    { host.innerHTML = V.allStaff(period); staffWire(); }
     else if (tab === 'compare')  { host.innerHTML = V.compare(); segWire(); }
     else if (tab === 'worktime') host.innerHTML = V.workTime(period);
@@ -306,6 +309,253 @@
       fmt(total), 'total calls');
     document.querySelectorAll('.mc').forEach(el =>
       C.miniBars(el, JSON.parse(el.dataset.series), el.dataset.color));
+    document.querySelectorAll('[data-goto]').forEach(b =>
+      b.addEventListener('click', () => { tab = b.dataset.goto; shell(); }));
+  }
+
+  // ---------------------------------------------------- LEADERSHIP OVERVIEW
+  function leadership() {
+    const agents = Q.agentsFor(period);
+    const t = Q.totalsFor(period);
+    const d = Q.DELTAS[period];
+
+    // Split by team
+    const rm = agents.filter(a => a.team === 'RM');
+    const fc = agents.filter(a => a.team === 'Fancy');
+    const teamTotals = team => {
+      const calls = team.reduce((s, a) => s + a.calls, 0);
+      const leads = team.reduce((s, a) => s + a.leads, 0);
+      const sr = calls ? +((leads / calls) * 100).toFixed(1) : 0;
+      const target = team === rm
+        ? (CFG.BENCHMARKS && CFG.BENCHMARKS.rm_success_rate) || 17
+        : (CFG.BENCHMARKS && CFG.BENCHMARKS.fc_success_rate) || 20;
+      return { calls, leads, sr, target, n: team.length };
+    };
+    const rmT = teamTotals(rm), fcT = teamTotals(fc);
+
+    // Revenue estimate: split leads by type if possible
+    const rev = CFG.REVENUE_PER_LEAD || { default: 10000 };
+    const seller = agents.reduce((s, a) => s + (a.seller || 0), 0);
+    const rental = agents.reduce((s, a) => s + (a.rental || 0), 0);
+    const email  = agents.reduce((s, a) => s + (a.email  || 0), 0);
+    const typed  = seller + rental + email;
+    const untyped = Math.max(0, t.leads - typed);
+    const revenue = seller * (rev.seller || rev.default)
+                  + rental * (rev.rental || rev.default)
+                  + email  * (rev.email  || rev.default)
+                  + untyped * (rev.default);
+
+    // Efficiency: avg dialler/clocked across agents
+    const eff = agents.length
+      ? Math.round(agents.reduce((s, a) => s + (a.eff || 0), 0) / agents.length)
+      : 0;
+
+    // Top campaigns by call share
+    const camps = Q.campaignsFor(period).slice(0, 5);
+    const campTotal = Q.campaignsFor(period).reduce((s, c) => s + c.calls, 0) || 1;
+
+    // Red flags
+    const flags = redFlags(agents, d, rmT, fcT);
+
+    // Progress to target
+    const targets = CFG.FLOOR_TARGETS || {};
+    const tgtCalls = (period === 'this-week' || period === 'last-week')
+      ? targets.weekly_calls : targets.monthly_calls;
+    const tgtLeads = (period === 'this-week' || period === 'last-week')
+      ? targets.weekly_leads : targets.monthly_leads;
+    const progress = (cur, tgt) => tgt > 0 ? Math.min(100, (cur / tgt) * 100) : 0;
+    const tgtClass = pct => pct >= 95 ? 'ok' : pct >= 75 ? 'warn' : 'bad';
+
+    const top5 = agents.slice().sort((a, b) => (b.success * b.calls) - (a.success * a.calls)).slice(0, 5);
+
+    const kpi = (icon, label, val, delta, foot) => {
+      const cls = delta == null ? 'flat' : delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
+      const ic = delta == null ? '' : delta > 0 ? I.up : delta < 0 ? I.down : '';
+      const dtxt = delta == null ? '' : (delta === 0 ? 'no change' :
+        Math.abs(delta) + (label.includes('Rate') ? ' pts' : '%'));
+      return `<div class="card kpi">
+        <div class="kpi-top"><div class="kpi-ic">${icon}</div>
+          ${delta != null ? `<span class="delta ${cls}">${ic}${dtxt}</span>` : ''}
+        </div>
+        <div class="kpi-label">${label}</div>
+        <div class="kpi-val tnum">${val}</div>
+        <div class="kpi-foot">${foot}</div>
+        <div class="spark">${C.spark(Q.WEEK_CALLS.slice(-8).map((v,i)=>v*(1+i*0.002)))}</div>
+      </div>`;
+    };
+
+    const teamCard = (label, td, accent) => `
+      <div class="card card-pad">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:14px">
+          <div>
+            <div class="kpi-label" style="margin:0">${label}</div>
+            <div style="font-family:var(--serif);font-size:22px;font-weight:700;color:var(--ink);margin-top:4px">
+              ${td.n} agents · ${fmt(td.calls)} calls
+            </div>
+          </div>
+          <span class="pill ${td.sr >= td.target ? 'ok' : td.sr >= td.target - 3 ? 'warn' : 'bad'}" style="font-size:11px">
+            ${td.sr}% success
+          </span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px 16px;margin-top:14px;font-size:12.5px">
+          <div><div class="kpi-label" style="margin:0;font-size:10.5px">Leads</div>
+            <div class="tnum" style="font-weight:700;font-size:16px;color:var(--ink)">${fmt(td.leads)}</div></div>
+          <div><div class="kpi-label" style="margin:0;font-size:10.5px">Target</div>
+            <div class="tnum" style="font-weight:700;font-size:16px;color:var(--ink)">${td.target}%</div></div>
+          <div><div class="kpi-label" style="margin:0;font-size:10.5px">vs Target</div>
+            <div class="tnum" style="font-weight:700;font-size:16px;color:${td.sr >= td.target ? 'var(--green)' : 'var(--red)'}">${(td.sr - td.target > 0 ? '+' : '')}${(td.sr - td.target).toFixed(1)} pts</div></div>
+        </div>
+      </div>`;
+
+    const campRows = camps.map(c => {
+      const pct = ((c.calls / campTotal) * 100).toFixed(1);
+      return `<div class="src-row">
+        <div class="src-name"><span class="legend-swatch" style="background:${c.color}"></span>${c.name}</div>
+        <div class="src-meta">${fmt(c.calls)} calls · ${pct}%</div>
+        <div class="src-bar"><span style="width:${pct}%;background:${c.color}"></span></div>
+      </div>`;
+    }).join('');
+
+    const flagItems = flags.length ? flags.map(f => `
+      <div class="insight">
+        <div class="insight-ic ${f.type}">${f.type === 'warn' ? I.alert : f.type === 'down' ? I.down : I.spark}</div>
+        <div class="insight-body"><p>${f.html}</p>
+          ${f.action ? `<div class="insight-action">${I.arrow}${f.action}</div>` : ''}
+        </div>
+      </div>`).join('') : `<div style="padding:18px 24px;color:var(--muted);font-size:13px">
+        No red flags this period — the floor is on track.
+      </div>`;
+
+    const tgtBar = (label, cur, tgt) => {
+      if (!tgt) return '';
+      const pct = progress(cur, tgt);
+      const cls = tgtClass(pct);
+      return `<div style="margin-top:14px">
+        <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px">
+          <span style="color:var(--ink);font-weight:600">${label}</span>
+          <span class="tnum" style="color:var(--muted)">${fmt(cur)} / ${fmt(tgt)} <b style="color:var(--ink)">(${pct.toFixed(0)}%)</b></span>
+        </div>
+        <div class="eff-track"><span style="width:${pct}%;background:${cls === 'ok' ? 'var(--green)' : cls === 'warn' ? 'var(--amber)' : 'var(--red)'}"></span></div>
+      </div>`;
+    };
+
+    return `
+    <div class="tab-view">
+      <!-- Hero KPIs -->
+      <div class="row kpis">
+        ${kpi(I.phone,   'Total Calls',        fmt(t.calls), d.calls,   'vs previous ' + Q.PERIODS[period].label.toLowerCase())}
+        ${kpi(I.trophy,  'Success Rate',       t.avgSuccess + '%', d.success, 'contact-to-lead conversion')}
+        ${kpi(I.bolt,    'Team Efficiency',    eff + '%', null, 'dialler ÷ clocked-in time')}
+        ${kpi(I.medal,   'Est. Revenue',       'R ' + fmt(Math.round(revenue)), null, fmt(t.leads) + ' leads × per-lead value (config.js)')}
+      </div>
+
+      <!-- Team split + Target progress -->
+      <div class="row g-2-1 mt">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card-head" style="padding:0">
+            <div><h3 style="font-family:var(--serif);font-size:17px;color:var(--ink);margin:0">RM vs Fancy</h3>
+              <div class="sub" style="font-size:12px">Side-by-side team performance</div></div>
+          </div>
+          ${teamCard(CFG.TEAM_LABELS?.RM    || 'Relationship Managers', rmT, '#3D5BA6')}
+          ${teamCard(CFG.TEAM_LABELS?.Fancy || 'Fancy Callers',         fcT, '#B98A02')}
+        </div>
+        <div class="card card-pad">
+          <div class="card-head" style="padding:0;border:0"><div>
+            <h3 style="margin:0">Progress to target</h3>
+            <div class="sub">${period === 'this-week' || period === 'last-week' ? 'Weekly floor targets' : 'Monthly floor targets'} · edit in config.js</div>
+          </div></div>
+          ${tgtBar('Total calls', t.calls, tgtCalls)}
+          ${tgtBar('Total leads', t.leads, tgtLeads)}
+          <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);line-height:1.7">
+            Revenue estimate uses <b style="color:var(--ink)">R${fmt(rev.seller || rev.default)} seller / R${fmt(rev.rental || rev.default)} rental / R${fmt(rev.email || rev.default)} email</b>. Adjust in <code>quay/config.js</code> for accuracy.
+          </div>
+        </div>
+      </div>
+
+      <!-- Top campaigns + Trend -->
+      <div class="row g-2-1 mt">
+        <div class="card">
+          <div class="card-head"><div><h3>Weekly trend</h3><div class="sub">Calls &amp; success rate · 12 weeks</div></div>
+            <div class="legend" style="padding:0">
+              <span class="legend-item"><span class="legend-swatch" style="background:#FDC503"></span>Calls</span>
+              <span class="legend-item"><span class="legend-swatch" style="background:#3D5BA6"></span>Success</span>
+            </div></div>
+          <div class="chart-wrap"><div id="lTrendChart"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div><h3>Top campaigns by share</h3><div class="sub">% of total calls this period</div></div></div>
+          <div class="src-list">${campRows || '<div style="padding:18px 24px;color:var(--muted);font-size:13px">No campaign data yet.</div>'}</div>
+        </div>
+      </div>
+
+      <!-- Top performers + Red flags -->
+      <div class="row g-2-1 mt" style="align-items:start">
+        <div class="card">
+          <div class="card-head"><div><h3>Top 5 performers</h3><div class="sub">Ranked by composite (success rate × calls)</div></div>
+            <button class="btn" data-goto="staff">${I.eye} View all</button></div>
+          <div class="tbl-wrap"><table class="tbl">
+            <thead><tr><th style="width:48px">Rank</th><th>Agent</th><th class="num">Calls</th><th class="num">Leads</th><th class="num">Success</th></tr></thead>
+            <tbody>${top5.map((a, i) => {
+              const medal = i === 0 ? 'g' : i === 1 ? 's' : i === 2 ? 'b' : 'n';
+              const sc = a.success >= 15 ? 'ok' : a.success >= 11 ? 'warn' : 'bad';
+              return `<tr>
+                <td><div class="medal ${medal}">${i + 1}</div></td>
+                <td><div class="agent-cell"><div class="avatar">${initials(a.name)}</div>
+                  <div><div class="agent-name">${a.name}</div><div class="agent-sub">${a.team} desk</div></div></div></td>
+                <td class="num tnum">${fmt(a.calls)}</td>
+                <td class="num tnum">${fmt(a.leads)}</td>
+                <td class="num"><span class="pill ${sc}">${a.success}%</span></td>
+              </tr>`;
+            }).join('')}</tbody>
+          </table></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div><h3>Red flags</h3><div class="sub">Auto-detected from this period</div></div></div>
+          <div class="insights">${flagItems}</div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function redFlags(agents, deltas, rmT, fcT) {
+    const flags = [];
+    const cfg = (CFG.RED_FLAGS) || {};
+    const cd = cfg.calls_drop_pct      ?? -15;
+    const sb = cfg.success_below_pct   ?? -3;
+    const ic = cfg.inactive_call_floor ?? 100;
+
+    // 1) Big WoW drop in calls
+    if (deltas.calls != null && deltas.calls <= cd) {
+      flags.push({ type: 'down',
+        html: `<b>Call volume down ${Math.abs(deltas.calls)}%</b> vs previous period — investigate cause.`,
+        action: 'Open Compare tab for week-vs-week breakdown' });
+    }
+    // 2) RM team below target by more than threshold
+    if (rmT.sr < rmT.target + sb) {
+      flags.push({ type: 'warn',
+        html: `<b>RM success rate at ${rmT.sr}%</b> — ${(rmT.target - rmT.sr).toFixed(1)} pts below the ${rmT.target}% target.`,
+        action: 'Review RM coaching cadence' });
+    }
+    if (fcT.sr < fcT.target + sb) {
+      flags.push({ type: 'warn',
+        html: `<b>Fancy success rate at ${fcT.sr}%</b> — ${(fcT.target - fcT.sr).toFixed(1)} pts below the ${fcT.target}% target.`,
+        action: 'Review Fancy desk lead quality' });
+    }
+    // 3) Inactive / very-low-call agents
+    const inactive = agents.filter(a => a.calls < ic).sort((a, b) => a.calls - b.calls).slice(0, 3);
+    inactive.forEach(a => {
+      flags.push({ type: 'warn',
+        html: `<b>${a.name}</b> made only <b>${fmt(a.calls)}</b> calls — well below the ${ic}-call floor.`,
+        action: 'Confirm clocked time + dialler issues' });
+    });
+    return flags;
+  }
+
+  function afterLeadership() {
+    if (Q.WEEKS && Q.WEEKS.length) {
+      C.weeklyTrend(document.getElementById('lTrendChart'),
+        Q.WEEKS, Q.WEEK_CALLS, Q.WEEK_SUCCESS);
+    }
     document.querySelectorAll('[data-goto]').forEach(b =>
       b.addEventListener('click', () => { tab = b.dataset.goto; shell(); }));
   }
