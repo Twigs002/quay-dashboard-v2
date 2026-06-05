@@ -217,13 +217,28 @@ window.QUAY_READY = (async function () {
                         '#D20A03', '#4C6BB8', '#B98A02', '#9AA3AD',
                         '#2E6FB0', '#6E7C8E', '#5A4FCF', '#21847B'];
 
+  // Group variants: SURFERS_NA + SURFERS_CM + SURFERS -> SURFERS.
+  // Also collapses 'X Master' (e.g. 'Clienthub Master' -> 'Clienthub').
+  function normalizeCampaignName(raw) {
+    if (!raw) return raw;
+    let n = String(raw).trim();
+    n = n.replace(/_[A-Za-z0-9]{1,6}$/, '');        // strip _NA / _CM / _NEW / etc
+    n = n.replace(/\s+Master$/i, '');               // 'Clienthub Master' -> 'Clienthub'
+    n = n.trim();
+    return n || raw;
+  }
+
   function campaignsFor(periodKey) {
     const slice = _sliceFor(periodKey);
     const byCamp = new Map();
     slice.forEach(week => {
       ['rm', 'fancy'].forEach(team => {
         (week[team] || []).forEach(agent => {
-          (agent.campaigns || []).forEach(camp => {
+          // Dedupe normalized names within a single agent so SURFERS_CM +
+          // SURFERS_NA on the same agent doesn't double up the agent's totals.
+          const agentCampaigns = new Set(
+            (agent.campaigns || []).map(normalizeCampaignName));
+          agentCampaigns.forEach(camp => {
             const cur = byCamp.get(camp) || {
               name: camp, calls: 0, leads: 0, seller: 0, rental: 0, email: 0,
               _agents: new Set(),

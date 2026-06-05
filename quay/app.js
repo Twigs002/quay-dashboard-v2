@@ -111,7 +111,7 @@
     else if (tab === 'worktime') host.innerHTML = V.workTime(period);
     else if (tab === 'daily')    host.innerHTML = V.daily(period);
     else if (tab === 'manager')  host.innerHTML = V.manager();
-    else if (tab === 'sources')  host.innerHTML = V.leadSources();
+    else if (tab === 'sources')  host.innerHTML = V.leadSources(period);
     host.scrollTop = 0;
   }
   function segWire() {

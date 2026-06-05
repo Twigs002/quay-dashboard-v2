@@ -292,41 +292,87 @@ window.VIEWS = (function () {
     </div>`;
   }
 
-  // ---------------------------------------------------- LEAD SOURCES
-  function leadSources() {
-    const src = Q.SOURCES.slice().sort((a, b) => b.conv - a.conv);
-    const maxConv = Math.max(...src.map(s => s.conv));
-    const rows = src.map((s, i) => `<tr>
-      <td class="num" style="font-weight:700;color:var(--muted);width:40px">${i + 1}</td>
-      <td><div class="agent-cell"><span style="width:11px;height:11px;border-radius:3px;background:${s.color};display:inline-block"></span>
-        <span class="agent-name">${s.name}</span></div></td>
-      <td class="num tnum">${fmt(s.calls)}</td>
-      <td class="num tnum">${fmt(s.leads)}</td>
-      <td class="num"><span class="pill ${s.conv >= 10 ? 'ok' : s.conv >= 7 ? 'warn' : 'bad'}">${s.conv}%</span></td>
-      <td class="num"><div class="cell-bar"><div class="track"><span style="width:${(s.conv/maxConv)*100}%;background:${s.color}"></span></div></div></td>
-    </tr>`).join('');
-    const best = src[0];
+  // ---------------------------------------------------- LEAD SOURCES (now: Campaigns)
+  function leadSources(period) {
+    const camps = Q.campaignsFor(period || 'this-week');
+    if (!camps.length) {
+      return `<div class="tab-view"><div class="card card-pad">
+        <h3 style="font-family:var(--serif);margin:0 0 8px">No campaign data</h3>
+        <div class="sub">No campaigns found for this period.</div></div></div>`;
+    }
+    const totalCalls = camps.reduce((s, c) => s + c.calls, 0);
+    const totalLeads = camps.reduce((s, c) => s + c.leads, 0);
+    const totalEmails = camps.reduce((s, c) => s + c.email, 0);
+    const maxCalls = camps[0].calls || 1;
+    const best = camps.slice().sort((a, b) => b.conv - a.conv)[0];
+
+    const rows = camps.map((c, i) => {
+      const conv = c.conv;
+      const pill = conv >= 12 ? 'ok' : conv >= 7 ? 'warn' : 'bad';
+      const bar = (c.calls / maxCalls) * 100;
+      return `<tr>
+        <td class="num" style="font-weight:700;color:var(--muted);width:40px">${i + 1}</td>
+        <td><div class="agent-cell">
+          <span style="width:11px;height:11px;border-radius:3px;background:${c.color};display:inline-block"></span>
+          <span class="agent-name">${c.name}</span></div></td>
+        <td class="num tnum">${c.agentsCount}</td>
+        <td class="num tnum">${fmt(c.calls)}</td>
+        <td class="num tnum">${fmt(c.leads)}</td>
+        <td class="num tnum">${fmt(c.seller)}</td>
+        <td class="num tnum">${fmt(c.rental)}</td>
+        <td class="num tnum">${fmt(c.email)}</td>
+        <td class="num"><span class="pill ${pill}">${conv}%</span></td>
+        <td class="num"><div class="cell-bar"><div class="track"><span style="width:${bar}%;background:${c.color}"></span></div></div></td>
+      </tr>`;
+    }).join('');
+
     return `
     <div class="tab-view">
-      <div class="card">
-        <div class="panel">
-          <div class="field"><label>From</label><input type="date" value="2026-05-01"></div>
-          <div class="field"><label>To</label><input type="date" value="2026-06-05"></div>
-          <button class="btn btn-primary">${I.target} Run</button>
-          <button class="btn">${I.download} Export CSV</button>
+      <div class="row g-3">
+        ${miniStat('Best converter', best.name, best.conv + '% (' + fmt(best.leads) + ' / ' + fmt(best.calls) + ')', I.star)}
+        ${miniStat('Total emails captured', fmt(totalEmails), 'across all campaigns this period', I.mail)}
+        ${miniStat('Campaigns running', camps.length + '', best.agentsCount + ' agents on top campaign', I.layers)}
+      </div>
+
+      <div class="row g-2-1 mt">
+        <div class="card">
+          <div class="card-head"><div><h3>Campaign performance</h3>
+            <div class="sub">Ranked by call volume · ${Q.PERIODS[period || 'this-week'].label} · variants like SURFERS_NA + SURFERS_CM are grouped</div></div>
+            <button class="btn">${I.download} Export CSV</button></div>
+          <div class="tbl-wrap"><table class="tbl">
+            <thead><tr>
+              <th class="num">#</th><th>Campaign</th>
+              <th class="num">Agents</th><th class="num">Calls</th>
+              <th class="num">Leads</th><th class="num">Seller</th>
+              <th class="num">Rental</th><th class="num">Email</th>
+              <th class="num">Conv.</th><th class="num">Volume</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table></div>
         </div>
-      </div>
-      <div class="row g-3 mt">
-        ${miniStat('Best converter', best.name, best.conv + '% lead conversion', I.star)}
-        ${miniStat('Lowest yield', src[src.length-1].name, src[src.length-1].conv + '% — review spend', I.alert)}
-        ${miniStat('Sources tracked', src.length + '', 'portals · web · referral · social', I.layers)}
-      </div>
-      <div class="card mt">
-        <div class="card-head"><div><h3>Lead source efficacy</h3><div class="sub">Which source converts best — ranked by conversion</div></div></div>
-        <div class="tbl-wrap"><table class="tbl">
-          <thead><tr><th class="num">#</th><th>Source</th><th class="num">Calls</th><th class="num">Leads</th><th class="num">Conv.</th><th class="num">Rate</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table></div>
+
+        <div class="card card-pad">
+          <div class="eyebrow">${I.alert} About these numbers</div>
+          <p style="font-size:12.5px;color:var(--slate);line-height:1.7;margin-top:10px">
+            Each agent's call/lead/email totals appear under <b>every campaign they're tagged on</b>.
+            When agents work multiple campaigns, the per-campaign rows
+            <b>over-count</b> at the floor level. Treat these as <em>relative</em>
+            comparisons of campaign activity, not an additive total.
+          </p>
+          <p style="font-size:12.5px;color:var(--slate);line-height:1.7;margin-top:10px">
+            Variants like <code>SURFERS_NA</code>, <code>SURFERS_CM</code> and <code>SURFERS</code> are merged into one <b>SURFERS</b> row.
+          </p>
+          <div style="font-size:12.5px;color:var(--slate);line-height:1.7;margin-top:14px">
+            <b style="color:var(--ink)">Period totals (with overlap):</b><br>
+            ${fmt(totalCalls)} calls · ${fmt(totalLeads)} leads · ${fmt(totalEmails)} emails
+            <div style="font-size:11px;color:var(--muted);margin-top:6px">
+              True floor totals (de-duplicated) are on the Overview tab.
+            </div>
+          </div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:18px;padding-top:14px;border-top:1px solid var(--line)">
+            For exact per-agent-per-campaign attribution, the Dialfire fetcher would need to be modified to query each campaign separately.
+          </div>
+        </div>
       </div>
     </div>`;
   }
