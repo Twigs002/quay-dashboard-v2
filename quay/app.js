@@ -57,8 +57,8 @@
               ${Object.entries(Q.PERIODS).map(([k, p]) =>
                 `<button data-period="${k}" class="${k === period ? 'active' : ''}">${p.label}</button>`).join('')}
             </div>
-            <button class="btn">${I.print} Print</button>
-            <button class="btn btn-primary">${I.download} Export</button>
+            <button class="btn" id="btnPrint" title="Print / save as PDF">${I.print} Print</button>
+            <button class="btn btn-primary" id="btnExport" title="Download current tab as CSV">${I.download} Export CSV</button>
           </div>
         </header>
         <div class="content" id="content"></div>
@@ -68,6 +68,8 @@
       b.addEventListener('click', () => { tab = b.dataset.tab; shell(); }));
     document.querySelectorAll('#period button').forEach(b =>
       b.addEventListener('click', () => { period = b.dataset.period; shell(); }));
+    document.getElementById('btnPrint').addEventListener('click', () => window.print());
+    document.getElementById('btnExport').addEventListener('click', exportCurrentTab);
 
     const appEl = document.getElementById('app');
     const tbtn = document.getElementById('navToggle');
@@ -101,6 +103,11 @@
     const meta = TABS.find(t => t.id === tab);
     document.getElementById('tabTitle').textContent = meta.title;
     document.getElementById('tabSub').textContent = meta.sub;
+    // Stamp print-time metadata used by the @media print header strip
+    document.body.dataset.printTitle  = meta.title;
+    document.body.dataset.printPeriod = (Q.PERIODS[period] || {}).label || period;
+    document.body.dataset.printDate   = new Date().toLocaleDateString('en-ZA',
+      { day: '2-digit', month: 'short', year: 'numeric' });
     render();
   }
 
@@ -304,6 +311,77 @@
       </div>
       <div class="eff-track"><span style="width:${Math.min(100, pct)}%;background:${color}"></span></div>
     </div>`;
+  }
+
+  // ---------------------------------------------------- EXPORT (CSV)
+  function exportCurrentTab() {
+    const stamp = new Date().toISOString().slice(0, 10);
+    const periodLabel = (Q.PERIODS[period] || {}).label || period;
+    const safe = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const filename = `quay-${tab}-${safe(periodLabel)}-${stamp}.csv`;
+    let rows;
+    if (tab === 'sources')         rows = csvCampaigns();
+    else if (tab === 'compare')    rows = csvCompare();
+    else if (tab === 'manager')    rows = csvManager();
+    else                            rows = csvAgents();
+    downloadCSV(filename, rows);
+  }
+
+  function csvAgents() {
+    const agents = Q.agentsFor(period);
+    const header = ['Name', 'Team', 'Calls', 'Leads', 'Success %', 'Connect %',
+      'CPH', 'Dialler hrs', 'Talk hrs', 'Seller', 'Rental', 'Email',
+      'Meets target', 'Campaigns'];
+    const out = [header];
+    agents.forEach(a => out.push([
+      a.name, a.team, a.calls, a.leads, a.success, a.connect,
+      a.cph || 0, a.df, (a.talkMin / 60).toFixed(2),
+      a.seller || 0, a.rental || 0, a.email || 0,
+      a.meetsTarget ? 'yes' : 'no',
+      (a.campaigns || []).join('; '),
+    ]));
+    return out;
+  }
+  function csvCampaigns() {
+    const camps = Q.campaignsFor(period);
+    const header = ['Campaign', 'Agents', 'Calls', 'Leads', 'Seller', 'Rental',
+      'Email', 'Conversion %', 'Attribution'];
+    const out = [header];
+    camps.forEach(c => out.push([
+      c.name, c.agentsCount, c.calls, c.leads, c.seller, c.rental, c.email,
+      c.conv, c.exact ? 'exact' : 'overlap',
+    ]));
+    return out;
+  }
+  function csvCompare() {
+    const totals = key => Q.totalsFor(key);
+    const a = totals('this-week'), b = totals('last-week');
+    const header = ['Metric', 'This Week', 'Last Week', 'Δ'];
+    const delta = (x, y) => y ? +(((x - y) / y) * 100).toFixed(1) + ' %' : '—';
+    return [header,
+      ['Total calls', a.calls, b.calls, delta(a.calls, b.calls)],
+      ['Total leads', a.leads, b.leads, delta(a.leads, b.leads)],
+      ['Avg success rate %', a.avgSuccess, b.avgSuccess, (a.avgSuccess - b.avgSuccess).toFixed(1) + ' pts'],
+      ['Active callers', a.active, b.active, (a.active - b.active)],
+    ];
+  }
+  function csvManager() {
+    // Manager tab currently shows campaign data; reuse the campaign CSV.
+    return csvCampaigns();
+  }
+
+  function downloadCSV(filename, rows) {
+    const esc = v => {
+      const s = (v == null ? '' : String(v));
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    const csv = rows.map(r => r.map(esc).join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
   }
 
   // ---------------------------------------------------- OVERVIEW
