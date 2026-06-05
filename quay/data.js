@@ -365,6 +365,64 @@ window.QUAY_READY = (async function () {
     return Math.round(total / slice.length);
   }
 
+  // ---- Per-agent history (used by the drill-down modal) ------------------
+  // Returns [{ weekStart, weekEnd, calls, leads, success%, talkHrs, dfHrs }, ...]
+  // sorted OLDEST first so the modal's trend chart reads left → right.
+  function agentHistory(agentName) {
+    const target = (agentName || '').trim();
+    const targetLower = target.toLowerCase();
+    const targetPretty = prettifyName(target).toLowerCase();
+    const out = [];
+    weeks.slice().reverse().forEach(w => {                  // oldest first
+      let row = null;
+      ['rm', 'fancy'].forEach(team => {
+        (w[team] || []).forEach(a => {
+          const an = (a.name || '').toLowerCase();
+          if (an === targetLower || prettifyName(a.name).toLowerCase() === targetPretty) row = a;
+        });
+      });
+      out.push({
+        weekStart: w.weekStart,
+        weekEnd:   w.weekEnd,
+        calls:     row ? (row.calls || 0)        : 0,
+        leads:     row ? (row.success || 0)      : 0,
+        success:   row ? (row.successRate || 0)  : 0,
+        talkHrs:   row ? (row.talkTime || 0)     : 0,
+        dfHrs:     row ? (row.workTime || 0)     : 0,
+        seller:    row ? (row.seller || 0)       : 0,
+        rental:    row ? (row.rental || 0)       : 0,
+        email:     row ? (row.email || 0)        : 0,
+        present:   !!row,
+      });
+    });
+    return out;
+  }
+
+  // Per-agent-per-campaign breakdown for the period (uses by_agent_campaign).
+  function agentCampaigns(agentName, periodKey) {
+    const slice = _sliceFor(periodKey);
+    const target = (agentName || '').trim();
+    const targetPretty = prettifyName(target);
+    const byCamp = {};
+    slice.forEach(w => {
+      if (!w.by_agent_campaign) return;
+      Object.entries(w.by_agent_campaign).forEach(([an, perCamp]) => {
+        if (an !== target && prettifyName(an) !== targetPretty) return;
+        Object.entries(perCamp).forEach(([rawCamp, st]) => {
+          const camp = normalizeCampaignName(rawCamp);
+          const cur = byCamp[camp] || { name: camp, calls: 0, leads: 0, seller: 0, rental: 0, email: 0 };
+          cur.calls  += st.calls   || 0;
+          cur.leads  += st.success || 0;
+          cur.seller += st.seller  || 0;
+          cur.rental += st.rental  || 0;
+          cur.email  += st.email   || 0;
+          byCamp[camp] = cur;
+        });
+      });
+    });
+    return Object.values(byCamp).sort((a, b) => b.calls - a.calls);
+  }
+
   window.QUAY = {
     AGENTS: agentsForWeek(weeks[0]),  // current week, sorted natural
     WEEKS, WEEK_CALLS, WEEK_SUCCESS,
@@ -372,6 +430,7 @@ window.QUAY_READY = (async function () {
     MONTHS, MONTH_CALLS, MONTH_LEADS, MONTH_EMAILS, MONTH_RENTALS, MONTH_DFHOURS,
     PERIODS, DELTAS, agentsFor, totalsFor,
     periodElapsed, project, trailingAvg,
+    agentHistory, agentCampaigns,
   };
   return window.QUAY;
 })();

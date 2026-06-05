@@ -136,6 +136,174 @@
       overall.style.display = view === 'overall' ? '' : 'none';
       per.style.display     = view === 'per'     ? 'grid' : 'none';
     }));
+    sortableWire(document.getElementById('staffOverall'));
+    wireAgentClicks();
+  }
+
+  // ---- Sortable tables: th[data-sort="key|type"] makes a header sortable.
+  //  type: 'num' (numeric) or 'str' (string). Click toggles asc/desc.
+  function sortableWire(root) {
+    if (!root) return;
+    root.querySelectorAll('th[data-sort]').forEach(th => {
+      th.style.cursor = 'pointer';
+      th.title = 'Click to sort';
+      th.addEventListener('click', () => {
+        const [key, type] = th.dataset.sort.split('|');
+        const dir = th.dataset.dir === 'asc' ? 'desc' : 'asc';
+        const tbody = root.querySelector('tbody');
+        if (!tbody) return;
+        const rows = [...tbody.querySelectorAll('tr')];
+        rows.sort((a, b) => {
+          const av = a.dataset[key] ?? '';
+          const bv = b.dataset[key] ?? '';
+          if (type === 'num') {
+            return (dir === 'asc' ? 1 : -1) * (parseFloat(av) - parseFloat(bv));
+          }
+          return (dir === 'asc' ? 1 : -1) * String(av).localeCompare(String(bv));
+        });
+        // Re-rank the leftmost cell if it contains a rank number
+        rows.forEach((r, i) => {
+          const rank = r.querySelector('td:first-child .medal, td:first-child');
+          if (rank && /^\d+$/.test((rank.textContent || '').trim())) {
+            rank.textContent = i + 1;
+          }
+        });
+        rows.forEach(r => tbody.appendChild(r));
+        root.querySelectorAll('th[data-sort]').forEach(x => x.dataset.dir = '');
+        root.querySelectorAll('th[data-sort] .sort-ind').forEach(s => s.textContent = '');
+        th.dataset.dir = dir;
+        const ind = th.querySelector('.sort-ind');
+        if (ind) ind.textContent = dir === 'asc' ? ' ▲' : ' ▼';
+      });
+    });
+  }
+  // ---------------------------------------------------- AGENT DRILL-DOWN
+  function openAgentModal(name) {
+    const all = Q.agentsFor(period);
+    const a = all.find(x => x.name === name);
+    if (!a) return;
+    const hist = Q.agentHistory(name).slice(-12);  // last 12 weeks present
+    const camps = Q.agentCampaigns(name, period);
+    const onTarget = !!a.meetsTarget;
+    const sc = a.success >= 15 ? 'ok' : a.success >= 11 ? 'warn' : 'bad';
+    const totals = camps.reduce((s, c) => ({
+      calls: s.calls + c.calls, leads: s.leads + c.leads,
+      seller: s.seller + c.seller, rental: s.rental + c.rental, email: s.email + c.email
+    }), { calls: 0, leads: 0, seller: 0, rental: 0, email: 0 });
+
+    const campRows = camps.length ? camps.map(c => {
+      const conv = c.calls ? ((c.leads / c.calls) * 100).toFixed(1) : '0.0';
+      return `<tr>
+        <td>${c.name}</td>
+        <td class="num tnum">${fmt(c.calls)}</td>
+        <td class="num tnum">${fmt(c.leads)}</td>
+        <td class="num"><span class="pill ${conv >= 15 ? 'ok' : conv >= 10 ? 'warn' : 'bad'}">${conv}%</span></td>
+      </tr>`;
+    }).join('') : `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:18px">No per-campaign breakdown for this period (week pre-dates the new fetcher field).</td></tr>`;
+
+    const r = a._raw || {};
+    const wt = r.workTime || 0;
+    const pct = (n) => wt > 0 ? Math.round((n || 0) / wt * 100) : 0;
+    const talkP = pct(r.talkTime), wrapP = pct(r.wrapTime), waitP = pct(r.waitTime);
+
+    const html = `
+      <div class="modal-backdrop" id="agentModalBackdrop"></div>
+      <div class="modal" id="agentModal">
+        <div class="modal-head">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div class="avatar" style="width:46px;height:46px;font-size:15px">${initials(a.name)}</div>
+            <div>
+              <div style="font-family:var(--serif);font-size:22px;font-weight:700;color:var(--ink)">${a.name}</div>
+              <div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap">
+                <span class="pill ${a.team === 'RM' ? 'rm' : 'fancy'}" style="font-size:10.5px">${a.team}</span>
+                <span class="pill ${sc}" style="font-size:10.5px">${a.success}% success</span>
+                ${onTarget ? '<span class="pill ok" style="font-size:10.5px">✓ on target</span>' : ''}
+              </div>
+            </div>
+          </div>
+          <button class="btn modal-close" id="agentModalClose">✕ Close</button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="card card-pad"><div class="kpi-label" style="margin:0">Calls (${Q.PERIODS[period].label})</div><div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">${fmt(a.calls)}</div></div>
+            <div class="card card-pad"><div class="kpi-label" style="margin:0">Leads</div><div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">${fmt(a.leads)}</div></div>
+            <div class="card card-pad"><div class="kpi-label" style="margin:0">Dialler hrs</div><div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">${a.df.toFixed(1)}h</div></div>
+            <div class="card card-pad"><div class="kpi-label" style="margin:0">CPH</div><div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">${a.cph || '—'}</div></div>
+          </div>
+
+          <div class="row g-2-1 mt">
+            <div class="card">
+              <div class="card-head"><div><h3>Weekly trend</h3><div class="sub">Last ${hist.length} weeks · calls + success rate</div></div></div>
+              <div class="chart-wrap"><div id="agentTrend"></div></div>
+            </div>
+            <div class="card card-pad">
+              <h3 style="font-family:var(--serif);margin:0 0 12px;font-size:16px">Time breakdown</h3>
+              ${timeRow('Talk', talkP, 'var(--blue)')}
+              ${timeRow('Wrap-up', wrapP, 'var(--amber)')}
+              ${timeRow('Wait',    waitP, '#9AA3AD')}
+              <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--slate);line-height:1.7">
+                <b style="color:var(--ink)">Leads breakdown</b><br>
+                Seller <b class="tnum" style="color:var(--ink)">${fmt(a.seller || 0)}</b> ·
+                Rental <b class="tnum" style="color:var(--ink)">${fmt(a.rental || 0)}</b> ·
+                Email <b class="tnum" style="color:var(--ink)">${fmt(a.email || 0)}</b>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt">
+            <div class="card-head"><div><h3>Per-campaign breakdown</h3>
+              <div class="sub">${camps.length ? `${camps.length} campaigns · totals: ${fmt(totals.calls)} calls / ${fmt(totals.leads)} leads` : 'No data'}</div></div></div>
+            <div class="tbl-wrap"><table class="tbl">
+              <thead><tr><th>Campaign</th><th class="num">Calls</th><th class="num">Leads</th><th class="num">Conv.</th></tr></thead>
+              <tbody>${campRows}</tbody>
+            </table></div>
+          </div>
+
+          ${(a.campaigns || []).length ? `<div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:6px">
+            ${a.campaigns.map(c => `<span class="pill" style="font-size:10.5px;padding:3px 9px;background:#EDF1F8;border-color:#D8E0EC;color:#3D5BA6">${c}</span>`).join('')}
+          </div>` : ''}
+        </div>
+      </div>`;
+
+    let mount = document.getElementById('agentModalMount');
+    if (!mount) {
+      mount = document.createElement('div');
+      mount.id = 'agentModalMount';
+      document.body.appendChild(mount);
+    }
+    mount.innerHTML = html;
+    document.body.style.overflow = 'hidden';
+
+    const close = () => {
+      mount.innerHTML = '';
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', escClose);
+    };
+    const escClose = e => { if (e.key === 'Escape') close(); };
+    document.getElementById('agentModalClose').addEventListener('click', close);
+    document.getElementById('agentModalBackdrop').addEventListener('click', close);
+    document.addEventListener('keydown', escClose);
+
+    // Render the trend chart
+    const labels = hist.map(h => {
+      const d = new Date(h.weekStart + 'T00:00:00Z');
+      return (d.getUTCMonth() + 1) + '/' + d.getUTCDate();
+    });
+    const calls = hist.map(h => h.calls);
+    const succ  = hist.map(h => h.success);
+    if (calls.length) {
+      C.weeklyTrend(document.getElementById('agentTrend'), labels, calls, succ);
+    }
+  }
+
+  function timeRow(label, pct, color) {
+    return `<div style="margin-top:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px">
+        <span style="color:var(--slate);font-weight:600">${label}</span>
+        <span class="tnum" style="color:var(--ink);font-weight:700">${pct}%</span>
+      </div>
+      <div class="eff-track"><span style="width:${Math.min(100, pct)}%;background:${color}"></span></div>
+    </div>`;
   }
 
   // ---------------------------------------------------- OVERVIEW
@@ -166,7 +334,7 @@
       const medal = i === 0 ? 'g' : i === 1 ? 's' : i === 2 ? 'b' : 'n';
       const sc = a.success >= 15 ? 'ok' : a.success >= 11 ? 'warn' : 'bad';
       const bar = Math.min(100, (a.calls / agents[0].calls) * 100);
-      return `<tr>
+      return `<tr data-agent="${a.name}" style="cursor:pointer">
         <td><div class="medal ${medal}">${i + 1}</div></td>
         <td><div class="agent-cell"><div class="avatar">${initials(a.name)}</div>
           <div><div class="agent-name">${a.name}</div><div class="agent-sub">${a.team} desk</div></div></div></td>
@@ -311,6 +479,7 @@
       C.miniBars(el, JSON.parse(el.dataset.series), el.dataset.color));
     document.querySelectorAll('[data-goto]').forEach(b =>
       b.addEventListener('click', () => { tab = b.dataset.goto; shell(); }));
+    wireAgentClicks();
   }
 
   // ---------------------------------------------------- LEADERSHIP OVERVIEW
@@ -510,7 +679,7 @@
             <tbody>${top5.map((a, i) => {
               const medal = i === 0 ? 'g' : i === 1 ? 's' : i === 2 ? 'b' : 'n';
               const sc = a.success >= 15 ? 'ok' : a.success >= 11 ? 'warn' : 'bad';
-              return `<tr>
+              return `<tr data-agent="${a.name}" style="cursor:pointer">
                 <td><div class="medal ${medal}">${i + 1}</div></td>
                 <td><div class="agent-cell"><div class="avatar">${initials(a.name)}</div>
                   <div><div class="agent-name">${a.name}</div><div class="agent-sub">${a.team} desk</div></div></div></td>
@@ -605,6 +774,20 @@
     }
     document.querySelectorAll('[data-goto]').forEach(b =>
       b.addEventListener('click', () => { tab = b.dataset.goto; shell(); }));
+    wireAgentClicks();
+  }
+
+  // Globally wire any element with data-agent to open the drill-down modal.
+  function wireAgentClicks(scope) {
+    (scope || document).querySelectorAll('[data-agent]').forEach(el => {
+      if (el.__agentWired) return;
+      el.__agentWired = true;
+      el.addEventListener('click', e => {
+        // Don't intercept clicks on buttons inside the row
+        if (e.target.closest('button, a, input, select')) return;
+        openAgentModal(el.dataset.agent);
+      });
+    });
   }
 
   shell();

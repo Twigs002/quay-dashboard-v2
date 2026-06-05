@@ -450,4 +450,37 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
 }
-.pc-card { min-height: 0; }
+.pc-card { min-height: 0; transition: transform .15s, box-shadow .15s; }
+.pc-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(15,30,60,.08); }
+
+/* Sortable column headers */
+th[data-sort] { user-select: none; }
+th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
+.sort-ind { font-size: 10px; color: var(--brass, #B98A02); margin-left: 2px; }
+
+/* Clickable rows (drill-down) */
+.tbl tbody tr[data-agent]:hover { background: rgba(61, 91, 166, .04); }
+
+/* Agent drill-down modal */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(15, 30, 60, .55);
+  backdrop-filter: blur(4px); z-index: 1000; animation: fadeIn .15s ease-out;
+}
+.modal {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: min(960px, 94vw); max-height: 90vh; overflow: auto;
+  background: var(--bg, #F7F9FC); border-radius: 16px;
+  box-shadow: 0 24px 70px rgba(15, 30, 60, .25);
+  z-index: 1001; animation: popIn .18s ease-out;
+}
+.modal-head {
+  position: sticky; top: 0; background: #fff;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 28px; border-bottom: 1px solid var(--line, #E5EAF2);
+  z-index: 2;
+}
+.modal-body { padding: 24px 28px 32px; }
+.modal-close { background: #fff; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popIn { from { opacity: 0; transform: translate(-50%, -48%) scale(.97); }
+                   to   { opacity: 1; transform: translate(-50%, -50%) scale(1); } }

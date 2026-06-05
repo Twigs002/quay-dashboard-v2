@@ -10,7 +10,7 @@ window.VIEWS = (function () {
   function agentRow(a, rank) {
     const sc = sucClass(a.success);
     const bar = Math.min(100, (a.calls / 720) * 100);
-    return `<tr>
+    return `<tr data-agent="${a.name}" data-rank="${rank}" data-name="${a.name}" data-team="${a.team}" data-calls="${a.calls}" data-leads="${a.leads}" data-success="${a.success}" data-connect="${a.connect}" style="cursor:pointer">
       <td class="num" style="color:var(--muted);font-weight:700;width:40px">${rank}</td>
       <td><div class="agent-cell">
         <div class="avatar">${initials(a.name)}</div>
@@ -58,15 +58,20 @@ window.VIEWS = (function () {
 
       <div class="card mt" id="staffOverall">
         <div class="card-head">
-          <div><h3>Agent-level performance</h3><div class="sub">Ranked by call volume · click a row to drill in</div></div>
+          <div><h3>Agent-level performance</h3><div class="sub">Click a column header to sort · click a row to drill in</div></div>
           <button class="btn">${I.download} Export CSV</button>
         </div>
         <div class="tbl-wrap">
           <table class="tbl">
             <thead><tr>
-              <th class="num">#</th><th>Agent</th><th>Team</th>
-              <th class="num">Calls</th><th class="num">Leads</th>
-              <th class="num">Success</th><th class="num">Connect</th><th class="num">Volume</th>
+              <th class="num">#</th>
+              <th data-sort="name|str">Agent<span class="sort-ind"></span></th>
+              <th data-sort="team|str">Team<span class="sort-ind"></span></th>
+              <th class="num" data-sort="calls|num">Calls<span class="sort-ind"></span></th>
+              <th class="num" data-sort="leads|num">Leads<span class="sort-ind"></span></th>
+              <th class="num" data-sort="success|num">Success<span class="sort-ind"></span></th>
+              <th class="num" data-sort="connect|num">Connect<span class="sort-ind"></span></th>
+              <th class="num">Volume</th>
             </tr></thead>
             <tbody>${rows}</tbody>
           </table>
@@ -87,7 +92,7 @@ window.VIEWS = (function () {
     const stat = (label, value) =>
       `<div><div class="kpi-label" style="margin:0;font-size:10.5px">${label}</div>
        <div class="tnum" style="font-family:var(--serif);font-weight:700;font-size:17px;color:var(--ink);margin-top:2px">${value}</div></div>`;
-    return `<div class="card card-pad pc-card">
+    return `<div class="card card-pad pc-card" data-agent="${a.name}" style="cursor:pointer">
       <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">
         <div class="avatar" style="width:42px;height:42px;font-size:14px">${initials(a.name)}</div>
         <div style="flex:1;min-width:0">
