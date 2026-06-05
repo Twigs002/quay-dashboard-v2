@@ -351,6 +351,8 @@ window.VIEWS = (function () {
     const totalCalls = camps.reduce((s, c) => s + c.calls, 0);
     const totalLeads = camps.reduce((s, c) => s + c.leads, 0);
     const totalEmails = camps.reduce((s, c) => s + c.email, 0);
+    const totalSeller = camps.reduce((s, c) => s + c.seller, 0);
+    const totalRental = camps.reduce((s, c) => s + c.rental, 0);
     const maxCalls = camps[0].calls || 1;
     const best = camps.slice().sort((a, b) => b.conv - a.conv)[0];
 
@@ -376,9 +378,11 @@ window.VIEWS = (function () {
 
     return `
     <div class="tab-view">
-      <div class="row g-3">
+      <div class="row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
         ${miniStat('Best converter', best.name, best.conv + '% (' + fmt(best.leads) + ' / ' + fmt(best.calls) + ')', I.star)}
-        ${miniStat('Total emails captured', fmt(totalEmails), 'across all campaigns this period', I.mail)}
+        ${miniStat('Seller leads', fmt(totalSeller), 'across all campaigns', I.medal)}
+        ${miniStat('Rental leads', fmt(totalRental), 'across all campaigns', I.home)}
+        ${miniStat('Email leads',  fmt(totalEmails), 'across all campaigns', I.mail)}
         ${miniStat('Campaigns running', camps.length + '', best.agentsCount + ' agents on top campaign', I.layers)}
       </div>
 
