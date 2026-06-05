@@ -209,22 +209,73 @@ window.QUAY_READY = (async function () {
   const MONTH_RENTALS = monthSeries.map(m => m.rentals);
   const MONTH_DFHOURS = monthSeries.map(m => m.dfHours);
 
-  // ---- Lead Sources (placeholder until portal data is wired) ---------------
-  const SOURCES = [
-    { name: 'Property24',       calls: 2480, leads: 214, color: '#3D5BA6' },
-    { name: 'Private Property', calls: 1760, leads: 168, color: '#98C5ED' },
-    { name: 'Website Enquiry',  calls: 1190, leads: 142, color: '#FDC503' },
-    { name: 'Referral',         calls:  720, leads: 118, color: '#2E4582' },
-    { name: 'Facebook / Meta',  calls:  960, leads:  74, color: '#D20A03' },
-    { name: 'Gumtree',          calls:  286, leads:  19, color: '#9AA3AD' },
-  ];
-  SOURCES.forEach(s => { s.conv = +((s.leads / s.calls) * 100).toFixed(1); });
+  // ---- Campaigns (per-campaign rollups from Dialfire data) ------------------
+  // CAVEAT: an agent's stats appear under EVERY campaign they're on. Agents
+  // working multiple campaigns will be double-counted across campaign rows.
+  // (Dialfire's feed doesn't break per-agent calls down per-campaign.)
+  const CAMP_PALETTE = ['#3D5BA6', '#FDC503', '#98C5ED', '#2E4582',
+                        '#D20A03', '#4C6BB8', '#B98A02', '#9AA3AD',
+                        '#2E6FB0', '#6E7C8E', '#5A4FCF', '#21847B'];
+
+  function campaignsFor(periodKey) {
+    const slice = _sliceFor(periodKey);
+    const byCamp = new Map();
+    slice.forEach(week => {
+      ['rm', 'fancy'].forEach(team => {
+        (week[team] || []).forEach(agent => {
+          (agent.campaigns || []).forEach(camp => {
+            const cur = byCamp.get(camp) || {
+              name: camp, calls: 0, leads: 0, seller: 0, rental: 0, email: 0,
+              _agents: new Set(),
+            };
+            cur.calls  += agent.calls   || 0;
+            cur.leads  += agent.success || 0;
+            cur.seller += agent.seller  || 0;
+            cur.rental += agent.rental  || 0;
+            cur.email  += agent.email   || 0;
+            cur._agents.add(agent.name);
+            byCamp.set(camp, cur);
+          });
+        });
+      });
+    });
+    const list = [...byCamp.values()].map(c => ({
+      name: c.name,
+      calls: c.calls, leads: c.leads,
+      seller: c.seller, rental: c.rental, email: c.email,
+      agentsCount: c._agents.size,
+      conv: c.calls ? +((c.leads / c.calls) * 100).toFixed(1) : 0,
+    })).sort((a, b) => b.calls - a.calls);
+    list.forEach((c, i) => { c.color = CAMP_PALETTE[i % CAMP_PALETTE.length]; });
+    return list;
+  }
+
+  // SOURCES on the Overview donut: top 5 campaigns this period + "Other".
+  function _topSourcesFor(periodKey) {
+    const all = campaignsFor(periodKey);
+    if (all.length <= 6) return all;
+    const top = all.slice(0, 5);
+    const rest = all.slice(5);
+    const other = {
+      name: 'Other campaigns',
+      calls: rest.reduce((s, c) => s + c.calls, 0),
+      leads: rest.reduce((s, c) => s + c.leads, 0),
+      seller: rest.reduce((s, c) => s + c.seller, 0),
+      rental: rest.reduce((s, c) => s + c.rental, 0),
+      email: rest.reduce((s, c) => s + c.email, 0),
+      agentsCount: 0,
+      color: '#9AA3AD',
+    };
+    other.conv = other.calls ? +((other.leads / other.calls) * 100).toFixed(1) : 0;
+    return [...top, other];
+  }
+  const SOURCES = _topSourcesFor('this-week');
 
   // ---- Expose ---------------------------------------------------------------
   window.QUAY = {
     AGENTS: agentsForWeek(weeks[0]),  // current week, sorted natural
     WEEKS, WEEK_CALLS, WEEK_SUCCESS,
-    SOURCES,
+    SOURCES, campaignsFor,
     MONTHS, MONTH_CALLS, MONTH_LEADS, MONTH_EMAILS, MONTH_RENTALS, MONTH_DFHOURS,
     PERIODS, DELTAS, agentsFor, totalsFor,
   };
