@@ -461,6 +461,84 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
 /* Clickable rows (drill-down) */
 .tbl tbody tr[data-agent]:hover { background: rgba(61, 91, 166, .04); }
 
+/* ============================================================
+   DARK MODE  ·  toggle via [data-theme="dark"] on <html> or <body>
+   Strategy: override only the colour primitives + paper surfaces;
+   brand colours (yellow/blue/red/green) stay constant so the
+   identity is recognisable in both themes.
+   ============================================================ */
+[data-theme="dark"] {
+  --paper:      #11151E;       /* page background */
+  --paper-2:    #161B27;
+  --card:       #1B2230;       /* card surface */
+  --card-2:     #232A39;
+  --ink:        #EDF1F8;       /* primary text */
+  --slate:      #B7C0D3;       /* secondary text */
+  --muted:      #8693AB;       /* tertiary text */
+  --on-navy:    #E8EDF7;
+  --on-navy-dim:#A7B5D2;
+  --line:       #2C354A;       /* divider lines */
+  --line-2:     #232A39;
+  --shadow-sm:  0 1px 2px rgba(0,0,0,.45), 0 1px 1px rgba(0,0,0,.35);
+  --shadow:     0 2px 6px rgba(0,0,0,.55), 0 8px 24px rgba(0,0,0,.55);
+  --shadow-lg:  0 12px 40px rgba(0,0,0,.70);
+  /* Soften the brand tints so they sit on dark surfaces */
+  --green-tint: #133229;
+  --amber-tint: #3A2D08;
+  --red-tint:   #3A1311;
+  --sky-tint:   #15273A;
+  --yellow-tint:#2E260A;
+}
+[data-theme="dark"] body { background: var(--paper); color: var(--ink); }
+/* Sidebar stays navy in both themes (brand) but tweak its surface a touch */
+[data-theme="dark"] .sidebar { background: linear-gradient(180deg, #0D1626 0%, #131C2E 100%); }
+/* Topbar adjustments */
+[data-theme="dark"] .topbar { background: var(--card); border-bottom-color: var(--line); }
+/* Tables — header row + alternating tint */
+[data-theme="dark"] .tbl thead th { background: var(--card-2); color: var(--slate); border-bottom-color: var(--line); }
+[data-theme="dark"] .tbl tbody tr:hover { background: rgba(98, 134, 220, .08) !important; }
+[data-theme="dark"] th[data-sort]:hover { background: rgba(98, 134, 220, .12); }
+/* Cards + inputs */
+[data-theme="dark"] .card, [data-theme="dark"] .modal { background: var(--card); border-color: var(--line); }
+[data-theme="dark"] .card-head { border-bottom-color: var(--line); }
+[data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea {
+  background: var(--card-2); border-color: var(--line); color: var(--ink);
+}
+[data-theme="dark"] .btn { background: var(--card-2); border-color: var(--line); color: var(--ink); }
+[data-theme="dark"] .btn:hover { background: #2A3447; }
+[data-theme="dark"] .btn-primary { background: var(--blue-800); color: #fff; border-color: var(--blue-800); }
+/* Grid lines on charts */
+[data-theme="dark"] .grid-line { stroke: var(--line); }
+[data-theme="dark"] .axis-label { fill: var(--muted); }
+/* Modal head + close button */
+[data-theme="dark"] .modal-head { background: var(--card); border-bottom-color: var(--line); }
+[data-theme="dark"] .modal-close { background: var(--card-2); color: var(--ink); border-color: var(--line); }
+[data-theme="dark"] .modal-backdrop { background: rgba(0,0,0,.65); }
+/* Pills — keep brand pop, just darken neutral backgrounds */
+[data-theme="dark"] .pill { background: var(--card-2); border-color: var(--line); }
+[data-theme="dark"] .pill.rm    { background: #1B2C4B; color: #A9C0F0; border-color: #2C436E; }
+[data-theme="dark"] .pill.fancy { background: #3A2E0E; color: #FFD86A; border-color: #5A4717; }
+[data-theme="dark"] .pill.ok    { background: #14352A; color: #69D49C; border-color: #1F4F3D; }
+[data-theme="dark"] .pill.warn  { background: #3A2D08; color: #FFC647; border-color: #5A461A; }
+[data-theme="dark"] .pill.bad   { background: #3A1311; color: #FF8A86; border-color: #5A1F1B; }
+/* Per-caller card hover lift in dark */
+[data-theme="dark"] .pc-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.55); }
+/* Eff-track progress bar background */
+[data-theme="dark"] .eff-track { background: var(--card-2); }
+[data-theme="dark"] .eff-target { background: var(--muted); }
+/* Side-card source-list */
+[data-theme="dark"] .src-bar { background: var(--card-2); }
+/* Code/links inside the dashboard */
+[data-theme="dark"] code { background: var(--card-2); color: var(--sky); }
+[data-theme="dark"] .agent-name, [data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3 { color: var(--ink); }
+/* Theme toggle button visual */
+.theme-toggle { display: inline-flex; align-items: center; gap: 6px; }
+.theme-toggle .moon, .theme-toggle .sun { transition: opacity .15s; }
+[data-theme="dark"] .theme-toggle .moon { opacity: .35; }
+[data-theme="dark"] .theme-toggle .sun  { opacity: 1; }
+.theme-toggle .sun  { opacity: .35; }
+.theme-toggle .moon { opacity: 1; }
+
 /* Print / PDF stylesheet */
 @media print {
   @page { size: A4; margin: 14mm; }
