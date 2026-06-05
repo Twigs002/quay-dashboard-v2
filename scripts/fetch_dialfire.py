@@ -194,6 +194,7 @@ def main():
 
     agents = {}
     by_campaign = {}                                      # raw campaign-name -> totals
+    by_agent_campaign = {}                                # agent -> {raw campaign -> per-campaign stats}
     for campaign in campaigns:
         rows = fetch_campaign_week(campaign, ts)
         cname    = _norm_camp(campaign.get("name", "")) or campaign.get("name", "")
@@ -207,6 +208,20 @@ def main():
             if parsed is None:
                 continue
             merge_agent_row(agents, parsed, cname)
+            # Preserve per-agent-per-campaign breakdown (Dialfire returns this
+            # natively per campaign; we just store it instead of collapsing).
+            ag_name = parsed["name"]
+            if ag_name not in by_agent_campaign:
+                by_agent_campaign[ag_name] = {}
+            by_agent_campaign[ag_name][raw_name] = {
+                "calls":    parsed["calls"],
+                "success":  parsed["success"],
+                "seller":   parsed["seller"],
+                "rental":   parsed["rental"],
+                "email":    parsed["email"],
+                "workTime": parsed["workTime"],
+                "talkTime": parsed["talkTime"],
+            }
             tot["calls"]    += parsed.get("calls", 0)
             tot["success"]  += parsed.get("success", 0)
             tot["seller"]   += parsed.get("seller", 0)
@@ -247,6 +262,7 @@ def main():
         "rm":          rm_agents,
         "fancy":       fancy_agents,
         "by_campaign": by_campaign,
+        "by_agent_campaign": by_agent_campaign,
     }
 
     os.makedirs("data", exist_ok=True)

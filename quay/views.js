@@ -395,25 +395,25 @@ window.VIEWS = (function () {
         </div>
 
         <div class="card card-pad">
-          <div class="eyebrow">${I.alert} About these numbers</div>
-          <p style="font-size:12.5px;color:var(--slate);line-height:1.7;margin-top:10px">
-            Each agent's call/lead/email totals appear under <b>every campaign they're tagged on</b>.
-            When agents work multiple campaigns, the per-campaign rows
-            <b>over-count</b> at the floor level. Treat these as <em>relative</em>
-            comparisons of campaign activity, not an additive total.
-          </p>
+          <div class="eyebrow">${camps[0].exact ? I.check : I.alert} About these numbers</div>
+          ${camps[0].exact ? `
+            <p style="font-size:12.5px;color:var(--slate);line-height:1.7;margin-top:10px">
+              <b style="color:var(--green)">Exact attribution.</b>
+              The Dialfire fetcher now stores per-agent stats per campaign, so
+              when an agent works multiple campaigns each row reflects only
+              the calls/leads they made on that specific campaign.
+            </p>` : `
+            <p style="font-size:12.5px;color:var(--slate);line-height:1.7;margin-top:10px">
+              Each agent's call/lead/email totals appear under <b>every campaign they're tagged on</b>.
+              When agents work multiple campaigns, the per-campaign rows
+              <b>over-count</b>. (Historical week — pre-dates the per-campaign breakdown.)
+            </p>`}
           <p style="font-size:12.5px;color:var(--slate);line-height:1.7;margin-top:10px">
             Variants like <code>SURFERS_NA</code>, <code>SURFERS_CM</code> and <code>SURFERS</code> are merged into one <b>SURFERS</b> row.
           </p>
           <div style="font-size:12.5px;color:var(--slate);line-height:1.7;margin-top:14px">
-            <b style="color:var(--ink)">Period totals (with overlap):</b><br>
+            <b style="color:var(--ink)">Period totals:</b><br>
             ${fmt(totalCalls)} calls · ${fmt(totalLeads)} leads · ${fmt(totalEmails)} emails
-            <div style="font-size:11px;color:var(--muted);margin-top:6px">
-              True floor totals (de-duplicated) are on the Overview tab.
-            </div>
-          </div>
-          <div style="font-size:11.5px;color:var(--muted);margin-top:18px;padding-top:14px;border-top:1px solid var(--line)">
-            For exact per-agent-per-campaign attribution, the Dialfire fetcher would need to be modified to query each campaign separately.
           </div>
         </div>
       </div>

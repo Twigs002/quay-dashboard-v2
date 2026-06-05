@@ -215,14 +215,28 @@ def main():
         print(f"\n--- {d} | timespan={ts} ---")
 
         agents = {}
+        by_agent_campaign = {}                            # agent -> {raw campaign -> per-campaign stats}
         for campaign in campaigns:
             rows = fetch_campaign_week(campaign, ts)
-            cname = _norm_camp(campaign.get("name", "")) or campaign.get("name", "")
+            cname    = _norm_camp(campaign.get("name", "")) or campaign.get("name", "")
+            raw_name = campaign.get("name", "") or cname
             for row in rows:
                 parsed = parse_row(row)
                 if parsed is None:
                     continue
                 merge_agent_row(agents, parsed, cname)
+                ag_name = parsed["name"]
+                if ag_name not in by_agent_campaign:
+                    by_agent_campaign[ag_name] = {}
+                by_agent_campaign[ag_name][raw_name] = {
+                    "calls":    parsed["calls"],
+                    "success":  parsed["success"],
+                    "seller":   parsed["seller"],
+                    "rental":   parsed["rental"],
+                    "email":    parsed["email"],
+                    "workTime": parsed["workTime"],
+                    "talkTime": parsed["talkTime"],
+                }
 
         finalize(agents)
 
@@ -234,10 +248,11 @@ def main():
         date_str = str(d)
         existing = [e for e in existing if e.get("date") != date_str]
         existing.append({
-            "date":      date_str,
-            "generated": now_utc.isoformat(),
-            "rm":        rm_agents,
-            "fancy":     fancy_agents,
+            "date":              date_str,
+            "generated":         now_utc.isoformat(),
+            "rm":                rm_agents,
+            "fancy":             fancy_agents,
+            "by_agent_campaign": by_agent_campaign,
         })
         fetched_dates.add(date_str)
 

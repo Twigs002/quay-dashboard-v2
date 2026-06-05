@@ -244,7 +244,33 @@ window.QUAY_READY = (async function () {
   function campaignsFor(periodKey) {
     const slice = _sliceFor(periodKey);
     const byCamp = new Map();
+
+    // Per-week strategy: use exact per-agent-per-campaign breakdown
+    // (`by_agent_campaign`) when it's present in the JSON — that's the
+    // accurate path. Fall back to the legacy overlap-based aggregation for
+    // older weeks that don't carry the breakdown yet.
     slice.forEach(week => {
+      if (week.by_agent_campaign && typeof week.by_agent_campaign === 'object') {
+        Object.entries(week.by_agent_campaign).forEach(([agentName, perCamp]) => {
+          Object.entries(perCamp).forEach(([rawCamp, stats]) => {
+            const camp = normalizeCampaignName(rawCamp);
+            const cur = byCamp.get(camp) || {
+              name: camp, calls: 0, leads: 0, seller: 0, rental: 0, email: 0,
+              _agents: new Set(), _exact: true,
+            };
+            cur.calls  += stats.calls   || 0;
+            cur.leads  += stats.success || 0;
+            cur.seller += stats.seller  || 0;
+            cur.rental += stats.rental  || 0;
+            cur.email  += stats.email   || 0;
+            cur._agents.add(agentName);
+            byCamp.set(camp, cur);
+          });
+        });
+        return;
+      }
+
+      // Legacy fallback (week pre-dates the by_agent_campaign field)
       ['rm', 'fancy'].forEach(team => {
         (week[team] || []).forEach(agent => {
           // Dedupe normalized names within a single agent so SURFERS_CM +
@@ -254,7 +280,7 @@ window.QUAY_READY = (async function () {
           agentCampaigns.forEach(camp => {
             const cur = byCamp.get(camp) || {
               name: camp, calls: 0, leads: 0, seller: 0, rental: 0, email: 0,
-              _agents: new Set(),
+              _agents: new Set(), _exact: false,
             };
             cur.calls  += agent.calls   || 0;
             cur.leads  += agent.success || 0;
@@ -273,6 +299,7 @@ window.QUAY_READY = (async function () {
       seller: c.seller, rental: c.rental, email: c.email,
       agentsCount: c._agents.size,
       conv: c.calls ? +((c.leads / c.calls) * 100).toFixed(1) : 0,
+      exact: !!c._exact,
     })).sort((a, b) => b.calls - a.calls);
     list.forEach((c, i) => { c.color = CAMP_PALETTE[i % CAMP_PALETTE.length]; });
     return list;

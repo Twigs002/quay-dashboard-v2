@@ -209,6 +209,7 @@ def main():
 
         agents = {}
         by_campaign = {}                                   # raw campaign-name -> totals
+        by_agent_campaign = {}                             # agent -> {raw campaign -> per-campaign stats}
         for campaign in CAMPAIGNS:
             rows = fetch_campaign_week(campaign, date_from, date_to)
             cname    = _norm_camp(campaign.get("name", ""))
@@ -225,6 +226,17 @@ def main():
                 if not n or n in ("Unknown", "-", "\u2014", "\u2013", "None"):
                     continue
                 merge_agent_row(agents, parsed, cname)
+                if n not in by_agent_campaign:
+                    by_agent_campaign[n] = {}
+                by_agent_campaign[n][raw_name] = {
+                    "calls":    parsed["calls"],
+                    "success":  parsed["success"],
+                    "seller":   parsed["seller"],
+                    "rental":   parsed["rental"],
+                    "email":    parsed["email"],
+                    "workTime": parsed["workTime"],
+                    "talkTime": parsed["talkTime"],
+                }
                 tot["calls"]    += parsed.get("calls", 0)
                 tot["success"]  += parsed.get("success", 0)
                 tot["seller"]   += parsed.get("seller", 0)
@@ -257,6 +269,7 @@ def main():
             "rm":        sorted(rm,    key=lambda x: x["calls"], reverse=True),
             "fancy":     sorted(fancy, key=lambda x: x["calls"], reverse=True),
             "by_campaign": by_campaign,
+            "by_agent_campaign": by_agent_campaign,
         })
 
     with open(hist_path, "w") as f:
