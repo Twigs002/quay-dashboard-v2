@@ -109,8 +109,8 @@ window.VIEWS = (function () {
         ${stat('Leads', fmt(a.leads))}
         ${stat('CPH', a.cph || '—')}
         ${stat('Dialler hrs', a.df.toFixed(1) + 'h')}
-        ${stat('Talk hrs', (a.talkMin / 60).toFixed(1) + 'h')}
-        ${stat('Talk %', a.connect + '%')}
+        ${stat('Work %',  (a.workPct != null ? a.workPct : 0) + '%')}
+        ${stat('Talk %',  (a.talkPct != null ? a.talkPct : a.connect) + '%')}
       </div>
       ${(a.seller || a.rental || a.email) ? `
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:flex;gap:18px;font-size:12px">

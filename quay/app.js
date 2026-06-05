@@ -212,6 +212,8 @@
     const wt = r.workTime || 0;
     const pct = (n) => wt > 0 ? Math.round((n || 0) / wt * 100) : 0;
     const talkP = pct(r.talkTime), wrapP = pct(r.wrapTime), waitP = pct(r.waitTime);
+    // Work % = dialler ÷ (dialler + pause) — how much of clocked session was actively dialling
+    const workP = a.workPct != null ? Math.round(a.workPct) : 0;
 
     const html = `
       <div class="modal-backdrop" id="agentModalBackdrop"></div>
@@ -244,10 +246,15 @@
               <div class="chart-wrap"><div id="agentTrend"></div></div>
             </div>
             <div class="card card-pad">
-              <h3 style="font-family:var(--serif);margin:0 0 12px;font-size:16px">Time breakdown</h3>
-              ${timeRow('Talk', talkP, 'var(--blue)')}
+              <h3 style="font-family:var(--serif);margin:0 0 4px;font-size:16px">Time breakdown</h3>
+              <div class="sub" style="font-size:11.5px;margin-bottom:10px">As % of dialler (work) time</div>
+              ${timeRow('Talk',    talkP, 'var(--blue)')}
               ${timeRow('Wrap-up', wrapP, 'var(--amber)')}
               ${timeRow('Wait',    waitP, '#9AA3AD')}
+              <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+                <div class="sub" style="font-size:11.5px;margin:0 0 8px">Session activity (work vs paused)</div>
+                ${timeRow('Work %', workP, 'var(--green)')}
+              </div>
               <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--slate);line-height:1.7">
                 <b style="color:var(--ink)">Leads breakdown</b><br>
                 Seller <b class="tnum" style="color:var(--ink)">${fmt(a.seller || 0)}</b> ·

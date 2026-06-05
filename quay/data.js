@@ -40,10 +40,16 @@ window.QUAY_READY = (async function () {
     const successRate = a.successRate || (calls ? (leads / calls) * 100 : 0);
     const talkHrs = a.talkTime || 0;
     const workHrs = a.workTime || 0;
+    const pauseHrs = a.pauseTime || 0;
     const ctHrs = workHrs > 0 ? workHrs / 0.85 : 0;   // estimated clocked-in
     const eff = ctHrs > 0 ? Math.round((workHrs / ctHrs) * 100) : 85;
-    // 'connect' rate proxied from talkPct (real field); fallback 50.
-    const connect = a.talkPct ? Math.round(a.talkPct) : 50;
+    // talkPct = talk time as % of work time (Dialfire field, fallback compute)
+    const talkPct = a.talkPct != null ? a.talkPct
+                                      : (workHrs > 0 ? (talkHrs / workHrs) * 100 : 0);
+    // workPct = work time as % of session (work + pause) — how much of the
+    // clocked session was spent actively dialling vs paused
+    const workPct = a.workPct != null ? a.workPct
+                                      : (workHrs + pauseHrs > 0 ? (workHrs / (workHrs + pauseHrs)) * 100 : 0);
     return {
       id: 'a' + String(idx + 1).padStart(2, '0'),
       name: prettifyName(a.name),
@@ -52,10 +58,13 @@ window.QUAY_READY = (async function () {
       leads,
       talkMin: Math.round(talkHrs * 60),
       df: +workHrs.toFixed(1),
+      pauseHrs: +pauseHrs.toFixed(2),
       ct: +ctHrs.toFixed(1),
       success: +successRate.toFixed(1),
       eff,
-      connect,
+      connect: Math.round(talkPct),
+      talkPct: +talkPct.toFixed(1),
+      workPct: +workPct.toFixed(1),
       seller: a.seller || 0,
       rental: a.rental || 0,
       email: a.email || 0,
@@ -81,6 +90,7 @@ window.QUAY_READY = (async function () {
           prev.talkMin += a.talkMin;
           prev.df = +(prev.df + a.df).toFixed(1);
           prev.ct = +(prev.ct + a.ct).toFixed(1);
+          prev.pauseHrs = +(prev.pauseHrs + a.pauseHrs).toFixed(2);
           prev.seller += a.seller;
           prev.rental += a.rental;
           prev.email += a.email;
@@ -90,13 +100,21 @@ window.QUAY_READY = (async function () {
         }
       });
     });
-    // Re-derive success rate + cph from aggregated totals
-    return [...byName.values()].map(a => ({
-      ...a,
-      success: a.calls ? +((a.leads / a.calls) * 100).toFixed(1) : 0,
-      eff: a.ct ? Math.round((a.df / a.ct) * 100) : 85,
-      cph: a.df ? +((a.calls / a.df).toFixed(1)) : 0,
-    }));
+    // Re-derive success rate + cph + work/talk % from aggregated totals
+    return [...byName.values()].map(a => {
+      const talkHrs = a.talkMin / 60;
+      const talkPct = a.df > 0 ? +((talkHrs / a.df) * 100).toFixed(1) : 0;
+      const workPct = (a.df + a.pauseHrs) > 0
+        ? +((a.df / (a.df + a.pauseHrs)) * 100).toFixed(1) : 0;
+      return {
+        ...a,
+        success: a.calls ? +((a.leads / a.calls) * 100).toFixed(1) : 0,
+        eff: a.ct ? Math.round((a.df / a.ct) * 100) : 85,
+        cph: a.df ? +((a.calls / a.df).toFixed(1)) : 0,
+        talkPct, workPct,
+        connect: Math.round(talkPct),
+      };
+    });
   }
 
   // ---- Period selectors ----------------------------------------------------
