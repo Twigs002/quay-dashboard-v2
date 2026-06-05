@@ -56,6 +56,12 @@ window.QUAY_READY = (async function () {
       success: +successRate.toFixed(1),
       eff,
       connect,
+      seller: a.seller || 0,
+      rental: a.rental || 0,
+      email: a.email || 0,
+      cph: a.cph || 0,
+      campaigns: Array.isArray(a.campaigns) ? a.campaigns.slice() : [],
+      meetsTarget: !!a.meetsTarget,
       _raw: a,
     };
   }
@@ -68,21 +74,28 @@ window.QUAY_READY = (async function () {
         const key = a.name + '|' + a.team;
         const prev = byName.get(key);
         if (!prev) {
-          byName.set(key, { ...a });
+          byName.set(key, { ...a, campaigns: a.campaigns.slice() });
         } else {
           prev.calls += a.calls;
           prev.leads += a.leads;
           prev.talkMin += a.talkMin;
           prev.df = +(prev.df + a.df).toFixed(1);
           prev.ct = +(prev.ct + a.ct).toFixed(1);
+          prev.seller += a.seller;
+          prev.rental += a.rental;
+          prev.email += a.email;
+          // Merge campaigns set
+          const seen = new Set(prev.campaigns);
+          a.campaigns.forEach(c => { if (!seen.has(c)) prev.campaigns.push(c); });
         }
       });
     });
-    // Re-derive success rate from aggregated totals
+    // Re-derive success rate + cph from aggregated totals
     return [...byName.values()].map(a => ({
       ...a,
       success: a.calls ? +((a.leads / a.calls) * 100).toFixed(1) : 0,
       eff: a.ct ? Math.round((a.df / a.ct) * 100) : 85,
+      cph: a.df ? +((a.calls / a.df).toFixed(1)) : 0,
     }));
   }
 

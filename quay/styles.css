@@ -443,3 +443,11 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   .nav-collapsed .nav-item span { display: inline; }
   .nav-collapsed .sidebar-foot { display: none; }
 }
+
+/* All Staff → Per Caller card grid */
+.staff-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+.pc-card { min-height: 0; }

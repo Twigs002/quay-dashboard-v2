@@ -30,6 +30,7 @@ window.VIEWS = (function () {
   function allStaff(period) {
     const agents = Q.agentsFor(period).slice().sort((a, b) => b.calls - a.calls);
     const rows = agents.map((a, i) => agentRow(a, i + 1)).join('');
+    const cards = agents.map(a => perCallerCard(a)).join('');
     const tCalls = agents.reduce((s, a) => s + a.calls, 0);
     const tLeads = agents.reduce((s, a) => s + a.leads, 0);
     return `
@@ -43,8 +44,8 @@ window.VIEWS = (function () {
             <button class="btn btn-primary">${I.filter} Apply</button>
           </div>
           <div class="seg" id="staffSeg">
-            <button class="active">Overall Report</button>
-            <button>Per Caller</button>
+            <button class="active" data-view="overall">Overall Report</button>
+            <button data-view="per">Per Caller</button>
           </div>
         </div>
       </div>
@@ -55,7 +56,7 @@ window.VIEWS = (function () {
         ${miniStat('Total leads', fmt(tLeads), 'seller · rental · email', I.target)}
       </div>
 
-      <div class="card mt">
+      <div class="card mt" id="staffOverall">
         <div class="card-head">
           <div><h3>Agent-level performance</h3><div class="sub">Ranked by call volume · click a row to drill in</div></div>
           <button class="btn">${I.download} Export CSV</button>
@@ -71,6 +72,48 @@ window.VIEWS = (function () {
           </table>
         </div>
       </div>
+
+      <div class="mt staff-cards" id="staffPerCaller" style="display:none">${cards}</div>
+    </div>`;
+  }
+
+  // ---- Per-caller card (richer per-agent view from real fields) ----
+  function perCallerCard(a) {
+    const sc = sucClass(a.success);
+    const onTarget = !!a.meetsTarget;
+    const camps = (a.campaigns || []).map(c =>
+      `<span class="pill" style="font-size:10.5px;padding:3px 9px;background:#EDF1F8;border-color:#D8E0EC;color:#3D5BA6">${c}</span>`
+    ).join('');
+    const stat = (label, value) =>
+      `<div><div class="kpi-label" style="margin:0;font-size:10.5px">${label}</div>
+       <div class="tnum" style="font-family:var(--serif);font-weight:700;font-size:17px;color:var(--ink);margin-top:2px">${value}</div></div>`;
+    return `<div class="card card-pad pc-card">
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">
+        <div class="avatar" style="width:42px;height:42px;font-size:14px">${initials(a.name)}</div>
+        <div style="flex:1;min-width:0">
+          <div class="agent-name" style="font-size:15.5px;line-height:1.2">${a.name}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px">
+            <span class="pill ${a.team === 'RM' ? 'rm' : 'fancy'}" style="font-size:10px;padding:2px 8px">${a.team}</span>
+            ${onTarget ? '<span class="pill ok" style="font-size:10px;padding:2px 8px">✓ on target</span>' : ''}
+            <span class="pill ${sc}" style="font-size:10px;padding:2px 8px">${a.success}% success</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px 16px">
+        ${stat('Calls', fmt(a.calls))}
+        ${stat('Leads', fmt(a.leads))}
+        ${stat('CPH', a.cph || '—')}
+        ${stat('Dialler hrs', a.df.toFixed(1) + 'h')}
+        ${stat('Talk hrs', (a.talkMin / 60).toFixed(1) + 'h')}
+        ${stat('Talk %', a.connect + '%')}
+      </div>
+      ${(a.seller || a.rental || a.email) ? `
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:flex;gap:18px;font-size:12px">
+        <div><b style="color:var(--ink)">${fmt(a.seller)}</b> <span style="color:var(--muted)">seller</span></div>
+        <div><b style="color:var(--ink)">${fmt(a.rental)}</b> <span style="color:var(--muted)">rental</span></div>
+        <div><b style="color:var(--ink)">${fmt(a.email)}</b> <span style="color:var(--muted)">email</span></div>
+      </div>` : ''}
+      ${camps ? `<div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:5px">${camps}</div>` : ''}
     </div>`;
   }
 

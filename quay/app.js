@@ -106,7 +106,7 @@
   function render() {
     const host = document.getElementById('content');
     if (tab === 'overview')      { host.innerHTML = overview(); afterOverview(); }
-    else if (tab === 'staff')    host.innerHTML = V.allStaff(period);
+    else if (tab === 'staff')    { host.innerHTML = V.allStaff(period); staffWire(); }
     else if (tab === 'compare')  { host.innerHTML = V.compare(); segWire(); }
     else if (tab === 'worktime') host.innerHTML = V.workTime(period);
     else if (tab === 'daily')    host.innerHTML = V.daily(period);
@@ -120,6 +120,19 @@
         seg.querySelectorAll('button').forEach(x => x.classList.remove('active'));
         b.classList.add('active');
       })));
+  }
+  function staffWire() {
+    const seg = document.getElementById('staffSeg');
+    const overall = document.getElementById('staffOverall');
+    const per = document.getElementById('staffPerCaller');
+    if (!seg || !overall || !per) return;
+    seg.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      seg.querySelectorAll('button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      const view = b.dataset.view;
+      overall.style.display = view === 'overall' ? '' : 'none';
+      per.style.display     = view === 'per'     ? 'grid' : 'none';
+    }));
   }
 
   // ---------------------------------------------------- OVERVIEW
