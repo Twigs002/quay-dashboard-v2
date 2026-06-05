@@ -426,16 +426,28 @@
         No red flags this period — the floor is on track.
       </div>`;
 
+    const elapsed = Q.periodElapsed(period);
+    const showPace = elapsed.fraction > 0 && elapsed.fraction < 1;
     const tgtBar = (label, cur, tgt) => {
       if (!tgt) return '';
       const pct = progress(cur, tgt);
-      const cls = tgtClass(pct);
+      const projected = Q.project(period, cur);
+      const projPct = progress(projected, tgt);
+      const cls = tgtClass(showPace ? projPct : pct);
+      const fillColor = cls === 'ok' ? 'var(--green)' : cls === 'warn' ? 'var(--amber)' : 'var(--red)';
       return `<div style="margin-top:14px">
         <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px">
           <span style="color:var(--ink);font-weight:600">${label}</span>
           <span class="tnum" style="color:var(--muted)">${fmt(cur)} / ${fmt(tgt)} <b style="color:var(--ink)">(${pct.toFixed(0)}%)</b></span>
         </div>
-        <div class="eff-track"><span style="width:${pct}%;background:${cls === 'ok' ? 'var(--green)' : cls === 'warn' ? 'var(--amber)' : 'var(--red)'}"></span></div>
+        <div class="eff-track" style="position:relative">
+          <span style="width:${pct}%;background:${fillColor}"></span>
+          ${showPace ? `<span style="position:absolute;left:0;top:0;height:100%;width:${Math.min(100,projPct)}%;background:repeating-linear-gradient(45deg,transparent 0 5px,${fillColor}33 5px 10px);border-right:2px dashed ${fillColor};opacity:.85"></span>` : ''}
+        </div>
+        ${showPace ? `<div style="display:flex;justify-content:space-between;font-size:11.5px;margin-top:5px;color:var(--muted)">
+          <span>${elapsed.elapsed}/${elapsed.total} ${period === 'this-week' ? 'working days' : 'days'} elapsed</span>
+          <span>At pace: <b class="tnum" style="color:${projPct >= 95 ? 'var(--green)' : projPct >= 75 ? 'var(--amber)' : 'var(--red)'}">${fmt(projected)} (${projPct.toFixed(0)}%)</b></span>
+        </div>` : ''}
       </div>`;
     };
 
@@ -514,7 +526,42 @@
           <div class="insights">${flagItems}</div>
         </div>
       </div>
+
+      <!-- Historical comparisons -->
+      ${historicalComparison(t)}
     </div>`;
+  }
+
+  function historicalComparison(t) {
+    const avgCalls4   = Q.trailingAvg('calls',   4);
+    const avgCalls12  = Q.trailingAvg('calls',  12);
+    const avgLeads4   = Q.trailingAvg('success', 4);
+    const avgLeads12  = Q.trailingAvg('success', 12);
+
+    if (!avgCalls4 && !avgCalls12) return '';
+
+    const cmpCard = (label, cur, baseline, baselineLabel, unit = '') => {
+      if (!baseline) return '';
+      const diff = cur - baseline;
+      const pct = ((diff / baseline) * 100).toFixed(1);
+      const up = diff >= 0;
+      return `<div class="card card-pad">
+        <div class="kpi-label" style="margin:0">${label}</div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin-top:6px">
+          <div style="font-family:var(--serif);font-size:22px;font-weight:700;color:var(--ink);white-space:nowrap">${fmt(cur)}${unit}</div>
+          <span class="delta ${up ? 'up' : 'down'}">${up ? I.up : I.down}${Math.abs(pct)}%</span>
+        </div>
+        <div class="kpi-foot" style="margin-top:8px">${baselineLabel}: <b class="tnum" style="color:var(--slate)">${fmt(baseline)}${unit}</b></div>
+      </div>`;
+    };
+
+    return `
+      <div class="divider-note">Historical comparison · this period vs recent averages</div>
+      <div class="row g-3">
+        ${cmpCard('Calls vs 4-week avg',  t.calls, avgCalls4,  'Avg last 4 weeks')}
+        ${cmpCard('Calls vs 12-week avg', t.calls, avgCalls12, 'Avg last 12 weeks')}
+        ${cmpCard('Leads vs 4-week avg',  t.leads, avgLeads4,  'Avg last 4 weeks')}
+      </div>`;
   }
 
   function redFlags(agents, deltas, rmT, fcT) {

@@ -327,12 +327,51 @@ window.QUAY_READY = (async function () {
   const SOURCES = _topSourcesFor('this-week');
 
   // ---- Expose ---------------------------------------------------------------
+  // ---- Forecasting / pace projection ---------------------------------------
+  // Fractions of period elapsed (used to project end-of-period totals).
+  // 'this-week' assumes Mon-Fri working week; weekend visits count as Fri.
+  // 'this-month' uses calendar days of current month.
+  // Other periods are historical / complete → no projection (factor=1).
+  function periodElapsed(periodKey) {
+    const now = new Date();
+    if (periodKey === 'this-week') {
+      const dow = now.getDay(); // 0=Sun, 1=Mon..6=Sat
+      const workedDays = (dow === 0 || dow === 6) ? 5 : Math.min(5, dow);
+      return { elapsed: workedDays, total: 5, fraction: workedDays / 5 };
+    }
+    if (periodKey === 'this-month') {
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      return { elapsed: now.getDate(), total: lastDay, fraction: now.getDate() / lastDay };
+    }
+    return { elapsed: 1, total: 1, fraction: 1 };
+  }
+
+  // Projected end-of-period value given current actuals.
+  function project(periodKey, value) {
+    const e = periodElapsed(periodKey);
+    if (!e.fraction || e.fraction >= 1) return Math.round(value);
+    return Math.round(value / e.fraction);
+  }
+
+  // Average of a given key across the trailing N weeks (excluding current).
+  function trailingAvg(key, n) {
+    const slice = weeks.slice(1, 1 + n);
+    if (!slice.length) return 0;
+    let total = 0;
+    slice.forEach(w => {
+      ['rm', 'fancy'].forEach(team =>
+        (w[team] || []).forEach(a => { total += (a[key] || 0); }));
+    });
+    return Math.round(total / slice.length);
+  }
+
   window.QUAY = {
     AGENTS: agentsForWeek(weeks[0]),  // current week, sorted natural
     WEEKS, WEEK_CALLS, WEEK_SUCCESS,
     SOURCES, campaignsFor,
     MONTHS, MONTH_CALLS, MONTH_LEADS, MONTH_EMAILS, MONTH_RENTALS, MONTH_DFHOURS,
     PERIODS, DELTAS, agentsFor, totalsFor,
+    periodElapsed, project, trailingAvg,
   };
   return window.QUAY;
 })();
