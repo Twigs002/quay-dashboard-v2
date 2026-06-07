@@ -533,7 +533,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 /* All Staff → Per Caller card grid */
 .staff-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  /* min(300px, 100%) prevents overflow on very narrow phones (iPhone SE) */
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
   gap: 16px;
 }
 .pc-card { min-height: 0; transition: transform .15s, box-shadow .15s; }
@@ -637,6 +638,15 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
 .dash-login-foot {
   font-size: 11.5px; color: rgba(255,255,255,0.55); margin-top: 18px;
 }
+/* Landscape phones / short viewports — tighten the login so it fits. */
+@media (max-height: 600px) {
+  .dash-login-box { padding: 18px 24px; }
+  .dash-login-logo { width: 140px; margin-bottom: 8px; }
+  .dash-login h1 { font-size: 16px; }
+  .dash-login-sub { margin-bottom: 12px; }
+  .dash-login .pin-dots { margin: 4px 0 10px; }
+  .dash-login .key { height: 44px; font-size: 18px; border-radius: 12px; }
+}
 
 /* ── Signed-as footer in sidebar ─────────────────────────────────────── */
 .signed-as {
@@ -669,9 +679,11 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
 .nav-collapsed .signed-as .signed-who,
 .nav-collapsed .signed-as .signed-out { display: none; }
 
-/* ── Clocks tab iframe ───────────────────────────────────────────────── */
+/* Clocks iframe sizing now lives in the responsive block above (uses dvh
+   so iOS Safari's address-bar dance doesn't squash the embed). This stub
+   keeps shared chrome — background, border, overflow — once. */
 .clocks-frame {
-  width: 100%; height: calc(100vh - 120px); min-height: 540px;
+  width: 100%;
   background: #F6F7FB; border-radius: 14px; overflow: hidden;
   border: 1px solid var(--line, #E5EAF2);
 }

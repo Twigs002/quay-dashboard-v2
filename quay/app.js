@@ -230,7 +230,13 @@
     // its own PIN gate. Listener is idempotent — re-wiring is safe.
     if (!window.__quayClocksWired) {
       window.__quayClocksWired = true;
+      // Origin allowlist so a hostile embed can't harvest the admin PIN.
+      const ALLOWED_ORIGINS = new Set([
+        'https://twigs002.github.io',
+        location.origin, // dev / preview parity
+      ]);
       window.addEventListener('message', (ev) => {
+        if (!ALLOWED_ORIGINS.has(ev.origin)) return;
         const m = ev.data;
         if (!m || m.type !== 'quay-admin-ready') return;
         if (!session || !session.pin) return;
@@ -244,7 +250,7 @@
               role: session.role, team: session.team,
               admin: true, pin: session.pin,
             },
-          }, '*');
+          }, ev.origin);  // explicit target origin, not '*'
         } catch {}
       });
     }
