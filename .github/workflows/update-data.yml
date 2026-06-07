@@ -58,11 +58,16 @@ jobs:
           AMIGOS_NA_TOKEN: ${{ secrets.AMIGOS_NA_TOKEN }}
         run: python scripts/fetch_dialfire.py
 
+      - name: Fetch quay-clock clocked hours
+        env:
+          QUAY_CLOCK_URL: ${{ secrets.QUAY_CLOCK_URL }}
+        run: python scripts/fetch_clock.py
+
       - name: Commit updated data
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name  "github-actions[bot]"
-          git add data/weekly_data.json data/history.json
+          git add data/weekly_data.json data/history.json data/clock_data.json
           git diff --staged --quiet && echo "No changes to commit" || \
             git commit -m "auto-update $(date -u +'%Y-%m-%d')"
           git pull --rebase origin main

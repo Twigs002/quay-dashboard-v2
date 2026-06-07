@@ -252,7 +252,7 @@ window.VIEWS = (function () {
             <div class="eyebrow">How efficiency works</div>
             <ul style="margin:12px 0 0;padding-left:18px;font-size:12.5px;color:var(--slate);line-height:1.9">
               <li><b style="color:var(--blue)">DialFire</b> = actual dialler time</li>
-              <li><b style="color:var(--amber)">ConnectTeams</b> = clocked-in time</li>
+              <li><b style="color:var(--amber)">ConnectTeams</b> = clocked-in time (from quay-clock when present, else estimated as DF / 0.85)</li>
               <li><b style="color:var(--ink)">Efficiency</b> = DF ÷ CT (target ≥70%)</li>
             </ul>
           </div>

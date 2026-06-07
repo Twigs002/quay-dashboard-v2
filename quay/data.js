@@ -3,15 +3,29 @@
    GitHub Action) and builds the shape app.js + views.js expect.
 
    Lead Sources: no real data feed yet — kept as placeholders.
-   Connecteam (clocked time): not wired yet — `ct` is estimated as df/0.85 so
-   the Work Time tab still renders meaningfully. We'll swap for real values
-   once the Connecteam integration lands. */
+   Clocked time (Work Time tab): real values come from data/clock_data.json
+   when the quay-clock fetcher has run (see scripts/fetch_clock.py). When
+   no real entry exists for an agent, we fall back to the historical
+   `workTime / 0.85` estimate so the tab still renders. */
 
 window.QUAY_READY = (async function () {
-  const [weekly, history] = await Promise.all([
+  const [weekly, history, clockData] = await Promise.all([
     fetch('data/weekly_data.json').then(r => r.json()),
     fetch('data/history.json').then(r => r.json()),
+    fetch('data/clock_data.json').then(r => r.ok ? r.json() : null).catch(() => null),
   ]);
+
+  // Build a name → clocked hours map from the quay-clock fetcher output.
+  // We try both raw and prettified names so PascalCase/dashed/snake_case
+  // entries all match agents from Dialfire.
+  const clockByName = new Map();
+  if (clockData && Array.isArray(clockData.agents)) {
+    clockData.agents.forEach(a => {
+      const hours = Number(a.hours) || 0;
+      if (a.name) clockByName.set(a.name.toLowerCase(), hours);
+      if (a.name_normalised) clockByName.set(a.name_normalised.toLowerCase(), hours);
+    });
+  }
 
   // history may or may not include the current week; ensure latest first.
   const weeks = history.slice().sort((a, b) => b.weekStart.localeCompare(a.weekStart));
@@ -41,7 +55,15 @@ window.QUAY_READY = (async function () {
     const talkHrs = a.talkTime || 0;
     const workHrs = a.workTime || 0;
     const pauseHrs = a.pauseTime || 0;
-    const ctHrs = workHrs > 0 ? workHrs / 0.85 : 0;   // estimated clocked-in
+    // Prefer real clocked hours from quay-clock when present; otherwise
+    // fall back to the historical 0.85 estimate so older weeks keep rendering.
+    const prettyName = prettifyName(a.name);
+    const clockHrs = clockByName.get((a.name || '').toLowerCase())
+                   ?? clockByName.get(prettyName.toLowerCase());
+    const ctSource = (clockHrs != null) ? 'clock' : 'estimate';
+    const ctHrs = (clockHrs != null && clockHrs > 0)
+      ? clockHrs
+      : (workHrs > 0 ? workHrs / 0.85 : 0);
     const eff = ctHrs > 0 ? Math.round((workHrs / ctHrs) * 100) : 85;
     // talkPct = talk time as % of work time (Dialfire field, fallback compute)
     const talkPct = a.talkPct != null ? a.talkPct
@@ -60,6 +82,7 @@ window.QUAY_READY = (async function () {
       df: +workHrs.toFixed(1),
       pauseHrs: +pauseHrs.toFixed(2),
       ct: +ctHrs.toFixed(1),
+      ctSource,
       success: +successRate.toFixed(1),
       eff,
       connect: Math.round(talkPct),
