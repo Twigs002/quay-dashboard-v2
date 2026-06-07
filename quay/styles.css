@@ -506,3 +506,89 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes popIn { from { opacity: 0; transform: translate(-50%, -48%) scale(.97); }
                    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+
+/* ── Dashboard login overlay (everyone who logs in is admin) ─────────── */
+.dash-login {
+  position: fixed; inset: 0; z-index: 2000;
+  background: linear-gradient(160deg, #34508F 0%, #27396B 70%, #1A2547 100%);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  font-family: 'Montserrat', system-ui, sans-serif;
+}
+.dash-login-box {
+  width: 100%; max-width: 380px;
+  padding: 36px 30px 30px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 22px; text-align: center; color: #fff;
+}
+.dash-login-logo { width: 200px; height: auto; margin: 0 auto 18px; display: block; }
+.dash-login h1 { font-size: 18px; font-weight: 800; margin: 0 0 4px; color: #fff; }
+.dash-login-sub { font-size: 13px; color: rgba(255,255,255,0.65); margin-bottom: 22px; }
+.dash-login .pin-dots { display: flex; gap: 14px; justify-content: center; margin: 6px 0 14px; }
+.dash-login .pin-dot {
+  width: 14px; height: 14px; border-radius: 999px;
+  border: 2px solid rgba(255,255,255,0.5);
+}
+.dash-login .pin-dot.filled { background: #FDC503; border-color: #FDC503; }
+.dash-login.pin-error .pin-dot { border-color: #FF8B85; }
+.dash-login-err {
+  min-height: 18px; margin-bottom: 8px;
+  font-size: 13px; font-weight: 600; color: #FFD1CE;
+}
+.dash-login .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.dash-login .key {
+  height: 56px; border-radius: 16px;
+  background: rgba(255,255,255,0.12); color: #fff;
+  font-size: 22px; font-weight: 700; border: 1px solid rgba(255,255,255,0.06);
+  font-family: 'Montserrat', sans-serif; cursor: pointer;
+}
+.dash-login .key:hover { background: rgba(255,255,255,0.2); }
+.dash-login .key.alt {
+  background: transparent; border-color: transparent;
+  font-size: 13px; font-weight: 700;
+}
+.dash-login-foot {
+  font-size: 11.5px; color: rgba(255,255,255,0.55); margin-top: 18px;
+}
+
+/* ── Signed-as footer in sidebar ─────────────────────────────────────── */
+.signed-as {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 6px 12px; margin-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.signed-av {
+  width: 32px; height: 32px; border-radius: 999px;
+  background: #FDC503; color: #1A2540;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 12px; flex-shrink: 0;
+  text-transform: uppercase;
+}
+.signed-who { flex: 1; min-width: 0; }
+.signed-who .signed-n {
+  font-size: 12.5px; font-weight: 700; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.signed-who .signed-r {
+  font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.55);
+}
+.signed-out {
+  background: transparent; border: 0; padding: 6px;
+  color: rgba(255,255,255,0.55); cursor: pointer; border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.signed-out:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.signed-out .ic { width: 16px; height: 16px; }
+.nav-collapsed .signed-as .signed-who,
+.nav-collapsed .signed-as .signed-out { display: none; }
+
+/* ── Clocks tab iframe ───────────────────────────────────────────────── */
+.clocks-frame {
+  width: 100%; height: calc(100vh - 120px); min-height: 540px;
+  background: #F6F7FB; border-radius: 14px; overflow: hidden;
+  border: 1px solid var(--line, #E5EAF2);
+}
+.clocks-frame iframe {
+  width: 100%; height: 100%; border: 0; display: block; background: #F6F7FB;
+}

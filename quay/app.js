@@ -6,8 +6,21 @@
   const fmt = n => n.toLocaleString('en-ZA');
   const initials = name => name.split(' ').map(w => w[0]).slice(0, 2).join('');
 
+  // ---- session (everyone who logs in is admin) ----
+  const SESSION_KEY = 'quay_dash_session_v1';
+  let session = (function () {
+    try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
+    catch { return null; }
+  })();
+  function setSession(s) {
+    if (s) localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+    else localStorage.removeItem(SESSION_KEY);
+    session = s;
+  }
+
   let period = 'this-week';
   let tab = 'leadership';
+  let pinBuf = '', pinErr = false, loginError = '';
   // nav preference: 'auto' (collapse on narrow), 'open' (force expanded), 'collapsed' (force rail)
   let navPref = localStorage.getItem('q1nav') || 'auto';
   const AUTO_BP = 1080;
@@ -23,10 +36,77 @@
     { id: 'daily',      label: 'Daily Stats',    icon: I.cal2,     title: 'Daily Stats',          sub: 'Per-caller performance for a single day' },
     { id: 'manager',    label: 'Manager Reports',icon: I.chart,    title: 'Manager Reports',      sub: 'Filter by date range and campaign' },
     { id: 'sources',    label: 'Lead Sources',   icon: I.target,   title: 'Lead Source Efficacy', sub: 'Which source converts best' },
+    { id: 'clocks',     label: 'Clocks',         icon: I.clock,    title: 'Clocks',               sub: 'Staff hours, requests & team — manage everything in one place' },
   ];
+
+  // ---------------------------------------------------- LOGIN
+  function renderLogin() {
+    const dots = [0,1,2,3].map(i =>
+      `<div class="pin-dot ${i < pinBuf.length ? 'filled' : ''}"></div>`).join('');
+    document.getElementById('app').innerHTML = `
+      <div class="dash-login ${pinErr ? 'pin-error' : ''}">
+        <div class="dash-login-box">
+          <img src="quay/quay1-logo-crop.png" alt="Quay 1" class="dash-login-logo">
+          <h1>Quay 1 Performance Dashboard</h1>
+          <div class="dash-login-sub">Enter your PIN to sign in</div>
+          <div class="pin-dots">${dots}</div>
+          <div class="dash-login-err">${loginError ? escapeHtml(loginError) : ''}</div>
+          <div class="keypad">
+            ${[1,2,3,4,5,6,7,8,9].map(n => `<button class="key" data-d="${n}">${n}</button>`).join('')}
+            <button class="key alt" data-back>← Back</button>
+            <button class="key" data-d="0">0</button>
+            <button class="key alt" data-clear>Clear</button>
+          </div>
+          <div class="dash-login-foot">Only admins on the Roster can sign in.</div>
+        </div>
+      </div>`;
+    document.querySelectorAll('.dash-login .key[data-d]').forEach(b =>
+      b.addEventListener('click', () => {
+        if (pinBuf.length >= 4) return;
+        pinBuf += b.dataset.d; pinErr = false; loginError = '';
+        renderLogin();
+        if (pinBuf.length === 4) submitLogin();
+      }));
+    const back = document.querySelector('.dash-login .key[data-back]');
+    if (back) back.addEventListener('click', () => { pinBuf = pinBuf.slice(0, -1); renderLogin(); });
+    const clr = document.querySelector('.dash-login .key[data-clear]');
+    if (clr) clr.addEventListener('click', () => { pinBuf = ''; loginError = ''; renderLogin(); });
+  }
+
+  async function submitLogin() {
+    try {
+      const res = await fetch(CFG.CLOCK_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'admin_check', pin: pinBuf }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'PIN not recognised');
+      setSession({ ...data.admin, pin: pinBuf });
+      pinBuf = ''; loginError = '';
+      shell();
+    } catch (e) {
+      pinErr = true; loginError = String(e.message || e); pinBuf = '';
+      setTimeout(() => { pinErr = false; renderLogin(); }, 600);
+      renderLogin();
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function signOut() {
+    setSession(null);
+    pinBuf = ''; loginError = ''; pinErr = false;
+    renderLogin();
+  }
 
   // ---------------------------------------------------- SHELL
   function shell() {
+    if (!session || !session.pin) { renderLogin(); return; }
     const navItems = TABS.map(t => `
       <button class="nav-item ${t.id === tab ? 'active' : ''}" data-tab="${t.id}" title="${t.label}">
         ${t.icon}<span>${t.label}</span>
@@ -42,6 +122,14 @@
           ${navItems}
         </nav>
         <div class="sidebar-foot">
+          <div class="signed-as">
+            <div class="signed-av">${initials(session.name || 'A')}</div>
+            <div class="signed-who">
+              <div class="signed-n">${escapeHtml(session.name || '')}</div>
+              <div class="signed-r">${escapeHtml(session.role || 'Admin')}</div>
+            </div>
+            <button class="signed-out" id="signOut" title="Sign out">${I.arrow}</button>
+          </div>
           <span class="live-dot"></span><span class="foot-text">Live · synced 4 min ago</span>
           <div class="foot-tag">Navigating Success</div>
         </div>
@@ -70,6 +158,8 @@
       b.addEventListener('click', () => { period = b.dataset.period; shell(); }));
     document.getElementById('btnPrint').addEventListener('click', () => window.print());
     document.getElementById('btnExport').addEventListener('click', exportCurrentTab);
+    const so = document.getElementById('signOut');
+    if (so) so.addEventListener('click', signOut);
 
     const appEl = document.getElementById('app');
     const tbtn = document.getElementById('navToggle');
@@ -122,7 +212,42 @@
     else if (tab === 'daily')    host.innerHTML = V.daily(period);
     else if (tab === 'manager')  host.innerHTML = V.manager();
     else if (tab === 'sources')  host.innerHTML = V.leadSources(period);
+    else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
     host.scrollTop = 0;
+  }
+
+  // ---- Clocks tab — iframe the quay-clock admin and hand off the session
+  function clocksIframe() {
+    const src = CFG.CLOCK_ADMIN_EMBED || '';
+    return `<div class="clocks-frame">
+      <iframe id="clocksIframe" src="${src}" title="Quay 1 Clocks"
+              loading="lazy" referrerpolicy="no-referrer"></iframe>
+    </div>`;
+  }
+
+  function wireClocks() {
+    // Respond to the iframe's "ready" with our admin session so it skips
+    // its own PIN gate. Listener is idempotent — re-wiring is safe.
+    if (!window.__quayClocksWired) {
+      window.__quayClocksWired = true;
+      window.addEventListener('message', (ev) => {
+        const m = ev.data;
+        if (!m || m.type !== 'quay-admin-ready') return;
+        if (!session || !session.pin) return;
+        const target = ev.source;
+        if (!target) return;
+        try {
+          target.postMessage({
+            type: 'quay-admin-session',
+            admin: {
+              id: session.id, name: session.name,
+              role: session.role, team: session.team,
+              admin: true, pin: session.pin,
+            },
+          }, '*');
+        } catch {}
+      });
+    }
   }
   function segWire() {
     document.querySelectorAll('.seg').forEach(seg =>

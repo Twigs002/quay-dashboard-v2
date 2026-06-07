@@ -39,4 +39,12 @@ window.QUAY_CONFIG = {
     RM:    'Relationship Managers',
     Fancy: 'Fancy Callers',
   },
+
+  // ---- quay-clock backend ---------------------------------------------
+  // Apps Script Web App URL — same one the staff PWA + admin use. Required
+  // for the dashboard login (admin_check) and for the Clocks tab.
+  CLOCK_API: 'https://script.google.com/macros/s/AKfycbw3g6cdmfIbWC6TVSybVk5CECKhnSBneDuWGzM4krxcTFgOhS7Ef4InD6F1x9llnl27AA/exec',
+
+  // URL of the embedded admin (same origin, ?embed=1).
+  CLOCK_ADMIN_EMBED: 'https://twigs002.github.io/quay-clock/admin/?embed=1',
 };
