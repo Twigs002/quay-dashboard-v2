@@ -438,11 +438,16 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 @media (max-width: 860px) {
   .app, .app.nav-collapsed { grid-template-columns: 1fr; }
   .sidebar {
-    position: static; height: auto;
+    /* Sticky so the brand + nav dropdown stay reachable while you scroll. */
+    position: sticky; top: 0; z-index: 40;
+    height: auto;
     display: flex; flex-direction: row; flex-wrap: wrap; align-items: center;
     border-right: 0; border-bottom: 1px solid rgba(255,255,255,.10);
     padding: 8px 12px;
+    box-shadow: 0 1px 0 rgba(0,0,0,.04);
   }
+  /* Topbar can scroll away on mobile — the sticky sidebar already holds nav. */
+  .topbar { position: static; }
   .brand { padding: 8px 12px; border-bottom: 0; flex: 0 0 auto; }
   .brand-logo { max-width: 132px; }
   /* Hide the horizontal tab strip; use a native select instead so every
