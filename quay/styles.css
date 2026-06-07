@@ -434,14 +434,100 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 }
 @media (max-width: 860px) {
   .app, .app.nav-collapsed { grid-template-columns: 1fr; }
-  .sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; }
-  .nav { display: flex; flex-wrap: wrap; flex: 1; }
+  .sidebar {
+    position: static; height: auto;
+    display: flex; flex-direction: row; flex-wrap: wrap; align-items: center;
+    border-right: 0; border-bottom: 1px solid rgba(255,255,255,.10);
+    padding: 6px 10px;
+  }
+  .brand { padding: 8px 12px; border-bottom: 0; flex: 0 0 auto; }
+  .brand-logo { max-width: 128px; }
+  .nav {
+    display: flex; flex-wrap: nowrap; flex: 1; overflow-x: auto;
+    padding: 6px 8px; gap: 4px;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-label { display: none; }
+  .nav-item {
+    flex: 0 0 auto; padding: 8px 12px; margin: 0; font-size: 13px;
+    border-radius: 999px;
+  }
+  .nav-item.active { box-shadow: none; background: rgba(255,255,255,.22); }
+  .signed-as { width: 100%; order: 99; margin: 6px 0 0; padding: 8px 6px; }
+  .sidebar-foot {
+    padding: 0; border-top: 0; flex: 0 0 100%;
+    display: flex; align-items: center; justify-content: flex-start; gap: 10px;
+    font-size: 11px;
+  }
+  .sidebar-foot .foot-tag { display: none; }
   /* on a stacked mobile bar, always show the full nav (ignore collapse rail) */
   .nav-collapsed .brand-logo { display: block; }
   .nav-collapsed .brand-mini { display: none; }
-  .nav-collapsed .nav-item { justify-content: flex-start; padding: 10px 12px; gap: 12px; }
+  .nav-collapsed .nav-item { justify-content: flex-start; padding: 8px 12px; gap: 8px; }
   .nav-collapsed .nav-item span { display: inline; }
-  .nav-collapsed .sidebar-foot { display: none; }
+  .nav-collapsed .sidebar-foot { display: flex; }
+  .nav-toggle { display: none; }
+
+  /* topbar wraps; period + actions go on a second row */
+  .topbar {
+    padding: 12px 16px; gap: 10px;
+    flex-wrap: wrap;
+  }
+  .topbar-titles h1 { font-size: 17px; letter-spacing: .03em; white-space: normal; }
+  .topbar-titles p { font-size: 12px; }
+  .topbar-right { width: 100%; flex-wrap: wrap; gap: 8px; }
+  .period {
+    flex: 1 1 100%; overflow-x: auto; white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .period::-webkit-scrollbar { display: none; }
+  .period button { padding: 7px 12px; font-size: 12px; }
+
+  .content { padding: 14px 14px 28px !important; }
+}
+
+/* phone-tight ─────────────────────────────────────────────────────── */
+@media (max-width: 520px) {
+  .kpis { grid-template-columns: 1fr; }
+  .mini-grid { grid-template-columns: 1fr; }
+  .kpi { padding: 14px 16px; }
+  .kpi-val { font-size: 24px; }
+
+  .topbar .btn { padding: 7px 10px; font-size: 12px; }
+  .topbar .btn .ic { width: 14px; height: 14px; }
+  /* on the smallest screens, hide the Print button label (icon stays) */
+  .topbar #btnPrint span, .topbar #btnExport span { display: none; }
+
+  /* any table inside a card scrolls horizontally rather than overflowing */
+  .card .tbl-wrap, .card .tbl, .tbl-wrap, .tbl, table.tbl {
+    display: block; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+  .card { border-radius: 14px; }
+  .card-pad, .card-pad-lg, .card-pad-sm { padding: 14px 16px !important; }
+
+  .modal { width: calc(100vw - 16px); max-height: 92vh; border-radius: 14px; }
+  .modal-head, .modal-body { padding-left: 18px !important; padding-right: 18px !important; }
+}
+
+/* Clocks tab — sensible mobile height + safe-area aware */
+.clocks-frame {
+  height: calc(100dvh - 200px);
+  min-height: 540px;
+}
+@media (max-width: 860px) {
+  .clocks-frame {
+    height: calc(100dvh - 160px);
+    min-height: 480px;
+    border-radius: 10px;
+  }
+}
+@media (max-width: 520px) {
+  .clocks-frame {
+    height: calc(100dvh - 200px);
+    min-height: 420px;
+  }
 }
 
 /* All Staff → Per Caller card grid */
