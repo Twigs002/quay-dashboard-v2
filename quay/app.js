@@ -111,12 +111,18 @@
       <button class="nav-item ${t.id === tab ? 'active' : ''}" data-tab="${t.id}" title="${t.label}">
         ${t.icon}<span>${t.label}</span>
       </button>`).join('');
+    const navMobileOptions = TABS.map(t =>
+      `<option value="${t.id}" ${t.id === tab ? 'selected' : ''}>${t.label}</option>`
+    ).join('');
     document.getElementById('app').innerHTML = `
       <aside class="sidebar">
         <div class="brand">
           <img class="brand-logo" src="quay/quay1-logo-crop.png" alt="Quay 1 International Realty">
           <div class="brand-mini">Q1</div>
         </div>
+        <select class="nav-mobile" id="navMobile" aria-label="Switch tab">
+          ${navMobileOptions}
+        </select>
         <nav class="nav">
           <div class="nav-label">Performance</div>
           ${navItems}
@@ -154,6 +160,8 @@
 
     document.querySelectorAll('.nav-item').forEach(b =>
       b.addEventListener('click', () => { tab = b.dataset.tab; shell(); }));
+    const navMobile = document.getElementById('navMobile');
+    if (navMobile) navMobile.addEventListener('change', () => { tab = navMobile.value; shell(); });
     document.querySelectorAll('#period button').forEach(b =>
       b.addEventListener('click', () => { period = b.dataset.period; shell(); }));
     document.getElementById('btnPrint').addEventListener('click', () => window.print());

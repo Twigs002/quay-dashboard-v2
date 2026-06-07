@@ -108,6 +108,9 @@ button { font-family: inherit; cursor: pointer; }
 .nav-collapsed .sidebar-foot .foot-text, .nav-collapsed .foot-tag { display: none; }
 .nav-collapsed .live-dot { margin-right: 0; }
 
+/* native dropdown nav (mobile only — hidden on desktop) */
+.nav-mobile { display: none; }
+
 /* sidebar toggle button */
 .nav-toggle {
   display: grid; place-items: center; flex: none;
@@ -438,64 +441,88 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
     position: static; height: auto;
     display: flex; flex-direction: row; flex-wrap: wrap; align-items: center;
     border-right: 0; border-bottom: 1px solid rgba(255,255,255,.10);
-    padding: 6px 10px;
+    padding: 8px 12px;
   }
   .brand { padding: 8px 12px; border-bottom: 0; flex: 0 0 auto; }
-  .brand-logo { max-width: 128px; }
-  .nav {
-    display: flex; flex-wrap: nowrap; flex: 1; overflow-x: auto;
-    padding: 6px 8px; gap: 4px;
-    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  .brand-logo { max-width: 132px; }
+  /* Hide the horizontal tab strip; use a native select instead so every
+     tab is reachable in one tap on a phone (was hidden behind a horizontal
+     scroll that wasn't discoverable). */
+  .nav { display: none !important; }
+  .nav-mobile {
+    display: block; flex: 1; min-width: 0;
+    margin: 4px 8px; padding: 12px 38px 12px 14px;
+    border-radius: 12px;
+    background-color: rgba(255,255,255,0.18);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 14px;
+    border: 1px solid rgba(255,255,255,0.22);
+    color: #fff;
+    font-family: var(--sans, 'Montserrat', sans-serif); font-weight: 700; font-size: 15px;
+    -webkit-appearance: none; appearance: none;
+    outline: none;
   }
-  .nav::-webkit-scrollbar { display: none; }
-  .nav-label { display: none; }
-  .nav-item {
-    flex: 0 0 auto; padding: 8px 12px; margin: 0; font-size: 13px;
-    border-radius: 999px;
-  }
-  .nav-item.active { box-shadow: none; background: rgba(255,255,255,.22); }
+  .nav-mobile option { color: #1A2746; background: #fff; }
   .signed-as { width: 100%; order: 99; margin: 6px 0 0; padding: 8px 6px; }
+  .signed-av { width: 30px; height: 30px; font-size: 12px; }
+  .signed-who .signed-n { font-size: 13.5px; }
+  .signed-who .signed-r { font-size: 12px; }
   .sidebar-foot {
     padding: 0; border-top: 0; flex: 0 0 100%;
     display: flex; align-items: center; justify-content: flex-start; gap: 10px;
-    font-size: 11px;
+    font-size: 12px;
   }
+  .sidebar-foot .foot-text { font-size: 12px; }
   .sidebar-foot .foot-tag { display: none; }
-  /* on a stacked mobile bar, always show the full nav (ignore collapse rail) */
+  /* nav-collapsed rail rules are irrelevant on mobile — the strip nav is gone */
   .nav-collapsed .brand-logo { display: block; }
   .nav-collapsed .brand-mini { display: none; }
-  .nav-collapsed .nav-item { justify-content: flex-start; padding: 8px 12px; gap: 8px; }
-  .nav-collapsed .nav-item span { display: inline; }
   .nav-collapsed .sidebar-foot { display: flex; }
   .nav-toggle { display: none; }
 
   /* topbar wraps; period + actions go on a second row */
   .topbar {
-    padding: 12px 16px; gap: 10px;
+    padding: 14px 18px; gap: 12px;
     flex-wrap: wrap;
   }
-  .topbar-titles h1 { font-size: 17px; letter-spacing: .03em; white-space: normal; }
-  .topbar-titles p { font-size: 12px; }
+  .topbar-titles h1 { font-size: 22px; letter-spacing: .03em; white-space: normal; }
+  .topbar-titles p { font-size: 14px; }
   .topbar-right { width: 100%; flex-wrap: wrap; gap: 8px; }
   .period {
     flex: 1 1 100%; overflow-x: auto; white-space: nowrap;
     -webkit-overflow-scrolling: touch;
   }
   .period::-webkit-scrollbar { display: none; }
-  .period button { padding: 7px 12px; font-size: 12px; }
+  .period button { padding: 9px 14px; font-size: 14px; font-weight: 600; }
 
-  .content { padding: 14px 14px 28px !important; }
+  .content { padding: 16px 16px 32px !important; }
+
+  /* body text scaling across cards */
+  .card { font-size: 14.5px; }
+  .kpi-label { font-size: 13.5px; }
+  .kpi-foot { font-size: 13px; }
+  h3 { font-size: 16.5px !important; }
+  .row { gap: 14px; }
 }
 
 /* phone-tight ─────────────────────────────────────────────────────── */
 @media (max-width: 520px) {
   .kpis { grid-template-columns: 1fr; }
   .mini-grid { grid-template-columns: 1fr; }
-  .kpi { padding: 14px 16px; }
-  .kpi-val { font-size: 24px; }
+  .kpi { padding: 18px 20px; }
+  .kpi-val { font-size: 30px; }
+  .kpi-label { font-size: 14px; }
+  .kpi-foot { font-size: 13.5px; }
+  .kpi-ic { width: 38px; height: 38px; }
+  .kpi-ic .ic { width: 21px; height: 21px; }
 
-  .topbar .btn { padding: 7px 10px; font-size: 12px; }
-  .topbar .btn .ic { width: 14px; height: 14px; }
+  .topbar { padding: 16px 18px; gap: 14px; }
+  .topbar-titles h1 { font-size: 22px; }
+  .topbar-titles p { font-size: 13.5px; }
+  .topbar .btn { padding: 9px 14px; font-size: 13.5px; }
+  .topbar .btn .ic { width: 16px; height: 16px; }
   /* on the smallest screens, hide the Print button label (icon stays) */
   .topbar #btnPrint span, .topbar #btnExport span { display: none; }
 
@@ -504,11 +531,18 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
     display: block; overflow-x: auto; -webkit-overflow-scrolling: touch;
     white-space: nowrap;
   }
-  .card { border-radius: 14px; }
-  .card-pad, .card-pad-lg, .card-pad-sm { padding: 14px 16px !important; }
+  .card { border-radius: 14px; font-size: 14.5px; }
+  .card-pad, .card-pad-lg, .card-pad-sm { padding: 16px 18px !important; }
+  /* body text inside cards (Progress to target, Weekly trend, RM vs Fancy, etc.) */
+  .card p, .card span, .card div { line-height: 1.4; }
+  .card h3 { font-size: 17px !important; }
+  table th, table td { font-size: 13.5px !important; }
 
   .modal { width: calc(100vw - 16px); max-height: 92vh; border-radius: 14px; }
   .modal-head, .modal-body { padding-left: 18px !important; padding-right: 18px !important; }
+
+  /* shorten the "Live · synced 4 min ago" footer so it stays on one line */
+  .foot-text { white-space: nowrap; }
 }
 
 /* Clocks tab — sensible mobile height + safe-area aware */
