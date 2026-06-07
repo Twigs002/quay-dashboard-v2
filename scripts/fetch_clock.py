@@ -1,23 +1,21 @@
-"""
-Fetch clocked-hours from the quay-clock Apps Script and write
-data/clock_data.json. Used by quay/data.js to replace the
-`workTime / 0.85` estimate in the Work Time tab with real values.
+"""Pull weekly clocked hours per agent from Supabase and write
+data/clock_data.json. Used by quay/data.js to feed real ct hours into
+the Work Time tab.
 
 Environment:
-  QUAY_CLOCK_URL  — Apps Script Web App URL (the same URL the PWA POSTs to)
+  SUPABASE_URL                 — project URL, e.g. https://<proj>.supabase.co
+  SUPABASE_SERVICE_ROLE_KEY    — service role key (read-only is enough)
 
-If QUAY_CLOCK_URL is unset, this script writes an empty payload and exits
-0 — the dashboard falls back to the old estimate so the build never breaks.
-
-Schedule: called by .github/workflows/update-data.yml right after
-fetch_dialfire.py so weekly_data.json + clock_data.json stay in sync.
+If either is missing, writes an empty payload and exits 0 so the
+workflow doesn't fail when secrets aren't configured.
 """
-
 import datetime
 import json
 import os
+import re
 import sys
 from pathlib import Path
+from urllib.parse import urlencode
 
 import requests
 
@@ -26,7 +24,6 @@ OUT  = ROOT / "data" / "clock_data.json"
 
 
 def week_window(now: datetime.datetime) -> tuple[str, str]:
-    """Monday 00:00 UTC → Sunday 23:59:59 UTC of the current week."""
     monday = (now - datetime.timedelta(days=now.weekday())).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
@@ -35,26 +32,9 @@ def week_window(now: datetime.datetime) -> tuple[str, str]:
 
 
 def normalise_name(name: str) -> str:
-    """Match `quay/data.js` prettifyName: 'WarrickSolomons' → 'Warrick Solomons'."""
-    import re
     s = re.sub(r"_", " ", name or "")
     s = re.sub(r"([a-z])([A-Z])", r"\1 \2", s)
     return s.strip()
-
-
-def post(url: str, action: str, **payload):
-    body = {"action": action, **payload}
-    r = requests.post(
-        url,
-        data=json.dumps(body),
-        headers={"Content-Type": "text/plain;charset=utf-8"},
-        timeout=30,
-    )
-    r.raise_for_status()
-    data = r.json()
-    if not data.get("ok"):
-        raise RuntimeError(f"{action} → {data.get('error', 'unknown error')}")
-    return data
 
 
 def write_payload(payload: dict) -> None:
@@ -64,9 +44,10 @@ def write_payload(payload: dict) -> None:
 
 
 def main() -> int:
-    url = os.environ.get("QUAY_CLOCK_URL", "").strip()
-    if not url:
-        print("[fetch_clock] QUAY_CLOCK_URL not set — writing empty payload, dashboard will fall back to estimate.")
+    supabase_url = os.environ.get("SUPABASE_URL", "").strip()
+    service_key  = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+    if not supabase_url or not service_key:
+        print("[fetch_clock] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set — writing empty payload.")
         write_payload({
             "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "week_start": None, "week_end": None, "agents": [], "source": "unset",
@@ -75,25 +56,50 @@ def main() -> int:
 
     now = datetime.datetime.now(datetime.timezone.utc)
     week_from, week_to = week_window(now)
+
+    # PostgREST: pull this week's `out` events (duration_hrs is set on out only),
+    # plus the staff names via a select join.
+    params = {
+        "select": "duration_hrs,staff_id,staff(name)",
+        "dir":    "eq.out",
+        "ts":     f"gte.{week_from}",  # primary range filter
+    }
+    url = f"{supabase_url}/rest/v1/events?{urlencode(params)}&ts=lte.{week_to}"
+    headers = {
+        "apikey": service_key,
+        "Authorization": f"Bearer {service_key}",
+        "Accept": "application/json",
+    }
+
     try:
-        data = post(url, "summary", **{"from": week_from, "to": week_to})
+        r = requests.get(url, headers=headers, timeout=30)
+        r.raise_for_status()
+        rows = r.json()
     except Exception as exc:
-        print(f"[fetch_clock] WARN: summary request failed: {exc}")
+        print(f"[fetch_clock] WARN: Supabase fetch failed: {exc}")
         write_payload({
             "generated_at": now.isoformat(), "week_start": week_from, "week_end": week_to,
             "agents": [], "source": "error", "error": str(exc),
         })
-        return 0  # never fail the workflow on a transient clock-app outage
+        return 0
+
+    by_agent: dict[str, dict] = {}
+    for row in rows:
+        sid  = row.get("staff_id") or ""
+        name = (row.get("staff") or {}).get("name") or sid
+        hrs  = float(row.get("duration_hrs") or 0)
+        agg  = by_agent.setdefault(sid, {"id": sid, "name": name, "hours": 0.0, "sessions": 0})
+        agg["hours"] += hrs
+        agg["sessions"] += 1
 
     agents = []
-    for row in data.get("summary", []):
-        name = row.get("name") or ""
+    for a in by_agent.values():
         agents.append({
-            "id": row.get("id", ""),
-            "name": name,
-            "name_normalised": normalise_name(name),
-            "hours": round(float(row.get("hours", 0) or 0), 3),
-            "sessions": int(row.get("sessions", 0) or 0),
+            "id": a["id"],
+            "name": a["name"],
+            "name_normalised": normalise_name(a["name"]),
+            "hours": round(a["hours"], 3),
+            "sessions": a["sessions"],
         })
 
     write_payload({
@@ -101,7 +107,7 @@ def main() -> int:
         "week_start": week_from,
         "week_end": week_to,
         "agents": agents,
-        "source": "apps_script",
+        "source": "supabase",
     })
     return 0
 

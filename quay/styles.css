@@ -652,6 +652,15 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
 .dash-login h1 { font-size: 18px; font-weight: 800; margin: 0 0 4px; color: #fff; }
 .dash-login-sub { font-size: 13px; color: rgba(255,255,255,0.65); margin-bottom: 22px; }
 .dash-login .pin-dots { display: flex; gap: 14px; justify-content: center; margin: 6px 0 14px; }
+.dash-login-user {
+  width: 100%; box-sizing: border-box;
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 12px; color: #fff; font-family: Montserrat;
+  font-size: 15px; font-weight: 600; padding: 12px 14px;
+  margin-bottom: 14px; outline: none;
+}
+.dash-login-user::placeholder { color: rgba(255,255,255,0.55); }
+.dash-login-user:focus { border-color: var(--yellow); }
 .dash-login .pin-dot {
   width: 14px; height: 14px; border-radius: 999px;
   border: 2px solid rgba(255,255,255,0.5);

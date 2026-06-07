@@ -40,6 +40,8 @@
   ];
 
   // ---------------------------------------------------- LOGIN
+  let loginUser = localStorage.getItem('quay_dash_last_user') || '';
+
   function renderLogin() {
     const dots = [0,1,2,3].map(i =>
       `<div class="pin-dot ${i < pinBuf.length ? 'filled' : ''}"></div>`).join('');
@@ -48,7 +50,10 @@
         <div class="dash-login-box">
           <img src="quay/quay1-logo-crop.png" alt="Quay 1" class="dash-login-logo">
           <h1>Quay 1 Performance Dashboard</h1>
-          <div class="dash-login-sub">Enter your PIN to sign in</div>
+          <div class="dash-login-sub">Sign in with your admin username + PIN</div>
+          <input id="dashUser" class="dash-login-user" type="text" autocomplete="username"
+                 autocapitalize="none" autocorrect="off"
+                 placeholder="username" value="${escapeHtml(loginUser || '')}">
           <div class="pin-dots">${dots}</div>
           <div class="dash-login-err">${loginError ? escapeHtml(loginError) : ''}</div>
           <div class="keypad">
@@ -57,9 +62,11 @@
             <button class="key" data-d="0">0</button>
             <button class="key alt" data-clear>Clear</button>
           </div>
-          <div class="dash-login-foot">Only admins on the Roster can sign in.</div>
+          <div class="dash-login-foot">Only Roster rows with <b>admin = true</b> can sign in.</div>
         </div>
       </div>`;
+    const u = document.getElementById('dashUser');
+    if (u) u.addEventListener('input', () => { loginUser = u.value; });
     document.querySelectorAll('.dash-login .key[data-d]').forEach(b =>
       b.addEventListener('click', () => {
         if (pinBuf.length >= 4) return;
@@ -74,15 +81,27 @@
   }
 
   async function submitLogin() {
+    const u = document.getElementById('dashUser');
+    if (u) loginUser = u.value;
+    const username = String(loginUser || '').trim().toLowerCase();
+    if (!username) {
+      pinErr = true; loginError = 'Enter your username first'; pinBuf = '';
+      setTimeout(() => { pinErr = false; renderLogin(); }, 600); renderLogin(); return;
+    }
     try {
-      const res = await fetch(CFG.CLOCK_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'admin_check', pin: pinBuf }),
-      });
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error || 'PIN not recognised');
-      setSession({ ...data.admin, pin: pinBuf });
+      const email = `${username}@${CFG.AUTH_EMAIL_DOMAIN || 'quay1.local'}`;
+      const { data, error } = await window.sb.auth.signInWithPassword({ email, password: pinBuf });
+      if (error || !data.user) throw new Error('Username or PIN not recognised');
+      // Confirm this user is in the staff table AND is_admin.
+      const { data: staff, error: sErr } = await window.sb.from('staff')
+        .select('id, name, role, team, is_admin, active')
+        .eq('auth_user_id', data.user.id).maybeSingle();
+      if (sErr || !staff || !staff.is_admin || staff.active === false) {
+        await window.sb.auth.signOut();
+        throw new Error('Not an admin');
+      }
+      setSession({ id: staff.id, name: staff.name, role: staff.role || '', team: staff.team || '', admin: true });
+      try { localStorage.setItem('quay_dash_last_user', username); } catch {}
       pinBuf = ''; loginError = '';
       shell();
     } catch (e) {
@@ -98,7 +117,8 @@
       .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
-  function signOut() {
+  async function signOut() {
+    try { await window.sb.auth.signOut(); } catch {}
     setSession(null);
     pinBuf = ''; loginError = ''; pinErr = false;
     renderLogin();
@@ -106,7 +126,9 @@
 
   // ---------------------------------------------------- SHELL
   function shell() {
-    if (!session || !session.pin) { renderLogin(); return; }
+    // We're authenticated when supabase has an active session AND we know
+    // the staff row. setSession({...staff}) is set by submitLogin/setSession.
+    if (!session || !session.id) { renderLogin(); return; }
     const navItems = TABS.map(t => `
       <button class="nav-item ${t.id === tab ? 'active' : ''}" data-tab="${t.id}" title="${t.label}">
         ${t.icon}<span>${t.label}</span>
@@ -234,31 +256,31 @@
   }
 
   function wireClocks() {
-    // Respond to the iframe's "ready" with our admin session so it skips
-    // its own PIN gate. Listener is idempotent — re-wiring is safe.
+    // When the embedded admin says it's ready, hand off the current
+    // Supabase session (access + refresh token) so the iframe doesn't
+    // ask for a second login. Listener is idempotent; origin gated.
     if (!window.__quayClocksWired) {
       window.__quayClocksWired = true;
-      // Origin allowlist so a hostile embed can't harvest the admin PIN.
       const ALLOWED_ORIGINS = new Set([
         'https://twigs002.github.io',
-        location.origin, // dev / preview parity
+        location.origin,
       ]);
-      window.addEventListener('message', (ev) => {
+      window.addEventListener('message', async (ev) => {
         if (!ALLOWED_ORIGINS.has(ev.origin)) return;
         const m = ev.data;
         if (!m || m.type !== 'quay-admin-ready') return;
-        if (!session || !session.pin) return;
         const target = ev.source;
         if (!target) return;
         try {
+          const { data } = await window.sb.auth.getSession();
+          if (!data?.session) return;
           target.postMessage({
-            type: 'quay-admin-session',
-            admin: {
-              id: session.id, name: session.name,
-              role: session.role, team: session.team,
-              admin: true, pin: session.pin,
+            type: 'quay-supabase-session',
+            session: {
+              access_token: data.session.access_token,
+              refresh_token: data.session.refresh_token,
             },
-          }, ev.origin);  // explicit target origin, not '*'
+          }, ev.origin);
         } catch {}
       });
     }
@@ -1018,5 +1040,21 @@
     });
   }
 
-  shell();
+  // Boot: try to restore an existing Supabase session, then render.
+  (async function bootAuth() {
+    try {
+      const { data: { user } } = await window.sb.auth.getUser();
+      if (user) {
+        const { data: staff } = await window.sb.from('staff')
+          .select('id, name, role, team, is_admin, active')
+          .eq('auth_user_id', user.id).maybeSingle();
+        if (staff && staff.is_admin && staff.active !== false) {
+          setSession({ id: staff.id, name: staff.name, role: staff.role || '', team: staff.team || '', admin: true });
+        } else {
+          await window.sb.auth.signOut(); setSession(null);
+        }
+      }
+    } catch { /* fall through to login */ }
+    shell();
+  })();
 })();

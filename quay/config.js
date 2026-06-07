@@ -41,9 +41,12 @@ window.QUAY_CONFIG = {
   },
 
   // ---- quay-clock backend ---------------------------------------------
-  // Apps Script Web App URL — same one the staff PWA + admin use. Required
-  // for the dashboard login (admin_check) and for the Clocks tab.
-  CLOCK_API: 'https://script.google.com/macros/s/AKfycbw3g6cdmfIbWC6TVSybVk5CECKhnSBneDuWGzM4krxcTFgOhS7Ef4InD6F1x9llnl27AA/exec',
+  // Supabase project — same one the staff PWA + admin use. Anon key is
+  // safe to commit; RLS gates every write. (Apps Script URL removed —
+  // see Twigs002/quay-clock supabase/ for the migration history.)
+  SUPABASE_URL:      'https://dqszbqiimbfvmmnpgpsb.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc3picWlpbWJmdm1tbnBncHNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NDk4OTQsImV4cCI6MjA5NjQyNTg5NH0.M9RQnJEidyIMZAwbELTSPakiSnvuWBdHTjD7nuOdCZY',
+  AUTH_EMAIL_DOMAIN: 'quay1.local',
 
   // URL of the embedded admin (same origin, ?embed=1).
   CLOCK_ADMIN_EMBED: 'https://twigs002.github.io/quay-clock/admin/?embed=1',
