@@ -781,19 +781,28 @@
       Object.entries(teamRates).forEach(([k, v]) => ci.set(String(k).toLowerCase(), Number(v)));
       return (camp) => ci.get(String(camp || '').toLowerCase().trim());
     })();
+    // Revenue ceiling — sellers and rentals use different rates; emails are
+    // a successful outcome but contribute R0.
+    //   seller × per-team rate (closed-unit comm from "Rand per Lead" sheet)
+    //   rental × CFG.RENTAL_RAND_PER_LEAD (single base — set in config.js)
+    //   email  × 0
     const camps0 = Q.campaignsFor(period);
+    const rentalRate = Number(CFG.RENTAL_RAND_PER_LEAD || 0);
     let revenue = 0;
-    let revenueMatched = 0; let revenueUnmatched = 0;
+    let sellerLeads = 0, rentalLeads = 0;
+    let sellerMatched = 0, sellerUnmatched = 0;
     camps0.forEach(c => {
-      const rate = teamRateLookup(c.name);
-      if (rate != null) { revenue += (c.leads || 0) * rate; revenueMatched += c.leads || 0; }
-      else              { revenue += (c.leads || 0) * (rev.default || 100506); revenueUnmatched += c.leads || 0; }
+      const s = c.seller || 0;
+      const r = c.rental || 0;
+      sellerLeads += s;
+      rentalLeads += r;
+      if (s > 0) {
+        const rate = teamRateLookup(c.name);
+        if (rate != null) { revenue += s * rate; sellerMatched += s; }
+        else              { revenue += s * (rev.default || 100506); sellerUnmatched += s; }
+      }
+      if (r > 0) revenue += r * rentalRate;
     });
-    // Leads we couldn't attribute via campaigns (shouldn't normally happen).
-    const attributedLeads = revenueMatched + revenueUnmatched;
-    if (t.leads > attributedLeads) {
-      revenue += (t.leads - attributedLeads) * (rev.default || 100506);
-    }
 
     // Efficiency: avg dialler/clocked across agents
     const eff = agents.length
@@ -909,7 +918,7 @@
         ${kpi(I.trophy,  'Success Rate',       t.avgSuccess + '%', d.success, 'contact-to-lead conversion')}
         ${kpi(I.bolt,    'Team Efficiency',    eff + '%', null, 'dialler ÷ clocked-in time')}
         ${kpi(I.medal,   'Revenue ceiling',    'R ' + fmt(Math.round(revenue)), null,
-              'Theoretical max — every lead × closed-unit rate. Real revenue is lower by the DialFire→close conversion rate.')}
+              fmt(sellerLeads) + ' seller × team rate + ' + fmt(rentalLeads) + ' rental × R' + fmt(rentalRate) + ' · emails R0')}
       </div>
 
       <!-- Team split + Target progress -->
@@ -951,8 +960,8 @@
         </div>
       </div>
 
-      <!-- Revenue model — per-team R/lead used for Est. Revenue -->
-      ${revenueModelCard(camps0, teamRateLookup, rev.default)}
+      <!-- Revenue model — per-campaign breakdown that drove the ceiling -->
+      ${revenueModelCard(camps0, teamRateLookup, rev.default, rentalRate)}
 
       <!-- Top performers + Red flags -->
       <div class="row g-2-1 mt" style="align-items:start">
@@ -1018,30 +1027,43 @@
       </div>`;
   }
 
-  // Renders the per-team R/lead breakdown that drove the Revenue Ceiling KPI.
-  // Only shows campaigns active in the current period, sorted by their
-  // contribution to revenue.
-  function revenueModelCard(campaigns, rateLookup, fallback) {
+  // Renders the per-campaign breakdown driving the Revenue Ceiling KPI.
+  // Splits seller (per-team rate) from rental (flat base). Emails are
+  // shown as a count but contribute R0.
+  function revenueModelCard(campaigns, rateLookup, fallback, rentalRate) {
+    const rentalR = Number(rentalRate || 0);
     const rows = (campaigns || [])
-      .filter(c => (c.leads || 0) > 0)
+      .filter(c => (c.seller || 0) + (c.rental || 0) + (c.email || 0) > 0)
       .map(c => {
         const rate = rateLookup(c.name);
         const matched = rate != null;
         const r = matched ? rate : fallback;
-        return { name: c.name, leads: c.leads || 0, rate: r, matched, revenue: (c.leads || 0) * r };
+        const sellerRev = (c.seller || 0) * r;
+        const rentalRev = (c.rental || 0) * rentalR;
+        return { name: c.name, seller: c.seller || 0, rental: c.rental || 0, email: c.email || 0,
+                 rate: r, matched, sellerRev, rentalRev, revenue: sellerRev + rentalRev };
       })
       .sort((a, b) => b.revenue - a.revenue);
     if (!rows.length) return '';
     return `
       <div class="card mt">
-        <div class="card-head"><div><h3>Revenue model · per-team R/lead</h3><div class="sub">From the "Rand per Lead" sheet — closed-unit rate. Feeds the Revenue Ceiling KPI.</div></div></div>
+        <div class="card-head"><div><h3>Revenue model</h3>
+          <div class="sub">Sellers × team rate (from "Rand per Lead") + rentals × R${fmt(rentalR)} · emails contribute R0</div></div></div>
         <div class="tbl-wrap"><table class="tbl">
-          <thead><tr><th>Campaign / Team</th><th class="num">Leads (period)</th><th class="num">R per lead</th><th class="num">Period revenue</th></tr></thead>
+          <thead><tr>
+            <th>Campaign / Team</th>
+            <th class="num">Seller</th><th class="num">@ R/lead</th>
+            <th class="num">Rental</th>
+            <th class="num">Email</th>
+            <th class="num">Revenue</th>
+          </tr></thead>
           <tbody>${rows.map(r => `
             <tr>
               <td><b>${r.name}</b> ${r.matched ? '' : '<span class="pill" style="background:#EEF0F6;color:var(--muted);font-size:10px;font-weight:700;margin-left:6px" title="Campaign not in TEAM_RAND_PER_LEAD — using floor average">floor avg</span>'}</td>
-              <td class="num tnum">${fmt(r.leads)}</td>
-              <td class="num tnum">R ${fmt(r.rate)}</td>
+              <td class="num tnum">${fmt(r.seller)}</td>
+              <td class="num tnum" style="color:var(--muted)">R ${fmt(r.rate)}</td>
+              <td class="num tnum">${fmt(r.rental)}</td>
+              <td class="num tnum" style="color:var(--muted)">${fmt(r.email)}</td>
               <td class="num tnum"><b>R ${fmt(Math.round(r.revenue))}</b></td>
             </tr>`).join('')}
           </tbody>

@@ -3,15 +3,18 @@
 
 window.QUAY_CONFIG = {
   // ---- Revenue assumption ----
-  // Used for the Leadership Overview "Estimated Revenue" KPI. Default is
-  // the floor-wide average from the "Rand per Lead" sheet (column F).
-  // Per-team rates are looked up in TEAM_RAND_PER_LEAD below.
+  // Used for the Leadership Overview "Revenue ceiling" KPI.
+  //   - SELLER leads: per-team rate from TEAM_RAND_PER_LEAD below; falls
+  //     back to REVENUE_PER_LEAD.default for unmapped campaigns.
+  //   - RENTAL leads: flat RENTAL_RAND_PER_LEAD (placeholder until you set
+  //     the real base — change the value below).
+  //   - EMAIL leads: counted as a success but worth R0.
   REVENUE_PER_LEAD: {
-    seller:  100506,
-    rental:  100506,
-    email:   100506,
-    default: 100506,
+    seller:  100506,   // floor-wide closed-unit avg from "Rand per Lead" sheet
+    default: 100506,   // fallback for seller campaigns not in TEAM_RAND_PER_LEAD
   },
+  // TODO(user): set the actual rental base — placeholder until then.
+  RENTAL_RAND_PER_LEAD: 5000,
 
   // ---- R per lead, by team (from "Rand per Lead" .numbers sheet) ----
   // Commission per lead = (Annual Sales × 4%) ÷ Units Sold. Looked up by
