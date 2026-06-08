@@ -270,7 +270,7 @@
     else if (tab === 'staff')    { host.innerHTML = V.allStaff(period); staffWire(); }
     else if (tab === 'compare')  { host.innerHTML = V.compare(); segWire(); }
     else if (tab === 'daily')    host.innerHTML = V.daily(period);
-    else if (tab === 'manager')  { host.innerHTML = V.manager(); managerWire(); }
+    else if (tab === 'manager')  { host.innerHTML = V.manager(period); managerWire(); }
     else if (tab === 'sources')  host.innerHTML = V.leadSources(period);
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
     host.scrollTop = 0;
