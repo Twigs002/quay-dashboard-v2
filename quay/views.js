@@ -7,10 +7,13 @@ window.VIEWS = (function () {
   const effClass = e => e >= 70 ? 'ok' : e >= 60 ? 'warn' : 'bad';
   const sucClass = s => s >= 15 ? 'ok' : s >= 11 ? 'warn' : 'bad';
 
-  function agentRow(a, rank) {
+  function agentRow(a, rank, scaleMax) {
     const sc = sucClass(a.success);
     const ec = effClass(a.eff);
-    const bar = Math.min(100, (a.calls / 720) * 100);
+    // Volume bar scales to the busiest agent in the current list so the
+    // bar still reads as a proportion when periods change (was hardcoded /720).
+    const maxC = scaleMax && scaleMax > 0 ? scaleMax : (a.calls || 1);
+    const bar = Math.min(100, (a.calls / maxC) * 100);
     const df = a.df != null ? a.df : 0;
     const ct = a.ct != null ? a.ct : 0;
     const eff = a.eff != null ? a.eff : 0;
@@ -39,7 +42,8 @@ window.VIEWS = (function () {
   // ---------------------------------------------------- ALL STAFF
   function allStaff(period) {
     const agents = Q.agentsFor(period).slice().sort((a, b) => b.calls - a.calls);
-    const rows = agents.map((a, i) => agentRow(a, i + 1)).join('');
+    const scaleMax = agents.length ? agents[0].calls : 1;
+    const rows = agents.map((a, i) => agentRow(a, i + 1, scaleMax)).join('');
     const cards = agents.map(a => perCallerCard(a)).join('');
     const tCalls = agents.reduce((s, a) => s + a.calls, 0);
     const tLeads = agents.reduce((s, a) => s + a.leads, 0);
@@ -75,7 +79,7 @@ window.VIEWS = (function () {
       <div class="card mt" id="staffOverall">
         <div class="card-head">
           <div><h3>Agent-level performance</h3><div class="sub">Calls · leads · dialler vs clocked hours · efficiency · click any column to sort</div></div>
-          <button class="btn">${I.download} Export CSV</button>
+          <button class="btn js-export">${I.download} Export CSV</button>
         </div>
         <div class="tbl-wrap">
           <table class="tbl">
@@ -215,7 +219,8 @@ window.VIEWS = (function () {
   function daily(period) {
     const agents = Q.agentsFor('this-week').map(a => ({ ...a, calls: Math.round(a.calls / 5), leads: Math.round(a.leads / 5) }))
       .sort((a, b) => b.calls - a.calls);
-    const rows = agents.map((a, i) => agentRow(a, i + 1)).join('');
+    const scaleMax = agents.length ? agents[0].calls : 1;
+    const rows = agents.map((a, i) => agentRow(a, i + 1, scaleMax)).join('');
     const tot = agents.reduce((s, a) => s + a.calls, 0);
     return `
     <div class="tab-view">
@@ -227,7 +232,7 @@ window.VIEWS = (function () {
             <button class="btn">◀ Prev</button><button class="btn">Next ▶</button>
             <button class="btn btn-primary">${I.calendar} Load</button>
           </div>
-          <button class="btn">${I.download} Export CSV</button>
+          <button class="btn js-export">${I.download} Export CSV</button>
         </div>
       </div>
       <div class="row g-3 mt">
@@ -318,7 +323,7 @@ window.VIEWS = (function () {
         <div class="card-head">
           <div><h3>Campaign performance · ${periodLabel}</h3>
             <div class="sub">${camps.length} campaign${camps.length === 1 ? '' : 's'} with activity · ranked by calls done</div></div>
-          <button class="btn">${I.download} Export CSV</button>
+          <button class="btn js-export">${I.download} Export CSV</button>
         </div>
         <div class="tbl-wrap"><table class="tbl">
           <thead><tr>
@@ -389,7 +394,7 @@ window.VIEWS = (function () {
         <div class="card">
           <div class="card-head"><div><h3>Campaign performance</h3>
             <div class="sub">Ranked by call volume · ${Q.PERIODS[period || 'this-week'].label} · variants like SURFERS_NA + SURFERS_CM are grouped</div></div>
-            <button class="btn">${I.download} Export CSV</button></div>
+            <button class="btn js-export">${I.download} Export CSV</button></div>
           <div class="tbl-wrap"><table class="tbl">
             <thead><tr>
               <th class="num">#</th><th>Campaign</th>

@@ -133,6 +133,21 @@
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
       .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
+  // Stable slug for use in red-flag keys, route data attrs, etc.
+  // Lowercase + ascii word chars only so the result is safe in URLs + selectors.
+  function slug(s) {
+    return String(s || '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+  // Stable week-start key (e.g. 'wk-2026-06-01') for any flag whose lifetime
+  // is a calendar week — keeps acks from one week bleeding into the next.
+  function wkKeyFor(d) {
+    const x = new Date(d || Date.now());
+    const dow = (x.getDay() + 6) % 7;       // Monday = 0
+    x.setHours(0,0,0,0);
+    x.setDate(x.getDate() - dow);
+    return 'wk-' + x.toISOString().slice(0,10);
+  }
 
   async function signOut() {
     try { await window.sb.auth.signOut(); } catch {}
@@ -273,6 +288,11 @@
     else if (tab === 'manager')  { host.innerHTML = V.manager(period); managerWire(); }
     else if (tab === 'sources')  host.innerHTML = V.leadSources(period);
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
+    // Any per-card "Export CSV" button shares the topbar export handler.
+    document.querySelectorAll('#content .js-export').forEach(b => {
+      if (b.__exportWired) return; b.__exportWired = true;
+      b.addEventListener('click', exportCurrentTab);
+    });
     host.scrollTop = 0;
   }
 
@@ -733,13 +753,16 @@
   }
 
   function miniCard(label, icon, series, color) {
-    const last = series[series.length - 1], prev = series[series.length - 2];
-    const pct = (((last - prev) / prev) * 100).toFixed(1);
+    const last = series[series.length - 1] || 0;
+    const prev = series[series.length - 2] || 0;
+    // Guard the % — a zero baseline used to print "Infinity%".
+    const pct = prev ? (((last - prev) / prev) * 100).toFixed(1) : '—';
+    const up = last >= prev;
     const unit = label === 'DialFire hrs' ? 'h' : '';
     return `<div class="card mini">
       <div class="mini-head">${icon} ${label} by month</div>
       <div class="mini-sub">last 8 months</div>
-      <div class="mini-val tnum">${fmt(last)}${unit}<span>▲ ${pct}%</span></div>
+      <div class="mini-val tnum">${fmt(last)}${unit}<span style="color:${up ? 'var(--green)' : 'var(--red)'}">${pct === '—' ? '—' : (up ? '▲' : '▼') + ' ' + Math.abs(parseFloat(pct)) + '%'}</span></div>
       <div style="margin-top:10px" class="mc" data-series='${JSON.stringify(series)}' data-color="${color}"></div>
     </div>`;
   }
@@ -902,21 +925,9 @@
       </div>`;
     }).join('');
 
-    // Hide flags that have already been attended to — the manager wanted
-    // them off the dashboard entirely once ticked, not just greyed out.
-    const openFlags = flags.filter(f => !f.key || !flagAcks.has(f.key));
-    const flagItems = openFlags.length ? openFlags.map(f => {
-      const key = f.key || '';
-      return `<div class="insight" data-flag-key="${key}">
-        <div class="insight-ic ${f.type}">${f.type === 'warn' ? I.alert : f.type === 'down' ? I.down : I.spark}</div>
-        <div class="insight-body"><p>${f.html}</p>
-          ${f.action ? `<div class="insight-action">${I.arrow}${f.action}</div>` : ''}
-        </div>
-        ${key ? `<button class="insight-ack" data-flag-key="${key}" title="Mark this flag as attended to">Mark attended</button>` : ''}
-      </div>`;
-    }).join('') : `<div style="padding:18px 24px;color:var(--muted);font-size:13px">
-        No red flags this period — the floor is on track.
-      </div>`;
+    // Re-use the shared Red Flags card template so leadership and manager
+    // never drift on layout / ack behaviour.
+    const flagsCard = flagsCardHtml(flags, { sub: 'Auto-detected from this period' });
 
     const elapsed = Q.periodElapsed(period);
     const showPace = elapsed.fraction > 0 && elapsed.fraction < 1;
@@ -1017,10 +1028,7 @@
             }).join('')}</tbody>
           </table></div>
         </div>
-        <div class="card">
-          <div class="card-head"><div><h3>Red flags</h3><div class="sub">Auto-detected from this period</div></div></div>
-          <div class="insights">${flagItems}</div>
-        </div>
+        ${flagsCard}
       </div>
 
       <!-- Historical comparisons -->
@@ -1108,11 +1116,13 @@
   // (e.g. Manager Reports). Mirrors the prelude inside overview() but only
   // grabs the inputs redFlags() actually needs.
   function currentFlags() {
-    const agents = Q.agentsFor(period);
+    if (!Q || !Q.agentsFor || !Q.DELTAS) return [];
+    const agents = Q.agentsFor(period) || [];
     const d = Q.DELTAS[period] || {};
     const rm = agents.filter(a => a.team === 'RM');
     const fc = agents.filter(a => a.team === 'Fancy');
     const teamTotals = team => {
+      if (!team.length) return null;       // empty team → skip the flag entirely
       const calls = team.reduce((s, a) => s + a.calls, 0);
       const leads = team.reduce((s, a) => s + a.leads, 0);
       const sr = calls ? +((leads / calls) * 100).toFixed(1) : 0;
@@ -1121,10 +1131,8 @@
         : (CFG.BENCHMARKS && CFG.BENCHMARKS.fc_success_rate) || 20;
       return { calls, leads, sr, target, n: team.length };
     };
-    return redFlags(agents, d, rmT_safe(teamTotals(rm)), rmT_safe(teamTotals(fc)));
+    return redFlags(agents, d, teamTotals(rm), teamTotals(fc));
   }
-  // Defensive: never let a divide-by-zero make redFlags() throw.
-  function rmT_safe(t) { return t && t.sr != null ? t : { sr: 0, target: 100, calls: 0, leads: 0 }; }
 
   // Returns ready-to-mount HTML for the Red Flags card. Pair with
   // wireFlagAckButtons() after injecting so the Mark-attended pills work.
@@ -1155,25 +1163,28 @@
     const cd = cfg.calls_drop_pct      ?? -15;
     const sb = cfg.success_below_pct   ?? -3;
     const ic = cfg.inactive_call_floor ?? 100;
-    const slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    // Week-bucket all "this period"-scoped flags so acks expire weekly
+    // instead of inheriting from a prior period that shared the key.
+    const wk = wkKeyFor(new Date());
 
     // 1) Big WoW drop in calls
-    if (deltas.calls != null && deltas.calls <= cd) {
+    if (deltas && deltas.calls != null && deltas.calls <= cd) {
       flags.push({ type: 'down',
-        key: `calls_drop:${period}`,
+        key: `calls_drop:${period}:${wk}`,
         html: `<b>Call volume down ${Math.abs(deltas.calls)}%</b> vs previous period — investigate cause.`,
         action: 'Open Compare tab for week-vs-week breakdown' });
     }
-    // 2) RM team below target by more than threshold
-    if (rmT.sr < rmT.target + sb) {
+    // 2) RM team below target by more than threshold — only when we actually
+    // have data for the team (no fallback that fires on empty rosters).
+    if (rmT && rmT.sr < rmT.target + sb) {
       flags.push({ type: 'warn',
-        key: `sr_low:rm:${period}`,
+        key: `sr_low:rm:${period}:${wk}`,
         html: `<b>RM success rate at ${rmT.sr}%</b> — ${(rmT.target - rmT.sr).toFixed(1)} pts below the ${rmT.target}% target.`,
         action: 'Review RM coaching cadence' });
     }
-    if (fcT.sr < fcT.target + sb) {
+    if (fcT && fcT.sr < fcT.target + sb) {
       flags.push({ type: 'warn',
-        key: `sr_low:fc:${period}`,
+        key: `sr_low:fc:${period}:${wk}`,
         html: `<b>Fancy success rate at ${fcT.sr}%</b> — ${(fcT.target - fcT.sr).toFixed(1)} pts below the ${fcT.target}% target.`,
         action: 'Review Fancy desk lead quality' });
     }
@@ -1181,8 +1192,8 @@
     const inactive = agents.filter(a => a.calls < ic).sort((a, b) => a.calls - b.calls).slice(0, 3);
     inactive.forEach(a => {
       flags.push({ type: 'warn',
-        key: `inactive:${slug(a.name)}:${period}`,
-        html: `<b>${a.name}</b> made only <b>${fmt(a.calls)}</b> calls — well below the ${ic}-call floor.`,
+        key: `inactive:${slug(a.name)}:${wk}`,
+        html: `<b>${escapeHtml(a.name)}</b> made only <b>${fmt(a.calls)}</b> calls — well below the ${ic}-call floor.`,
         action: 'Confirm clocked time + dialler issues' });
     });
     // Append clock-based schedule flags (no-shows, chronic lateness, etc.)
@@ -1356,15 +1367,14 @@
     const wkKey = schedule.weekStart ? schedule.weekStart.toISOString().slice(0, 10) : todayKey;
     const dow = today.getDay();
     const isWeekday = dow >= 1 && dow <= 5;
-    const slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     // 1) Anyone not clocked in yet but it's past 09:00 on a weekday.
     if (isWeekday && new Date().getHours() >= 9) {
       schedule.byStaff.forEach(r => {
-        const today = r.days[todayKey];
-        if (!today || !today.first) {
+        const day = r.days[todayKey];
+        if (!day || !day.first) {
           out.push({ type: 'warn',
             key: `no_clockin:${slug(r.name)}:${todayKey}`,
-            html: `<b>${r.name}</b> hasn't clocked in yet today.`,
+            html: `<b>${escapeHtml(r.name)}</b> hasn't clocked in yet today.`,
             action: 'Check with them or log a shift-change request' });
         }
       });
@@ -1373,14 +1383,14 @@
     schedule.byStaff.forEach(r => {
       if (r.late >= 3) out.push({ type: 'warn',
         key: `chronic_late:${slug(r.name)}:${wkKey}`,
-        html: `<b>${r.name}</b> clocked in late <b>${r.late}×</b> this week (avg start ${fmtHHMM(r.avgStartMin)}).`,
+        html: `<b>${escapeHtml(r.name)}</b> clocked in late <b>${r.late}×</b> this week (avg start ${fmtHHMM(r.avgStartMin)}).`,
         action: 'Worth a one-on-one' });
     });
     // 3) Anyone with no-shows on weekdays (excluding today before 09:00).
     schedule.byStaff.forEach(r => {
       if (r.missed >= 2) out.push({ type: 'down',
         key: `multi_missed:${slug(r.name)}:${wkKey}`,
-        html: `<b>${r.name}</b> missed <b>${r.missed}</b> weekday${r.missed > 1 ? 's' : ''} this week — no clock-in event.`,
+        html: `<b>${escapeHtml(r.name)}</b> missed <b>${r.missed}</b> weekday${r.missed > 1 ? 's' : ''} this week — no clock-in event.`,
         action: 'Submit a shift-change request if it was a one-off' });
     });
     return out;
@@ -1467,19 +1477,20 @@
   function rerenderFlagsInPlace() {
     if (tab !== 'overview' && tab !== 'leadership' && tab !== 'manager') return;
     let removed = 0;
+    let needShell = false;
     document.querySelectorAll('.insight[data-flag-key]').forEach(el => {
       const key = el.dataset.flagKey;
-      if (key && flagAcks.has(key)) {
-        const parent = el.parentElement;
-        el.remove();
-        removed++;
-        // Card now empty? Re-render the whole tab so the empty-state shows.
-        if (parent && !parent.querySelector('.insight')) {
-          shell();
-        }
-      }
+      if (!key || !flagAcks.has(key)) return;
+      const parent = el.parentElement;
+      el.remove();
+      removed++;
+      // Defer the shell() until we've finished iterating — otherwise a
+      // mid-loop shell() rebuilds the DOM and can short-circuit processing
+      // of a second flag card on the same page (e.g. Leadership + Manager).
+      if (parent && !parent.querySelector('.insight')) needShell = true;
     });
     if (removed) updateLiveFlagsBadge();
+    if (needShell) shell();
   }
   function wireFlagAckButtons(root) {
     (root || document).querySelectorAll('.insight-ack').forEach(b => {
@@ -1494,13 +1505,13 @@
   }
 
   // ─── Live red-flags badge ────────────────────────────────────────────
-  // Top-right pill that always shows the current count of clock-driven
-  // red flags (no-shows, lateness streaks, missing clock-ins). Stays
-  // visible across tabs; click jumps to Overview.
+  // Top-right pill mirroring the full Red Flags card — counts every open
+  // flag (schedule + business) so the badge and the on-screen list agree.
   function updateLiveFlagsBadge() {
     const el = document.getElementById('liveFlagsBadge');
     if (!el) return;
-    const flags = (typeof scheduleFlags === 'function') ? scheduleFlags() : [];
+    let flags = [];
+    try { flags = currentFlags(); } catch { flags = []; }
     // Don't count flags that have already been attended to.
     const n = flags.filter(f => !f.key || !flagAcks.has(f.key)).length;
     const countEl = document.getElementById('lfbCount');
@@ -1515,16 +1526,28 @@
   // Supabase. Same pattern as the admin app — debounced, fallback poll.
   let _rtChannel = null;
   let _rtReloadTimer = null;
+  let _rtPending = false;       // tab was hidden when a reload tried to fire
+  function dashIsBusy() {
+    // Don't blow away an open drill-down modal or the gate.
+    return !!document.querySelector('.modal-back, .modal');
+  }
   function rtScheduleReload() {
     clearTimeout(_rtReloadTimer);
     _rtReloadTimer = setTimeout(() => {
-      if (document.visibilityState !== 'visible') return;
+      if (document.visibilityState !== 'visible') { _rtPending = true; return; }
       loadScheduleData().then(() => {
         updateLiveFlagsBadge();
-        if (tab === 'overview' || tab === 'leadership') shell();
+        if (!dashIsBusy() && (tab === 'overview' || tab === 'leadership')) shell();
       });
     }, 2000);
   }
+  // When the tab becomes visible again, drain any queued realtime reload.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && _rtPending) {
+      _rtPending = false;
+      rtScheduleReload();
+    }
+  });
   function subscribeRealtime() {
     if (_rtChannel || !window.sb) return;
     try {
@@ -1536,17 +1559,21 @@
           // the hidden flag to reappear, which a DOM-only update can't do.
           loadFlagAcks().then(() => {
             updateLiveFlagsBadge();
+            if (dashIsBusy()) return;
             if (tab === 'overview' || tab === 'leadership' || tab === 'manager') shell();
           });
         })
         .subscribe();
     } catch (e) { console.warn('[rt] subscribe failed', e); }
   }
-  // Fallback slow poll in case the websocket drops silently.
+  // Fallback slow poll in case the websocket drops silently. Skips the
+  // full re-render if a modal is open or the user is mid-interaction —
+  // updateLiveFlagsBadge() still runs so the topbar count stays accurate.
   setInterval(() => {
     if (!session || document.visibilityState !== 'visible') return;
     loadScheduleData().then(() => {
       updateLiveFlagsBadge();
+      if (dashIsBusy()) return;
       if (tab === 'overview' || tab === 'leadership') shell();
     });
   }, 5 * 60 * 1000);
