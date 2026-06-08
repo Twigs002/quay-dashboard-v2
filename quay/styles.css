@@ -400,9 +400,34 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 /* ============================================================ INSIGHTS */
 .insights { display: flex; flex-direction: column; gap: 0; }
 .insight {
-  display: flex; gap: 14px; padding: 16px 22px; border-bottom: 1px solid var(--line-2);
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 16px 22px; border-bottom: 1px solid var(--line-2);
+  position: relative;
 }
 .insight:last-child { border-bottom: none; }
+.insight-ack {
+  align-self: flex-start;
+  margin-left: auto; flex: none;
+  background: #fff; border: 1px solid var(--line);
+  color: var(--ink); cursor: pointer;
+  font-family: Montserrat; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 6px 11px; border-radius: 999px;
+  transition: background .12s ease, color .12s ease, border-color .12s ease;
+}
+.insight-ack:hover { background: var(--paper); border-color: #C7CFE0; }
+.insight.acked { background: rgba(31, 164, 99, 0.04); }
+.insight.acked .insight-body p,
+.insight.acked .insight-action {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.insight.acked .insight-body p b { color: var(--muted); }
+.insight.acked .insight-ic { opacity: 0.5; filter: grayscale(0.6); }
+.insight.acked .insight-ack {
+  background: var(--green-tint); color: var(--green); border-color: var(--green);
+}
+.insight.acked .insight-ack:hover { background: #fff; }
 .insight-ic {
   width: 34px; height: 34px; border-radius: 9px; flex: none; display: grid; place-items: center;
 }
