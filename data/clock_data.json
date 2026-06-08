@@ -1,7 +1,8 @@
 {
   "agents": [],
-  "generated_at": "2026-06-07T09:59:18.019299+00:00",
-  "source": "unset",
-  "week_end": null,
-  "week_start": null
+  "error": "400 Client Error: Bad Request for url: https://dqszbqiimbfvmmnpgpsb.supabase.co/rest/v1/events?select=duration_hrs%2Cstaff_id%2Cstaff%28name%29&dir=eq.out&ts=gte.2026-06-08T00%3A00%3A00%2B00%3A00Z&ts=lte.2026-06-14T23:59:59+00:00Z",
+  "generated_at": "2026-06-08T05:11:52.039087+00:00",
+  "source": "error",
+  "week_end": "2026-06-14T23:59:59+00:00Z",
+  "week_start": "2026-06-08T00:00:00+00:00Z"
 }
