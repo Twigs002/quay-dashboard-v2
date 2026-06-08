@@ -264,6 +264,33 @@ window.VIEWS = (function () {
       <td class="num"><span class="pill ${d[3] >= 10 ? 'ok' : d[3] >= 6.5 ? 'warn' : 'bad'}">${d[3]}%</span></td>
       <td class="num tnum">${d[4]}h</td>
     </tr>`).join('');
+
+    // ---- Monthly graphs --------------------------------------------------
+    // Re-uses the Operational Overview's miniCard painter (.mc el is wired
+    // by managerWire() in app.js after this view mounts).
+    const monthCard = (label, icon, series, color, unit) => {
+      const last = series[series.length - 1], prev = series[series.length - 2] || 1;
+      const pct = (((last - prev) / prev) * 100).toFixed(1);
+      const up  = last >= prev;
+      return `<div class="card mini">
+        <div class="mini-head">${icon} ${label} by month</div>
+        <div class="mini-sub">last 8 months</div>
+        <div class="mini-val tnum">${fmt(last)}${unit || ''}<span style="color:${up ? 'var(--green)' : 'var(--red)'}">${up ? '▲' : '▼'} ${Math.abs(pct)}%</span></div>
+        <div style="margin-top:10px" class="mc" data-series='${JSON.stringify(series)}' data-color="${color}"></div>
+      </div>`;
+    };
+    const monthlyGraphs = `
+      <div class="card mt card-pad">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+          <div><h3 style="margin:0">Monthly trends</h3><div class="sub">Last 8 months across the engine room · ${Q.MONTHS[0]} → ${Q.MONTHS[Q.MONTHS.length - 1]}</div></div>
+        </div>
+        <div class="row mini-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+          ${monthCard('Calls',   I.phone,  Q.MONTH_CALLS,   '#3D5BA6')}
+          ${monthCard('Leads',   I.target, Q.MONTH_LEADS,   '#B98A02')}
+          ${monthCard('Rentals', I.home,   Q.MONTH_RENTALS, '#4C6BB8')}
+          ${monthCard('Emails',  I.mail,   Q.MONTH_EMAILS,  '#2E6FB0')}
+        </div>
+      </div>`;
     return `
     <div class="tab-view">
       <div class="card">
@@ -280,6 +307,7 @@ window.VIEWS = (function () {
           </div>
         </div>
       </div>
+      ${monthlyGraphs}
       <div class="card mt">
         <div class="card-head"><div><h3>Campaign performance — May 1 to Jun 5</h3><div class="sub">Filtered by selected campaigns</div></div></div>
         <div class="tbl-wrap"><table class="tbl">

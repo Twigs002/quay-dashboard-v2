@@ -190,6 +190,12 @@
             <div class="topbar-titles"><h1 id="tabTitle"></h1><p id="tabSub"></p></div>
           </div>
           <div class="topbar-right">
+            <button class="live-flags-badge" id="liveFlagsBadge" title="Jump to live red flags on Overview">
+              <span class="lfb-pulse"></span>
+              <span class="lfb-icon">⚑</span>
+              <span class="lfb-count" id="lfbCount">0</span>
+              <span class="lfb-label">live red flag<span id="lfbS"></span></span>
+            </button>
             <div class="period" id="period">
               ${Object.entries(Q.PERIODS).map(([k, p]) =>
                 `<button data-period="${k}" class="${k === period ? 'active' : ''}">${p.label}</button>`).join('')}
@@ -209,6 +215,9 @@
       b.addEventListener('click', () => { period = b.dataset.period; shell(); }));
     document.getElementById('btnPrint').addEventListener('click', () => window.print());
     document.getElementById('btnExport').addEventListener('click', exportCurrentTab);
+    const lfb = document.getElementById('liveFlagsBadge');
+    if (lfb) lfb.addEventListener('click', () => { tab = 'overview'; shell(); });
+    updateLiveFlagsBadge();
     const so = document.getElementById('signOut');
     if (so) so.addEventListener('click', signOut);
 
@@ -261,7 +270,7 @@
     else if (tab === 'staff')    { host.innerHTML = V.allStaff(period); staffWire(); }
     else if (tab === 'compare')  { host.innerHTML = V.compare(); segWire(); }
     else if (tab === 'daily')    host.innerHTML = V.daily(period);
-    else if (tab === 'manager')  host.innerHTML = V.manager();
+    else if (tab === 'manager')  { host.innerHTML = V.manager(); managerWire(); }
     else if (tab === 'sources')  host.innerHTML = V.leadSources(period);
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
     host.scrollTop = 0;
@@ -313,6 +322,11 @@
         b.classList.add('active');
       })));
   }
+  function managerWire() {
+    document.querySelectorAll('#content .mc').forEach(el =>
+      C.miniBars(el, JSON.parse(el.dataset.series), el.dataset.color));
+  }
+
   function staffWire() {
     const seg = document.getElementById('staffSeg');
     const overall = document.getElementById('staffOverall');
@@ -1318,7 +1332,10 @@
             admin: true, super: !!staff.is_super,
           });
           if (staff.is_super) tab = 'leadership';
-          loadScheduleData().then(() => { if (tab === 'overview' || tab === 'leadership') shell(); });
+          loadScheduleData().then(() => {
+            updateLiveFlagsBadge();
+            if (tab === 'overview' || tab === 'leadership') shell();
+          });
           subscribeRealtime();
         } else {
           await window.sb.auth.signOut(); setSession(null);
@@ -1327,6 +1344,23 @@
     } catch { /* fall through to login */ }
     shell();
   })();
+
+  // ─── Live red-flags badge ────────────────────────────────────────────
+  // Top-right pill that always shows the current count of clock-driven
+  // red flags (no-shows, lateness streaks, missing clock-ins). Stays
+  // visible across tabs; click jumps to Overview.
+  function updateLiveFlagsBadge() {
+    const el = document.getElementById('liveFlagsBadge');
+    if (!el) return;
+    const flags = (typeof scheduleFlags === 'function') ? scheduleFlags() : [];
+    const n = flags.length;
+    const countEl = document.getElementById('lfbCount');
+    const sEl = document.getElementById('lfbS');
+    if (countEl) countEl.textContent = String(n);
+    if (sEl) sEl.textContent = n === 1 ? '' : 's';
+    el.classList.toggle('active', n > 0);
+    el.classList.toggle('clear',  n === 0);
+  }
 
   // ─── Realtime: refresh schedule data whenever an event lands in
   // Supabase. Same pattern as the admin app — debounced, fallback poll.
@@ -1337,6 +1371,7 @@
     _rtReloadTimer = setTimeout(() => {
       if (document.visibilityState !== 'visible') return;
       loadScheduleData().then(() => {
+        updateLiveFlagsBadge();
         if (tab === 'overview' || tab === 'leadership') shell();
       });
     }, 2000);
@@ -1354,6 +1389,7 @@
   setInterval(() => {
     if (!session || document.visibilityState !== 'visible') return;
     loadScheduleData().then(() => {
+      updateLiveFlagsBadge();
       if (tab === 'overview' || tab === 'leadership') shell();
     });
   }, 5 * 60 * 1000);
