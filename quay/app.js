@@ -908,10 +908,8 @@
         ${kpi(I.phone,   'Total Calls',        fmt(t.calls), d.calls,   'vs previous ' + Q.PERIODS[period].label.toLowerCase())}
         ${kpi(I.trophy,  'Success Rate',       t.avgSuccess + '%', d.success, 'contact-to-lead conversion')}
         ${kpi(I.bolt,    'Team Efficiency',    eff + '%', null, 'dialler ÷ clocked-in time')}
-        ${kpi(I.medal,   'Est. Revenue',       'R ' + fmt(Math.round(revenue)), null,
-              revenueMatched > 0
-                ? fmt(revenueMatched) + ' of ' + fmt(t.leads) + ' leads matched to a team rate; rest at floor avg'
-                : fmt(t.leads) + ' leads × R' + fmt(rev.default) + ' floor avg (no team match this period)')}
+        ${kpi(I.medal,   'Revenue ceiling',    'R ' + fmt(Math.round(revenue)), null,
+              'Theoretical max — every lead × closed-unit rate. Real revenue is lower by the DialFire→close conversion rate.')}
       </div>
 
       <!-- Team split + Target progress -->
@@ -1020,7 +1018,7 @@
       </div>`;
   }
 
-  // Renders the per-team R/lead breakdown that drove the Est. Revenue KPI.
+  // Renders the per-team R/lead breakdown that drove the Revenue Ceiling KPI.
   // Only shows campaigns active in the current period, sorted by their
   // contribution to revenue.
   function revenueModelCard(campaigns, rateLookup, fallback) {
@@ -1036,7 +1034,7 @@
     if (!rows.length) return '';
     return `
       <div class="card mt">
-        <div class="card-head"><div><h3>Revenue model · per-team R/lead</h3><div class="sub">From the "Rand per Lead" sheet. Used to weight the Est. Revenue KPI.</div></div></div>
+        <div class="card-head"><div><h3>Revenue model · per-team R/lead</h3><div class="sub">From the "Rand per Lead" sheet — closed-unit rate. Feeds the Revenue Ceiling KPI.</div></div></div>
         <div class="tbl-wrap"><table class="tbl">
           <thead><tr><th>Campaign / Team</th><th class="num">Leads (period)</th><th class="num">R per lead</th><th class="num">Period revenue</th></tr></thead>
           <tbody>${rows.map(r => `
