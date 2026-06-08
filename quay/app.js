@@ -46,7 +46,6 @@
     { id: 'overview',   label: 'Overview',       icon: I.trophy,   title: 'Operational Overview', sub: 'A single view of call-floor performance' },
     { id: 'staff',      label: 'All Staff',      icon: I.calendar, title: 'All Staff Report',     sub: 'Drill into agent-level performance' },
     { id: 'compare',    label: 'Compare',        icon: I.scale,    title: 'Period Comparison',    sub: 'Week vs week · month vs month' },
-    { id: 'worktime',   label: 'Work Time',      icon: I.clock,    title: 'Work Time & Efficiency', sub: 'DialFire dialler time vs clocked-in time' },
     { id: 'daily',      label: 'Daily Stats',    icon: I.cal2,     title: 'Daily Stats',          sub: 'Per-caller performance for a single day' },
     { id: 'manager',    label: 'Manager Reports',icon: I.chart,    title: 'Manager Reports',      sub: 'Filter by date range and campaign' },
     { id: 'sources',    label: 'Lead Sources',   icon: I.target,   title: 'Lead Source Efficacy', sub: 'Which source converts best' },
@@ -261,7 +260,6 @@
     else if (tab === 'overview') { host.innerHTML = overview(); afterOverview(); }
     else if (tab === 'staff')    { host.innerHTML = V.allStaff(period); staffWire(); }
     else if (tab === 'compare')  { host.innerHTML = V.compare(); segWire(); }
-    else if (tab === 'worktime') host.innerHTML = V.workTime(period);
     else if (tab === 'daily')    host.innerHTML = V.daily(period);
     else if (tab === 'manager')  host.innerHTML = V.manager();
     else if (tab === 'sources')  host.innerHTML = V.leadSources(period);

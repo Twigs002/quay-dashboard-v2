@@ -1,4 +1,4 @@
-/* Quay 1 — secondary tab views (All Staff, Compare, Work Time, Daily, Manager, Lead Sources) */
+/* Quay 1 — secondary tab views (All Staff, Compare, Daily, Manager, Lead Sources) */
 
 window.VIEWS = (function () {
   const Q = window.QUAY, I = window.ICON, C = window.CHART;
@@ -205,74 +205,6 @@ window.VIEWS = (function () {
     </div>`;
   }
 
-  // ---------------------------------------------------- WORK TIME
-  // DialFire dialler time vs real clocked time from Supabase. Replaces
-  // the old ConnectTeams CSV upload workflow — data flows automatically.
-  function workTime(period) {
-    const agents = Q.agentsFor(period).slice().sort((a, b) => b.eff - a.eff);
-    const haveClock = agents.some(a => a.ctSource === 'clock');
-    const avgEff = Math.round(agents.reduce((s, a) => s + a.eff, 0) / agents.length);
-    const totDf = agents.reduce((s, a) => s + a.df, 0);
-    const totCt = agents.reduce((s, a) => s + a.ct, 0);
-    const onTrack = agents.filter(a => a.eff >= 70).length;
-    const rows = agents.map(a => {
-      const ec = effClass(a.eff);
-      const col = a.eff >= 70 ? 'var(--green)' : a.eff >= 60 ? 'var(--amber)' : 'var(--red)';
-      const srcTag = a.ctSource === 'clock'
-        ? '<span class="pill" style="background:var(--green-tint);color:var(--green);font-size:10px;font-weight:700;margin-left:6px">real</span>'
-        : '<span class="pill" style="background:#EEF0F6;color:var(--muted);font-size:10px;font-weight:700;margin-left:6px" title="estimated DF / 0.85 — agent not in the clock data yet">est</span>';
-      return `<tr>
-        <td><div class="agent-cell"><div class="avatar">${initials(a.name)}</div>
-          <div><div class="agent-name">${a.name}</div><div class="agent-sub">${a.team}</div></div></div></td>
-        <td class="num tnum">${a.df.toFixed(1)}h</td>
-        <td class="num tnum">${a.ct.toFixed(1)}h${srcTag}</td>
-        <td style="width:240px"><div class="eff-track">
-          <span style="width:${Math.min(100, a.eff)}%;background:${col}"></span>
-          <div class="eff-target" style="left:70%"></div>
-        </div></td>
-        <td class="num"><span class="pill ${ec}">${a.eff}%</span></td>
-      </tr>`;
-    }).join('');
-    return `
-    <div class="tab-view">
-      <div class="row g-3">
-        ${miniStat('Avg efficiency', avgEff + '%', 'DialFire ÷ clocked time · target ≥70%', I.bolt)}
-        ${miniStat('On-target agents', onTrack + ' / ' + agents.length, 'meeting the 70% threshold', I.check)}
-        ${miniStat('Dialler vs clocked', totDf.toFixed(0) + 'h / ' + totCt.toFixed(0) + 'h', haveClock ? 'real data from quay-clock' : 'estimated — no clock data yet', I.clock)}
-      </div>
-
-      <div class="row g-2-1 mt">
-        <div class="card">
-          <div class="card-head"><div><h3>DialFire vs Clocked</h3><div class="sub">Active dialler time against real clocked-in time from quay-clock</div></div>
-            <button class="btn">${I.download} Export</button></div>
-          <div class="tbl-wrap"><table class="tbl">
-            <thead><tr><th>Agent</th><th class="num">DialFire</th><th class="num">Clocked</th><th>Efficiency</th><th class="num">%</th></tr></thead>
-            <tbody>${rows}</tbody>
-          </table></div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:20px">
-          <div class="card card-pad">
-            <div class="eyebrow">Where the numbers come from</div>
-            <ul style="margin:12px 0 0;padding-left:18px;font-size:12.5px;color:var(--slate);line-height:1.9">
-              <li><b style="color:var(--blue)">DialFire</b> = active dialler time, fetched daily from the DialFire API.</li>
-              <li><b style="color:var(--amber)">Clocked</b> = real clocked-in time pulled from <code>quay-clock</code>. Tagged <b style="color:var(--green)">real</b> per row when present; <b style="color:var(--muted)">est</b> if that agent isn't in the clock data for the week yet.</li>
-              <li><b style="color:var(--ink)">Efficiency</b> = DF ÷ Clocked. Target ≥ 70%.</li>
-            </ul>
-          </div>
-          <div class="card card-pad">
-            <div class="eyebrow">Standard schedule</div>
-            <div style="font-size:13px;color:var(--slate);line-height:1.7;margin-top:10px">
-              Working day is <b style="color:var(--ink)">08:00 – 17:00</b> Mon–Fri (9 hours).
-              The dashboard surfaces over/under variance — it doesn't enforce it.
-              See <b style="color:var(--ink)">Schedule adherence</b> on the Operational Overview tab.
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>`;
-  }
-
   // ---------------------------------------------------- DAILY
   function daily(period) {
     const agents = Q.agentsFor('this-week').map(a => ({ ...a, calls: Math.round(a.calls / 5), leads: Math.round(a.leads / 5) }))
@@ -441,5 +373,5 @@ window.VIEWS = (function () {
     </div>`;
   }
 
-  return { allStaff, compare, workTime, daily, manager, leadSources };
+  return { allStaff, compare, daily, manager, leadSources };
 })();
