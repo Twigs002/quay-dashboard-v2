@@ -1323,6 +1323,7 @@
           });
           if (staff.is_super) tab = 'leadership';
           loadScheduleData().then(() => { if (tab === 'overview' || tab === 'leadership') shell(); });
+          subscribeRealtime();
         } else {
           await window.sb.auth.signOut(); setSession(null);
         }
@@ -1330,4 +1331,34 @@
     } catch { /* fall through to login */ }
     shell();
   })();
+
+  // ─── Realtime: refresh schedule data whenever an event lands in
+  // Supabase. Same pattern as the admin app — debounced, fallback poll.
+  let _rtChannel = null;
+  let _rtReloadTimer = null;
+  function rtScheduleReload() {
+    clearTimeout(_rtReloadTimer);
+    _rtReloadTimer = setTimeout(() => {
+      if (document.visibilityState !== 'visible') return;
+      loadScheduleData().then(() => {
+        if (tab === 'overview' || tab === 'leadership') shell();
+      });
+    }, 2000);
+  }
+  function subscribeRealtime() {
+    if (_rtChannel || !window.sb) return;
+    try {
+      _rtChannel = window.sb
+        .channel('dash-feed')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, rtScheduleReload)
+        .subscribe();
+    } catch (e) { console.warn('[rt] subscribe failed', e); }
+  }
+  // Fallback slow poll in case the websocket drops silently.
+  setInterval(() => {
+    if (!session || document.visibilityState !== 'visible') return;
+    loadScheduleData().then(() => {
+      if (tab === 'overview' || tab === 'leadership') shell();
+    });
+  }, 5 * 60 * 1000);
 })();
