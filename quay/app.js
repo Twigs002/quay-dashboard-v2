@@ -19,7 +19,7 @@
   }
 
   let period = 'this-week';
-  let tab = 'leadership';
+  let tab = 'overview'; // default landing; switched to 'leadership' for superusers below
 
   // ---- standard schedule (8am–5pm Mon–Fri) ----
   // Soft target: we surface variance, we don't enforce it.
@@ -108,13 +108,17 @@
       if (error || !data.user) throw new Error('Username or PIN not recognised');
       // Confirm this user is in the staff table AND is_admin.
       const { data: staff, error: sErr } = await window.sb.from('staff')
-        .select('id, name, role, team, is_admin, active')
+        .select('id, name, role, team, is_admin, is_super, active')
         .eq('auth_user_id', data.user.id).maybeSingle();
       if (sErr || !staff || !staff.is_admin || staff.active === false) {
         await window.sb.auth.signOut();
         throw new Error('Not an admin');
       }
-      setSession({ id: staff.id, name: staff.name, role: staff.role || '', team: staff.team || '', admin: true });
+      setSession({
+        id: staff.id, name: staff.name, role: staff.role || '', team: staff.team || '',
+        admin: true, super: !!staff.is_super,
+      });
+      if (staff.is_super) tab = 'leadership'; // superusers land on Leadership by default
       try { localStorage.setItem('quay_dash_last_user', username); } catch {}
       pinBuf = ''; loginError = '';
       shell();
@@ -143,11 +147,15 @@
     // We're authenticated when supabase has an active session AND we know
     // the staff row. setSession({...staff}) is set by submitLogin/setSession.
     if (!session || !session.id) { renderLogin(); return; }
-    const navItems = TABS.map(t => `
+    // Filter tabs by role: only superusers see Leadership.
+    const visibleTabs = TABS.filter(t => t.id !== 'leadership' || session.super);
+    // If a non-super lands on a hidden tab (e.g. via deep link), bounce to overview.
+    if (!visibleTabs.find(t => t.id === tab)) tab = 'overview';
+    const navItems = visibleTabs.map(t => `
       <button class="nav-item ${t.id === tab ? 'active' : ''}" data-tab="${t.id}" title="${t.label}">
         ${t.icon}<span>${t.label}</span>
       </button>`).join('');
-    const navMobileOptions = TABS.map(t =>
+    const navMobileOptions = visibleTabs.map(t =>
       `<option value="${t.id}" ${t.id === tab ? 'selected' : ''}>${t.label}</option>`
     ).join('');
     document.getElementById('app').innerHTML = `
@@ -168,7 +176,7 @@
             <div class="signed-av">${initials(session.name || 'A')}</div>
             <div class="signed-who">
               <div class="signed-n">${escapeHtml(session.name || '')}</div>
-              <div class="signed-r">${escapeHtml(session.role || 'Admin')}</div>
+              <div class="signed-r">${session.super ? 'Superuser' : 'Manager'}${session.role ? ' · ' + escapeHtml(session.role) : ''}</div>
             </div>
             <button class="signed-out" id="signOut" title="Sign out">${I.arrow}</button>
           </div>
@@ -248,6 +256,7 @@
   // ---------------------------------------------------- ROUTER
   function render() {
     const host = document.getElementById('content');
+    if (tab === 'leadership' && !session?.super) { tab = 'overview'; }
     if (tab === 'leadership')    { host.innerHTML = leadership(); afterLeadership(); }
     else if (tab === 'overview') { host.innerHTML = overview(); afterOverview(); }
     else if (tab === 'staff')    { host.innerHTML = V.allStaff(period); staffWire(); }
@@ -1299,10 +1308,14 @@
       const { data: { user } } = await window.sb.auth.getUser();
       if (user) {
         const { data: staff } = await window.sb.from('staff')
-          .select('id, name, role, team, is_admin, active')
+          .select('id, name, role, team, is_admin, is_super, active')
           .eq('auth_user_id', user.id).maybeSingle();
         if (staff && staff.is_admin && staff.active !== false) {
-          setSession({ id: staff.id, name: staff.name, role: staff.role || '', team: staff.team || '', admin: true });
+          setSession({
+            id: staff.id, name: staff.name, role: staff.role || '', team: staff.team || '',
+            admin: true, super: !!staff.is_super,
+          });
+          if (staff.is_super) tab = 'leadership';
           loadScheduleData().then(() => { if (tab === 'overview' || tab === 'leadership') shell(); });
         } else {
           await window.sb.auth.signOut(); setSession(null);
