@@ -770,6 +770,7 @@
     document.querySelectorAll('[data-goto]').forEach(b =>
       b.addEventListener('click', () => { tab = b.dataset.goto; shell(); }));
     wireAgentClicks();
+    wireFlagAckButtons();
   }
 
   // ---------------------------------------------------- LEADERSHIP OVERVIEW
@@ -896,13 +897,17 @@
       </div>`;
     }).join('');
 
-    const flagItems = flags.length ? flags.map(f => `
-      <div class="insight">
+    const flagItems = flags.length ? flags.map(f => {
+      const key = f.key || '';
+      const acked = key && flagAcks.has(key);
+      return `<div class="insight${acked ? ' acked' : ''}" data-flag-key="${key}">
         <div class="insight-ic ${f.type}">${f.type === 'warn' ? I.alert : f.type === 'down' ? I.down : I.spark}</div>
         <div class="insight-body"><p>${f.html}</p>
           ${f.action ? `<div class="insight-action">${I.arrow}${f.action}</div>` : ''}
         </div>
-      </div>`).join('') : `<div style="padding:18px 24px;color:var(--muted);font-size:13px">
+        ${key ? `<button class="insight-ack" data-flag-key="${key}" title="Mark this flag as attended to">${acked ? 'Undo' : 'Mark attended'}</button>` : ''}
+      </div>`;
+    }).join('') : `<div style="padding:18px 24px;color:var(--muted);font-size:13px">
         No red flags this period — the floor is on track.
       </div>`;
 
@@ -1098,21 +1103,25 @@
     const cd = cfg.calls_drop_pct      ?? -15;
     const sb = cfg.success_below_pct   ?? -3;
     const ic = cfg.inactive_call_floor ?? 100;
+    const slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
     // 1) Big WoW drop in calls
     if (deltas.calls != null && deltas.calls <= cd) {
       flags.push({ type: 'down',
+        key: `calls_drop:${period}`,
         html: `<b>Call volume down ${Math.abs(deltas.calls)}%</b> vs previous period — investigate cause.`,
         action: 'Open Compare tab for week-vs-week breakdown' });
     }
     // 2) RM team below target by more than threshold
     if (rmT.sr < rmT.target + sb) {
       flags.push({ type: 'warn',
+        key: `sr_low:rm:${period}`,
         html: `<b>RM success rate at ${rmT.sr}%</b> — ${(rmT.target - rmT.sr).toFixed(1)} pts below the ${rmT.target}% target.`,
         action: 'Review RM coaching cadence' });
     }
     if (fcT.sr < fcT.target + sb) {
       flags.push({ type: 'warn',
+        key: `sr_low:fc:${period}`,
         html: `<b>Fancy success rate at ${fcT.sr}%</b> — ${(fcT.target - fcT.sr).toFixed(1)} pts below the ${fcT.target}% target.`,
         action: 'Review Fancy desk lead quality' });
     }
@@ -1120,6 +1129,7 @@
     const inactive = agents.filter(a => a.calls < ic).sort((a, b) => a.calls - b.calls).slice(0, 3);
     inactive.forEach(a => {
       flags.push({ type: 'warn',
+        key: `inactive:${slug(a.name)}:${period}`,
         html: `<b>${a.name}</b> made only <b>${fmt(a.calls)}</b> calls — well below the ${ic}-call floor.`,
         action: 'Confirm clocked time + dialler issues' });
     });
@@ -1135,6 +1145,7 @@
     document.querySelectorAll('[data-goto]').forEach(b =>
       b.addEventListener('click', () => { tab = b.dataset.goto; shell(); }));
     wireAgentClicks();
+    wireFlagAckButtons();
   }
 
   // Globally wire any element with data-agent to open the drill-down modal.
@@ -1290,14 +1301,17 @@
     const out = [];
     const today = new Date(); today.setHours(0,0,0,0);
     const todayKey = today.toISOString().slice(0, 10);
+    const wkKey = schedule.weekStart ? schedule.weekStart.toISOString().slice(0, 10) : todayKey;
     const dow = today.getDay();
     const isWeekday = dow >= 1 && dow <= 5;
+    const slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     // 1) Anyone not clocked in yet but it's past 09:00 on a weekday.
     if (isWeekday && new Date().getHours() >= 9) {
       schedule.byStaff.forEach(r => {
         const today = r.days[todayKey];
         if (!today || !today.first) {
           out.push({ type: 'warn',
+            key: `no_clockin:${slug(r.name)}:${todayKey}`,
             html: `<b>${r.name}</b> hasn't clocked in yet today.`,
             action: 'Check with them or log a shift-change request' });
         }
@@ -1306,12 +1320,14 @@
     // 2) Anyone late 3+ times this week.
     schedule.byStaff.forEach(r => {
       if (r.late >= 3) out.push({ type: 'warn',
+        key: `chronic_late:${slug(r.name)}:${wkKey}`,
         html: `<b>${r.name}</b> clocked in late <b>${r.late}×</b> this week (avg start ${fmtHHMM(r.avgStartMin)}).`,
         action: 'Worth a one-on-one' });
     });
     // 3) Anyone with no-shows on weekdays (excluding today before 09:00).
     schedule.byStaff.forEach(r => {
       if (r.missed >= 2) out.push({ type: 'down',
+        key: `multi_missed:${slug(r.name)}:${wkKey}`,
         html: `<b>${r.name}</b> missed <b>${r.missed}</b> weekday${r.missed > 1 ? 's' : ''} this week — no clock-in event.`,
         action: 'Submit a shift-change request if it was a one-off' });
     });
@@ -1336,6 +1352,7 @@
             updateLiveFlagsBadge();
             if (tab === 'overview' || tab === 'leadership') shell();
           });
+          loadFlagAcks();
           subscribeRealtime();
         } else {
           await window.sb.auth.signOut(); setSession(null);
@@ -1345,6 +1362,77 @@
     shell();
   })();
 
+  // ─── Red-flag acks (flag-checklist persistence) ──────────────────────
+  // Maps flag_key → { acked_at, acked_by, name } for any flag a manager
+  // has marked as 'attended to'. Backed by the Supabase `flag_acks` table,
+  // so a tick on one device shows up on every other.
+  const flagAcks = new Map();
+  async function loadFlagAcks() {
+    if (!window.sb) return;
+    try {
+      // Pull acks + the staff name behind each ack so we can render who attended.
+      const { data, error } = await window.sb
+        .from('flag_acks')
+        .select('flag_key, acked_at, acked_by');
+      if (error) throw error;
+      flagAcks.clear();
+      (data || []).forEach(r => flagAcks.set(r.flag_key, r));
+      updateLiveFlagsBadge();
+    } catch (e) {
+      console.warn('[flag_acks] load failed', e);
+    }
+  }
+  async function ackFlag(key) {
+    if (!window.sb || !session) return;
+    flagAcks.set(key, { flag_key: key, acked_at: new Date().toISOString(), acked_by: session.id });
+    rerenderFlagsInPlace();
+    updateLiveFlagsBadge();
+    try {
+      await window.sb.from('flag_acks').upsert({ flag_key: key, acked_by: session.id });
+    } catch (e) {
+      console.warn('[flag_acks] ack failed', e);
+      flagAcks.delete(key);
+      rerenderFlagsInPlace();
+    }
+  }
+  async function unackFlag(key) {
+    if (!window.sb) return;
+    const prev = flagAcks.get(key);
+    flagAcks.delete(key);
+    rerenderFlagsInPlace();
+    updateLiveFlagsBadge();
+    try {
+      await window.sb.from('flag_acks').delete().eq('flag_key', key);
+    } catch (e) {
+      console.warn('[flag_acks] unack failed', e);
+      if (prev) flagAcks.set(key, prev);
+      rerenderFlagsInPlace();
+    }
+  }
+  // Light re-render: just refresh the flag rows on whichever tab is showing
+  // (Overview / Leadership). Avoids a full shell() that would lose scroll.
+  function rerenderFlagsInPlace() {
+    if (tab !== 'overview' && tab !== 'leadership') return;
+    document.querySelectorAll('.insight[data-flag-key]').forEach(el => {
+      const key = el.dataset.flagKey;
+      const acked = flagAcks.has(key);
+      el.classList.toggle('acked', acked);
+      const btn = el.querySelector('.insight-ack');
+      if (btn) btn.textContent = acked ? 'Undo' : 'Mark attended';
+    });
+  }
+  function wireFlagAckButtons(root) {
+    (root || document).querySelectorAll('.insight-ack').forEach(b => {
+      if (b.__wired) return; b.__wired = true;
+      b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const key = b.dataset.flagKey;
+        if (!key) return;
+        flagAcks.has(key) ? unackFlag(key) : ackFlag(key);
+      });
+    });
+  }
+
   // ─── Live red-flags badge ────────────────────────────────────────────
   // Top-right pill that always shows the current count of clock-driven
   // red flags (no-shows, lateness streaks, missing clock-ins). Stays
@@ -1353,7 +1441,8 @@
     const el = document.getElementById('liveFlagsBadge');
     if (!el) return;
     const flags = (typeof scheduleFlags === 'function') ? scheduleFlags() : [];
-    const n = flags.length;
+    // Don't count flags that have already been attended to.
+    const n = flags.filter(f => !f.key || !flagAcks.has(f.key)).length;
     const countEl = document.getElementById('lfbCount');
     const sEl = document.getElementById('lfbS');
     if (countEl) countEl.textContent = String(n);
@@ -1382,6 +1471,9 @@
       _rtChannel = window.sb
         .channel('dash-feed')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, rtScheduleReload)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'flag_acks' }, () => {
+          loadFlagAcks().then(rerenderFlagsInPlace);
+        })
         .subscribe();
     } catch (e) { console.warn('[rt] subscribe failed', e); }
   }
