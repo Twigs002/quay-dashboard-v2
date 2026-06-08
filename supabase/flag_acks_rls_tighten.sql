@@ -27,7 +27,7 @@ create policy flag_acks_update_self on public.flag_acks
     acked_by = (select id from public.staff where auth_user_id = auth.uid())
   );
 
--- 3) Deletes: same as update — only the owner can un-tick.
+-- 3) Deletes: same as update - only the owner can un-tick.
 --    (Superusers who need to override can do so via the SQL editor.)
 drop policy if exists flag_acks_delete_authn on public.flag_acks;
 create policy flag_acks_delete_self on public.flag_acks
@@ -36,5 +36,5 @@ create policy flag_acks_delete_self on public.flag_acks
     acked_by = (select id from public.staff where auth_user_id = auth.uid())
   );
 
--- Select policy stays wide open to authenticated — every manager should
+-- Select policy stays wide open to authenticated - every manager should
 -- still see every ack so the team sees what's been handled.
