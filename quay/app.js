@@ -325,6 +325,11 @@
   function managerWire() {
     document.querySelectorAll('#content .mc').forEach(el =>
       C.miniBars(el, JSON.parse(el.dataset.series), el.dataset.color));
+    const host = document.getElementById('managerFlagsHost');
+    if (host) {
+      host.innerHTML = flagsCardHtml(currentFlags());
+      wireFlagAckButtons(host);
+    }
   }
 
   function staffWire() {
@@ -1097,6 +1102,51 @@
       </div>`;
   }
 
+  // Computes the same flags the Overview card shows, for re-use elsewhere
+  // (e.g. Manager Reports). Mirrors the prelude inside overview() but only
+  // grabs the inputs redFlags() actually needs.
+  function currentFlags() {
+    const agents = Q.agentsFor(period);
+    const d = Q.DELTAS[period] || {};
+    const rm = agents.filter(a => a.team === 'RM');
+    const fc = agents.filter(a => a.team === 'Fancy');
+    const teamTotals = team => {
+      const calls = team.reduce((s, a) => s + a.calls, 0);
+      const leads = team.reduce((s, a) => s + a.leads, 0);
+      const sr = calls ? +((leads / calls) * 100).toFixed(1) : 0;
+      const target = team === rm
+        ? (CFG.BENCHMARKS && CFG.BENCHMARKS.rm_success_rate) || 17
+        : (CFG.BENCHMARKS && CFG.BENCHMARKS.fc_success_rate) || 20;
+      return { calls, leads, sr, target, n: team.length };
+    };
+    return redFlags(agents, d, rmT_safe(teamTotals(rm)), rmT_safe(teamTotals(fc)));
+  }
+  // Defensive: never let a divide-by-zero make redFlags() throw.
+  function rmT_safe(t) { return t && t.sr != null ? t : { sr: 0, target: 100, calls: 0, leads: 0 }; }
+
+  // Returns ready-to-mount HTML for the Red Flags card. Pair with
+  // wireFlagAckButtons() after injecting so the Mark-attended pills work.
+  function flagsCardHtml(flags, opts) {
+    const sub = (opts && opts.sub) || 'Auto-detected from this period · click Mark attended to tick them off';
+    const items = flags.length ? flags.map(f => {
+      const key = f.key || '';
+      const acked = key && flagAcks.has(key);
+      return `<div class="insight${acked ? ' acked' : ''}" data-flag-key="${key}">
+        <div class="insight-ic ${f.type}">${f.type === 'warn' ? I.alert : f.type === 'down' ? I.down : I.spark}</div>
+        <div class="insight-body"><p>${f.html}</p>
+          ${f.action ? `<div class="insight-action">${I.arrow}${f.action}</div>` : ''}
+        </div>
+        ${key ? `<button class="insight-ack" data-flag-key="${key}" title="Mark this flag as attended to">${acked ? 'Undo' : 'Mark attended'}</button>` : ''}
+      </div>`;
+    }).join('') : `<div style="padding:18px 24px;color:var(--muted);font-size:13px">
+        No red flags this period — the floor is on track.
+      </div>`;
+    return `<div class="card">
+      <div class="card-head"><div><h3>Red flags</h3><div class="sub">${sub}</div></div></div>
+      <div class="insights">${items}</div>
+    </div>`;
+  }
+
   function redFlags(agents, deltas, rmT, fcT) {
     const flags = [];
     const cfg = (CFG.RED_FLAGS) || {};
@@ -1412,7 +1462,7 @@
   // Light re-render: just refresh the flag rows on whichever tab is showing
   // (Overview / Leadership). Avoids a full shell() that would lose scroll.
   function rerenderFlagsInPlace() {
-    if (tab !== 'overview' && tab !== 'leadership') return;
+    if (tab !== 'overview' && tab !== 'leadership' && tab !== 'manager') return;
     document.querySelectorAll('.insight[data-flag-key]').forEach(el => {
       const key = el.dataset.flagKey;
       const acked = flagAcks.has(key);
