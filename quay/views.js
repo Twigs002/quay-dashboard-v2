@@ -43,6 +43,10 @@ window.VIEWS = (function () {
     const cards = agents.map(a => perCallerCard(a)).join('');
     const tCalls = agents.reduce((s, a) => s + a.calls, 0);
     const tLeads = agents.reduce((s, a) => s + a.leads, 0);
+    const totDf  = agents.reduce((s, a) => s + (a.df || 0), 0);
+    const totCt  = agents.reduce((s, a) => s + (a.ct || 0), 0);
+    const haveClock = agents.some(a => a.ctSource === 'clock');
+    const avgEff = agents.length ? Math.round(agents.reduce((s, a) => s + (a.eff || 0), 0) / agents.length) : 0;
     return `
     <div class="tab-view">
       <div class="card">
@@ -60,10 +64,12 @@ window.VIEWS = (function () {
         </div>
       </div>
 
-      <div class="row g-3 mt">
+      <div class="row mt" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
         ${miniStat('Roster size', agents.length + ' agents', 'RM + Fancy combined', I.users)}
         ${miniStat('Total calls', fmt(tCalls), 'across selected range', I.phone)}
         ${miniStat('Total leads', fmt(tLeads), 'seller · rental · email', I.target)}
+        ${miniStat('Avg efficiency', avgEff + '%', 'DialFire ÷ clocked time · target ≥70%', I.bolt)}
+        ${miniStat('Dialler vs clocked', totDf.toFixed(0) + 'h / ' + totCt.toFixed(0) + 'h', haveClock ? 'real data from quay-clock' : 'estimated — no clock data yet', I.clock)}
       </div>
 
       <div class="card mt" id="staffOverall">
