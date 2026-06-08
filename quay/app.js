@@ -20,6 +20,20 @@
 
   let period = 'this-week';
   let tab = 'leadership';
+
+  // ---- standard schedule (8am–5pm Mon–Fri) ----
+  // Soft target: we surface variance, we don't enforce it.
+  const SCHEDULE = {
+    start_hr: 8,   start_min: 0,
+    end_hr: 17,    end_min: 0,
+    late_grace_min: 15,    // clocked in by 08:15 counts as on-time
+    early_grace_min: 15,   // clocked out after 16:45 counts as full day
+  };
+  // Per-week schedule adherence — populated by loadScheduleData() then read
+  // by overview()'s adherence card + redFlags(). Shape:
+  //   { byStaff: Map<id, { name, days: { yyyy-mm-dd: { first, last } }, late, early, missed }>,
+  //     weekStart, weekEnd, asOf }
+  let schedule = null;
   let pinBuf = '', pinErr = false, loginError = '';
   // nav preference: 'auto' (collapse on narrow), 'open' (force expanded), 'collapsed' (force rail)
   let navPref = localStorage.getItem('q1nav') || 'auto';
@@ -659,6 +673,11 @@
         </div>
       </div>
 
+      <!-- schedule adherence (real clock-in data) -->
+      <div class="mt">
+        ${scheduleAdherenceCard()}
+      </div>
+
       <!-- insights + top10 -->
       <div class="row g-2-1 mt" style="align-items:start">
         <div class="card">
@@ -1014,7 +1033,8 @@
         html: `<b>${a.name}</b> made only <b>${fmt(a.calls)}</b> calls — well below the ${ic}-call floor.`,
         action: 'Confirm clocked time + dialler issues' });
     });
-    return flags;
+    // Append clock-based schedule flags (no-shows, chronic lateness, etc.)
+    return flags.concat(scheduleFlags());
   }
 
   function afterLeadership() {
@@ -1040,6 +1060,170 @@
     });
   }
 
+  // ---- Schedule analytics ----------------------------------------------
+  // Pulls the last 7 days of events from Supabase using the logged-in
+  // admin's session (events_select_authn RLS policy allows reads to any
+  // authenticated user). Aggregates per-staff per-day first-in / last-out
+  // and counts late starts, early finishes, and missed weekdays.
+  async function loadScheduleData() {
+    if (!session) return;
+    try {
+      const now = new Date();
+      const monday = startOfThisWeek(now);
+      const weekEnd = new Date(monday); weekEnd.setDate(weekEnd.getDate() + 6); weekEnd.setHours(23,59,59,999);
+      const [{ data: staff }, { data: events }] = await Promise.all([
+        window.sb.from('staff').select('id, name, active').eq('active', true),
+        window.sb.from('events').select('staff_id, ts, dir')
+          .gte('ts', monday.toISOString()).lte('ts', weekEnd.toISOString())
+          .order('ts', { ascending: true }),
+      ]);
+      const byStaff = new Map();
+      (staff || []).forEach(s => byStaff.set(s.id, {
+        id: s.id, name: s.name, days: {},
+        late: 0, early: 0, missed: 0, avgStartMin: null, avgEndMin: null,
+      }));
+      (events || []).forEach(e => {
+        const rec = byStaff.get(e.staff_id);
+        if (!rec) return;
+        const d = new Date(e.ts);
+        const key = d.toISOString().slice(0, 10);
+        if (!rec.days[key]) rec.days[key] = { first: null, last: null };
+        if (e.dir === 'in'  && !rec.days[key].first) rec.days[key].first = d;
+        if (e.dir === 'out') rec.days[key].last = d;
+      });
+      // Compute aggregates per staff over Mon..min(today, Fri).
+      const today = new Date(); today.setHours(0,0,0,0);
+      const lastWeekday = new Date(monday);
+      // Loop Mon..Fri up to but not past today.
+      const days = [];
+      for (let i = 0; i < 5; i++) {
+        const d = new Date(monday); d.setDate(d.getDate() + i);
+        if (d <= today) days.push(d);
+      }
+      const lateThreshold = SCHEDULE.start_hr * 60 + SCHEDULE.start_min + SCHEDULE.late_grace_min;
+      const earlyThreshold = SCHEDULE.end_hr * 60 + SCHEDULE.end_min - SCHEDULE.early_grace_min;
+      byStaff.forEach((rec) => {
+        let startSum = 0, startCount = 0, endSum = 0, endCount = 0;
+        days.forEach(d => {
+          const key = d.toISOString().slice(0, 10);
+          const entry = rec.days[key];
+          if (!entry || !entry.first) {
+            // Don't count today as 'missed' until past 09:00.
+            const isToday = d.toDateString() === today.toDateString();
+            if (!isToday || new Date().getHours() >= 9) rec.missed++;
+            return;
+          }
+          const startMin = entry.first.getHours() * 60 + entry.first.getMinutes();
+          startSum += startMin; startCount++;
+          if (startMin > lateThreshold) rec.late++;
+          if (entry.last) {
+            const endMin = entry.last.getHours() * 60 + entry.last.getMinutes();
+            endSum += endMin; endCount++;
+            if (endMin < earlyThreshold) rec.early++;
+          }
+        });
+        rec.avgStartMin = startCount ? Math.round(startSum / startCount) : null;
+        rec.avgEndMin   = endCount   ? Math.round(endSum / endCount)     : null;
+        rec.daysWorked  = startCount;
+      });
+      schedule = {
+        byStaff,
+        weekStart: monday,
+        weekEnd,
+        asOf: new Date(),
+        evaluatedDays: days.length,
+      };
+    } catch (e) {
+      console.warn('[schedule] load failed', e);
+      schedule = null;
+    }
+  }
+  function startOfThisWeek(d) {
+    const x = new Date(d); const dow = (x.getDay() + 6) % 7;
+    x.setHours(0,0,0,0); x.setDate(x.getDate() - dow); return x;
+  }
+  function fmtHHMM(min) {
+    if (min == null) return '—';
+    const h = Math.floor(min / 60), m = min % 60;
+    return ('0'+h).slice(-2) + ':' + ('0'+m).slice(-2);
+  }
+
+  // ---- Schedule adherence card (rendered inside Operational Overview) ---
+  function scheduleAdherenceCard() {
+    if (!schedule) {
+      return `<div class="card card-pad">
+        <h3 style="margin:0 0 6px">Schedule adherence</h3>
+        <div class="muted" style="font-size:13px">Loading clock data…</div>
+      </div>`;
+    }
+    const rows = [...schedule.byStaff.values()]
+      .filter(r => r.daysWorked > 0 || r.missed > 0)
+      .sort((a, b) => (b.late + b.early + b.missed) - (a.late + a.early + a.missed));
+    const onTimeDays = rows.reduce((s, r) => s + (r.daysWorked - r.late), 0);
+    const totalDays  = rows.reduce((s, r) => s + r.daysWorked + r.missed, 0);
+    const punctuality = totalDays ? Math.round((onTimeDays / totalDays) * 100) : 0;
+
+    const body = rows.map(r => {
+      const start = fmtHHMM(r.avgStartMin);
+      const end   = fmtHHMM(r.avgEndMin);
+      const late  = r.late   ? `<span class="pill warn">${r.late}× late</span>` : '';
+      const early = r.early  ? `<span class="pill warn">${r.early}× early-out</span>` : '';
+      const miss  = r.missed ? `<span class="pill bad">${r.missed}× no-show</span>` : '';
+      const allOk = !r.late && !r.early && !r.missed && r.daysWorked > 0;
+      return `<tr>
+        <td><div class="agent-cell"><div class="avatar">${initials(r.name)}</div>
+          <div><div class="agent-name">${r.name}</div><div class="agent-sub">${r.daysWorked}/${schedule.evaluatedDays} days</div></div></div></td>
+        <td class="num tnum">${start}</td>
+        <td class="num tnum">${end}</td>
+        <td class="num">${allOk ? '<span class="pill ok">on track</span>' : (late + ' ' + early + ' ' + miss)}</td>
+      </tr>`;
+    }).join('');
+
+    return `<div class="card">
+      <div class="card-head"><div><h3>Schedule adherence</h3><div class="sub">Standard day · 08:00 – 17:00 Mon–Fri · ${schedule.evaluatedDays} weekday${schedule.evaluatedDays===1?'':'s'} so far</div></div>
+        <span class="pill ${punctuality >= 90 ? 'ok' : punctuality >= 75 ? 'warn' : 'bad'}" style="font-size:12px">${punctuality}% punctual</span>
+      </div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Agent</th><th class="num">Avg start</th><th class="num">Avg end</th><th>This week</th></tr></thead>
+        <tbody>${body || `<tr><td colspan="4" class="muted" style="text-align:center;padding:30px">No clock data this week yet.</td></tr>`}</tbody>
+      </table></div>
+    </div>`;
+  }
+
+  // ---- Schedule-based red flags (appended to the existing redFlags() list)
+  function scheduleFlags() {
+    if (!schedule) return [];
+    const out = [];
+    const today = new Date(); today.setHours(0,0,0,0);
+    const todayKey = today.toISOString().slice(0, 10);
+    const dow = today.getDay();
+    const isWeekday = dow >= 1 && dow <= 5;
+    // 1) Anyone not clocked in yet but it's past 09:00 on a weekday.
+    if (isWeekday && new Date().getHours() >= 9) {
+      schedule.byStaff.forEach(r => {
+        const today = r.days[todayKey];
+        if (!today || !today.first) {
+          out.push({ type: 'warn',
+            html: `<b>${r.name}</b> hasn't clocked in yet today.`,
+            action: 'Check with them or log a shift-change request' });
+        }
+      });
+    }
+    // 2) Anyone late 3+ times this week.
+    schedule.byStaff.forEach(r => {
+      if (r.late >= 3) out.push({ type: 'warn',
+        html: `<b>${r.name}</b> clocked in late <b>${r.late}×</b> this week (avg start ${fmtHHMM(r.avgStartMin)}).`,
+        action: 'Worth a one-on-one' });
+    });
+    // 3) Anyone with no-shows on weekdays (excluding today before 09:00).
+    schedule.byStaff.forEach(r => {
+      if (r.missed >= 2) out.push({ type: 'down',
+        html: `<b>${r.name}</b> missed <b>${r.missed}</b> weekday${r.missed > 1 ? 's' : ''} this week — no clock-in event.`,
+        action: 'Submit a shift-change request if it was a one-off' });
+    });
+    return out;
+  }
+
   // Boot: try to restore an existing Supabase session, then render.
   (async function bootAuth() {
     try {
@@ -1050,6 +1234,7 @@
           .eq('auth_user_id', user.id).maybeSingle();
         if (staff && staff.is_admin && staff.active !== false) {
           setSession({ id: staff.id, name: staff.name, role: staff.role || '', team: staff.team || '', admin: true });
+          loadScheduleData().then(() => { if (tab === 'overview' || tab === 'leadership') shell(); });
         } else {
           await window.sb.auth.signOut(); setSession(null);
         }
