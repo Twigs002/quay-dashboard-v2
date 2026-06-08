@@ -771,17 +771,29 @@
     };
     const rmT = teamTotals(rm), fcT = teamTotals(fc);
 
-    // Revenue estimate: split leads by type if possible
-    const rev = CFG.REVENUE_PER_LEAD || { default: 10000 };
-    const seller = agents.reduce((s, a) => s + (a.seller || 0), 0);
-    const rental = agents.reduce((s, a) => s + (a.rental || 0), 0);
-    const email  = agents.reduce((s, a) => s + (a.email  || 0), 0);
-    const typed  = seller + rental + email;
-    const untyped = Math.max(0, t.leads - typed);
-    const revenue = seller * (rev.seller || rev.default)
-                  + rental * (rev.rental || rev.default)
-                  + email  * (rev.email  || rev.default)
-                  + untyped * (rev.default);
+    // Revenue estimate — looks up per-team R/lead from TEAM_RAND_PER_LEAD
+    // (source: "Rand per Lead" sheet column F, = (annual sales × 4%) ÷ units).
+    // Falls back to REVENUE_PER_LEAD.default for unmapped / generic campaigns.
+    const rev = CFG.REVENUE_PER_LEAD || { default: 100506 };
+    const teamRates = CFG.TEAM_RAND_PER_LEAD || {};
+    const teamRateLookup = (() => {
+      const ci = new Map();
+      Object.entries(teamRates).forEach(([k, v]) => ci.set(String(k).toLowerCase(), Number(v)));
+      return (camp) => ci.get(String(camp || '').toLowerCase().trim());
+    })();
+    const camps0 = Q.campaignsFor(period);
+    let revenue = 0;
+    let revenueMatched = 0; let revenueUnmatched = 0;
+    camps0.forEach(c => {
+      const rate = teamRateLookup(c.name);
+      if (rate != null) { revenue += (c.leads || 0) * rate; revenueMatched += c.leads || 0; }
+      else              { revenue += (c.leads || 0) * (rev.default || 100506); revenueUnmatched += c.leads || 0; }
+    });
+    // Leads we couldn't attribute via campaigns (shouldn't normally happen).
+    const attributedLeads = revenueMatched + revenueUnmatched;
+    if (t.leads > attributedLeads) {
+      revenue += (t.leads - attributedLeads) * (rev.default || 100506);
+    }
 
     // Efficiency: avg dialler/clocked across agents
     const eff = agents.length
@@ -896,7 +908,10 @@
         ${kpi(I.phone,   'Total Calls',        fmt(t.calls), d.calls,   'vs previous ' + Q.PERIODS[period].label.toLowerCase())}
         ${kpi(I.trophy,  'Success Rate',       t.avgSuccess + '%', d.success, 'contact-to-lead conversion')}
         ${kpi(I.bolt,    'Team Efficiency',    eff + '%', null, 'dialler ÷ clocked-in time')}
-        ${kpi(I.medal,   'Est. Revenue',       'R ' + fmt(Math.round(revenue)), null, fmt(t.leads) + ' leads × per-lead value (config.js)')}
+        ${kpi(I.medal,   'Est. Revenue',       'R ' + fmt(Math.round(revenue)), null,
+              revenueMatched > 0
+                ? fmt(revenueMatched) + ' of ' + fmt(t.leads) + ' leads matched to a team rate; rest at floor avg'
+                : fmt(t.leads) + ' leads × R' + fmt(rev.default) + ' floor avg (no team match this period)')}
       </div>
 
       <!-- Team split + Target progress -->
@@ -937,6 +952,9 @@
           <div class="src-list">${campRows || '<div style="padding:18px 24px;color:var(--muted);font-size:13px">No campaign data yet.</div>'}</div>
         </div>
       </div>
+
+      <!-- Revenue model — per-team R/lead used for Est. Revenue -->
+      ${revenueModelCard(camps0, teamRateLookup, rev.default)}
 
       <!-- Top performers + Red flags -->
       <div class="row g-2-1 mt" style="align-items:start">
@@ -999,6 +1017,37 @@
         ${cmpCard('Calls vs 4-week avg',  t.calls, avgCalls4,  'Avg last 4 weeks')}
         ${cmpCard('Calls vs 12-week avg', t.calls, avgCalls12, 'Avg last 12 weeks')}
         ${cmpCard('Leads vs 4-week avg',  t.leads, avgLeads4,  'Avg last 4 weeks')}
+      </div>`;
+  }
+
+  // Renders the per-team R/lead breakdown that drove the Est. Revenue KPI.
+  // Only shows campaigns active in the current period, sorted by their
+  // contribution to revenue.
+  function revenueModelCard(campaigns, rateLookup, fallback) {
+    const rows = (campaigns || [])
+      .filter(c => (c.leads || 0) > 0)
+      .map(c => {
+        const rate = rateLookup(c.name);
+        const matched = rate != null;
+        const r = matched ? rate : fallback;
+        return { name: c.name, leads: c.leads || 0, rate: r, matched, revenue: (c.leads || 0) * r };
+      })
+      .sort((a, b) => b.revenue - a.revenue);
+    if (!rows.length) return '';
+    return `
+      <div class="card mt">
+        <div class="card-head"><div><h3>Revenue model · per-team R/lead</h3><div class="sub">From the "Rand per Lead" sheet. Used to weight the Est. Revenue KPI.</div></div></div>
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>Campaign / Team</th><th class="num">Leads (period)</th><th class="num">R per lead</th><th class="num">Period revenue</th></tr></thead>
+          <tbody>${rows.map(r => `
+            <tr>
+              <td><b>${r.name}</b> ${r.matched ? '' : '<span class="pill" style="background:#EEF0F6;color:var(--muted);font-size:10px;font-weight:700;margin-left:6px" title="Campaign not in TEAM_RAND_PER_LEAD — using floor average">floor avg</span>'}</td>
+              <td class="num tnum">${fmt(r.leads)}</td>
+              <td class="num tnum">R ${fmt(r.rate)}</td>
+              <td class="num tnum"><b>R ${fmt(Math.round(r.revenue))}</b></td>
+            </tr>`).join('')}
+          </tbody>
+        </table></div>
       </div>`;
   }
 

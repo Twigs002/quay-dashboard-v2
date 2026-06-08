@@ -2,13 +2,71 @@
    Edit values here; every view reads from window.QUAY_CONFIG. */
 
 window.QUAY_CONFIG = {
-  // ---- Revenue assumption (PLACEHOLDER — swap for real per-lead values) ----
-  // Used for the Leadership Overview "Estimated Revenue" KPI.
+  // ---- Revenue assumption ----
+  // Used for the Leadership Overview "Estimated Revenue" KPI. Default is
+  // the floor-wide average from the "Rand per Lead" sheet (column F).
+  // Per-team rates are looked up in TEAM_RAND_PER_LEAD below.
   REVENUE_PER_LEAD: {
-    seller:  10000,    // R per seller lead
-    rental:  10000,    // R per rental lead
-    email:   10000,    // R per email lead
-    default: 10000,    // fallback when type isn't broken out
+    seller:  100506,
+    rental:  100506,
+    email:   100506,
+    default: 100506,
+  },
+
+  // ---- R per lead, by team (from "Rand per Lead" .numbers sheet) ----
+  // Commission per lead = (Annual Sales × 4%) ÷ Units Sold. Looked up by
+  // the agent's primary campaign name; falls back to REVENUE_PER_LEAD.default
+  // when the campaign doesn't match a team (e.g. agents on Clienthub Master).
+  TEAM_RAND_PER_LEAD: {
+    'Proteas':       564182,
+    'City Sunsets':  256830,
+    'Goal Diggers':  401086,
+    'Assassins':     131666,
+    'Wombats':        62173,
+    'Wolves':         74581,
+    'Warriors':      103813,
+    'Dragons':        44664,
+    'Babes':         132110,
+    'Musketeers':     94964,
+    'Furys':          57835,
+    'Tornadoes':     145435,
+    'Hooligans':     106331,
+    'Amigos':         99387,
+    'Weasels':       241356,
+    'Dutchmen':      180422,
+    'Boets':          71346,
+    'Koeksisters':    91353,
+    'Prom Queens':   148972,
+    'Tigers':        115150,
+    'Wizards':        84675,
+    'Lions':          52686,
+    'Knights':        57906,
+    'Power Rangers': 163686,
+    'Spartans':       94282,
+    'Gladiators':     99400,
+    'Surfers':       102689,
+    'Chargers':       46564,
+    'Hoekers':       162000,
+    'Llamas':         42953,
+    'Hustlers':      150160,
+    'Pirates':        31880,
+    'TNT':            55800,
+    'Invincibles':    55760,
+    'Slayers':        78429,
+    'Falcons':        85500,
+    'Soccer Moms':   122150,
+    'Dealers':        39400,
+    'Bulls':          37333,
+    'Panthers':       46356,
+    'Hawks':          57994,
+    'Headbangers':    80356,
+    'Avengers':      164000,
+    'Gunslingers':    54667,
+    'Farmers':       136200,
+    'Raccoons':       88600,
+    'Targaryens':     27800,
+    'Samurais':       76790,
+    'Dealmakers':     38000,
   },
 
   // ---- Performance benchmarks (mirror scripts/dialfire_common.py BENCHMARKS) ----
