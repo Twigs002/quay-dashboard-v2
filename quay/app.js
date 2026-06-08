@@ -1149,8 +1149,14 @@
       const now = new Date();
       const monday = startOfThisWeek(now);
       const weekEnd = new Date(monday); weekEnd.setDate(weekEnd.getDate() + 6); weekEnd.setHours(23,59,59,999);
+      // Admins + superusers are exempt from clock-in expectations — they
+      // don't need to clock in, so we drop them from schedule adherence
+      // entirely (no late/missed flags, not counted in % punctual).
       const [{ data: staff }, { data: events }] = await Promise.all([
-        window.sb.from('staff').select('id, name, active').eq('active', true),
+        window.sb.from('staff')
+          .select('id, name, active, is_admin')
+          .eq('active', true)
+          .eq('is_admin', false),
         window.sb.from('events').select('staff_id, ts, dir')
           .gte('ts', monday.toISOString()).lte('ts', weekEnd.toISOString())
           .order('ts', { ascending: true }),
@@ -1258,7 +1264,7 @@
     }).join('');
 
     return `<div class="card">
-      <div class="card-head"><div><h3>Schedule adherence</h3><div class="sub">Standard day · 08:00 – 17:00 Mon–Fri · ${schedule.evaluatedDays} weekday${schedule.evaluatedDays===1?'':'s'} so far</div></div>
+      <div class="card-head"><div><h3>Schedule adherence</h3><div class="sub">Standard day · 08:00 – 17:00 Mon–Fri · ${schedule.evaluatedDays} weekday${schedule.evaluatedDays===1?'':'s'} so far · admins exempt</div></div>
         <span class="pill ${punctuality >= 90 ? 'ok' : punctuality >= 75 ? 'warn' : 'bad'}" style="font-size:12px">${punctuality}% punctual</span>
       </div>
       <div class="tbl-wrap"><table class="tbl">

@@ -13,7 +13,7 @@ window.QUAY_CONFIG = {
     seller:  100506,   // floor-wide closed-unit avg from "Rand per Lead" sheet
     default: 100506,   // fallback for seller campaigns not in TEAM_RAND_PER_LEAD
   },
-  // TODO(user): set the actual rental base — placeholder until then.
+  // Rental R/lead base — confirmed R5,000.
   RENTAL_RAND_PER_LEAD: 5000,
 
   // ---- R per lead, by team (from "Rand per Lead" .numbers sheet) ----
