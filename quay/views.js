@@ -308,6 +308,7 @@ window.VIEWS = (function () {
         </div>
       </div>
       ${monthlyGraphs}
+      <div class="mt" id="managerFlagsHost"></div>
       <div class="card mt">
         <div class="card-head"><div><h3>Campaign performance — May 1 to Jun 5</h3><div class="sub">Filtered by selected campaigns</div></div></div>
         <div class="tbl-wrap"><table class="tbl">
