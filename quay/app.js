@@ -603,7 +603,7 @@
       </div>`;
     };
 
-    const top10 = agents.slice(0, 10).map((a, i) => {
+    const top10 = agents.slice(0, 6).map((a, i) => {
       const medal = i === 0 ? 'g' : i === 1 ? 's' : i === 2 ? 'b' : 'n';
       const sc = a.success >= 15 ? 'ok' : a.success >= 11 ? 'warn' : 'bad';
       const bar = Math.min(100, (a.calls / agents[0].calls) * 100);
@@ -690,7 +690,7 @@
       <!-- insights + top10 -->
       <div class="row g-2-1 mt" style="align-items:start">
         <div class="card">
-          <div class="card-head"><div><h3>Top 10 Performers</h3><div class="sub">Ranked by calls · open All Staff for the full roster</div></div>
+          <div class="card-head"><div><h3>Top 6 Performers</h3><div class="sub">Ranked by calls · open All Staff for the full roster</div></div>
             <button class="btn" data-goto="staff">${I.eye} View all</button></div>
           <div class="tbl-wrap"><table class="tbl">
             <thead><tr><th style="width:48px">Rank</th><th>Agent</th><th class="num">Calls</th><th class="num">Leads</th><th class="num">Success</th><th class="num">Volume</th></tr></thead>
@@ -1233,6 +1233,8 @@
   }
 
   // ---- Schedule adherence card (rendered inside Operational Overview) ---
+  // Headline-only summary: today's clocked-in count + week punctuality %.
+  // The per-caller breakdown lives in the Clocks tab now.
   function scheduleAdherenceCard() {
     if (!schedule) {
       return `<div class="card card-pad">
@@ -1240,37 +1242,33 @@
         <div class="muted" style="font-size:13px">Loading clock data…</div>
       </div>`;
     }
-    const rows = [...schedule.byStaff.values()]
-      .filter(r => r.daysWorked > 0 || r.missed > 0)
-      .sort((a, b) => (b.late + b.early + b.missed) - (a.late + a.early + a.missed));
+    const rows = [...schedule.byStaff.values()];
+    const totalStaff = rows.length;
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const clockedInToday = rows.filter(r => r.days[todayKey] && r.days[todayKey].first).length;
     const onTimeDays = rows.reduce((s, r) => s + (r.daysWorked - r.late), 0);
     const totalDays  = rows.reduce((s, r) => s + r.daysWorked + r.missed, 0);
     const punctuality = totalDays ? Math.round((onTimeDays / totalDays) * 100) : 0;
+    const punctTone = punctuality >= 90 ? 'ok' : punctuality >= 75 ? 'warn' : 'bad';
+    const inTone    = totalStaff && clockedInToday / totalStaff >= 0.9 ? 'ok'
+                    : totalStaff && clockedInToday / totalStaff >= 0.6 ? 'warn' : 'bad';
 
-    const body = rows.map(r => {
-      const start = fmtHHMM(r.avgStartMin);
-      const end   = fmtHHMM(r.avgEndMin);
-      const late  = r.late   ? `<span class="pill warn">${r.late}× late</span>` : '';
-      const early = r.early  ? `<span class="pill warn">${r.early}× early-out</span>` : '';
-      const miss  = r.missed ? `<span class="pill bad">${r.missed}× no-show</span>` : '';
-      const allOk = !r.late && !r.early && !r.missed && r.daysWorked > 0;
-      return `<tr>
-        <td><div class="agent-cell"><div class="avatar">${initials(r.name)}</div>
-          <div><div class="agent-name">${r.name}</div><div class="agent-sub">${r.daysWorked}/${schedule.evaluatedDays} days</div></div></div></td>
-        <td class="num tnum">${start}</td>
-        <td class="num tnum">${end}</td>
-        <td class="num">${allOk ? '<span class="pill ok">on track</span>' : (late + ' ' + early + ' ' + miss)}</td>
-      </tr>`;
-    }).join('');
-
-    return `<div class="card">
-      <div class="card-head"><div><h3>Schedule adherence</h3><div class="sub">Standard day · 08:00 – 17:00 Mon–Fri · ${schedule.evaluatedDays} weekday${schedule.evaluatedDays===1?'':'s'} so far · admins exempt</div></div>
-        <span class="pill ${punctuality >= 90 ? 'ok' : punctuality >= 75 ? 'warn' : 'bad'}" style="font-size:12px">${punctuality}% punctual</span>
+    return `<div class="card card-pad">
+      <div class="card-head" style="border:0;padding:0;margin-bottom:10px">
+        <div><h3>Schedule adherence</h3><div class="sub">Standard day · 08:00 – 17:00 Mon–Fri · admins exempt · full breakdown in Clocks tab</div></div>
       </div>
-      <div class="tbl-wrap"><table class="tbl">
-        <thead><tr><th>Agent</th><th class="num">Avg start</th><th class="num">Avg end</th><th>This week</th></tr></thead>
-        <tbody>${body || `<tr><td colspan="4" class="muted" style="text-align:center;padding:30px">No clock data this week yet.</td></tr>`}</tbody>
-      </table></div>
+      <div class="row g-2-1" style="gap:14px">
+        <div class="kpi" style="padding:14px 16px">
+          <div class="kpi-lbl">Clocked in today</div>
+          <div class="kpi-val tnum"><span class="pill ${inTone}" style="font-size:18px;font-weight:800;padding:6px 12px">${clockedInToday}/${totalStaff}</span></div>
+          <div class="kpi-foot">staff on the clock right now</div>
+        </div>
+        <div class="kpi" style="padding:14px 16px">
+          <div class="kpi-lbl">Punctual this week</div>
+          <div class="kpi-val tnum"><span class="pill ${punctTone}" style="font-size:18px;font-weight:800;padding:6px 12px">${punctuality}%</span></div>
+          <div class="kpi-foot">on-time days / scheduled days · ${schedule.evaluatedDays} weekday${schedule.evaluatedDays===1?'':'s'} so far</div>
+        </div>
+      </div>
     </div>`;
   }
 
