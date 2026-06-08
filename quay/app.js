@@ -902,15 +902,17 @@
       </div>`;
     }).join('');
 
-    const flagItems = flags.length ? flags.map(f => {
+    // Hide flags that have already been attended to — the manager wanted
+    // them off the dashboard entirely once ticked, not just greyed out.
+    const openFlags = flags.filter(f => !f.key || !flagAcks.has(f.key));
+    const flagItems = openFlags.length ? openFlags.map(f => {
       const key = f.key || '';
-      const acked = key && flagAcks.has(key);
-      return `<div class="insight${acked ? ' acked' : ''}" data-flag-key="${key}">
+      return `<div class="insight" data-flag-key="${key}">
         <div class="insight-ic ${f.type}">${f.type === 'warn' ? I.alert : f.type === 'down' ? I.down : I.spark}</div>
         <div class="insight-body"><p>${f.html}</p>
           ${f.action ? `<div class="insight-action">${I.arrow}${f.action}</div>` : ''}
         </div>
-        ${key ? `<button class="insight-ack" data-flag-key="${key}" title="Mark this flag as attended to">${acked ? 'Undo' : 'Mark attended'}</button>` : ''}
+        ${key ? `<button class="insight-ack" data-flag-key="${key}" title="Mark this flag as attended to">Mark attended</button>` : ''}
       </div>`;
     }).join('') : `<div style="padding:18px 24px;color:var(--muted);font-size:13px">
         No red flags this period — the floor is on track.
@@ -1127,16 +1129,16 @@
   // Returns ready-to-mount HTML for the Red Flags card. Pair with
   // wireFlagAckButtons() after injecting so the Mark-attended pills work.
   function flagsCardHtml(flags, opts) {
-    const sub = (opts && opts.sub) || 'Auto-detected from this period · click Mark attended to tick them off';
-    const items = flags.length ? flags.map(f => {
+    const sub = (opts && opts.sub) || 'Auto-detected from this period · click Mark attended to clear them';
+    const openFlags = flags.filter(f => !f.key || !flagAcks.has(f.key));
+    const items = openFlags.length ? openFlags.map(f => {
       const key = f.key || '';
-      const acked = key && flagAcks.has(key);
-      return `<div class="insight${acked ? ' acked' : ''}" data-flag-key="${key}">
+      return `<div class="insight" data-flag-key="${key}">
         <div class="insight-ic ${f.type}">${f.type === 'warn' ? I.alert : f.type === 'down' ? I.down : I.spark}</div>
         <div class="insight-body"><p>${f.html}</p>
           ${f.action ? `<div class="insight-action">${I.arrow}${f.action}</div>` : ''}
         </div>
-        ${key ? `<button class="insight-ack" data-flag-key="${key}" title="Mark this flag as attended to">${acked ? 'Undo' : 'Mark attended'}</button>` : ''}
+        ${key ? `<button class="insight-ack" data-flag-key="${key}" title="Mark this flag as attended to">Mark attended</button>` : ''}
       </div>`;
     }).join('') : `<div style="padding:18px 24px;color:var(--muted);font-size:13px">
         No red flags this period — the floor is on track.
@@ -1459,17 +1461,25 @@
       rerenderFlagsInPlace();
     }
   }
-  // Light re-render: just refresh the flag rows on whichever tab is showing
-  // (Overview / Leadership). Avoids a full shell() that would lose scroll.
+  // Drop any flag rows that have been acked out of the DOM. If a card ends
+  // up empty as a result we trigger a full shell() so the empty-state
+  // message renders, and so the card heights re-flow cleanly.
   function rerenderFlagsInPlace() {
     if (tab !== 'overview' && tab !== 'leadership' && tab !== 'manager') return;
+    let removed = 0;
     document.querySelectorAll('.insight[data-flag-key]').forEach(el => {
       const key = el.dataset.flagKey;
-      const acked = flagAcks.has(key);
-      el.classList.toggle('acked', acked);
-      const btn = el.querySelector('.insight-ack');
-      if (btn) btn.textContent = acked ? 'Undo' : 'Mark attended';
+      if (key && flagAcks.has(key)) {
+        const parent = el.parentElement;
+        el.remove();
+        removed++;
+        // Card now empty? Re-render the whole tab so the empty-state shows.
+        if (parent && !parent.querySelector('.insight')) {
+          shell();
+        }
+      }
     });
+    if (removed) updateLiveFlagsBadge();
   }
   function wireFlagAckButtons(root) {
     (root || document).querySelectorAll('.insight-ack').forEach(b => {
@@ -1522,7 +1532,12 @@
         .channel('dash-feed')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, rtScheduleReload)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'flag_acks' }, () => {
-          loadFlagAcks().then(rerenderFlagsInPlace);
+          // Full re-render — an un-ack from another device or admin needs
+          // the hidden flag to reappear, which a DOM-only update can't do.
+          loadFlagAcks().then(() => {
+            updateLiveFlagsBadge();
+            if (tab === 'overview' || tab === 'leadership' || tab === 'manager') shell();
+          });
         })
         .subscribe();
     } catch (e) { console.warn('[rt] subscribe failed', e); }
