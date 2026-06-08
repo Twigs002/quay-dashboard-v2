@@ -9,8 +9,15 @@ window.VIEWS = (function () {
 
   function agentRow(a, rank) {
     const sc = sucClass(a.success);
+    const ec = effClass(a.eff);
     const bar = Math.min(100, (a.calls / 720) * 100);
-    return `<tr data-agent="${a.name}" data-rank="${rank}" data-name="${a.name}" data-team="${a.team}" data-calls="${a.calls}" data-leads="${a.leads}" data-success="${a.success}" data-connect="${a.connect}" style="cursor:pointer">
+    const df = a.df != null ? a.df : 0;
+    const ct = a.ct != null ? a.ct : 0;
+    const eff = a.eff != null ? a.eff : 0;
+    const ctSrc = a.ctSource === 'clock'
+      ? '<span class="pill" style="background:var(--green-tint);color:var(--green);font-size:9.5px;font-weight:700;margin-left:5px;padding:1px 6px">real</span>'
+      : '<span class="pill" style="background:#EEF0F6;color:var(--muted);font-size:9.5px;font-weight:700;margin-left:5px;padding:1px 6px" title="estimated DF / 0.85 — agent not in the clock data yet">est</span>';
+    return `<tr data-agent="${a.name}" data-rank="${rank}" data-name="${a.name}" data-team="${a.team}" data-calls="${a.calls}" data-leads="${a.leads}" data-success="${a.success}" data-connect="${a.connect}" data-df="${df}" data-ct="${ct}" data-eff="${eff}" style="cursor:pointer">
       <td class="num" style="color:var(--muted);font-weight:700;width:40px">${rank}</td>
       <td><div class="agent-cell">
         <div class="avatar">${initials(a.name)}</div>
@@ -22,6 +29,9 @@ window.VIEWS = (function () {
       <td class="num tnum">${fmt(a.leads)}</td>
       <td class="num"><span class="pill ${sc}">${a.success}%</span></td>
       <td class="num tnum">${a.connect}%</td>
+      <td class="num tnum">${df.toFixed(1)}h</td>
+      <td class="num tnum">${ct.toFixed(1)}h${ctSrc}</td>
+      <td class="num"><span class="pill ${ec}">${eff}%</span></td>
       <td class="num"><div class="cell-bar"><div class="track"><span style="width:${bar}%"></span></div></div></td>
     </tr>`;
   }
@@ -58,7 +68,7 @@ window.VIEWS = (function () {
 
       <div class="card mt" id="staffOverall">
         <div class="card-head">
-          <div><h3>Agent-level performance</h3><div class="sub">Click a column header to sort · click a row to drill in</div></div>
+          <div><h3>Agent-level performance</h3><div class="sub">Calls · leads · dialler vs clocked hours · efficiency · click any column to sort</div></div>
           <button class="btn">${I.download} Export CSV</button>
         </div>
         <div class="tbl-wrap">
@@ -71,6 +81,9 @@ window.VIEWS = (function () {
               <th class="num" data-sort="leads|num">Leads<span class="sort-ind"></span></th>
               <th class="num" data-sort="success|num">Success<span class="sort-ind"></span></th>
               <th class="num" data-sort="connect|num">Connect<span class="sort-ind"></span></th>
+              <th class="num" data-sort="df|num">Dialler<span class="sort-ind"></span></th>
+              <th class="num" data-sort="ct|num">Clocked<span class="sort-ind"></span></th>
+              <th class="num" data-sort="eff|num">Eff %<span class="sort-ind"></span></th>
               <th class="num">Volume</th>
             </tr></thead>
             <tbody>${rows}</tbody>
@@ -287,7 +300,7 @@ window.VIEWS = (function () {
       <div class="card mt">
         <div class="card-head"><div><h3>Per-caller performance — 5 June</h3><div class="sub">Today's dialling by agent</div></div></div>
         <div class="tbl-wrap"><table class="tbl">
-          <thead><tr><th class="num">#</th><th>Agent</th><th>Team</th><th class="num">Calls</th><th class="num">Leads</th><th class="num">Success</th><th class="num">Connect</th><th class="num">Volume</th></tr></thead>
+          <thead><tr><th class="num">#</th><th>Agent</th><th>Team</th><th class="num">Calls</th><th class="num">Leads</th><th class="num">Success</th><th class="num">Connect</th><th class="num">Dialler</th><th class="num">Clocked</th><th class="num">Eff %</th><th class="num">Volume</th></tr></thead>
           <tbody>${rows}</tbody>
         </table></div>
       </div>
