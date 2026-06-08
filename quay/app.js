@@ -41,17 +41,16 @@
   const navCollapsed = () =>
     navPref === 'open' ? false : navPref === 'collapsed' ? true : window.innerWidth < AUTO_BP;
 
-  // Simplified — 4 tabs. Overview is role-aware (superusers see the
-  // Leadership layout; managers see Operational). All Staff / Compare /
-  // Daily Stats / Manager Reports were removed as duplicate/placeholder.
-  // All Staff still reachable via the Top Performers "View all" button.
   const TABS = [
-    { id: 'overview', label: 'Overview',  icon: I.trophy, title: 'Overview',  sub: 'Performance at a glance' },
-    { id: 'worktime', label: 'Work Time', icon: I.clock,  title: 'Work Time & Efficiency', sub: 'DialFire dialler time vs clocked-in time' },
-    { id: 'sources',  label: 'Campaigns', icon: I.target, title: 'Campaigns', sub: 'Per-campaign rollups · which channels convert' },
-    { id: 'clocks',   label: 'Clocks',    icon: I.clock,  title: 'Clocks',    sub: 'Staff hours, requests & team' },
-    // Hidden but routable — reached via the "View all" button on Overview.
-    { id: 'staff',    label: 'All Staff', icon: I.calendar, title: 'All Staff Report', sub: 'Drill into agent-level performance', hidden: true },
+    { id: 'leadership', label: 'Leadership',     icon: I.medal,    title: 'Leadership Overview',  sub: 'Strategic snapshot for directors · revenue, targets, red flags' },
+    { id: 'overview',   label: 'Overview',       icon: I.trophy,   title: 'Operational Overview', sub: 'A single view of call-floor performance' },
+    { id: 'staff',      label: 'All Staff',      icon: I.calendar, title: 'All Staff Report',     sub: 'Drill into agent-level performance' },
+    { id: 'compare',    label: 'Compare',        icon: I.scale,    title: 'Period Comparison',    sub: 'Week vs week · month vs month' },
+    { id: 'worktime',   label: 'Work Time',      icon: I.clock,    title: 'Work Time & Efficiency', sub: 'DialFire dialler time vs clocked-in time' },
+    { id: 'daily',      label: 'Daily Stats',    icon: I.cal2,     title: 'Daily Stats',          sub: 'Per-caller performance for a single day' },
+    { id: 'manager',    label: 'Manager Reports',icon: I.chart,    title: 'Manager Reports',      sub: 'Filter by date range and campaign' },
+    { id: 'sources',    label: 'Lead Sources',   icon: I.target,   title: 'Lead Source Efficacy', sub: 'Which source converts best' },
+    { id: 'clocks',     label: 'Clocks',         icon: I.clock,    title: 'Clocks',               sub: 'Staff hours, requests & team — manage everything in one place' },
   ];
 
   // ---------------------------------------------------- LOGIN
@@ -119,7 +118,7 @@
         id: staff.id, name: staff.name, role: staff.role || '', team: staff.team || '',
         admin: true, super: !!staff.is_super,
       });
-      // Overview is the only entry point; role-aware rendering picks the right layout.
+      if (staff.is_super) tab = 'leadership'; // superusers land on Leadership by default
       try { localStorage.setItem('quay_dash_last_user', username); } catch {}
       pinBuf = ''; loginError = '';
       shell();
@@ -149,11 +148,9 @@
     // the staff row. setSession({...staff}) is set by submitLogin/setSession.
     if (!session || !session.id) { renderLogin(); return; }
     // Filter tabs by role: only superusers see Leadership.
-    // Sidebar shows only non-hidden tabs. 'staff' is hidden but reachable
-    // via the "View all" button on Overview.
-    const visibleTabs = TABS.filter(t => !t.hidden);
-    // If user lands on an unknown tab via deep link, bounce to overview.
-    if (!TABS.find(t => t.id === tab)) tab = 'overview';
+    const visibleTabs = TABS.filter(t => t.id !== 'leadership' || session.super);
+    // If a non-super lands on a hidden tab (e.g. via deep link), bounce to overview.
+    if (!visibleTabs.find(t => t.id === tab)) tab = 'overview';
     const navItems = visibleTabs.map(t => `
       <button class="nav-item ${t.id === tab ? 'active' : ''}" data-tab="${t.id}" title="${t.label}">
         ${t.icon}<span>${t.label}</span>
@@ -259,15 +256,14 @@
   // ---------------------------------------------------- ROUTER
   function render() {
     const host = document.getElementById('content');
-    // Overview is role-aware: supers get the Leadership layout (revenue,
-    // red flags, RM vs Fancy, targets); managers get the lean Operational one.
-    if (tab === 'leadership') tab = 'overview'; // alias for back-compat
-    if (tab === 'overview') {
-      if (session && session.super) { host.innerHTML = leadership(); afterLeadership(); }
-      else                          { host.innerHTML = overview();   afterOverview(); }
-    }
+    if (tab === 'leadership' && !session?.super) { tab = 'overview'; }
+    if (tab === 'leadership')    { host.innerHTML = leadership(); afterLeadership(); }
+    else if (tab === 'overview') { host.innerHTML = overview(); afterOverview(); }
     else if (tab === 'staff')    { host.innerHTML = V.allStaff(period); staffWire(); }
+    else if (tab === 'compare')  { host.innerHTML = V.compare(); segWire(); }
     else if (tab === 'worktime') host.innerHTML = V.workTime(period);
+    else if (tab === 'daily')    host.innerHTML = V.daily(period);
+    else if (tab === 'manager')  host.innerHTML = V.manager();
     else if (tab === 'sources')  host.innerHTML = V.leadSources(period);
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
     host.scrollTop = 0;
@@ -1325,7 +1321,7 @@
             id: staff.id, name: staff.name, role: staff.role || '', team: staff.team || '',
             admin: true, super: !!staff.is_super,
           });
-          // Role-aware render handles the layout choice inside the Overview tab.
+          if (staff.is_super) tab = 'leadership';
           loadScheduleData().then(() => { if (tab === 'overview' || tab === 'leadership') shell(); });
         } else {
           await window.sb.auth.signOut(); setSession(null);
