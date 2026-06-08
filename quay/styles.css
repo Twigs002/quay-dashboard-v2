@@ -187,6 +187,48 @@ button { font-family: inherit; cursor: pointer; }
 .topbar-titles p { margin: 2px 0 0; font-size: 13px; color: var(--slate); }
 .topbar-right { display: flex; align-items: center; gap: 14px; }
 
+/* Live red-flags badge — always visible, bright red while flags are open. */
+.live-flags-badge {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 1px solid #F1BCB8; cursor: pointer;
+  padding: 7px 13px 7px 22px; border-radius: 999px;
+  font-family: Montserrat; font-size: 12px; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  background: #FCE9E8; color: #8a1a13;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.live-flags-badge:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(210, 10, 3, 0.18); }
+.live-flags-badge.active {
+  background: var(--red, #D20A03); color: #fff; border-color: var(--red, #D20A03);
+  box-shadow: 0 0 0 0 rgba(210, 10, 3, 0.55);
+  animation: lfb-pulse 2.2s ease-out infinite;
+}
+.live-flags-badge.clear { opacity: 0.55; }
+.live-flags-badge .lfb-icon  { font-size: 13px; line-height: 1; }
+.live-flags-badge .lfb-count { font-size: 14px; font-weight: 800; min-width: 14px; text-align: center; }
+.live-flags-badge .lfb-label { font-size: 11px; }
+.live-flags-badge .lfb-pulse {
+  position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+  width: 8px; height: 8px; border-radius: 999px; background: #fff;
+  opacity: 0; pointer-events: none;
+}
+.live-flags-badge.active .lfb-pulse { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); animation: lfb-dot 1.2s ease-out infinite; }
+@keyframes lfb-pulse {
+  0%   { box-shadow: 0 0 0 0    rgba(210, 10, 3, 0.55); }
+  70%  { box-shadow: 0 0 0 14px rgba(210, 10, 3, 0); }
+  100% { box-shadow: 0 0 0 0    rgba(210, 10, 3, 0); }
+}
+@keyframes lfb-dot {
+  0%   { box-shadow: 0 0 0 0   rgba(255, 255, 255, 0.7); }
+  70%  { box-shadow: 0 0 0 7px rgba(255, 255, 255, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(255, 255, 255, 0); }
+}
+@media (max-width: 760px) {
+  .live-flags-badge .lfb-label { display: none; }
+  .live-flags-badge { padding-right: 11px; }
+}
+
 .period {
   display: inline-flex; background: var(--card); border: 1px solid var(--line);
   border-radius: 999px; padding: 3px; box-shadow: var(--shadow-sm);
