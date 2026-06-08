@@ -676,7 +676,7 @@
       <div class="row g-2-1 mt">
         <div class="card">
           <div class="card-head">
-            <div><h3>Weekly Performance Trend</h3><div class="sub">Calls &amp; success rate · 12 weeks</div></div>
+            <div><h3>Weekly Performance Trend</h3><div class="sub">Calls &amp; success rate · trailing window ending ${Q.PERIODS[period].label.toLowerCase()}</div></div>
             <div class="legend" style="padding:0">
               <span class="legend-item"><span class="legend-swatch" style="background:#FDC503"></span>Calls</span>
               <span class="legend-item"><span class="legend-swatch" style="background:#3D5BA6"></span>Success rate</span>
@@ -685,7 +685,7 @@
           <div class="chart-wrap"><div id="trendChart"></div></div>
         </div>
         <div class="card">
-          <div class="card-head"><div><h3>Lead Sources</h3><div class="sub">Share of calls</div></div></div>
+          <div class="card-head"><div><h3>Lead Sources</h3><div class="sub">Share of calls · ${Q.PERIODS[period].label}</div></div></div>
           <div style="display:flex;justify-content:center;padding:18px 24px 6px"><div id="donut" style="max-width:200px;width:100%"></div></div>
           <div class="src-list">${srcRows}</div>
         </div>
@@ -788,10 +788,15 @@
   }
 
   function afterOverview() {
-    C.weeklyTrend(document.getElementById('trendChart'), Q.WEEKS, Q.WEEK_CALLS, Q.WEEK_SUCCESS);
-    const total = Q.SOURCES.reduce((s, x) => s + x.calls, 0);
+    // Both the weekly trend chart and the lead-sources donut follow the
+    // topbar period selector, so the visuals match the KPI block above.
+    const trend = (Q.trendSeriesFor ? Q.trendSeriesFor(period) : null)
+      || { labels: Q.WEEKS, calls: Q.WEEK_CALLS, success: Q.WEEK_SUCCESS };
+    C.weeklyTrend(document.getElementById('trendChart'), trend.labels, trend.calls, trend.success);
+    const periodSources = Q.sourcesFor ? Q.sourcesFor(period) : Q.SOURCES;
+    const total = periodSources.reduce((s, x) => s + x.calls, 0);
     C.donut(document.getElementById('donut'),
-      Q.SOURCES.map(s => ({ value: s.calls, color: s.color })),
+      periodSources.map(s => ({ value: s.calls, color: s.color })),
       fmt(total), 'total calls');
     document.querySelectorAll('.mc').forEach(el =>
       C.miniBars(el, JSON.parse(el.dataset.series), el.dataset.color));
@@ -1201,9 +1206,11 @@
   }
 
   function afterLeadership() {
-    if (Q.WEEKS && Q.WEEKS.length) {
+    const trend = (Q.trendSeriesFor ? Q.trendSeriesFor(period) : null)
+      || { labels: Q.WEEKS, calls: Q.WEEK_CALLS, success: Q.WEEK_SUCCESS };
+    if (trend.labels && trend.labels.length) {
       C.weeklyTrend(document.getElementById('lTrendChart'),
-        Q.WEEKS, Q.WEEK_CALLS, Q.WEEK_SUCCESS);
+        trend.labels, trend.calls, trend.success);
     }
     document.querySelectorAll('[data-goto]').forEach(b =>
       b.addEventListener('click', () => { tab = b.dataset.goto; shell(); }));

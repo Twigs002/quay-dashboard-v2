@@ -221,6 +221,28 @@ window.QUAY_READY = (async function () {
     return +t.avgSuccess.toFixed(1);
   });
 
+  // Period-aware trend window. The Operational Overview lets the user
+  // switch between this-week, last-week, this-month, last-90, all-time —
+  // the trend chart's window slides to match so the chart and the KPIs
+  // above it describe the same horizon.
+  function trendSeriesFor(periodKey) {
+    const p = PERIODS[periodKey] || PERIODS['this-week'];
+    // Number of weeks to plot: keep at least 4, cap at 26.
+    const span = Math.min(26, Math.max(4, p.weeks * 4));
+    const offset = p.offset || 0;
+    // weeks is newest-first; take the slice ending at the period's end.
+    const slice = weeks.slice(offset, offset + span).reverse(); // oldest -> newest
+    const labels = slice.map(w => {
+      const d = new Date(w.weekStart + 'T00:00:00Z');
+      const onejan = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      const wnum = Math.ceil(((d - onejan) / 86400000 + onejan.getUTCDay() + 1) / 7);
+      return 'W' + wnum;
+    });
+    const callsSeries = slice.map(w => agentsForWeek(w).reduce((s, a) => s + a.calls, 0));
+    const succSeries  = slice.map(w => +(_periodTotals([w]).avgSuccess).toFixed(1));
+    return { labels, calls: callsSeries, success: succSeries, weekCount: slice.length };
+  }
+
   // ---- Monthly trend (last 8 months, grouped from weeks) -------------------
   const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   function monthKey(weekStart) {
@@ -366,6 +388,8 @@ window.QUAY_READY = (async function () {
     return [...top, other];
   }
   const SOURCES = _topSourcesFor('this-week');
+  // Public alias so the Overview donut can re-compute as the period changes.
+  const sourcesFor = _topSourcesFor;
 
   // ---- Expose ---------------------------------------------------------------
   // ---- Forecasting / pace projection ---------------------------------------
@@ -466,8 +490,8 @@ window.QUAY_READY = (async function () {
 
   window.QUAY = {
     AGENTS: agentsForWeek(weeks[0]),  // current week, sorted natural
-    WEEKS, WEEK_CALLS, WEEK_SUCCESS,
-    SOURCES, campaignsFor,
+    WEEKS, WEEK_CALLS, WEEK_SUCCESS, trendSeriesFor,
+    SOURCES, sourcesFor, campaignsFor,
     MONTHS, MONTH_CALLS, MONTH_LEADS, MONTH_EMAILS, MONTH_RENTALS, MONTH_DFHOURS,
     PERIODS, DELTAS, agentsFor, totalsFor,
     periodElapsed, project, trailingAvg,

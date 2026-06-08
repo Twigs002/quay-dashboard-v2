@@ -24,8 +24,7 @@ window.VIEWS = (function () {
       <td class="num" style="color:var(--muted);font-weight:700;width:40px">${rank}</td>
       <td><div class="agent-cell">
         <div class="avatar">${initials(a.name)}</div>
-        <div><div class="agent-name">${a.name}</div>
-        <div class="agent-sub">ID ${a.id.toUpperCase()}</div></div>
+        <div><div class="agent-name">${a.name}</div></div>
       </div></td>
       <td><span class="pill ${a.team === 'RM' ? 'rm' : 'fancy'}">${a.team}</span></td>
       <td class="num tnum">${fmt(a.calls)}</td>
