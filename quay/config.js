@@ -77,7 +77,7 @@ window.QUAY_CONFIG = {
     cph:             45,    // calls per hour (per-agent floor)
     rm_success_rate: 17,    // % (RM team success threshold)
     fc_success_rate: 20,    // % (Fancy Callers threshold)
-    efficiency:      70,    // % work/clocked time (Work Time tab target)
+    efficiency:      70,    // % work/clocked time target (All Staff Eff %)
   },
 
   // ---- Floor-wide period targets (used by Leadership Overview progress bars) ----

@@ -3,10 +3,10 @@
    GitHub Action) and builds the shape app.js + views.js expect.
 
    Lead Sources: no real data feed yet — kept as placeholders.
-   Clocked time (Work Time tab): real values come from data/clock_data.json
-   when the quay-clock fetcher has run (see scripts/fetch_clock.py). When
-   no real entry exists for an agent, we fall back to the historical
-   `workTime / 0.85` estimate so the tab still renders. */
+   Clocked time (Dialler / Clocked columns on All Staff): real values come
+   from data/clock_data.json when the quay-clock fetcher has run (see
+   scripts/fetch_clock.py). When no real entry exists for an agent, we
+   fall back to the historical `workTime / 0.85` estimate. */
 
 window.QUAY_READY = (async function () {
   const [weekly, history, clockData] = await Promise.all([
