@@ -49,6 +49,7 @@
     { id: 'compare',    label: 'Compare',        icon: I.scale,    title: 'Period Comparison',    sub: 'Week vs week · month vs month' },
     { id: 'daily',      label: 'Daily Stats',    icon: I.cal2,     title: 'Daily Stats',          sub: 'Per-caller performance for a single day' },
     { id: 'monthly',    label: 'Monthly',        icon: I.cal2,     title: 'Monthly Breakdown',    sub: 'Month-by-month roll-up across every week of data' },
+    { id: 'reports',    label: 'Daily Reports',  icon: I.cal2,     title: 'End-of-day Reports',   sub: 'Submissions from LN + Assistant on clock-out' },
     { id: 'manager',    label: 'Manager Reports',icon: I.chart,    title: 'Manager Reports',      sub: 'Filter by date range and campaign' },
     { id: 'sources',    label: 'Lead Sources',   icon: I.target,   title: 'Lead Source Efficacy', sub: 'Which source converts best' },
     { id: 'clocks',     label: 'Clocks',         icon: I.clock,    title: 'Clocks',               sub: 'Staff hours, requests & team — manage everything in one place' },
@@ -288,6 +289,7 @@
     else if (tab === 'compare')  { host.innerHTML = V.compare(); segWire(); }
     else if (tab === 'daily')    { host.innerHTML = V.daily(period, dailyPicked); dailyWire(); }
     else if (tab === 'monthly')  host.innerHTML = V.monthly();
+    else if (tab === 'reports')  { host.innerHTML = renderReportsView(); wireReportsView(); }
     else if (tab === 'manager')  { host.innerHTML = V.manager(period); managerWire(); }
     else if (tab === 'sources')  host.innerHTML = V.leadSources(period);
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
@@ -596,6 +598,7 @@
     else if (tab === 'manager')    rows = csvManager();
     else if (tab === 'monthly')    rows = csvMonthly();
     else if (tab === 'daily')      rows = csvDaily();
+    else if (tab === 'reports')    rows = csvReports();
     else                            rows = csvAgents();
     downloadCSV(filename, rows);
   }
@@ -626,6 +629,33 @@
     ]));
     return out;
   }
+  function csvReports() {
+    const rows = (_reports || []).filter(r => {
+      if (_reportsFilter.from && r.clocked_out_at < _reportsFilter.from + 'T00:00:00') return false;
+      if (_reportsFilter.to   && r.clocked_out_at > _reportsFilter.to   + 'T23:59:59') return false;
+      if (_reportsFilter.staffId && r.staff_id !== _reportsFilter.staffId) return false;
+      if (_reportsFilter.division && (r.division || '').toLowerCase() !== _reportsFilter.division.toLowerCase()) return false;
+      return true;
+    });
+    const header = [
+      'Clocked out at','Staff','Designation','Division',
+      'HS Tasks','HS Calls','HS Emails','HS WhatsApps','HS Answered','HS Leads/Vals','HS Reconverted',
+      'DF Calls','DF Emails','DF Leads/Vals','DF Hours',
+      'WA Sent','WA Responses','WA Leads/Vals',
+      'Notes',
+    ];
+    const out = [header];
+    rows.forEach(r => out.push([
+      r.clocked_out_at, _staffNamesById.get(r.staff_id) || r.staff_id, r.designation, r.division || '',
+      r.hs_tasks_completed, r.hs_calls_made, r.hs_emails_sent, r.hs_whatsapps_sent,
+      r.hs_answered_contacts, r.hs_leads_vals, r.hs_reconverted_leads,
+      r.df_calls, r.df_email_successes, r.df_leads_vals, r.df_hours,
+      r.wa_sent, r.wa_responses, r.wa_leads_vals,
+      r.notes || '',
+    ]));
+    return out;
+  }
+
   function csvDaily() {
     const date = dailyPicked || (Q.latestDailyDate && Q.latestDailyDate()) || null;
     const agents = (date && Q.dailyFor) ? (Q.dailyFor(date) || []) : [];
@@ -1579,6 +1609,180 @@
     });
   }
 
+  // ─── Daily Reports (LN/Assistant end-of-day form on quay-clock) ─────
+  // Pulls clock_out_reports + decorates each row with the submitter's
+  // staff name. Loaded on first open of the Reports tab and refreshed
+  // by the realtime subscription below.
+  let _reports = null;                    // array of report rows
+  let _staffNamesById = new Map();
+  let _reportsFilter = { from: '', to: '', staffId: '', division: '' };
+  let _reportsLoading = false;
+  async function loadReports() {
+    if (!window.sb) return;
+    _reportsLoading = true;
+    try {
+      const { data: rows, error } = await window.sb
+        .from('clock_out_reports')
+        .select('*')
+        .order('clocked_out_at', { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      _reports = rows || [];
+      // Best-effort lookup of staff names (single query, RLS allows reads).
+      if (_staffNamesById.size === 0) {
+        const { data: staff } = await window.sb.from('staff').select('id, name');
+        (staff || []).forEach(s => _staffNamesById.set(s.id, s.name));
+      }
+    } catch (e) {
+      console.warn('[reports] load failed', e);
+      _reports = [];
+    } finally {
+      _reportsLoading = false;
+    }
+  }
+
+  function renderReportsView() {
+    // Lazy-load on first render; trigger and show a loading state.
+    if (_reports == null && !_reportsLoading) {
+      loadReports().then(() => { if (tab === 'reports') shell(); });
+    }
+    const reports = (_reports || []).filter(r => {
+      if (_reportsFilter.from && r.clocked_out_at < _reportsFilter.from + 'T00:00:00') return false;
+      if (_reportsFilter.to   && r.clocked_out_at > _reportsFilter.to   + 'T23:59:59') return false;
+      if (_reportsFilter.staffId && r.staff_id !== _reportsFilter.staffId) return false;
+      if (_reportsFilter.division && (r.division || '').toLowerCase() !== _reportsFilter.division.toLowerCase()) return false;
+      return true;
+    });
+    const totalsRow = reports.reduce((t, r) => {
+      ['hs_tasks_completed','hs_calls_made','hs_emails_sent','hs_whatsapps_sent',
+       'hs_answered_contacts','hs_leads_vals','hs_reconverted_leads',
+       'df_calls','df_email_successes','df_leads_vals','df_hours',
+       'wa_sent','wa_responses','wa_leads_vals'].forEach(k => { t[k] = (t[k] || 0) + Number(r[k] || 0); });
+      return t;
+    }, {});
+    const staffOptions = [...new Set((_reports || []).map(r => r.staff_id))]
+      .map(id => `<option value="${id}" ${_reportsFilter.staffId === id ? 'selected' : ''}>${escapeHtml(_staffNamesById.get(id) || id)}</option>`).join('');
+    const dateFmt = (iso) => {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      return d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
+    const num = n => (n == null ? '0' : Number(n).toLocaleString('en-ZA'));
+    const reportRow = (r) => {
+      const name = escapeHtml(_staffNamesById.get(r.staff_id) || r.staff_id);
+      const designation = r.designation ? r.designation.replace('_', ' ') : '';
+      return `<details class="report-card">
+        <summary>
+          <div class="report-head">
+            <div>
+              <div class="report-name">${name}</div>
+              <div class="report-sub">${escapeHtml(designation)} · ${escapeHtml(r.division || '—')} · ${dateFmt(r.clocked_out_at)}</div>
+            </div>
+            <div class="report-stat-strip">
+              <span><b>${num(r.hs_calls_made + r.df_calls)}</b><small>calls</small></span>
+              <span><b>${num(r.hs_leads_vals + r.df_leads_vals + r.wa_leads_vals)}</b><small>leads/vals</small></span>
+              <span><b>${num(r.df_hours)}h</b><small>dialler</small></span>
+            </div>
+          </div>
+        </summary>
+        <div class="report-body">
+          <div class="report-section">
+            <h5>📊 HubSpot Work Summary</h5>
+            <div class="report-grid">
+              <div><span>📋 Tasks Completed</span><b>${num(r.hs_tasks_completed)}</b></div>
+              <div><span>📞 Calls Made</span><b>${num(r.hs_calls_made)}</b></div>
+              <div><span>💻 Emails Sent</span><b>${num(r.hs_emails_sent)}</b></div>
+              <div><span>📲 WhatsApp's sent</span><b>${num(r.hs_whatsapps_sent)}</b></div>
+              <div><span>✅ Answered Contacts</span><b>${num(r.hs_answered_contacts)}</b></div>
+              <div><span>🎯 Leads/Vals</span><b>${num(r.hs_leads_vals)}</b></div>
+              <div><span>♻️ Reconverted Leads</span><b>${num(r.hs_reconverted_leads)}</b></div>
+            </div>
+          </div>
+          <div class="report-section">
+            <h5>☎️🔥 DialFire Canvassing</h5>
+            <div class="report-grid">
+              <div><span>📞 Calls</span><b>${num(r.df_calls)}</b></div>
+              <div><span>📧 Email Successes</span><b>${num(r.df_email_successes)}</b></div>
+              <div><span>🏡 Leads/Vals</span><b>${num(r.df_leads_vals)}</b></div>
+              <div><span>⏰ Hours</span><b>${num(r.df_hours)}</b></div>
+            </div>
+          </div>
+          <div class="report-section">
+            <h5>📲 WhatsApp Campaigns</h5>
+            <div class="report-grid">
+              <div><span>🤳 WhatsApps sent</span><b>${num(r.wa_sent)}</b></div>
+              <div><span>▶️ Responses</span><b>${num(r.wa_responses)}</b></div>
+              <div><span>🎯 Leads/Vals</span><b>${num(r.wa_leads_vals)}</b></div>
+            </div>
+          </div>
+          ${r.notes ? `<div class="report-section">
+            <h5>🔷📈 Notes</h5>
+            <div class="report-notes">${escapeHtml(r.notes)}</div>
+          </div>` : ''}
+        </div>
+      </details>`;
+    };
+    return `<div class="tab-view">
+      <div class="card card-pad">
+        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
+          <div class="field"><label>From</label>
+            <input id="repFrom" type="date" value="${_reportsFilter.from}">
+          </div>
+          <div class="field"><label>To</label>
+            <input id="repTo" type="date" value="${_reportsFilter.to}">
+          </div>
+          <div class="field"><label>Staff</label>
+            <select id="repStaff">
+              <option value="">All staff</option>
+              ${staffOptions}
+            </select>
+          </div>
+          <div class="field"><label>Division</label>
+            <input id="repDivision" type="text" placeholder="Any" value="${escapeHtml(_reportsFilter.division)}">
+          </div>
+          <button class="btn" id="repClear">Clear</button>
+          <button class="btn js-export" style="margin-left:auto">${I.download} Export CSV</button>
+        </div>
+      </div>
+      <div class="row mt" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px">
+        ${miniStatSimple('Reports', String(reports.length))}
+        ${miniStatSimple('HS Calls', num(totalsRow.hs_calls_made || 0))}
+        ${miniStatSimple('DF Calls', num(totalsRow.df_calls || 0))}
+        ${miniStatSimple('DF Hours', num(totalsRow.df_hours || 0))}
+        ${miniStatSimple('All Leads/Vals', num((totalsRow.hs_leads_vals||0) + (totalsRow.df_leads_vals||0) + (totalsRow.wa_leads_vals||0)))}
+      </div>
+      <div class="mt">
+        ${_reports == null ? '<div class="muted" style="padding:30px;text-align:center">Loading…</div>' :
+          reports.length === 0 ? '<div class="muted" style="padding:30px;text-align:center">No reports match the current filters.</div>' :
+          reports.map(reportRow).join('')}
+      </div>
+    </div>`;
+  }
+
+  function miniStatSimple(label, value) {
+    return `<div class="card card-pad">
+      <div class="kpi-label" style="margin:0">${label}</div>
+      <div style="font-family:var(--serif);font-size:22px;font-weight:700;color:var(--ink);margin-top:4px">${value}</div>
+    </div>`;
+  }
+
+  function wireReportsView() {
+    const f = document.getElementById('repFrom');
+    const t = document.getElementById('repTo');
+    const s = document.getElementById('repStaff');
+    const d = document.getElementById('repDivision');
+    const clear = document.getElementById('repClear');
+    if (f) f.addEventListener('change', e => { _reportsFilter.from = e.target.value; shell(); });
+    if (t) t.addEventListener('change', e => { _reportsFilter.to   = e.target.value; shell(); });
+    if (s) s.addEventListener('change', e => { _reportsFilter.staffId = e.target.value; shell(); });
+    if (d) d.addEventListener('input',  e => { _reportsFilter.division = e.target.value; });
+    if (d) d.addEventListener('change', () => shell());
+    if (clear) clear.addEventListener('click', () => {
+      _reportsFilter = { from: '', to: '', staffId: '', division: '' };
+      shell();
+    });
+  }
+
   // ─── Live red-flags badge ────────────────────────────────────────────
   // Top-right pill mirroring the full Red Flags card — counts every open
   // flag (schedule + business) so the badge and the on-screen list agree.
@@ -1629,6 +1833,9 @@
       _rtChannel = window.sb
         .channel('dash-feed')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, rtScheduleReload)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'clock_out_reports' }, () => {
+          loadReports().then(() => { if (tab === 'reports' && !dashIsBusy()) shell(); });
+        })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'flag_acks' }, () => {
           // Full re-render — an un-ack from another device or admin needs
           // the hidden flag to reappear, which a DOM-only update can't do.
