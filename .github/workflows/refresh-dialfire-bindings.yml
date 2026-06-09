@@ -1,0 +1,40 @@
+name: DialFire — Refresh HubSpot Bindings
+
+# On-demand only. Click "Run workflow" on this page in GitHub Actions
+# to fire the per-binding contact sync against every NA + CM campaign.
+# Replaces the 113-click manual flow the user used to run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      filter_suffix:
+        description: 'Space-pair-separated suffixes (default " - NA  - CM"). Leave blank for ALL bindings.'
+        required: false
+        default: ' - NA  - CM'
+      dry_run:
+        description: 'Dry run? (true = list bindings only, no POSTs)'
+        required: false
+        default: 'false'
+        type: choice
+        options: [ 'false', 'true' ]
+
+concurrency:
+  group: dialfire-bindings
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install requests
+      - name: Refresh bindings
+        env:
+          DIALFIRE_HUBSPOT_BEARER: ${{ secrets.DIALFIRE_HUBSPOT_BEARER }}
+          DIALFIRE_TENANT_ID:      ${{ secrets.DIALFIRE_TENANT_ID }}
+          DIALFIRE_CONNECTION_ID:  ${{ secrets.DIALFIRE_CONNECTION_ID }}
+          DIALFIRE_FILTER_SUFFIX:  ${{ inputs.filter_suffix }}
+          DIALFIRE_DRY_RUN:        ${{ inputs.dry_run }}
+        run: python scripts/refresh_dialfire_bindings.py

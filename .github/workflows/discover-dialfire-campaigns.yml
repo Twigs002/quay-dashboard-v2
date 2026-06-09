@@ -1,0 +1,35 @@
+name: DialFire — Discover Tenant Campaigns
+
+# On-demand. Lists every campaign visible under the tenant token and
+# writes scripts/campaigns.discovered.json as an artifact you can
+# download + paste back into the DIALFIRE_CAMPAIGNS secret. Avoids
+# the manual "export JSON from DialFire admin" step.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: dialfire-discover
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install requests
+      - name: Discover campaigns
+        env:
+          DIALFIRE_TENANT_ID:      ${{ secrets.DIALFIRE_TENANT_ID }}
+          DIALFIRE_TENANT_TOKEN:   ${{ secrets.DIALFIRE_TENANT_TOKEN }}
+          DIALFIRE_HUBSPOT_BEARER: ${{ secrets.DIALFIRE_HUBSPOT_BEARER }}
+          OUTPUT_PATH:             scripts/campaigns.discovered.json
+        run: python scripts/discover_dialfire_campaigns.py
+      - name: Upload discovered campaigns
+        uses: actions/upload-artifact@v4
+        with:
+          name: campaigns-discovered
+          path: scripts/campaigns.discovered.json
+          retention-days: 7
