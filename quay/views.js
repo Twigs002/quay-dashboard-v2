@@ -278,6 +278,8 @@ window.VIEWS = (function () {
           </table></div>
         ` : `<div class="muted" style="padding:24px;text-align:center;font-size:13.5px;line-height:1.6">${emptyMsg}</div>`}
       </div>
+      <!-- End-of-day reports submitted on this date (populated by app.js after mount) -->
+      <div class="mt" id="dailyReportsHost" data-daily-date="${date || ''}"></div>
     </div>`;
   }
 

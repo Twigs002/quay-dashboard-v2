@@ -50,7 +50,6 @@
     { id: 'daily',      label: 'Daily Stats',    icon: I.cal2,     title: 'Daily Stats',          sub: 'Per-caller performance for a single day' },
     { id: 'monthly',    label: 'Monthly',        icon: I.cal2,     title: 'Monthly Breakdown',    sub: 'Month-by-month roll-up across every week of data' },
     { id: 'reports',    label: 'Daily Reports',  icon: I.cal2,     title: 'End-of-day Reports',   sub: 'Submissions from LN + Assistant on clock-out' },
-    { id: 'team',       label: 'Team',           icon: I.users,    title: 'Team Directory',       sub: 'Staff roster + status, add and edit directly' },
     { id: 'manager',    label: 'Manager Reports',icon: I.chart,    title: 'Manager Reports',      sub: 'Filter by date range and campaign' },
     { id: 'sources',    label: 'Lead Sources',   icon: I.target,   title: 'Lead Source Efficacy', sub: 'Which source converts best' },
     { id: 'clocks',     label: 'Clocks',         icon: I.clock,    title: 'Clocks',               sub: 'Staff hours, requests & team — manage everything in one place' },
@@ -291,7 +290,6 @@
     else if (tab === 'daily')    { host.innerHTML = V.daily(period, dailyPicked); dailyWire(); }
     else if (tab === 'monthly')  host.innerHTML = V.monthly();
     else if (tab === 'reports')  { host.innerHTML = renderReportsView(); wireReportsView(); }
-    else if (tab === 'team')     { host.innerHTML = renderTeamView(); wireTeamView(); }
     else if (tab === 'manager')  { host.innerHTML = V.manager(period); managerWire(); }
     else if (tab === 'sources')  host.innerHTML = V.leadSources(period);
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
@@ -387,6 +385,99 @@
     document.querySelectorAll('[data-daily-step]').forEach(b =>
       b.addEventListener('click', () => stepFromCurrent(parseInt(b.dataset.dailyStep, 10)))
     );
+    // Populate the day's EOD reports card. Lazy-loads on first use.
+    populateDailyReports();
+  }
+
+  // Renders the End-of-day Report list for whichever date the Daily Stats
+  // tab is showing. Reuses the same _reports cache the Daily Reports tab
+  // uses, so toggling between tabs doesn't re-fetch.
+  function populateDailyReports() {
+    const host = document.getElementById('dailyReportsHost');
+    if (!host) return;
+    const date = host.dataset.dailyDate;
+    if (!date) return;
+    if (_reports == null) {
+      host.innerHTML = '<div class="card card-pad muted" style="text-align:center;padding:18px">Loading day reports…</div>';
+      loadReports().then(() => { if (tab === 'daily') populateDailyReports(); });
+      return;
+    }
+    // Filter to reports clocked-out on this calendar day (UTC).
+    const dayStart = date + 'T00:00:00';
+    const dayEnd   = date + 'T23:59:59';
+    const dayReports = _reports.filter(r =>
+      r.clocked_out_at >= dayStart && r.clocked_out_at <= dayEnd
+    );
+    if (dayReports.length === 0) {
+      host.innerHTML = `<div class="card card-pad">
+        <div class="card-head" style="border:0;padding:0;margin-bottom:6px">
+          <h3>End-of-day reports — ${escapeHtml(date)}</h3>
+        </div>
+        <div class="muted" style="font-size:13px">No LN/Assistant reports submitted on this date.</div>
+      </div>`;
+      return;
+    }
+    const num = n => (n == null ? '0' : Number(n).toLocaleString('en-ZA'));
+    const dateFmt = (iso) => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const cards = dayReports.map(r => {
+      const name = escapeHtml(_staffNamesById.get(r.staff_id) || r.staff_id);
+      const designation = (r.designation || '').replace('_', ' ');
+      return `<details class="report-card">
+        <summary>
+          <div class="report-head">
+            <div>
+              <div class="report-name">${name}</div>
+              <div class="report-sub">${escapeHtml(designation)} · ${escapeHtml(r.division || '—')} · clocked out ${dateFmt(r.clocked_out_at)}</div>
+            </div>
+            <div class="report-stat-strip">
+              <span><b>${num(r.hs_calls_made + r.df_calls)}</b><small>calls</small></span>
+              <span><b>${num(r.hs_leads_vals + r.df_leads_vals + r.wa_leads_vals)}</b><small>leads/vals</small></span>
+              <span><b>${num(r.df_hours)}h</b><small>dialler</small></span>
+            </div>
+          </div>
+        </summary>
+        <div class="report-body">
+          <div class="report-section">
+            <h5>📊 HubSpot Work Summary</h5>
+            <div class="report-grid">
+              <div><span>📋 Tasks Completed</span><b>${num(r.hs_tasks_completed)}</b></div>
+              <div><span>📞 Calls Made</span><b>${num(r.hs_calls_made)}</b></div>
+              <div><span>💻 Emails Sent</span><b>${num(r.hs_emails_sent)}</b></div>
+              <div><span>📲 WhatsApp's sent</span><b>${num(r.hs_whatsapps_sent)}</b></div>
+              <div><span>✅ Answered Contacts</span><b>${num(r.hs_answered_contacts)}</b></div>
+              <div><span>🎯 Leads/Vals</span><b>${num(r.hs_leads_vals)}</b></div>
+              <div><span>♻️ Reconverted Leads</span><b>${num(r.hs_reconverted_leads)}</b></div>
+            </div>
+          </div>
+          <div class="report-section">
+            <h5>☎️🔥 DialFire Canvassing</h5>
+            <div class="report-grid">
+              <div><span>📞 Calls</span><b>${num(r.df_calls)}</b></div>
+              <div><span>📧 Email Successes</span><b>${num(r.df_email_successes)}</b></div>
+              <div><span>🏡 Leads/Vals</span><b>${num(r.df_leads_vals)}</b></div>
+              <div><span>⏰ Hours</span><b>${num(r.df_hours)}</b></div>
+            </div>
+          </div>
+          <div class="report-section">
+            <h5>📲 WhatsApp Campaigns</h5>
+            <div class="report-grid">
+              <div><span>🤳 WhatsApps sent</span><b>${num(r.wa_sent)}</b></div>
+              <div><span>▶️ Responses</span><b>${num(r.wa_responses)}</b></div>
+              <div><span>🎯 Leads/Vals</span><b>${num(r.wa_leads_vals)}</b></div>
+            </div>
+          </div>
+          ${r.notes ? `<div class="report-section">
+            <h5>🔷📈 Notes</h5>
+            <div class="report-notes">${escapeHtml(r.notes)}</div>
+          </div>` : ''}
+        </div>
+      </details>`;
+    }).join('');
+    host.innerHTML = `<div class="card">
+      <div class="card-head"><div><h3>End-of-day reports — ${escapeHtml(date)}</h3>
+        <div class="sub">${dayReports.length} submission${dayReports.length === 1 ? '' : 's'} from LN/Assistant on this day</div></div></div>
+      <div style="padding:14px 18px 18px">${cards}</div>
+    </div>`;
   }
 
   function managerWire() {
