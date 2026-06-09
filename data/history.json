@@ -1,9 +1,11 @@
 [
   {
-    "generated": "2026-06-09T02:21:10Z",
+    "generated": "2026-06-09T04:44:39.857692+00:00",
     "week": "2026-06-08",
     "weekStart": "2026-06-08",
     "weekEnd": "2026-06-14",
+    "periodStart": "2026-06-08",
+    "periodEnd": "2026-06-14",
     "rm": [],
     "fancy": [
       {
@@ -29,6 +31,33 @@
         "wrapPct": 55.9,
         "waitPct": 26.4,
         "workPct": 99.8
+      },
+      {
+        "name": "CraigCarroll",
+        "calls": 127,
+        "success": 5,
+        "seller": 1,
+        "rental": 0,
+        "email": 4,
+        "cph": 49.0,
+        "successRate": 3.9,
+        "workTime": 2.5902,
+        "talkTime": 0.6194,
+        "wrapTime": 1.1055,
+        "pauseTime": 0.0911,
+        "waitTime": 0.7742,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "AVENGERS_NEW",
+          "AVENGERS",
+          "BETTIES",
+          "PROTEAS"
+        ],
+        "talkPct": 23.9,
+        "wrapPct": 42.7,
+        "waitPct": 29.9,
+        "workPct": 96.6
       },
       {
         "name": "BronwynBotha",
@@ -106,26 +135,27 @@
       },
       {
         "name": "NeelamJameel",
-        "calls": 49,
+        "calls": 50,
         "success": 3,
         "seller": 0,
         "rental": 0,
         "email": 3,
         "cph": 34.6,
-        "successRate": 6.1,
-        "workTime": 1.417,
-        "talkTime": 0.4214,
+        "successRate": 6.0,
+        "workTime": 1.4437,
+        "talkTime": 0.4308,
         "wrapTime": 0.0902,
         "pauseTime": 0.0278,
-        "waitTime": 0.8775,
+        "waitTime": 0.8947,
         "is_rm": false,
         "meetsTarget": false,
         "campaigns": [
+          "AMIGOS",
           "TORNADOES"
         ],
-        "talkPct": 29.7,
-        "wrapPct": 6.4,
-        "waitPct": 61.9,
+        "talkPct": 29.8,
+        "wrapPct": 6.2,
+        "waitPct": 62.0,
         "workPct": 98.1
       },
       {
@@ -151,31 +181,6 @@
         "wrapPct": 33.5,
         "waitPct": 43.4,
         "workPct": 94.6
-      },
-      {
-        "name": "CraigCarroll",
-        "calls": 33,
-        "success": 5,
-        "seller": 1,
-        "rental": 0,
-        "email": 4,
-        "cph": 30.2,
-        "successRate": 15.2,
-        "workTime": 1.0936,
-        "talkTime": 0.3683,
-        "wrapTime": 0.0919,
-        "pauseTime": 0.0528,
-        "waitTime": 0.5806,
-        "is_rm": false,
-        "meetsTarget": false,
-        "campaigns": [
-          "AVENGERS",
-          "PROTEAS"
-        ],
-        "talkPct": 33.7,
-        "wrapPct": 8.4,
-        "waitPct": 53.1,
-        "workPct": 95.4
       },
       {
         "name": "ZivanaKriel",
@@ -265,17 +270,17 @@
         "agent_count": 0
       },
       "AMIGOS_NA": {
-        "calls": 0,
+        "calls": 1,
         "success": 0,
         "seller": 0,
         "rental": 0,
         "email": 0,
-        "workTime": 0.0,
-        "talkTime": 0.0,
+        "workTime": 0.0267,
+        "talkTime": 0.0094,
         "wrapTime": 0.0,
         "pauseTime": 0.0,
-        "waitTime": 0.0,
-        "agent_count": 0
+        "waitTime": 0.0172,
+        "agent_count": 1
       },
       "AMIGOS_NEW": {
         "calls": 0,
@@ -330,17 +335,17 @@
         "agent_count": 0
       },
       "AVENGERS_NEW": {
-        "calls": 0,
+        "calls": 90,
         "success": 0,
         "seller": 0,
         "rental": 0,
         "email": 0,
-        "workTime": 0.0,
-        "talkTime": 0.0,
-        "wrapTime": 0.0,
-        "pauseTime": 0.0,
-        "waitTime": 0.0,
-        "agent_count": 0
+        "workTime": 1.4369,
+        "talkTime": 0.2472,
+        "wrapTime": 1.0036,
+        "pauseTime": 0.0272,
+        "waitTime": 0.1589,
+        "agent_count": 1
       },
       "AVENGERS_CM": {
         "calls": 0,
@@ -460,17 +465,17 @@
         "agent_count": 0
       },
       "BETTIES_CM": {
-        "calls": 0,
+        "calls": 4,
         "success": 0,
         "seller": 0,
         "rental": 0,
         "email": 0,
-        "workTime": 0.0,
-        "talkTime": 0.0,
-        "wrapTime": 0.0,
-        "pauseTime": 0.0,
-        "waitTime": 0.0,
-        "agent_count": 0
+        "workTime": 0.0597,
+        "talkTime": 0.0039,
+        "wrapTime": 0.01,
+        "pauseTime": 0.0111,
+        "waitTime": 0.0347,
+        "agent_count": 1
       },
       "BETTIES_NA": {
         "calls": 0,
@@ -2450,7 +2455,45 @@
       }
     },
     "by_agent_campaign": {
+      "NeelamJameel": {
+        "AMIGOS_NA": {
+          "calls": 1,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "workTime": 0.0267,
+          "talkTime": 0.0094
+        },
+        "TORNADOES_NA": {
+          "calls": 3,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "workTime": 0.0603,
+          "talkTime": 0.0
+        },
+        "TORNADOES_CM": {
+          "calls": 46,
+          "success": 3,
+          "seller": 0,
+          "rental": 0,
+          "email": 3,
+          "workTime": 1.3567,
+          "talkTime": 0.4214
+        }
+      },
       "CraigCarroll": {
+        "AVENGERS_NEW": {
+          "calls": 90,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "workTime": 1.4369,
+          "talkTime": 0.2472
+        },
         "AVENGERS_NA": {
           "calls": 4,
           "success": 0,
@@ -2459,6 +2502,15 @@
           "email": 0,
           "workTime": 0.0528,
           "talkTime": 0.0069
+        },
+        "BETTIES_CM": {
+          "calls": 4,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "workTime": 0.0597,
+          "talkTime": 0.0039
         },
         "PROTEAS_CM": {
           "calls": 29,
@@ -2599,26 +2651,6 @@
           "email": 3,
           "workTime": 0.6708,
           "talkTime": 0.1956
-        }
-      },
-      "NeelamJameel": {
-        "TORNADOES_NA": {
-          "calls": 3,
-          "success": 0,
-          "seller": 0,
-          "rental": 0,
-          "email": 0,
-          "workTime": 0.0603,
-          "talkTime": 0.0
-        },
-        "TORNADOES_CM": {
-          "calls": 46,
-          "success": 3,
-          "seller": 0,
-          "rental": 0,
-          "email": 3,
-          "workTime": 1.3567,
-          "talkTime": 0.4214
         }
       },
       "GenevaGomes": {
