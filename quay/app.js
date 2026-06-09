@@ -50,6 +50,7 @@
     { id: 'daily',      label: 'Daily Stats',    icon: I.cal2,     title: 'Daily Stats',          sub: 'Per-caller performance for a single day' },
     { id: 'monthly',    label: 'Monthly',        icon: I.cal2,     title: 'Monthly Breakdown',    sub: 'Month-by-month roll-up across every week of data' },
     { id: 'reports',    label: 'Daily Reports',  icon: I.cal2,     title: 'End-of-day Reports',   sub: 'Submissions from LN + Assistant on clock-out' },
+    { id: 'team',       label: 'Team',           icon: I.users,    title: 'Team Directory',       sub: 'Staff roster + status, add and edit directly' },
     { id: 'manager',    label: 'Manager Reports',icon: I.chart,    title: 'Manager Reports',      sub: 'Filter by date range and campaign' },
     { id: 'sources',    label: 'Lead Sources',   icon: I.target,   title: 'Lead Source Efficacy', sub: 'Which source converts best' },
     { id: 'clocks',     label: 'Clocks',         icon: I.clock,    title: 'Clocks',               sub: 'Staff hours, requests & team — manage everything in one place' },
@@ -290,6 +291,7 @@
     else if (tab === 'daily')    { host.innerHTML = V.daily(period, dailyPicked); dailyWire(); }
     else if (tab === 'monthly')  host.innerHTML = V.monthly();
     else if (tab === 'reports')  { host.innerHTML = renderReportsView(); wireReportsView(); }
+    else if (tab === 'team')     { host.innerHTML = renderTeamView(); wireTeamView(); }
     else if (tab === 'manager')  { host.innerHTML = V.manager(period); managerWire(); }
     else if (tab === 'sources')  host.innerHTML = V.leadSources(period);
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
@@ -1783,6 +1785,346 @@
     });
   }
 
+  // ─── Team Directory (native — no longer requires Clocks iframe) ────
+  // Pulls public.staff + each staff member's latest event so we can
+  // render live status. Add/Edit modal posts to admin-create-staff
+  // (Edge Function) for new rows, or PATCHes public.staff for edits.
+  let _team = null;             // [{id,name,...,status,lastIn,lastOut}]
+  let _teamLoading = false;
+  let _teamFilter = '';
+  let _teamModal = null;        // form state when modal is open
+
+  async function loadTeam() {
+    if (!window.sb) return;
+    _teamLoading = true;
+    try {
+      const { data: staff, error } = await window.sb
+        .from('staff')
+        .select('*')
+        .eq('active', true)
+        .order('name', { ascending: true });
+      if (error) throw error;
+      // One small query per staff to grab their last two events — same
+      // pattern the clock admin uses. Cheap for an office-sized roster.
+      const decorated = await Promise.all((staff || []).map(async (s) => {
+        const { data: ev } = await window.sb
+          .from('events').select('ts, dir')
+          .eq('staff_id', s.id)
+          .order('ts', { ascending: false })
+          .limit(2);
+        let status = 'out', lastIn = '', lastOut = '';
+        (ev || []).forEach(e => {
+          if (e.dir === 'in'  && !lastIn)  lastIn  = e.ts;
+          if (e.dir === 'out' && !lastOut) lastOut = e.ts;
+        });
+        if (lastIn && (!lastOut || lastIn > lastOut)) status = 'in';
+        return { ...s, status, lastIn, lastOut };
+      }));
+      decorated.sort((a, b) => {
+        if (a.status !== b.status) return a.status === 'in' ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      });
+      _team = decorated;
+    } catch (e) {
+      console.warn('[team] load failed', e);
+      _team = [];
+    } finally {
+      _teamLoading = false;
+    }
+  }
+
+  function renderTeamView() {
+    if (_team == null && !_teamLoading) {
+      loadTeam().then(() => { if (tab === 'team') shell(); });
+    }
+    const q = _teamFilter.trim().toLowerCase();
+    const rows = (_team || []).filter(s =>
+      !q || s.name.toLowerCase().includes(q)
+         || (s.designation || '').toLowerCase().includes(q)
+         || (s.division || '').toLowerCase().includes(q)
+         || (s.team || '').toLowerCase().includes(q)
+         || (s.role || '').toLowerCase().includes(q)
+    );
+    const desigLabel = (d) => ({
+      super_admin: 'Super Admin',
+      manager:     'Manager',
+      rm:          'RM',
+      fancy:       'Fancy',
+      ln:          'LN',
+      assistant:   'Assistant',
+    }[d] || (d || '—'));
+    const onCount = (_team || []).filter(s => s.status === 'in').length;
+    const totalCount = (_team || []).length;
+
+    const rel = (iso) => {
+      if (!iso) return '—';
+      const t = new Date(iso).getTime();
+      const m = Math.max(0, Math.round((Date.now() - t) / 60000));
+      if (m < 60) return m + 'm ago';
+      const h = Math.round(m / 60);
+      return h < 24 ? h + 'h ago' : Math.round(h / 24) + 'd ago';
+    };
+
+    return `<div class="tab-view">
+      <div class="card card-pad">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+          <input id="teamSearch" type="search" placeholder="Search name, designation, division..."
+                 value="${escapeHtml(_teamFilter)}"
+                 style="flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-family:Montserrat">
+          <div class="muted" style="font-size:13px"><b style="color:var(--green)">${onCount}</b> on the clock · <b>${totalCount}</b> active staff</div>
+          <button class="btn btn-primary" id="teamAddBtn">${I.plus || '+'} Add staff</button>
+        </div>
+      </div>
+      <div class="card mt">
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Designation</th>
+            <th>Division</th>
+            <th>Role / Team</th>
+            <th>Last clocked</th>
+            <th class="r"></th>
+          </tr></thead>
+          <tbody>
+            ${_team == null ? '<tr><td colspan="7" class="muted" style="text-align:center;padding:30px">Loading…</td></tr>' :
+              rows.length === 0 ? '<tr><td colspan="7" class="muted" style="text-align:center;padding:30px">No staff match.</td></tr>' :
+              rows.map(s => `<tr>
+                <td><div class="agent-cell"><div class="avatar">${escapeHtml(initialsOf(s.name))}</div>
+                  <div class="agent-name">${escapeHtml(s.name)}</div></div></td>
+                <td><span class="pill ${s.status === 'in' ? 'ok' : ''}" style="font-size:11px;padding:3px 9px">${s.status === 'in' ? '● On the clock' : 'Clocked out'}</span></td>
+                <td>${escapeHtml(desigLabel(s.designation))}</td>
+                <td class="muted">${escapeHtml(s.division || '—')}</td>
+                <td class="muted">${escapeHtml((s.role || '—') + (s.team ? ' · ' + s.team : ''))}</td>
+                <td class="muted tnum" style="font-size:12.5px">${s.status === 'in' ? 'in ' + rel(s.lastIn) : (s.lastOut ? 'out ' + rel(s.lastOut) : '—')}</td>
+                <td class="r"><button class="btn small" data-edit-staff-id="${escapeHtml(s.id)}">Edit</button></td>
+              </tr>`).join('')}
+          </tbody>
+        </table></div>
+      </div>
+      ${_teamModal ? renderTeamModal() : ''}
+    </div>`;
+  }
+
+  function initialsOf(name) {
+    return String(name || '?').split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase();
+  }
+
+  function renderTeamModal() {
+    const f = _teamModal;
+    const isEdit = f.mode === 'edit';
+    const designations = [
+      ['super_admin', 'Super Admin'],
+      ['manager',     'Manager'],
+      ['rm',          'RM (Relationship Manager)'],
+      ['fancy',       'Fancy Caller'],
+      ['ln',          'LN (Lead Nurturer)'],
+      ['assistant',   'Assistant'],
+    ];
+    return `<div class="modal-back" id="teamModalBack"></div>
+      <div class="modal" role="dialog" style="width:min(560px, calc(100vw - 32px))">
+        <div class="modal-head">
+          <h3 style="margin:0">${isEdit ? 'Edit ' + escapeHtml(f.name) : 'Add a staff member'}</h3>
+          <button class="modal-close" id="teamModalClose">×</button>
+        </div>
+        <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+          <label class="field"><span>Name</span>
+            <input id="tmName" type="text" value="${escapeHtml(f.name)}" placeholder="e.g. Thandi Mokoena" ${isEdit ? '' : 'autofocus'}>
+          </label>
+          ${isEdit ? `
+            <label class="field"><span>Username (login id)</span>
+              <input type="text" value="${escapeHtml(f.id)}" disabled>
+            </label>` : `
+            <label class="field"><span>Username</span>
+              <input id="tmId" type="text" value="${escapeHtml(f.id)}" placeholder="auto from name" autocapitalize="off">
+              <div class="muted" style="font-size:11px;margin-top:3px">Lower-case, no spaces. Auto-generated from name; edit to override.</div>
+            </label>
+            <label class="field"><span>PIN (4 digits, they'll use this to log in)</span>
+              <input id="tmPin" type="text" inputmode="numeric" maxlength="4" value="${escapeHtml(f.pin)}" placeholder="4 digits">
+            </label>
+          `}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <label class="field"><span>Designation</span>
+              <select id="tmDesignation">
+                ${designations.map(([v, l]) => `<option value="${v}" ${f.designation === v ? 'selected' : ''}>${l}</option>`).join('')}
+              </select>
+            </label>
+            <label class="field"><span>Division</span>
+              <input id="tmDivision" type="text" list="tmDivisionList" value="${escapeHtml(f.division)}" placeholder="e.g. Engine Room">
+              <datalist id="tmDivisionList">
+                <option value="Engine Room"></option>
+                <option value="RM"></option>
+                <option value="Fancy"></option>
+                <option value="Inbound"></option>
+                <option value="Outbound"></option>
+              </datalist>
+            </label>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <label class="field"><span>Role</span>
+              <input id="tmRole" type="text" value="${escapeHtml(f.role)}" placeholder="Sales Agent">
+            </label>
+            <label class="field"><span>Team</span>
+              <input id="tmTeam" type="text" value="${escapeHtml(f.team)}" placeholder="Sales">
+            </label>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <label class="field"><span>Hourly rate (R)</span>
+              <input id="tmRate" type="number" step="0.01" min="0" value="${escapeHtml(f.hourly_rate)}" placeholder="e.g. 75.00">
+            </label>
+            <label class="field"><span>Weekly hours</span>
+              <input id="tmHours" type="number" step="0.5" min="0" max="80" value="${escapeHtml(f.weekly_hours)}" placeholder="e.g. 40">
+            </label>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13.5px">
+            <input id="tmAdmin" type="checkbox" ${f.admin ? 'checked' : ''}>
+            <span>Admin — can open the manager dashboard</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13.5px">
+            <input id="tmSuper" type="checkbox" ${f.super ? 'checked' : ''}>
+            <span>Superuser — can also see Leadership</span>
+          </label>
+          ${f.error ? `<div class="banner" style="display:block">${escapeHtml(f.error)}</div>` : ''}
+        </div>
+        <div class="modal-foot">
+          <button class="btn" id="teamModalCancel">Cancel</button>
+          <button class="btn btn-primary" id="teamModalSave" ${f.busy ? 'disabled' : ''}>${f.busy ? 'Saving…' : (isEdit ? 'Save changes' : 'Add staff')}</button>
+        </div>
+      </div>`;
+  }
+
+  function wireTeamView() {
+    const search = document.getElementById('teamSearch');
+    if (search) search.addEventListener('input', (e) => {
+      _teamFilter = e.target.value;
+      // Re-render rows only, keep search-input focus.
+      const tbody = document.querySelector('#content .tbl tbody');
+      if (tbody) shell(); else shell();
+    });
+    const addBtn = document.getElementById('teamAddBtn');
+    if (addBtn) addBtn.addEventListener('click', () => {
+      _teamModal = {
+        mode: 'add', name: '', id: '', pin: '',
+        role: '', team: '', designation: 'fancy', division: '',
+        hourly_rate: '', weekly_hours: '',
+        admin: false, super: false,
+        busy: false, error: '',
+      };
+      shell();
+    });
+    document.querySelectorAll('button[data-edit-staff-id]').forEach(b => {
+      b.addEventListener('click', () => {
+        const s = (_team || []).find(x => x.id === b.dataset.editStaffId);
+        if (!s) return;
+        _teamModal = {
+          mode: 'edit',
+          id: s.id, name: s.name, pin: '',
+          role: s.role || '', team: s.team || '',
+          designation: s.designation || 'fancy',
+          division: s.division || '',
+          hourly_rate:  s.hourly_rate  != null ? String(s.hourly_rate)  : '',
+          weekly_hours: s.weekly_hours != null ? String(s.weekly_hours) : '',
+          admin: !!s.is_admin, super: !!s.is_super,
+          busy: false, error: '',
+        };
+        shell();
+      });
+    });
+    if (_teamModal) wireTeamModal();
+  }
+
+  function wireTeamModal() {
+    const f = _teamModal;
+    const close = () => { _teamModal = null; shell(); };
+    document.getElementById('teamModalBack').addEventListener('click', close);
+    document.getElementById('teamModalClose').addEventListener('click', close);
+    document.getElementById('teamModalCancel').addEventListener('click', close);
+    const name = document.getElementById('tmName');
+    const idIn = document.getElementById('tmId');
+    const pin  = document.getElementById('tmPin');
+    let idTouched = !!f.id;
+    if (name) name.addEventListener('input', () => {
+      f.name = name.value;
+      if (f.mode === 'add' && !idTouched && idIn) {
+        const slug = name.value.toLowerCase().trim()
+          .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 32);
+        idIn.value = slug; f.id = slug;
+      }
+    });
+    if (idIn) idIn.addEventListener('input', () => { idTouched = true; f.id = idIn.value; });
+    if (pin)  pin.addEventListener('input', () => {
+      f.pin = pin.value.replace(/\D/g, '').slice(0, 4); pin.value = f.pin;
+    });
+    document.getElementById('tmRole').addEventListener('input',  (e) => { f.role  = e.target.value; });
+    document.getElementById('tmTeam').addEventListener('input',  (e) => { f.team  = e.target.value; });
+    document.getElementById('tmDesignation').addEventListener('change', (e) => { f.designation = e.target.value; });
+    document.getElementById('tmDivision').addEventListener('input', (e) => { f.division = e.target.value; });
+    document.getElementById('tmRate').addEventListener('input',  (e) => { f.hourly_rate  = e.target.value; });
+    document.getElementById('tmHours').addEventListener('input', (e) => { f.weekly_hours = e.target.value; });
+    document.getElementById('tmAdmin').addEventListener('change',(e) => { f.admin = e.target.checked; });
+    document.getElementById('tmSuper').addEventListener('change',(e) => { f.super = e.target.checked; });
+    document.getElementById('teamModalSave').addEventListener('click', saveTeamModal);
+  }
+
+  async function saveTeamModal() {
+    const f = _teamModal;
+    if (!f) return;
+    f.error = '';
+    if (!f.name.trim()) { f.error = 'Name is required'; shell(); return; }
+    if (f.mode === 'add' && (!f.pin || f.pin.length !== 4)) {
+      f.error = 'PIN must be 4 digits';
+      shell(); return;
+    }
+    f.busy = true; shell();
+    try {
+      if (f.mode === 'add') {
+        // Call the same admin-create-staff Edge Function the clock admin uses.
+        const { data: { session: s } } = await window.sb.auth.getSession();
+        if (!s) throw new Error('Not signed in');
+        const res = await fetch(`${CFG.SUPABASE_URL}/functions/v1/admin-create-staff`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${s.access_token}`,
+            'apikey': CFG.SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            id: f.id.trim() || f.name, name: f.name.trim(), pin: f.pin,
+            role: f.role.trim(), team: f.team.trim(),
+            admin: !!f.admin, is_super: !!f.super,
+            hourly_rate:  f.hourly_rate  === '' ? null : Number(f.hourly_rate),
+            weekly_hours: f.weekly_hours === '' ? null : Number(f.weekly_hours),
+            designation: f.designation || null,
+            division:    f.division    || null,
+          }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.ok === false) throw new Error(body.error || 'Could not create staff');
+      } else {
+        // Direct PATCH — RLS will accept it because the current session
+        // belongs to an admin (the dashboard requires login).
+        const patch = {
+          name: f.name.trim(),
+          role: f.role.trim(), team: f.team.trim(),
+          is_admin: !!f.admin, is_super: !!f.super,
+          designation: f.designation || null,
+          division:    f.division    || null,
+          hourly_rate:  f.hourly_rate  === '' ? null : Number(f.hourly_rate),
+          weekly_hours: f.weekly_hours === '' ? null : Number(f.weekly_hours),
+        };
+        const { error } = await window.sb.from('staff').update(patch).eq('id', f.id);
+        if (error) throw new Error(error.message);
+      }
+      _teamModal = null;
+      _team = null; // force a re-load to pick up the new/edited row + fresh status
+      shell();
+    } catch (e) {
+      f.busy = false;
+      f.error = String(e.message || e);
+      shell();
+    }
+  }
+
   // ─── Live red-flags badge ────────────────────────────────────────────
   // Top-right pill mirroring the full Red Flags card — counts every open
   // flag (schedule + business) so the badge and the on-screen list agree.
@@ -1835,6 +2177,11 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, rtScheduleReload)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'clock_out_reports' }, () => {
           loadReports().then(() => { if (tab === 'reports' && !dashIsBusy()) shell(); });
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'staff' }, () => {
+          // Invalidate so next Team tab visit pulls fresh roster.
+          _team = null;
+          if (tab === 'team' && !dashIsBusy()) shell();
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'flag_acks' }, () => {
           // Full re-render — an un-ack from another device or admin needs
