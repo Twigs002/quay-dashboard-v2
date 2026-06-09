@@ -47,6 +47,7 @@
     { id: 'staff',      label: 'All Staff',      icon: I.calendar, title: 'All Staff Report',     sub: 'Drill into agent-level performance' },
     { id: 'compare',    label: 'Compare',        icon: I.scale,    title: 'Period Comparison',    sub: 'Week vs week · month vs month' },
     { id: 'daily',      label: 'Daily Stats',    icon: I.cal2,     title: 'Daily Stats',          sub: 'Per-caller performance for a single day' },
+    { id: 'monthly',    label: 'Monthly',        icon: I.cal2,     title: 'Monthly Breakdown',    sub: 'Month-by-month roll-up across every week of data' },
     { id: 'manager',    label: 'Manager Reports',icon: I.chart,    title: 'Manager Reports',      sub: 'Filter by date range and campaign' },
     { id: 'sources',    label: 'Lead Sources',   icon: I.target,   title: 'Lead Source Efficacy', sub: 'Which source converts best' },
     { id: 'clocks',     label: 'Clocks',         icon: I.clock,    title: 'Clocks',               sub: 'Staff hours, requests & team — manage everything in one place' },
@@ -285,6 +286,7 @@
     else if (tab === 'staff')    { host.innerHTML = V.allStaff(period); staffWire(); }
     else if (tab === 'compare')  { host.innerHTML = V.compare(); segWire(); }
     else if (tab === 'daily')    host.innerHTML = V.daily(period);
+    else if (tab === 'monthly')  host.innerHTML = V.monthly();
     else if (tab === 'manager')  { host.innerHTML = V.manager(period); managerWire(); }
     else if (tab === 'sources')  host.innerHTML = V.leadSources(period);
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
@@ -551,6 +553,7 @@
     if (tab === 'sources')         rows = csvCampaigns();
     else if (tab === 'compare')    rows = csvCompare();
     else if (tab === 'manager')    rows = csvManager();
+    else if (tab === 'monthly')    rows = csvMonthly();
     else                            rows = csvAgents();
     downloadCSV(filename, rows);
   }
@@ -581,6 +584,17 @@
     ]));
     return out;
   }
+  function csvMonthly() {
+    const rows = Q.monthlyBreakdown ? Q.monthlyBreakdown() : [];
+    const header = ['Month','Weeks','RMs','Fancy','Total Calls','Success %','Seller Leads','Rental Leads','Emails'];
+    const out = [header];
+    rows.forEach(r => out.push([
+      r.label, r.weeks, r.rmCount, r.fancyCount, r.calls, r.successRate,
+      r.seller, r.rental, r.email,
+    ]));
+    return out;
+  }
+
   function csvCompare() {
     const totals = key => Q.totalsFor(key);
     const a = totals('this-week'), b = totals('last-week');

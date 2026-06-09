@@ -285,6 +285,67 @@ window.QUAY_READY = (async function () {
   const MONTH_RENTALS = monthSeries.map(m => m.rentals);
   const MONTH_DFHOURS = monthSeries.map(m => m.dfHours);
 
+  // ---- Monthly Breakdown — All Time -----------------------------------------
+  // One row per calendar month covering every week we have data for.
+  // Returns newest-first so the dashboard table reads top-down chronologically.
+  // Unique RM/Fancy counts are de-duped across weeks by agent name so a single
+  // person who worked 4 weeks doesn't get counted 4 times.
+  function monthlyBreakdown() {
+    return orderedMonths
+      .slice()                          // newest-first so we reverse the orderedMonths
+      .sort()
+      .reverse()
+      .map(k => {
+        const ws = buckets.get(k);
+        const [year, monthNum] = k.split('-').map(Number);
+        const label = `${MONTH_NAMES[monthNum - 1]} ${year}`;
+        const rmNames = new Set();
+        const fancyNames = new Set();
+        let calls = 0, seller = 0, rental = 0, email = 0, leads = 0;
+        ws.forEach(w => {
+          (w.rm || []).forEach(a => {
+            if (a && a.name) rmNames.add(a.name);
+            calls  += a.calls  || 0;
+            seller += a.seller || 0;
+            rental += a.rental || 0;
+            email  += a.email  || 0;
+            leads  += a.leads  || 0;
+          });
+          (w.fancy || []).forEach(a => {
+            if (a && a.name) fancyNames.add(a.name);
+            calls  += a.calls  || 0;
+            seller += a.seller || 0;
+            rental += a.rental || 0;
+            email  += a.email  || 0;
+            leads  += a.leads  || 0;
+          });
+        });
+        // Weighted-by-calls success rate so a big-volume week doesn't get
+        // averaged equally with a quiet one.
+        const successWeighted = ws.reduce((s, w) => {
+          const total = _periodTotals([w]);
+          return s + total.avgSuccess * total.calls;
+        }, 0);
+        const totalCalls = ws.reduce((s, w) => s + _periodTotals([w]).calls, 0);
+        const successRate = totalCalls
+          ? +(successWeighted / totalCalls).toFixed(1)
+          : 0;
+        return {
+          key: k,
+          label,
+          weeks: ws.length,
+          rmCount: rmNames.size,
+          fancyCount: fancyNames.size,
+          calls,
+          seller,
+          rental,
+          email,
+          leads,
+          successRate,
+        };
+      });
+  }
+
   // ---- Campaigns (per-campaign rollups from Dialfire data) ------------------
   // CAVEAT: an agent's stats appear under EVERY campaign they're on. Agents
   // working multiple campaigns will be double-counted across campaign rows.
@@ -492,6 +553,7 @@ window.QUAY_READY = (async function () {
     AGENTS: agentsForWeek(weeks[0]),  // current week, sorted natural
     WEEKS, WEEK_CALLS, WEEK_SUCCESS, trendSeriesFor,
     SOURCES, sourcesFor, campaignsFor,
+    monthlyBreakdown,
     MONTHS, MONTH_CALLS, MONTH_LEADS, MONTH_EMAILS, MONTH_RENTALS, MONTH_DFHOURS,
     PERIODS, DELTAS, agentsFor, totalsFor,
     periodElapsed, project, trailingAvg,
