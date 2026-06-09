@@ -25,13 +25,20 @@ RENTAL_STATUSES = {"RENTAL_LEAD"}
 EMAIL_STATUSES  = {"GOT_EMAIL"}
 
 # Agents who ONLY work these campaigns are classified as "RM" (relationship
-# manager). Anyone working ClientHub plus another campaign is "Fancy" (Fancy
-# Caller).
+# manager). Anyone working a ClientHub variant plus a non-ClientHub campaign
+# is "Fancy" (Fancy Caller). Stored lowercase for case-insensitive matching
+# downstream — Dialfire returns the names with varying capitalisation across
+# campaigns.
 RM_CAMPAIGNS = {
-    "Clienthub Master",
-    "New Contacts",
-    "No Answer / Not Contacted",
-    "CLIENTHUB",
+    # current Dialfire short names
+    "clienthub",
+    "clienthub_new",
+    "clienthub_no_answer",
+    # legacy names that pre-date the rename (kept so historical weeks classify
+    # correctly without a re-fetch)
+    "clienthub master",
+    "new contacts",
+    "no answer / not contacted",
 }
 
 
@@ -276,8 +283,10 @@ def finalize(agents):
         denom = wt + a.get("pauseTime", 0)
         a["workPct"] = round(wt / denom * 100, 1) if denom > 0 else 0.0
 
-        camps = set(a.get("campaigns", []))
-        a["is_rm"] = bool(camps) and camps.issubset(RM_CAMPAIGNS)
+        # Case-insensitive match — Dialfire capitalises ClientHub variants
+        # inconsistently ("CLIENTHUB" vs "Clienthub Master").
+        camps_lower = {(c or "").strip().lower() for c in a.get("campaigns", [])}
+        a["is_rm"] = bool(camps_lower) and camps_lower.issubset(RM_CAMPAIGNS)
 
         bench = BENCHMARKS["rm_success_rate"] if a["is_rm"] else BENCHMARKS["fc_success_rate"]
         a["meetsTarget"] = (
