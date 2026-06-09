@@ -432,5 +432,57 @@ window.VIEWS = (function () {
     </div>`;
   }
 
-  return { allStaff, compare, daily, manager, leadSources };
+  // ---------------------------------------------------- MONTHLY BREAKDOWN
+  // One row per calendar month — newest-first. Matches the
+  // "Monthly Breakdown — All Time" pattern from the management dashboard
+  // so the two surfaces line up.
+  function monthly() {
+    const rows = Q.monthlyBreakdown ? Q.monthlyBreakdown() : [];
+    const srPill = sr => sr >= 18 ? 'ok' : sr >= 14 ? 'warn' : 'bad';
+
+    const body = rows.length ? rows.map(r => `
+      <tr>
+        <td><a href="#" class="month-link" data-month-key="${r.key}">${r.label}</a></td>
+        <td class="muted">${r.weeks} week${r.weeks === 1 ? '' : 's'}</td>
+        <td>
+          <span class="pill" style="background:#E7EEF4;color:var(--blue);font-size:11px;padding:3px 9px">${r.rmCount} RMs</span>
+          <span class="pill" style="background:#F3EBF8;color:#5A4FCF;font-size:11px;padding:3px 9px;margin-left:6px">${r.fancyCount} Fancy</span>
+        </td>
+        <td class="num tnum" style="font-weight:700">${fmt(r.calls)}</td>
+        <td class="num"><span class="pill ${srPill(r.successRate)}">${r.successRate}%</span></td>
+        <td class="num tnum">${fmt(r.seller)}</td>
+        <td class="num tnum">${fmt(r.rental)}</td>
+        <td class="num tnum">${fmt(r.email)}</td>
+      </tr>`).join('') : `
+      <tr><td colspan="8" class="muted" style="text-align:center;padding:34px">
+        No monthly data yet — backfill needs to land first.
+      </td></tr>`;
+
+    return `
+    <div class="tab-view">
+      <div class="card">
+        <div class="card-head">
+          <div><h3>Monthly Breakdown · All Time</h3>
+            <div class="sub">Aggregated from every week of DialFire history we have</div>
+          </div>
+          <button class="btn js-export">${I.download} Export CSV</button>
+        </div>
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr>
+            <th>Month</th>
+            <th>Weeks</th>
+            <th>Callers</th>
+            <th class="num">Total Calls</th>
+            <th class="num">Success Rate</th>
+            <th class="num">Seller Leads</th>
+            <th class="num">Rental Leads</th>
+            <th class="num">Emails</th>
+          </tr></thead>
+          <tbody>${body}</tbody>
+        </table></div>
+      </div>
+    </div>`;
+  }
+
+  return { allStaff, compare, daily, manager, leadSources, monthly };
 })();
