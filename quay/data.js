@@ -9,10 +9,13 @@
    fall back to the historical `workTime / 0.85` estimate. */
 
 window.QUAY_READY = (async function () {
-  const [weekly, history, clockData] = await Promise.all([
+  const [weekly, history, clockData, dailyData] = await Promise.all([
     fetch('data/weekly_data.json').then(r => r.json()),
     fetch('data/history.json').then(r => r.json()),
     fetch('data/clock_data.json').then(r => r.ok ? r.json() : null).catch(() => null),
+    // Per-day stats from fetch_dialfire_daily.py — file may not exist yet
+    // if the workflow hasn't run successfully. Treat as empty in that case.
+    fetch('data/daily_data.json').then(r => r.ok ? r.json() : []).catch(() => []),
   ]);
 
   // Build a name → clocked hours map from the quay-clock fetcher output.
@@ -285,6 +288,28 @@ window.QUAY_READY = (async function () {
   const MONTH_RENTALS = monthSeries.map(m => m.rentals);
   const MONTH_DFHOURS = monthSeries.map(m => m.dfHours);
 
+  // ---- Daily Stats (per-day data from update-daily.yml workflow) -----------
+  // dailyData is an array of { date, rm: [...], fancy: [...], generated } —
+  // newest-first. Used by the Daily Stats tab.
+  const dailyByDate = new Map();
+  (Array.isArray(dailyData) ? dailyData : []).forEach(d => {
+    if (d && d.date) dailyByDate.set(d.date, d);
+  });
+  const dailyDates = [...dailyByDate.keys()].sort().reverse();
+  function dailyFor(dateStr) {
+    const entry = dailyByDate.get(dateStr);
+    if (!entry) return null;
+    // Convert the same way agentsForWeek does so name/team/eff/etc line up
+    // with the rest of the dashboard.
+    const out = [];
+    (entry.rm    || []).forEach((a, i) => out.push(_normAgent(a, 'RM', i)));
+    (entry.fancy || []).forEach((a, i) => out.push(_normAgent(a, 'Fancy', i + 100)));
+    return out.sort((a, b) => b.calls - a.calls);
+  }
+  function latestDailyDate() {
+    return dailyDates[0] || null;
+  }
+
   // ---- Monthly Breakdown — All Time -----------------------------------------
   // One row per calendar month covering every week we have data for.
   // Returns newest-first so the dashboard table reads top-down chronologically.
@@ -554,6 +579,7 @@ window.QUAY_READY = (async function () {
     WEEKS, WEEK_CALLS, WEEK_SUCCESS, trendSeriesFor,
     SOURCES, sourcesFor, campaignsFor,
     monthlyBreakdown,
+    dailyDates, dailyFor, latestDailyDate,
     MONTHS, MONTH_CALLS, MONTH_LEADS, MONTH_EMAILS, MONTH_RENTALS, MONTH_DFHOURS,
     PERIODS, DELTAS, agentsFor, totalsFor,
     periodElapsed, project, trailingAvg,

@@ -215,38 +215,77 @@ window.VIEWS = (function () {
   }
 
   // ---------------------------------------------------- DAILY
-  function daily(period) {
-    const agents = Q.agentsFor('this-week').map(a => ({ ...a, calls: Math.round(a.calls / 5), leads: Math.round(a.leads / 5) }))
-      .sort((a, b) => b.calls - a.calls);
+  // Picks a specific date and renders per-caller stats. Backed by
+  // data/daily_data.json (written by the update-daily.yml workflow);
+  // shows an empty-state with backfill instructions if no entry exists.
+  function daily(period, selectedDate) {
+    const available = (Q.dailyDates || []).slice();
+    const date = selectedDate || (available[0] || null);
+    const agents = (Q.dailyFor && date) ? (Q.dailyFor(date) || []) : [];
     const scaleMax = agents.length ? agents[0].calls : 1;
     const rows = agents.map((a, i) => agentRow(a, i + 1, scaleMax)).join('');
-    const tot = agents.reduce((s, a) => s + a.calls, 0);
+    const totCalls = agents.reduce((s, a) => s + a.calls, 0);
+    const totLeads = agents.reduce((s, a) => s + a.leads, 0);
+
+    // Friendly label "Thursday · 5 June 2026"
+    const labelFor = (ymd) => {
+      if (!ymd) return '—';
+      const d = new Date(ymd + 'T00:00:00Z');
+      const weekday = d.toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'UTC' });
+      const day = d.getUTCDate();
+      const month = d.toLocaleDateString('en-GB', { month: 'long', timeZone: 'UTC' });
+      const year = d.getUTCFullYear();
+      return `${weekday} · ${day} ${month} ${year}`;
+    };
+    const prettyDate = labelFor(date);
+
+    // The empty-state message when no data exists for the picked date
+    // OR when the daily fetcher has never run.
+    const emptyMsg = !available.length
+      ? `No per-day data yet — the <code>update-daily.yml</code> workflow needs to populate <code>data/daily_data.json</code>. ` +
+        `Trigger it manually with a start_date / end_date in GitHub Actions, or wait for the daily 06:00 SAST cron.`
+      : `No data captured for <b>${escapeHtml(prettyDate)}</b>. ` +
+        `The most recent date with stats is <b>${available[0]}</b>.`;
+
     return `
     <div class="tab-view">
       <div class="card">
         <div class="panel" style="justify-content:space-between">
-          <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap">
-            <div class="field"><label>Date</label><input type="date" value="2026-06-05"></div>
-            <button class="btn">Today</button><button class="btn">Yesterday</button>
-            <button class="btn">◀ Prev</button><button class="btn">Next ▶</button>
-            <button class="btn btn-primary">${I.calendar} Load</button>
+          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+            <div class="field">
+              <label>Date</label>
+              <input id="dailyDate" type="date" value="${date || ''}" ${available.length ? `min="${available[available.length - 1]}" max="${available[0]}"` : ''}>
+            </div>
+            <button class="btn" data-daily-jump="today">Today</button>
+            <button class="btn" data-daily-jump="yesterday">Yesterday</button>
+            <button class="btn" data-daily-step="-1">${'◀'} Prev day</button>
+            <button class="btn" data-daily-step="1">Next day ${'▶'}</button>
           </div>
           <button class="btn js-export">${I.download} Export CSV</button>
         </div>
       </div>
       <div class="row g-3 mt">
-        ${miniStat('Calls today', fmt(tot), 'Thursday · 5 June 2026', I.phone)}
-        ${miniStat('Leads today', fmt(agents.reduce((s,a)=>s+a.leads,0)), 'seller · rental · email', I.target)}
-        ${miniStat('Active callers', agents.length + '', 'logged dialling time today', I.users)}
+        ${miniStat('Calls', fmt(totCalls), prettyDate, I.phone)}
+        ${miniStat('Leads', fmt(totLeads), 'seller · rental · email', I.target)}
+        ${miniStat('Active callers', agents.length + '', 'logged dialling time', I.users)}
       </div>
       <div class="card mt">
-        <div class="card-head"><div><h3>Per-caller performance — 5 June</h3><div class="sub">Today's dialling by agent</div></div></div>
-        <div class="tbl-wrap"><table class="tbl">
-          <thead><tr><th class="num">#</th><th>Agent</th><th>Team</th><th class="num">Calls</th><th class="num">Leads</th><th class="num">Success</th><th class="num">Connect</th><th class="num">Dialler</th><th class="num">Clocked</th><th class="num">Eff %</th><th class="num">Volume</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table></div>
+        <div class="card-head"><div><h3>Per-caller performance — ${escapeHtml(prettyDate)}</h3><div class="sub">${available.length} day${available.length === 1 ? '' : 's'} of history available</div></div></div>
+        ${agents.length ? `
+          <div class="tbl-wrap"><table class="tbl">
+            <thead><tr><th class="num">#</th><th>Agent</th><th>Team</th><th class="num">Calls</th><th class="num">Leads</th><th class="num">Success</th><th class="num">Connect</th><th class="num">Dialler</th><th class="num">Clocked</th><th class="num">Eff %</th><th class="num">Volume</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table></div>
+        ` : `<div class="muted" style="padding:24px;text-align:center;font-size:13.5px;line-height:1.6">${emptyMsg}</div>`}
       </div>
     </div>`;
+  }
+
+  // Tiny local helper used by the daily empty-state msg.
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
   // ---------------------------------------------------- MANAGER

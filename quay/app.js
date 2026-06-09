@@ -20,6 +20,7 @@
 
   let period = 'this-week';
   let tab = 'overview'; // default landing; switched to 'leadership' for superusers below
+  let dailyPicked = null; // selected date on the Daily Stats tab (yyyy-mm-dd)
 
   // ---- standard schedule (8am–5pm Mon–Fri) ----
   // Soft target: we surface variance, we don't enforce it.
@@ -285,7 +286,7 @@
     else if (tab === 'overview') { host.innerHTML = overview(); afterOverview(); }
     else if (tab === 'staff')    { host.innerHTML = V.allStaff(period); staffWire(); }
     else if (tab === 'compare')  { host.innerHTML = V.compare(); segWire(); }
-    else if (tab === 'daily')    host.innerHTML = V.daily(period);
+    else if (tab === 'daily')    { host.innerHTML = V.daily(period, dailyPicked); dailyWire(); }
     else if (tab === 'monthly')  host.innerHTML = V.monthly();
     else if (tab === 'manager')  { host.innerHTML = V.manager(period); managerWire(); }
     else if (tab === 'sources')  host.innerHTML = V.leadSources(period);
@@ -344,6 +345,46 @@
         b.classList.add('active');
       })));
   }
+  function dailyWire() {
+    const available = (Q.dailyDates || []).slice();      // newest first
+    const currentISO = () => new Date().toISOString().slice(0, 10);
+    const yesterdayISO = () => {
+      const d = new Date(); d.setDate(d.getDate() - 1);
+      return d.toISOString().slice(0, 10);
+    };
+    const pick = (newDate) => {
+      if (!newDate) return;
+      dailyPicked = newDate;
+      shell();
+    };
+    const stepFromCurrent = (delta) => {
+      // Step through the AVAILABLE dates so prev/next don't jump to a blank day.
+      const cur = dailyPicked || available[0];
+      if (!cur) return;
+      const idx = available.indexOf(cur);
+      if (idx < 0) return;
+      // Note: available is newest-first, so "prev day" means INCREASING index.
+      const targetIdx = idx - delta; // delta -1 = prev day = older = higher idx
+      const nextIdx = idx + (delta > 0 ? -1 : 1);
+      if (nextIdx >= 0 && nextIdx < available.length) pick(available[nextIdx]);
+    };
+    const dateEl = document.getElementById('dailyDate');
+    if (dateEl) dateEl.addEventListener('change', e => pick(e.target.value));
+    document.querySelectorAll('[data-daily-jump]').forEach(b =>
+      b.addEventListener('click', () => {
+        const t = b.dataset.dailyJump;
+        const target = t === 'today' ? currentISO() : yesterdayISO();
+        // If the exact day isn't available, fall back to the most recent
+        // available date that's <= target.
+        const usable = available.find(d => d <= target) || available[0];
+        pick(usable);
+      })
+    );
+    document.querySelectorAll('[data-daily-step]').forEach(b =>
+      b.addEventListener('click', () => stepFromCurrent(parseInt(b.dataset.dailyStep, 10)))
+    );
+  }
+
   function managerWire() {
     document.querySelectorAll('#content .mc').forEach(el =>
       C.miniBars(el, JSON.parse(el.dataset.series), el.dataset.color));
@@ -554,6 +595,7 @@
     else if (tab === 'compare')    rows = csvCompare();
     else if (tab === 'manager')    rows = csvManager();
     else if (tab === 'monthly')    rows = csvMonthly();
+    else if (tab === 'daily')      rows = csvDaily();
     else                            rows = csvAgents();
     downloadCSV(filename, rows);
   }
@@ -584,6 +626,18 @@
     ]));
     return out;
   }
+  function csvDaily() {
+    const date = dailyPicked || (Q.latestDailyDate && Q.latestDailyDate()) || null;
+    const agents = (date && Q.dailyFor) ? (Q.dailyFor(date) || []) : [];
+    const header = ['Date','Name','Team','Calls','Leads','Success %','Connect %','Dialler hrs','Clocked hrs','Eff %','Seller','Rental','Email'];
+    const out = [header];
+    agents.forEach(a => out.push([
+      date, a.name, a.team, a.calls, a.leads, a.success, a.connect,
+      a.df, a.ct, a.eff, a.seller || 0, a.rental || 0, a.email || 0,
+    ]));
+    return out;
+  }
+
   function csvMonthly() {
     const rows = Q.monthlyBreakdown ? Q.monthlyBreakdown() : [];
     const header = ['Month','Weeks','RMs','Fancy','Total Calls','Success %','Seller Leads','Rental Leads','Emails'];
