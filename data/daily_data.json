@@ -1,7 +1,14 @@
 [
   {
+    "date": "2026-06-13",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
+    "rm": [],
+    "fancy": [],
+    "by_agent_campaign": {}
+  },
+  {
     "date": "2026-06-12",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "Test",
@@ -776,7 +783,7 @@
   },
   {
     "date": "2026-06-11",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -1860,7 +1867,7 @@
   },
   {
     "date": "2026-06-10",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -3251,7 +3258,7 @@
   },
   {
     "date": "2026-06-09",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "SiphesihleSibanyoni",
@@ -3843,27 +3850,27 @@
       },
       {
         "name": "GcisaSokwaliwa",
-        "calls": 1,
+        "calls": 7,
         "success": 0,
         "seller": 0,
         "rental": 0,
         "email": 0,
-        "cph": 10.0,
+        "cph": 8.9,
         "successRate": 0.0,
-        "workTime": 0.1003,
-        "talkTime": 0.0033,
-        "wrapTime": 0.0706,
-        "pauseTime": 0.0053,
-        "waitTime": 0.0211,
+        "workTime": 0.7886,
+        "talkTime": 0.0239,
+        "wrapTime": 0.6142,
+        "pauseTime": 0.017,
+        "waitTime": 0.1336,
         "is_rm": false,
         "meetsTarget": false,
         "campaigns": [
           "DEALMAKERS"
         ],
-        "talkPct": 3.3,
-        "wrapPct": 70.4,
-        "waitPct": 21.0,
-        "workPct": 95.0
+        "talkPct": 3.0,
+        "wrapPct": 77.9,
+        "waitPct": 16.9,
+        "workPct": 97.9
       },
       {
         "name": "Nicolette",
@@ -4026,6 +4033,15 @@
         }
       },
       "GcisaSokwaliwa": {
+        "DEALMAKERS_CM": {
+          "calls": 6,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "workTime": 0.6883,
+          "talkTime": 0.0206
+        },
         "DEALMAKERS_NA": {
           "calls": 1,
           "success": 0,
@@ -4566,7 +4582,7 @@
   },
   {
     "date": "2026-06-08",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -5715,7 +5731,7 @@
   },
   {
     "date": "2026-06-07",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -5930,18 +5946,18 @@
       },
       {
         "name": "NeelamJameel",
-        "calls": 150,
-        "success": 8,
+        "calls": 196,
+        "success": 11,
         "seller": 0,
         "rental": 0,
-        "email": 7,
-        "cph": 57.1,
-        "successRate": 5.3,
-        "workTime": 2.6287,
-        "talkTime": 1.3383,
-        "wrapTime": 0.1377,
-        "pauseTime": 0.0956,
-        "waitTime": 1.0569,
+        "email": 10,
+        "cph": 49.2,
+        "successRate": 5.6,
+        "workTime": 3.9854,
+        "talkTime": 1.7597,
+        "wrapTime": 0.2171,
+        "pauseTime": 0.1128,
+        "waitTime": 1.8955,
         "is_rm": false,
         "meetsTarget": false,
         "campaigns": [
@@ -5949,10 +5965,10 @@
           "TORNADOES",
           "CLIENTHUB"
         ],
-        "talkPct": 50.9,
-        "wrapPct": 5.2,
-        "waitPct": 40.2,
-        "workPct": 96.5
+        "talkPct": 44.2,
+        "wrapPct": 5.4,
+        "waitPct": 47.6,
+        "workPct": 97.2
       },
       {
         "name": "QhayiyaDayimani",
@@ -6144,6 +6160,15 @@
           "email": 0,
           "workTime": 0.0603,
           "talkTime": 0.0
+        },
+        "TORNADOES_CM": {
+          "calls": 46,
+          "success": 3,
+          "seller": 0,
+          "rental": 0,
+          "email": 3,
+          "workTime": 1.3567,
+          "talkTime": 0.4214
         },
         "CLIENTHUB": {
           "calls": 146,
@@ -6531,14 +6556,14 @@
   },
   {
     "date": "2026-06-06",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-06-05",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "WarrickSolomons",
@@ -7205,7 +7230,7 @@
   },
   {
     "date": "2026-06-04",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "WarrickSolomons",
@@ -8171,7 +8196,7 @@
   },
   {
     "date": "2026-06-03",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "WarrickSolomons",
@@ -9197,7 +9222,7 @@
   },
   {
     "date": "2026-06-02",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "WarrickSolomons",
@@ -10444,7 +10469,7 @@
   },
   {
     "date": "2026-06-01",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -11634,7 +11659,7 @@
   },
   {
     "date": "2026-05-31",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -12604,14 +12629,14 @@
   },
   {
     "date": "2026-05-30",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-05-29",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "SiphesihleSibanyoni",
@@ -13538,7 +13563,7 @@
   },
   {
     "date": "2026-05-28",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "SiphesihleSibanyoni",
@@ -14799,7 +14824,7 @@
   },
   {
     "date": "2026-05-27",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -16091,7 +16116,7 @@
   },
   {
     "date": "2026-05-26",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "WarrickSolomons",
@@ -17403,7 +17428,7 @@
   },
   {
     "date": "2026-05-25",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "SadiqaCarelse",
@@ -18464,7 +18489,7 @@
   },
   {
     "date": "2026-05-24",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -19257,7 +19282,7 @@
   },
   {
     "date": "2026-05-23",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "CraigCarroll",
@@ -19376,7 +19401,7 @@
   },
   {
     "date": "2026-05-22",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "WarrickSolomons",
@@ -20180,7 +20205,7 @@
   },
   {
     "date": "2026-05-21",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "WarrickSolomons",
@@ -21235,7 +21260,7 @@
   },
   {
     "date": "2026-05-20",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "WarrickSolomons",
@@ -22439,7 +22464,7 @@
   },
   {
     "date": "2026-05-19",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "WarrickSolomons",
@@ -23746,7 +23771,7 @@
   },
   {
     "date": "2026-05-18",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "WarrickSolomons",
@@ -25028,7 +25053,7 @@
   },
   {
     "date": "2026-05-17",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "WarrickSolomons",
@@ -25960,7 +25985,7 @@
   },
   {
     "date": "2026-05-16",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [],
     "fancy": [
       {
@@ -26129,7 +26154,7 @@
   },
   {
     "date": "2026-05-15",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "WhitneyMalgas",
@@ -27070,7 +27095,7 @@
   },
   {
     "date": "2026-05-14",
-    "generated": "2026-06-13T07:51:06.008286+00:00",
+    "generated": "2026-06-14T08:17:52.361526+00:00",
     "rm": [
       {
         "name": "ZivanaKriel",
