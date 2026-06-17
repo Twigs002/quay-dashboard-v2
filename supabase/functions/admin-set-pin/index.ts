@@ -62,10 +62,12 @@ serve(async (req) => {
   const callerEmail = who.user.email;
 
   const admin = createClient(url, service);
+  // Caller's staff.id == local-part of their auth email.
+  const callerId = (callerEmail ?? "").split("@")[0];
   const { data: callerStaff, error: callerErr } = await admin
     .from("staff")
     .select("is_admin, is_super")
-    .eq("id", (callerEmail ?? "").split("@")[0])
+    .eq("id", callerId)
     .maybeSingle();
   if (callerErr || !callerStaff?.is_admin) return bad("Admin only", 403);
 
@@ -77,9 +79,9 @@ serve(async (req) => {
     .maybeSingle();
   if (!targetStaff) return bad("Staff not found", 404);
 
-  // Resolve the auth user via the email convention used by admin-create-staff.
-  // (Assumed email shape: `<id>@quay1.co.za` — match whatever admin-create-staff uses.)
-  const email = `${id}@quay1.co.za`;
+  // Matches CFG.AUTH_EMAIL_DOMAIN in quay/config.js (currently quay1.local).
+  const domain = Deno.env.get("AUTH_EMAIL_DOMAIN") ?? "quay1.local";
+  const email = `${id}@${domain}`;
   const { data: list, error: listErr } = await admin.auth.admin.listUsers({
     page: 1, perPage: 200,
   });
