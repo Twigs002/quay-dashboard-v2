@@ -1932,9 +1932,6 @@
     const rows = (_team || []).filter(s =>
       !q || s.name.toLowerCase().includes(q)
          || (s.designation || '').toLowerCase().includes(q)
-         || (s.division || '').toLowerCase().includes(q)
-         || (s.team || '').toLowerCase().includes(q)
-         || (s.role || '').toLowerCase().includes(q)
     );
     const desigLabel = (d) => ({
       super_admin: 'Super Admin',
@@ -1959,7 +1956,7 @@
     return `<div class="tab-view">
       <div class="card card-pad">
         <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
-          <input id="teamSearch" type="search" placeholder="Search name, designation, division..."
+          <input id="teamSearch" type="search" placeholder="Search name or designation..."
                  value="${escapeHtml(_teamFilter)}"
                  style="flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-family:Montserrat">
           <div class="muted" style="font-size:13px"><b style="color:var(--green)">${onCount}</b> on the clock · <b>${totalCount}</b> active staff</div>
@@ -1972,21 +1969,17 @@
             <th>Name</th>
             <th>Status</th>
             <th>Designation</th>
-            <th>Division</th>
-            <th>Role / Team</th>
             <th>Last clocked</th>
             <th class="r"></th>
           </tr></thead>
           <tbody>
-            ${_team == null ? '<tr><td colspan="7" class="muted" style="text-align:center;padding:30px">Loading…</td></tr>' :
-              rows.length === 0 ? '<tr><td colspan="7" class="muted" style="text-align:center;padding:30px">No staff match.</td></tr>' :
+            ${_team == null ? '<tr><td colspan="5" class="muted" style="text-align:center;padding:30px">Loading…</td></tr>' :
+              rows.length === 0 ? '<tr><td colspan="5" class="muted" style="text-align:center;padding:30px">No staff match.</td></tr>' :
               rows.map(s => `<tr>
                 <td><div class="agent-cell"><div class="avatar">${escapeHtml(initialsOf(s.name))}</div>
                   <div class="agent-name">${escapeHtml(s.name)}</div></div></td>
                 <td><span class="pill ${s.status === 'in' ? 'ok' : ''}" style="font-size:11px;padding:3px 9px">${s.status === 'in' ? '● On the clock' : 'Clocked out'}</span></td>
                 <td>${escapeHtml(desigLabel(s.designation))}</td>
-                <td class="muted">${escapeHtml(s.division || '—')}</td>
-                <td class="muted">${escapeHtml((s.role || '—') + (s.team ? ' · ' + s.team : ''))}</td>
                 <td class="muted tnum" style="font-size:12.5px">${s.status === 'in' ? 'in ' + rel(s.lastIn) : (s.lastOut ? 'out ' + rel(s.lastOut) : '—')}</td>
                 <td class="r"><button class="btn small" data-edit-staff-id="${escapeHtml(s.id)}">Edit</button></td>
               </tr>`).join('')}
@@ -2025,6 +2018,9 @@
           ${isEdit ? `
             <label class="field"><span>Username (login id)</span>
               <input type="text" value="${escapeHtml(f.id)}" disabled>
+            </label>
+            <label class="field"><span>PIN (4 digits — leave blank to keep current)</span>
+              <input id="tmPin" type="text" inputmode="numeric" maxlength="4" value="${escapeHtml(f.pin)}" placeholder="••••">
             </label>` : `
             <label class="field"><span>Username</span>
               <input id="tmId" type="text" value="${escapeHtml(f.id)}" placeholder="auto from name" autocapitalize="off">
@@ -2034,31 +2030,11 @@
               <input id="tmPin" type="text" inputmode="numeric" maxlength="4" value="${escapeHtml(f.pin)}" placeholder="4 digits">
             </label>
           `}
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <label class="field"><span>Designation</span>
-              <select id="tmDesignation">
-                ${designations.map(([v, l]) => `<option value="${v}" ${f.designation === v ? 'selected' : ''}>${l}</option>`).join('')}
-              </select>
-            </label>
-            <label class="field"><span>Division</span>
-              <input id="tmDivision" type="text" list="tmDivisionList" value="${escapeHtml(f.division)}" placeholder="e.g. Engine Room">
-              <datalist id="tmDivisionList">
-                <option value="Engine Room"></option>
-                <option value="RM"></option>
-                <option value="Fancy"></option>
-                <option value="Inbound"></option>
-                <option value="Outbound"></option>
-              </datalist>
-            </label>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <label class="field"><span>Role</span>
-              <input id="tmRole" type="text" value="${escapeHtml(f.role)}" placeholder="Sales Agent">
-            </label>
-            <label class="field"><span>Team</span>
-              <input id="tmTeam" type="text" value="${escapeHtml(f.team)}" placeholder="Sales">
-            </label>
-          </div>
+          <label class="field"><span>Designation</span>
+            <select id="tmDesignation">
+              ${designations.map(([v, l]) => `<option value="${v}" ${f.designation === v ? 'selected' : ''}>${l}</option>`).join('')}
+            </select>
+          </label>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
             <label class="field"><span>Hourly rate (R)</span>
               <input id="tmRate" type="number" step="0.01" min="0" value="${escapeHtml(f.hourly_rate)}" placeholder="e.g. 75.00">
@@ -2096,7 +2072,7 @@
     if (addBtn) addBtn.addEventListener('click', () => {
       _teamModal = {
         mode: 'add', name: '', id: '', pin: '',
-        role: '', team: '', designation: 'fancy', division: '',
+        designation: 'fancy',
         hourly_rate: '', weekly_hours: '',
         admin: false, super: false,
         busy: false, error: '',
@@ -2110,9 +2086,7 @@
         _teamModal = {
           mode: 'edit',
           id: s.id, name: s.name, pin: '',
-          role: s.role || '', team: s.team || '',
           designation: s.designation || 'fancy',
-          division: s.division || '',
           hourly_rate:  s.hourly_rate  != null ? String(s.hourly_rate)  : '',
           weekly_hours: s.weekly_hours != null ? String(s.weekly_hours) : '',
           admin: !!s.is_admin, super: !!s.is_super,
@@ -2146,10 +2120,7 @@
     if (pin)  pin.addEventListener('input', () => {
       f.pin = pin.value.replace(/\D/g, '').slice(0, 4); pin.value = f.pin;
     });
-    document.getElementById('tmRole').addEventListener('input',  (e) => { f.role  = e.target.value; });
-    document.getElementById('tmTeam').addEventListener('input',  (e) => { f.team  = e.target.value; });
     document.getElementById('tmDesignation').addEventListener('change', (e) => { f.designation = e.target.value; });
-    document.getElementById('tmDivision').addEventListener('input', (e) => { f.division = e.target.value; });
     document.getElementById('tmRate').addEventListener('input',  (e) => { f.hourly_rate  = e.target.value; });
     document.getElementById('tmHours').addEventListener('input', (e) => { f.weekly_hours = e.target.value; });
     document.getElementById('tmAdmin').addEventListener('change',(e) => { f.admin = e.target.checked; });
@@ -2181,30 +2152,45 @@
           },
           body: JSON.stringify({
             id: f.id.trim() || f.name, name: f.name.trim(), pin: f.pin,
-            role: f.role.trim(), team: f.team.trim(),
             admin: !!f.admin, is_super: !!f.super,
             hourly_rate:  f.hourly_rate  === '' ? null : Number(f.hourly_rate),
             weekly_hours: f.weekly_hours === '' ? null : Number(f.weekly_hours),
             designation: f.designation || null,
-            division:    f.division    || null,
           }),
         });
         const body = await res.json().catch(() => ({}));
         if (!res.ok || body.ok === false) throw new Error(body.error || 'Could not create staff');
       } else {
-        // Direct PATCH — RLS will accept it because the current session
-        // belongs to an admin (the dashboard requires login).
+        // Direct PATCH for non-PIN fields — RLS allows it for admins.
         const patch = {
           name: f.name.trim(),
-          role: f.role.trim(), team: f.team.trim(),
           is_admin: !!f.admin, is_super: !!f.super,
           designation: f.designation || null,
-          division:    f.division    || null,
           hourly_rate:  f.hourly_rate  === '' ? null : Number(f.hourly_rate),
           weekly_hours: f.weekly_hours === '' ? null : Number(f.weekly_hours),
         };
         const { error } = await window.sb.from('staff').update(patch).eq('id', f.id);
         if (error) throw new Error(error.message);
+
+        // If the admin entered a new PIN, route it through admin-set-pin
+        // (Edge Function) which uses the service role to reset the auth password.
+        if (f.pin && f.pin.length === 4) {
+          const { data: { session: s } } = await window.sb.auth.getSession();
+          if (!s) throw new Error('Not signed in');
+          const res = await fetch(`${CFG.SUPABASE_URL}/functions/v1/admin-set-pin`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${s.access_token}`,
+              'apikey': CFG.SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({ id: f.id, pin: f.pin }),
+          });
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok || body.ok === false) {
+            throw new Error(body.error || 'PIN updated locally but admin-set-pin Edge Function failed (deploy it to enable PIN resets)');
+          }
+        }
       }
       _teamModal = null;
       _team = null; // force a re-load to pick up the new/edited row + fresh status
