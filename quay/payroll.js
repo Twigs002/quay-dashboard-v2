@@ -778,6 +778,7 @@
       ['allShifts', 'All Shifts'],
       ['perAgent', 'Per-Agent Allocations'],
       ['byDivision', 'By Division'],
+      ['divisionCosts', 'Division Costs'],
       ['earnings', 'Earnings'],
       ['dataQuality', 'Data Quality'],
       ['config', 'Config'],
@@ -805,6 +806,7 @@
       if (activeView === 'allShifts') body = V.payrollAllShifts(shifts)
       else if (activeView === 'perAgent') body = V.payrollPerAgent(alloc.empTeamHours, alloc.empTotalHours, alloc.empMeta)
       else if (activeView === 'byDivision') body = V.payrollByDivision(alloc.empTeamHours, alloc.empTotalHours)
+      else if (activeView === 'divisionCosts') body = V.payrollDivisionCosts(alloc.empTeamHours, alloc.empTotalHours, alloc.empMeta)
       else if (activeView === 'earnings') body = V.payrollEarnings(alloc.empTotalHours, alloc.empMeta)
       else if (activeView === 'dataQuality') body = V.payrollDataQuality(alloc.rawVariantsPerTeam)
     }
@@ -1106,6 +1108,135 @@
           <div class="sub">Wide pivot · % of <i>that agent's</i> pay-period time on each division · round-half-up</div>
         </div></div>
         <div class="tbl-wrap"><table class="tbl payroll-bydiv">
+          <thead><tr>${headCells.join('')}</tr></thead>
+          <tbody>${body}</tbody>
+        </table></div>
+      </div>`
+  }
+
+  // Division Costs — wide pivot for cost-attribution (mirrors the Excel
+  // sheet the bookkeeper uses). Per division row: up to N agent blocks of
+  // (NAME, PAYROLL AMOUNT, SDL, DIV CONTRIBUTION) + TOTAL FANCY/LN + NOTES.
+  //   PAYROLL AMOUNT     = agent's pay-period gross (totalHours × hourly_rate)
+  //   SDL                = PAYROLL × 0.011 (SA Skills Development Levy)
+  //   DIV CONTRIBUTION   = (hours on this division) × rate
+  //                      = PAYROLL × (div_hours / total_hours)
+  //   TOTAL FANCY/LN     = sum of DIV CONTRIBUTION across agents in this row
+  V.payrollDivisionCosts = function (empTeamHours, empTotalHours, empMeta) {
+    const SDL_RATE = 0.011
+
+    // Invert empTeamHours → team → Map<emp, hrs>
+    const teamEmp = new Map()
+    if (empTeamHours) {
+      empTeamHours.forEach((teams, emp) => {
+        teams.forEach((hrs, t) => {
+          if (!teamEmp.has(t)) teamEmp.set(t, new Map())
+          teamEmp.get(t).set(emp, hrs)
+        })
+      })
+    }
+    let maxHead = 1
+    teamEmp.forEach(m => { if (m.size > maxHead) maxHead = m.size })
+    if (maxHead < 1) maxHead = 1
+
+    const nonCanonical = []
+    teamEmp.forEach((_m, t) => {
+      if (!CONFIG.CANONICAL_SET.has(t) && t !== '(No team noted)') nonCanonical.push(t)
+    })
+    nonCanonical.sort((a, b) => a.localeCompare(b))
+    const hasNoTeam = teamEmp.has('(No team noted)')
+
+    // Header — 1 (division) + 4N (agent blocks) + 1 (total) + 1 (notes)
+    const headCells = ['<th>DIVISION</th>']
+    for (let n = 1; n <= maxHead; n++) {
+      headCells.push(`<th>FANCY / LN NAME ${n}</th>`)
+      headCells.push(`<th class="num">PAYROLL AMOUNT</th>`)
+      headCells.push(`<th class="num">SDL</th>`)
+      headCells.push(`<th class="num">DIV CONTRIBUTION</th>`)
+    }
+    headCells.push('<th class="num">TOTAL FANCY/LN</th>')
+    headCells.push('<th>NOTES</th>')
+
+    // Running grand-totals (bottom row)
+    let gtPayroll = new Array(maxHead).fill(0)
+    let gtSdl = new Array(maxHead).fill(0)
+    let gtContrib = new Array(maxHead).fill(0)
+    let gtRowTotal = 0
+
+    function rowFor(team, note) {
+      const members = teamEmp.get(team) || new Map()
+      // Sort by contribution desc so the biggest cost-holder leads.
+      const enriched = Array.from(members.entries()).map(([emp, hrs]) => {
+        const meta = empMeta && empMeta.get(emp) ? empMeta.get(emp) : null
+        const rate = meta ? meta.hourlyRate : null
+        const totalHrs = empTotalHours.get(emp) || 0
+        const payroll = rate != null ? totalHrs * rate : null
+        const sdl = payroll != null ? payroll * SDL_RATE : null
+        const contrib = rate != null ? hrs * rate : null
+        return { emp, hrs, rate, payroll, sdl, contrib }
+      }).sort((a, b) => (b.contrib || 0) - (a.contrib || 0))
+
+      const cells = [`<td><b>${esc(team)}</b></td>`]
+      let rowTotal = 0
+      for (let i = 0; i < maxHead; i++) {
+        if (i < enriched.length) {
+          const x = enriched[i]
+          cells.push(`<td>${esc(x.emp)}</td>`)
+          cells.push(`<td class="num tnum">${x.payroll == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(x.payroll)}</td>`)
+          cells.push(`<td class="num tnum">${x.sdl == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(x.sdl)}</td>`)
+          cells.push(`<td class="num tnum">${x.contrib == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(x.contrib)}</td>`)
+          if (x.payroll != null) gtPayroll[i] += x.payroll
+          if (x.sdl != null)     gtSdl[i] += x.sdl
+          if (x.contrib != null) {
+            gtContrib[i] += x.contrib
+            rowTotal += x.contrib
+          }
+        } else {
+          cells.push('<td></td><td></td><td></td><td></td>')
+        }
+      }
+      cells.push(`<td class="num tnum"><b>${rowTotal > 0 ? _fmtZAR(rowTotal) : '<span style="color:var(--muted)">—</span>'}</b></td>`)
+      cells.push(`<td style="color:var(--muted);font-size:12px">${esc(note)}</td>`)
+      gtRowTotal += rowTotal
+      return `<tr>${cells.join('')}</tr>`
+    }
+
+    let body = ''
+    for (const team of CONFIG.CANONICAL_TEAMS) {
+      const members = teamEmp.get(team)
+      const note = (members && members.size) ? '' : 'no agents this period'
+      body += rowFor(team, note)
+    }
+    if (nonCanonical.length || hasNoTeam) {
+      const spanCols = 1 + maxHead * 4 + 1 + 1
+      body += `<tr class="payroll-noncanon-sep">
+        <td colspan="${spanCols}" style="background:#C00000;color:#fff;text-align:center;font-weight:700;letter-spacing:0.4px;padding:10px">
+          Not in master list — review
+        </td>
+      </tr>`
+      for (const team of nonCanonical) body += rowFor(team, 'Not in master list')
+      if (hasNoTeam) body += rowFor('(No team noted)', 'Shifts where the Employee notes field was blank')
+    }
+
+    // Grand-total row
+    const totalCells = ['<td><b>GRAND TOTAL</b></td>']
+    for (let i = 0; i < maxHead; i++) {
+      totalCells.push('<td></td>')
+      totalCells.push(`<td class="num tnum">${gtPayroll[i] ? _fmtZAR(gtPayroll[i]) : ''}</td>`)
+      totalCells.push(`<td class="num tnum">${gtSdl[i] ? _fmtZAR(gtSdl[i]) : ''}</td>`)
+      totalCells.push(`<td class="num tnum">${gtContrib[i] ? _fmtZAR(gtContrib[i]) : ''}</td>`)
+    }
+    totalCells.push(`<td class="num tnum"><b>${_fmtZAR(gtRowTotal)}</b></td>`)
+    totalCells.push('<td></td>')
+    body += `<tr style="background:#FFF6E0;font-weight:700">${totalCells.join('')}</tr>`
+
+    return `
+      <div class="card">
+        <div class="card-head"><div>
+          <h3>Division Costs</h3>
+          <div class="sub">Cost-attribution pivot · PAYROLL = total hrs × rate · SDL = 1.1% levy · DIV CONTRIBUTION = hours on this division × rate</div>
+        </div></div>
+        <div class="tbl-wrap"><table class="tbl payroll-divcosts">
           <thead><tr>${headCells.join('')}</tr></thead>
           <tbody>${body}</tbody>
         </table></div>

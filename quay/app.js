@@ -1291,6 +1291,90 @@
       }
       return out;
     }
+    if (view === 'divisionCosts') {
+      // Cost-attribution wide pivot — mirrors the Excel bookkeeper sheet.
+      const SDL_RATE = 0.011;
+      const ETH = s.allocations ? s.allocations.empTeamHours : new Map();
+      const ETOT = s.allocations ? s.allocations.empTotalHours : new Map();
+      const EMETA = s.allocations ? (s.allocations.empMeta || new Map()) : new Map();
+      const teamEmp = new Map();
+      ETH.forEach((teams, emp) => teams.forEach((hrs, t) => {
+        if (!teamEmp.has(t)) teamEmp.set(t, new Map());
+        teamEmp.get(t).set(emp, hrs);
+      }));
+      let maxHead = 1;
+      teamEmp.forEach(m => { if (m.size > maxHead) maxHead = m.size; });
+      const header = ['Division'];
+      for (let i = 1; i <= maxHead; i++) {
+        header.push(`Fancy / LN name ${i}`);
+        header.push('Payroll amount');
+        header.push('SDL');
+        header.push('Div contribution');
+      }
+      header.push('Total Fancy/LN');
+      header.push('Notes');
+      const out = [header];
+      const gtPayroll = new Array(maxHead).fill(0);
+      const gtSdl = new Array(maxHead).fill(0);
+      const gtContrib = new Array(maxHead).fill(0);
+      let gtRowTotal = 0;
+      const fmt2 = n => (n == null ? '' : Number(n).toFixed(2));
+      const rowFor = (team, note) => {
+        const members = teamEmp.get(team) || new Map();
+        const enriched = Array.from(members.entries()).map(([emp, hrs]) => {
+          const meta = EMETA.get(emp);
+          const rate = meta ? meta.hourlyRate : null;
+          const total = ETOT.get(emp) || 0;
+          const payroll = rate != null ? total * rate : null;
+          const sdl = payroll != null ? payroll * SDL_RATE : null;
+          const contrib = rate != null ? hrs * rate : null;
+          return { emp, payroll, sdl, contrib };
+        }).sort((a, b) => (b.contrib || 0) - (a.contrib || 0));
+        const row = [team];
+        let rowTotal = 0;
+        for (let i = 0; i < maxHead; i++) {
+          if (i < enriched.length) {
+            const x = enriched[i];
+            row.push(x.emp);
+            row.push(fmt2(x.payroll));
+            row.push(fmt2(x.sdl));
+            row.push(fmt2(x.contrib));
+            if (x.payroll != null) gtPayroll[i] += x.payroll;
+            if (x.sdl != null)     gtSdl[i] += x.sdl;
+            if (x.contrib != null) { gtContrib[i] += x.contrib; rowTotal += x.contrib; }
+          } else {
+            row.push(''); row.push(''); row.push(''); row.push('');
+          }
+        }
+        row.push(fmt2(rowTotal));
+        row.push(note);
+        gtRowTotal += rowTotal;
+        return row;
+      };
+      window.PAYROLL.CANONICAL_TEAMS.forEach(t => {
+        const members = teamEmp.get(t);
+        out.push(rowFor(t, (members && members.size) ? '' : 'no agents this period'));
+      });
+      const nonCanon = [];
+      teamEmp.forEach((_m, t) => {
+        if (!window.PAYROLL.CANONICAL_SET.has(t) && t !== '(No team noted)') nonCanon.push(t);
+      });
+      nonCanon.sort((a, b) => a.localeCompare(b));
+      if (nonCanon.length || teamEmp.has('(No team noted)')) {
+        out.push(['--- Not in master list — review ---']);
+        nonCanon.forEach(t => out.push(rowFor(t, 'Not in master list')));
+        if (teamEmp.has('(No team noted)')) out.push(rowFor('(No team noted)', 'Shifts where the Employee notes field was blank'));
+      }
+      // Grand-total row
+      const tot = ['GRAND TOTAL'];
+      for (let i = 0; i < maxHead; i++) {
+        tot.push(''); tot.push(fmt2(gtPayroll[i])); tot.push(fmt2(gtSdl[i])); tot.push(fmt2(gtContrib[i]));
+      }
+      tot.push(fmt2(gtRowTotal));
+      tot.push('');
+      out.push(tot);
+      return out;
+    }
     if (view === 'dataQuality') {
       const rv = (s.allocations || {}).rawVariantsPerTeam || new Map();
       const out = [['Pay period', periodLbl], [], ['Canonical Team', 'Original notes / variants seen', '# variants']];
