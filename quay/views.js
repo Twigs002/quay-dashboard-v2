@@ -56,8 +56,12 @@ window.VIEWS = (function () {
   }
 
   // ---------------------------------------------------- ALL STAFF
-  function allStaff(period) {
-    const agents = Q.agentsFor(period).slice().sort((a, b) => b.calls - a.calls);
+  function allStaff(period, teamFilter) {
+    teamFilter = teamFilter || 'all';
+    let agents = Q.agentsFor(period).slice().sort((a, b) => b.calls - a.calls);
+    if (teamFilter === 'RM' || teamFilter === 'Fancy') {
+      agents = agents.filter(a => a.team === teamFilter);
+    }
     const scaleMax = agents.length ? agents[0].calls : 1;
     const rows = agents.map((a, i) => agentRow(a, i + 1, scaleMax)).join('');
     const cards = agents.map(a => perCallerCard(a)).join('');
@@ -67,6 +71,11 @@ window.VIEWS = (function () {
     const totCt  = agents.reduce((s, a) => s + (a.ct || 0), 0);
     const haveClock = agents.some(a => a.ctSource === 'clock');
     const avgEff = agents.length ? Math.round(agents.reduce((s, a) => s + (a.eff || 0), 0) / agents.length) : 0;
+    const rosterSub = teamFilter === 'all'
+      ? 'RM + Fancy combined'
+      : teamFilter + ' only';
+    const selOpt = (v, label) =>
+      `<option value="${v}" ${teamFilter === v ? 'selected' : ''}>${label}</option>`;
     return `
     <div class="tab-view">
       <div class="card">
@@ -74,8 +83,11 @@ window.VIEWS = (function () {
           <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
             <div class="field"><label>From</label><input type="date" value="2026-06-01"></div>
             <div class="field"><label>To</label><input type="date" value="2026-06-05"></div>
-            <div class="field"><label>Team</label><select><option>All teams</option><option>RM</option><option>Fancy</option></select></div>
-            <button class="btn btn-primary">${I.filter} Apply</button>
+            <div class="field"><label>Team</label><select id="staffTeamFilter">
+              ${selOpt('all', 'All teams')}
+              ${selOpt('RM', 'RM')}
+              ${selOpt('Fancy', 'Fancy')}
+            </select></div>
           </div>
           <div class="seg" id="staffSeg">
             <button class="active" data-view="overall">Overall Report</button>
@@ -85,7 +97,7 @@ window.VIEWS = (function () {
       </div>
 
       <div class="row mt" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
-        ${miniStat('Roster size', agents.length + ' agents', 'RM + Fancy combined', I.users)}
+        ${miniStat('Roster size', agents.length + ' agents', rosterSub, I.users)}
         ${miniStat('Total calls', fmt(tCalls), 'across selected range', I.phone)}
         ${miniStat('Total leads', fmt(tLeads), 'seller · rental · email', I.target)}
         ${miniStat('Avg efficiency', avgEff + '%', 'DialFire ÷ clocked time · target ≥70%', I.bolt)}
@@ -410,7 +422,14 @@ window.VIEWS = (function () {
     const rows = camps.map((c, i) => {
       const conv = c.conv != null ? c.conv : (c.calls ? +((c.leads / c.calls) * 100).toFixed(1) : 0);
       const cv = conv >= 12 ? 'ok' : conv >= 7 ? 'warn' : 'bad';
-      return `<tr>
+      return `<tr data-campaign="${escapeHtml(c.name)}"
+                  data-name="${escapeHtml(c.name)}"
+                  data-calls="${c.calls || 0}"
+                  data-seller="${c.seller || 0}"
+                  data-rental="${c.rental || 0}"
+                  data-email="${c.email || 0}"
+                  data-conv="${conv}"
+                  style="cursor:pointer">
         <td class="num" style="color:var(--muted);font-weight:700;width:40px">${i + 1}</td>
         <td><div class="agent-cell">
           <span style="width:11px;height:11px;border-radius:3px;background:${c.color || '#3D5BA6'};display:inline-block"></span>
@@ -469,20 +488,20 @@ window.VIEWS = (function () {
             <div class="sub">${camps.length} campaign${camps.length === 1 ? '' : 's'} with activity · ranked by calls done</div></div>
           <button class="btn js-export">${I.download} Export CSV</button>
         </div>
-        <div class="tbl-wrap"><table class="tbl">
+        <div class="tbl-wrap"><table class="tbl" id="managerCampTable">
           <thead><tr>
             <th class="num" style="width:40px">#</th>
-            <th>Campaign</th>
-            <th class="num">Calls done</th>
-            <th class="num">Seller leads</th>
-            <th class="num">Rental leads</th>
-            <th class="num">Emails</th>
-            <th class="num">Conv.</th>
+            <th data-sort="name|str">Campaign<span class="sort-ind"></span></th>
+            <th class="num" data-sort="calls|num">Calls done<span class="sort-ind"></span></th>
+            <th class="num" data-sort="seller|num">Seller leads<span class="sort-ind"></span></th>
+            <th class="num" data-sort="rental|num">Rental leads<span class="sort-ind"></span></th>
+            <th class="num" data-sort="email|num">Emails<span class="sort-ind"></span></th>
+            <th class="num" data-sort="conv|num">Conv. %<span class="sort-ind"></span></th>
           </tr></thead>
           <tbody>
             ${rows || `<tr><td colspan="7" class="muted" style="text-align:center;padding:30px">No campaign activity for ${periodLabel.toLowerCase()} yet.</td></tr>`}
-            ${totalRow}
           </tbody>
+          ${totalRow ? `<tfoot>${totalRow}</tfoot>` : ''}
         </table></div>
       </div>
     </div>`;

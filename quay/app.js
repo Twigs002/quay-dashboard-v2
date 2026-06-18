@@ -31,6 +31,7 @@
   let period = 'this-week';
   let tab = 'overview'; // default landing; switched to 'leadership' for superusers below
   let dailyPicked = null; // selected date on the Daily Stats tab (yyyy-mm-dd)
+  let staffTeamFilter = 'all'; // 'all' | 'RM' | 'Fancy' — All Staff tab team dropdown
 
   // ---- standard schedule (8am–5pm Mon–Fri) ----
   // Soft target: we surface variance, we don't enforce it.
@@ -351,7 +352,7 @@
     if (tab === 'payroll'    && !session?.super) { tab = 'overview'; }
     if (tab === 'leadership')    { host.innerHTML = leadership(); afterLeadership(); }
     else if (tab === 'overview') { host.innerHTML = overview(); afterOverview(); }
-    else if (tab === 'staff')    { host.innerHTML = V.allStaff(period); staffWire(); }
+    else if (tab === 'staff')    { host.innerHTML = V.allStaff(period, staffTeamFilter); staffWire(); }
     else if (tab === 'compare')  { host.innerHTML = V.compare(); segWire(); }
     else if (tab === 'daily')    { host.innerHTML = V.daily(period, dailyPicked); dailyWire(); }
     else if (tab === 'monthly')  { host.innerHTML = V.monthly(); monthlyWire(); }
@@ -889,6 +890,14 @@
       host.innerHTML = flagsCardHtml(currentFlags());
       wireFlagAckButtons(host);
     }
+    // Sortable campaign table — reuses the same sortableWire() the All
+    // Staff table uses. Click any th[data-sort] header to toggle asc/desc.
+    sortableWire(document.getElementById('managerCampTable'));
+    // Drill-down: click a campaign row → open the per-campaign + per-caller
+    // modal so the user can see who worked it.
+    document.querySelectorAll('#managerCampTable tbody tr[data-campaign]').forEach(tr => {
+      tr.addEventListener('click', () => openCampaignModal(tr.dataset.campaign));
+    });
   }
 
   function staffWire() {
@@ -903,6 +912,13 @@
       overall.style.display = view === 'overall' ? '' : 'none';
       per.style.display     = view === 'per'     ? 'grid' : 'none';
     }));
+    // Team filter — re-render the tab when the dropdown changes so the
+    // KPI strip, table, and per-caller cards all reflect the filtered set.
+    const teamSel = document.getElementById('staffTeamFilter');
+    if (teamSel) teamSel.addEventListener('change', () => {
+      staffTeamFilter = teamSel.value;
+      shell();
+    });
     sortableWire(document.getElementById('staffOverall'));
     wireAgentClicks();
   }
@@ -1068,6 +1084,167 @@
     if (calls.length) {
       C.weeklyTrend(document.getElementById('agentTrend'), labels, calls, succ);
     }
+  }
+
+  // ---------------------------------------------------- CAMPAIGN DRILL-DOWN
+  // Click a row in the Manager Reports campaign table → modal showing the
+  // campaign totals up top and a per-agent breakdown. Per-agent-per-campaign
+  // numbers come from Q.agentCampaigns(agent, period) (backed by
+  // weekly_data.json's by_agent_campaign). If a week pre-dates that field
+  // the agent simply won't appear in the per-campaign list for that week —
+  // we fall back to the agent's overall period stats with a note.
+  function openCampaignModal(campaignName) {
+    if (!campaignName) return;
+    const camps = Q.campaignsFor(period) || [];
+    const camp = camps.find(c => c.name === campaignName);
+    if (!camp) return;
+    const allAgents = Q.agentsFor(period) || [];
+    // Build per-agent stats for THIS campaign. Two passes:
+    //   1) Exact: ask Q.agentCampaigns(agent, period) which is sourced from
+    //      week.by_agent_campaign.
+    //   2) Fallback: if no exact rows came back AND the agent's `campaigns`
+    //      array lists this campaign (the only signal historical weeks have),
+    //      attribute their period totals with a 'fallback' note.
+    const exact = [];
+    const fallback = [];
+    allAgents.forEach(a => {
+      const perCamp = Q.agentCampaigns ? (Q.agentCampaigns(a.name, period) || []) : [];
+      const hit = perCamp.find(c => c.name === campaignName);
+      if (hit && (hit.calls || hit.leads)) {
+        exact.push({
+          name: a.name, team: a.team,
+          calls: hit.calls || 0, leads: hit.leads || 0,
+          seller: hit.seller || 0, rental: hit.rental || 0, email: hit.email || 0,
+          cph: a.cph, // overall CPH — we don't have per-campaign CPH client-side
+          success: hit.calls ? +((hit.leads / hit.calls) * 100).toFixed(1) : 0,
+          source: 'exact',
+        });
+      } else if ((a.campaigns || []).some(c => c === campaignName
+                  || c.toLowerCase() === campaignName.toLowerCase())) {
+        fallback.push({
+          name: a.name, team: a.team,
+          calls: a.calls, leads: a.leads,
+          seller: a.seller || 0, rental: a.rental || 0, email: a.email || 0,
+          cph: a.cph,
+          success: a.success,
+          source: 'fallback',
+        });
+      }
+    });
+    const rows = exact.concat(fallback).sort((a, b) => b.calls - a.calls);
+    const conv = camp.calls ? +((camp.leads / camp.calls) * 100).toFixed(1) : 0;
+    const sc = c => sucClass(c);
+    const colorDot = camp.color
+      ? `<span style="width:14px;height:14px;border-radius:4px;background:${camp.color};display:inline-block;margin-right:10px;vertical-align:middle"></span>`
+      : '';
+
+    const rowsHtml = rows.length ? rows.map(r => `
+      <tr data-agent="${escapeHtml(r.name)}" style="cursor:pointer">
+        <td><div class="agent-cell">
+          <div class="avatar">${initials(r.name)}</div>
+          <div>
+            <div class="agent-name">${escapeHtml(r.name)}</div>
+            ${r.source === 'fallback'
+              ? '<div class="agent-sub" style="color:var(--muted);font-size:11px">overall period · per-campaign split N/A</div>'
+              : `<div class="agent-sub">${r.team} desk</div>`}
+          </div>
+        </div></td>
+        <td><span class="pill ${r.team === 'RM' ? 'rm' : 'fancy'}">${r.team}</span></td>
+        <td class="num tnum">${fmt(r.calls)}</td>
+        <td class="num tnum">${fmt(r.leads)}</td>
+        <td class="num"><span class="pill ${sc(r.success)}">${r.success}%</span></td>
+        <td class="num tnum">${r.cph || '—'}</td>
+      </tr>`).join('')
+      : `<tr><td colspan="6" class="muted" style="text-align:center;padding:24px">No agent activity recorded for this campaign in this period.</td></tr>`;
+
+    const anyFallback = rows.some(r => r.source === 'fallback');
+    const html = `
+      <div class="modal-backdrop" id="campaignModalBackdrop"></div>
+      <div class="modal" id="campaignModal">
+        <div class="modal-head">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div>
+              <div style="font-family:var(--serif);font-size:22px;font-weight:700;color:var(--ink)">
+                ${colorDot}${escapeHtml(camp.name)}
+              </div>
+              <div class="sub" style="margin-top:4px;font-size:12.5px">
+                ${camp.agentsCount} agent${camp.agentsCount === 1 ? '' : 's'} ·
+                ${Q.PERIODS[period].label} ·
+                ${camp.exact ? 'exact per-agent attribution' : 'overlap-based aggregation (historical week)'}
+              </div>
+            </div>
+          </div>
+          <button class="btn modal-close" id="campaignModalClose">✕ Close</button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="card card-pad"><div class="kpi-label" style="margin:0">Calls done</div>
+              <div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">${fmt(camp.calls)}</div></div>
+            <div class="card card-pad"><div class="kpi-label" style="margin:0">Total leads</div>
+              <div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">${fmt(camp.leads)}</div></div>
+            <div class="card card-pad"><div class="kpi-label" style="margin:0">Conversion</div>
+              <div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">
+                <span class="pill ${sc(conv)}" style="font-size:18px;padding:4px 10px">${conv}%</span>
+              </div></div>
+            <div class="card card-pad"><div class="kpi-label" style="margin:0">Leads breakdown</div>
+              <div style="font-family:var(--serif);font-size:15px;font-weight:600;color:var(--ink);margin-top:6px;line-height:1.5">
+                <b>${fmt(camp.seller)}</b> seller ·
+                <b>${fmt(camp.rental)}</b> rental ·
+                <b>${fmt(camp.email)}</b> email
+              </div></div>
+          </div>
+
+          <div class="card mt">
+            <div class="card-head"><div>
+              <h3>Per-caller stats — ${escapeHtml(camp.name)}</h3>
+              <div class="sub">${rows.length} agent${rows.length === 1 ? '' : 's'} contributed this period · click a row for the full drill-down</div>
+            </div></div>
+            <div class="tbl-wrap"><table class="tbl">
+              <thead><tr>
+                <th>Agent</th>
+                <th>Team</th>
+                <th class="num">Calls</th>
+                <th class="num">Leads</th>
+                <th class="num">Success</th>
+                <th class="num">CPH</th>
+              </tr></thead>
+              <tbody>${rowsHtml}</tbody>
+            </table></div>
+          </div>
+
+          ${anyFallback ? `<div class="muted" style="font-size:12px;line-height:1.6;margin-top:12px">
+            <b style="color:var(--slate)">Note:</b>
+            Some agents show their overall period stats instead of per-campaign
+            numbers — those weeks pre-date the per-agent-per-campaign breakdown.
+          </div>` : ''}
+        </div>
+      </div>`;
+
+    let mount = document.getElementById('campaignModalMount');
+    if (!mount) {
+      mount = document.createElement('div');
+      mount.id = 'campaignModalMount';
+      document.body.appendChild(mount);
+    }
+    mount.innerHTML = html;
+    document.body.style.overflow = 'hidden';
+
+    const close = () => {
+      mount.innerHTML = '';
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', escClose);
+    };
+    const escClose = e => { if (e.key === 'Escape') close(); };
+    document.getElementById('campaignModalClose').addEventListener('click', close);
+    document.getElementById('campaignModalBackdrop').addEventListener('click', close);
+    document.addEventListener('keydown', escClose);
+
+    // Let the per-agent rows open the existing agent drill-down. The
+    // campaign modal stays mounted underneath so the user can close back
+    // into it (or the agent modal will sit on top).
+    mount.querySelectorAll('tr[data-agent]').forEach(tr => {
+      tr.addEventListener('click', () => openAgentModal(tr.dataset.agent));
+    });
   }
 
   function timeRow(label, pct, color) {
@@ -2016,7 +2193,62 @@
     return `<div class="card">
       <div class="card-head"><div><h3>Red flags</h3><div class="sub">${sub}</div></div></div>
       <div class="insights">${items}</div>
+      ${attendedFlagsSectionHtml(flags)}
     </div>`;
+  }
+
+  // Collapsible "Attended (N)" section listing every flag a manager has
+  // acked. Each row shows what the flag was, who acked it, when, and a
+  // small "Un-attend" button that deletes the row from flag_acks. Hidden
+  // entirely when there are no acks.
+  function attendedFlagsSectionHtml(currentList) {
+    if (!flagAcks || flagAcks.size === 0) return '';
+    // Build a lookup of currently-live flags so an ack against a still-open
+    // key shows the canonical HTML. Acks against keys not in the live list
+    // (e.g. last-week's flags, or flags that resolved themselves) fall back
+    // to the snapshot stored on the ack record.
+    const liveByKey = new Map();
+    (currentList || []).forEach(f => { if (f.key) liveByKey.set(f.key, f); });
+    // Stable order: most recently acked first.
+    const acks = [...flagAcks.values()].sort((a, b) => {
+      const ta = a.acked_at ? new Date(a.acked_at).getTime() : 0;
+      const tb = b.acked_at ? new Date(b.acked_at).getTime() : 0;
+      return tb - ta;
+    });
+    const fmtSast = (iso) => {
+      if (!iso) return '—';
+      try {
+        return new Date(iso).toLocaleString('en-ZA', {
+          timeZone: 'Africa/Johannesburg',
+          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+        });
+      } catch { return iso; }
+    };
+    const rows = acks.map(a => {
+      const live = liveByKey.get(a.flag_key);
+      // Prefer the live flag text. Fall back to whatever snapshot we
+      // saved into `note` when the flag was first acked. Final fallback
+      // is a muted placeholder so the row still renders.
+      const html = live ? live.html
+        : (a.note ? a.note
+        : '<span class="muted">[flag no longer current]</span>');
+      const ackedBy = a.acked_by ? (_staffNamesById.get(a.acked_by) || a.acked_by) : '—';
+      return `<div class="insight" data-attended-key="${escapeHtml(a.flag_key)}">
+        <div class="insight-ic" style="background:#EEF0F6;color:var(--muted)">${I.check || '✓'}</div>
+        <div class="insight-body">
+          <p>${html}</p>
+          <div class="insight-action" style="color:var(--muted)">
+            attended by <b>${escapeHtml(ackedBy)}</b> · ${escapeHtml(fmtSast(a.acked_at))}
+          </div>
+        </div>
+        <button class="insight-ack insight-unack" data-unack-key="${escapeHtml(a.flag_key)}"
+                title="Bring this flag back into the open list">Un-attend</button>
+      </div>`;
+    }).join('');
+    return `<details class="attended-flags">
+      <summary>Attended (${flagAcks.size})</summary>
+      <div class="insights">${rows}</div>
+    </details>`;
   }
 
   function redFlags(agents, deltas, rmT, fcT, opts) {
@@ -2310,24 +2542,51 @@
     if (!window.sb) return;
     try {
       // Pull acks + the staff name behind each ack so we can render who attended.
+      // `note` carries a snapshot of the flag's HTML at ack time, so the
+      // Attended log can still show context for flags that have since
+      // resolved themselves.
       const { data, error } = await window.sb
         .from('flag_acks')
-        .select('flag_key, acked_at, acked_by');
+        .select('flag_key, acked_at, acked_by, note');
       if (error) throw error;
       flagAcks.clear();
       (data || []).forEach(r => flagAcks.set(r.flag_key, r));
+      // Make sure the staff-name lookup is populated so the Attended log
+      // can resolve acked_by (a staff.id) into a readable name.
+      if (_staffNamesById.size === 0 && window.sb) {
+        try {
+          const { data: staff } = await window.sb.from('staff').select('id, name');
+          (staff || []).forEach(s => _staffNamesById.set(s.id, s.name));
+        } catch {}
+      }
       updateLiveFlagsBadge();
     } catch (e) {
       console.warn('[flag_acks] load failed', e);
     }
   }
-  async function ackFlag(key) {
+  async function ackFlag(key, snapshot) {
     if (!window.sb || !session) return;
-    flagAcks.set(key, { flag_key: key, acked_at: new Date().toISOString(), acked_by: session.id });
+    // Snapshot the flag's html so the Attended log can show context even
+    // after the underlying flag has gone away (e.g. a chronic-late flag
+    // that expired the following week). Falls back to looking the flag
+    // up in currentFlags() if the caller didn't pre-supply one.
+    let note = snapshot || null;
+    if (!note) {
+      try {
+        const live = (currentFlags() || []).find(f => f.key === key);
+        if (live) note = live.html;
+      } catch {}
+    }
+    flagAcks.set(key, {
+      flag_key: key, acked_at: new Date().toISOString(),
+      acked_by: session.id, note,
+    });
     rerenderFlagsInPlace();
     updateLiveFlagsBadge();
     try {
-      await window.sb.from('flag_acks').upsert({ flag_key: key, acked_by: session.id });
+      await window.sb.from('flag_acks').upsert({
+        flag_key: key, acked_by: session.id, note,
+      });
     } catch (e) {
       console.warn('[flag_acks] ack failed', e);
       flagAcks.delete(key);
@@ -2351,29 +2610,38 @@
   // Drop any flag rows that have been acked out of the DOM. If a card ends
   // up empty as a result we trigger a full shell() so the empty-state
   // message renders, and so the card heights re-flow cleanly.
+  //
+  // Trigger a full shell() any time an ack actually changes the DOM so the
+  // Attended (N) collapsible at the bottom of the card reflects the new
+  // ack count; an in-place removal alone would leave that stale.
   function rerenderFlagsInPlace() {
     if (tab !== 'overview' && tab !== 'leadership' && tab !== 'manager') return;
     let removed = 0;
-    let needShell = false;
     document.querySelectorAll('.insight[data-flag-key]').forEach(el => {
       const key = el.dataset.flagKey;
       if (!key || !flagAcks.has(key)) return;
-      const parent = el.parentElement;
       el.remove();
       removed++;
-      // Defer the shell() until we've finished iterating — otherwise a
-      // mid-loop shell() rebuilds the DOM and can short-circuit processing
-      // of a second flag card on the same page (e.g. Leadership + Manager).
-      if (parent && !parent.querySelector('.insight')) needShell = true;
     });
-    if (removed) updateLiveFlagsBadge();
-    if (needShell) shell();
+    if (removed) {
+      updateLiveFlagsBadge();
+      shell();
+    }
   }
   function wireFlagAckButtons(root) {
     (root || document).querySelectorAll('.insight-ack').forEach(b => {
       if (b.__wired) return; b.__wired = true;
       b.addEventListener('click', (e) => {
         e.stopPropagation();
+        // Un-attend button (sits inside the Attended section) carries
+        // data-unack-key; the regular Mark-attended button uses data-flag-key.
+        const unackKey = b.dataset.unackKey;
+        if (unackKey) {
+          unackFlag(unackKey);
+          // Full re-render so the flag reappears in the open list above.
+          if (tab === 'overview' || tab === 'leadership' || tab === 'manager') shell();
+          return;
+        }
         const key = b.dataset.flagKey;
         if (!key) return;
         flagAcks.has(key) ? unackFlag(key) : ackFlag(key);
