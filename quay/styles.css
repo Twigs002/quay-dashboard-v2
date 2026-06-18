@@ -394,6 +394,21 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .tbl tbody td { padding: 13px 18px; border-bottom: 1px solid var(--line-2); color: var(--slate); }
 .tbl tbody tr:hover { background: var(--card-2); }
 .tbl tbody tr:last-child td { border-bottom: none; }
+
+/* Division Costs + By Division: tighter rows on the canonical pivot
+   so the 67-row table doesn't feel airy. Empty rows (no agents this
+   period) get an even tighter compact treatment + muted division text
+   so the eye reads them as "skip past me". */
+.payroll-divcosts tbody td,
+.payroll-bydiv    tbody td { padding: 8px 14px; line-height: 1.4; }
+.payroll-divcosts tbody tr.empty-row td,
+.payroll-bydiv    tbody tr.empty-row td {
+  padding: 5px 14px; color: var(--muted); font-weight: 500;
+}
+.payroll-divcosts tbody tr.empty-row td b,
+.payroll-bydiv    tbody tr.empty-row td b {
+  color: var(--muted); font-weight: 500;
+}
 .agent-cell { display: flex; align-items: center; gap: 11px; }
 .avatar {
   width: 32px; height: 32px; border-radius: 50%; flex: none;

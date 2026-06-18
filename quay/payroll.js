@@ -1153,7 +1153,8 @@
         }
       }
       cells.push(`<td style="color:var(--muted);font-size:12px">${esc(note)}</td>`)
-      return `<tr>${cells.join('')}</tr>`
+      const cls = members.size === 0 ? ' class="empty-row"' : ''
+      return `<tr${cls}>${cells.join('')}</tr>`
     }
 
     let body = ''
@@ -1281,7 +1282,8 @@
       cells.push(`<td class="num tnum"><b>${rowTotal > 0 ? _fmtZAR(rowTotal) : '<span style="color:var(--muted)">—</span>'}</b></td>`)
       cells.push(`<td style="color:var(--muted);font-size:12px">${esc(note)}</td>`)
       gtRowTotal += rowTotal
-      return `<tr>${cells.join('')}</tr>`
+      const cls = members.size === 0 ? ' class="empty-row"' : ''
+      return `<tr${cls}>${cells.join('')}</tr>`
     }
 
     let body = ''
