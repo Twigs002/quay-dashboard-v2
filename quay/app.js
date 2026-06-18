@@ -2581,7 +2581,23 @@
     if (pin)  pin.addEventListener('input', () => {
       f.pin = pin.value.replace(/\D/g, '').slice(0, 4); pin.value = f.pin;
     });
-    document.getElementById('tmDesignation').addEventListener('change', (e) => { f.designation = e.target.value; });
+    document.getElementById('tmDesignation').addEventListener('change', (e) => {
+      f.designation = e.target.value;
+      // Sync Admin + Super checkboxes to match the chosen role so users
+      // don't have to remember to also untick a stale 'Super' from when
+      // the person used to be super_admin.
+      //   super_admin → Admin + Super
+      //   manager     → Admin only
+      //   anything else → neither
+      const isSuper = f.designation === 'super_admin';
+      const isAdmin = isSuper || f.designation === 'manager';
+      f.super = isSuper;
+      f.admin = isAdmin;
+      const adm = document.getElementById('tmAdmin');
+      const sup = document.getElementById('tmSuper');
+      if (adm) adm.checked = isAdmin;
+      if (sup) sup.checked = isSuper;
+    });
     document.getElementById('tmRate').addEventListener('input',  (e) => { f.hourly_rate  = e.target.value; });
     document.getElementById('tmHours').addEventListener('input', (e) => { f.weekly_hours = e.target.value; });
     document.getElementById('tmAdmin').addEventListener('change',(e) => { f.admin = e.target.checked; });
