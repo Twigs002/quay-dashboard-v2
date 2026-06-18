@@ -1923,7 +1923,7 @@
     // Red flags — Leadership view skips the per-person schedule flags
     // (no-shows, chronic lateness). Those are HR/manager territory and
     // still surface on Overview where managers see them.
-    const flags = redFlags(agents, d, rmT, fcT, { includeSchedule: false });
+    const flags = redFlags(agents, d, rmT, fcT, { includeSchedule: false, includeInactive: false });
 
     // Progress vs last period — beat your previous week / month rather
     // than a stale hard-coded floor target.
@@ -2277,6 +2277,10 @@
   function redFlags(agents, deltas, rmT, fcT, opts) {
     const flags = [];
     const includeSchedule = !opts || opts.includeSchedule !== false;
+    // Leadership view passes includeInactive:false to suppress the
+    // per-agent "X made only N calls" flags — those are manager-level
+    // noise that crowded the strategic view.
+    const includeInactive = !opts || opts.includeInactive !== false;
     const cfg = (CFG.RED_FLAGS) || {};
     const cd = cfg.calls_drop_pct      ?? -15;
     const sb = cfg.success_below_pct   ?? -3;
@@ -2306,14 +2310,16 @@
         html: `<b>Fancy success rate at ${fcT.sr}%</b> — ${(fcT.target - fcT.sr).toFixed(1)} pts below the ${fcT.target}% target.`,
         action: 'Review Fancy desk lead quality' });
     }
-    // 3) Inactive / very-low-call agents
-    const inactive = agents.filter(a => a.calls < ic).sort((a, b) => a.calls - b.calls).slice(0, 3);
-    inactive.forEach(a => {
-      flags.push({ type: 'warn',
-        key: `inactive:${slug(a.name)}:${wk}`,
-        html: `<b>${escapeHtml(a.name)}</b> made only <b>${fmt(a.calls)}</b> calls — well below the ${ic}-call floor.`,
-        action: 'Confirm clocked time + dialler issues' });
-    });
+    // 3) Inactive / very-low-call agents — manager territory, gated.
+    if (includeInactive) {
+      const inactive = agents.filter(a => a.calls < ic).sort((a, b) => a.calls - b.calls).slice(0, 3);
+      inactive.forEach(a => {
+        flags.push({ type: 'warn',
+          key: `inactive:${slug(a.name)}:${wk}`,
+          html: `<b>${escapeHtml(a.name)}</b> made only <b>${fmt(a.calls)}</b> calls — well below the ${ic}-call floor.`,
+          action: 'Confirm clocked time + dialler issues' });
+      });
+    }
     // Append clock-based schedule flags (no-shows, chronic lateness, etc.)
     return includeSchedule ? flags.concat(scheduleFlags()) : flags;
   }
