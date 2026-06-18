@@ -389,8 +389,16 @@
         shell();
       });
     });
-    // First mount: kick off the fetch if we haven't already.
-    if (payrollState.shifts === null && !payrollState.loading) {
+    // Wire the Config sub-view's add/edit/delete/reorder buttons (only
+    // present in the DOM when activeView === 'config').
+    if (payrollState.activeView === 'config') {
+      payrollConfigWire();
+    }
+    // First mount: hydrate config from DB, then kick off the fetch if
+    // we haven't already. Config load + shift fetch run in parallel so
+    // tab open isn't bottle-necked by either.
+    if (payrollState.shifts === null && !payrollState.loading
+        && payrollState.activeView !== 'config') {
       payrollFetchAndRender();
     }
   }
@@ -402,8 +410,14 @@
     // Render the loading state immediately.
     if (tab === 'payroll') shell();
     try {
+      // Make sure CONFIG is hydrated before parsing notes. Both calls
+      // are network-bound so kick them off in parallel; the algorithm
+      // doesn't run until both have resolved.
       const { start, end } = payrollState.period;
-      const shifts = await window.PAYROLL.fetchShiftsForPeriod(start, end);
+      const [shifts] = await Promise.all([
+        window.PAYROLL.fetchShiftsForPeriod(start, end),
+        window.PAYROLL.ensureConfigLoaded(),
+      ]);
       const allocations = window.PAYROLL.computeAllocations(shifts);
       payrollState.shifts = shifts;
       payrollState.allocations = allocations;
@@ -416,6 +430,215 @@
       payrollState.loading = false;
       if (tab === 'payroll') shell();
     }
+  }
+
+  // ----- Config sub-view event wiring -----
+  // Handles add / edit / delete / reorder across all 5 reference tables.
+  // After every successful mutation, reloads CONFIG from Supabase and
+  // re-renders the sub-view. Shows a small green pill on success / red
+  // on failure.
+  function payrollConfigWire() {
+    const root = document.getElementById('payrollConfig');
+    if (!root) return;
+    const sb = window.sb;
+    const P = window.PAYROLL;
+
+    function pill(msg, ok) {
+      const el = root.querySelector('[data-cf-pill]');
+      if (!el) return;
+      el.textContent = msg;
+      el.className = 'cf-pill' + (ok ? '' : ' err');
+      el.style.display = '';
+      setTimeout(() => { el.style.display = 'none'; }, 2400);
+    }
+
+    async function reloadAndRerender(msg) {
+      await P.reloadConfig();
+      pill(msg || 'Saved', true);
+      if (tab === 'payroll') shell();
+    }
+
+    function fieldVal(name) {
+      const el = root.querySelector(`[data-cf-input="${name}"]`);
+      return el ? String(el.value || '').trim() : '';
+    }
+
+    async function patch(table, id, payload) {
+      if (!id) {
+        pill('No id — refresh DB first', false);
+        return false;
+      }
+      const { error } = await sb.from(table).update(payload).eq('id', id);
+      if (error) { pill(error.message, false); return false; }
+      return true;
+    }
+    async function del(table, id) {
+      if (!id) {
+        pill('No id — refresh DB first', false);
+        return false;
+      }
+      const { error } = await sb.from(table).delete().eq('id', id);
+      if (error) { pill(error.message, false); return false; }
+      return true;
+    }
+    async function insert(table, payload) {
+      const { error } = await sb.from(table).insert(payload);
+      if (error) { pill(error.message, false); return false; }
+      return true;
+    }
+
+    // --- Live alias-pattern tester ---
+    const testIn = root.querySelector('[data-cf-input="alias-test"]');
+    const testOut = root.querySelector('[data-cf-test-out]');
+    if (testIn && testOut) {
+      const update = () => {
+        const v = String(testIn.value || '');
+        if (!v) { testOut.textContent = '—'; testOut.classList.add('empty'); return; }
+        const teams = P.parseTeams(v);
+        testOut.classList.remove('empty');
+        testOut.textContent = teams.length ? teams.join(' · ') : '(dropped)';
+      };
+      testIn.addEventListener('input', update);
+    }
+
+    // --- Refresh from DB ---
+    const reloadBtn = root.querySelector('[data-cf-action="reload"]');
+    if (reloadBtn) reloadBtn.addEventListener('click', async () => {
+      const ok = await P.reloadConfig();
+      pill(ok ? 'Reloaded from Supabase' : 'Reload failed — see console', ok);
+      if (tab === 'payroll') shell();
+    });
+
+    // --- Canonical Divisions ---
+    root.querySelectorAll('[data-cf-action="canon-add"]').forEach(b => b.addEventListener('click', async () => {
+      const name = fieldVal('canon-name');
+      const order = parseInt(fieldVal('canon-order'), 10);
+      if (!name) { pill('Name required', false); return; }
+      if (!Number.isFinite(order)) { pill('Valid order required', false); return; }
+      const ok = await insert('payroll_canonical_divisions', { name, display_order: order, active: true });
+      if (ok) await reloadAndRerender('Division added');
+    }));
+    root.querySelectorAll('[data-cf-action="canon-edit"]').forEach(b => b.addEventListener('click', async () => {
+      const id = b.dataset.id, prev = b.dataset.name;
+      const next = prompt(`Rename "${prev}" to:`, prev);
+      if (!next || next === prev) return;
+      const ok = await patch('payroll_canonical_divisions', id, { name: next });
+      if (ok) await reloadAndRerender('Division renamed');
+    }));
+    root.querySelectorAll('[data-cf-action="canon-delete"]').forEach(b => b.addEventListener('click', async () => {
+      const id = b.dataset.id, name = b.dataset.name;
+      if (!confirm(`Delete the "${name}" division? Shifts that used it will show up as non-canonical until you re-add it.`)) return;
+      const ok = await del('payroll_canonical_divisions', id);
+      if (ok) await reloadAndRerender('Division removed');
+    }));
+    // Up/down arrows — swap display_order with neighbour.
+    const canonRows = root.querySelectorAll('[data-cf-row="canon"]');
+    root.querySelectorAll('[data-cf-action="canon-up"],[data-cf-action="canon-down"]').forEach(b => b.addEventListener('click', async () => {
+      const dir = b.dataset.cfAction === 'canon-up' ? -1 : 1;
+      const i = parseInt(b.dataset.i, 10);
+      const j = i + dir;
+      if (j < 0 || j >= canonRows.length) return;
+      const a = canonRows[i], c = canonRows[j];
+      const aId = a.dataset.cfId, cId = c.dataset.cfId;
+      if (!aId || !cId) { pill('Reorder needs DB rows — deploy schema first', false); return; }
+      const aOrd = parseInt(a.querySelector('.cf-ord').textContent.trim(), 10);
+      const cOrd = parseInt(c.querySelector('.cf-ord').textContent.trim(), 10);
+      const ok1 = await patch('payroll_canonical_divisions', aId, { display_order: cOrd });
+      if (!ok1) return;
+      const ok2 = await patch('payroll_canonical_divisions', cId, { display_order: aOrd });
+      if (ok2) await reloadAndRerender('Reordered');
+    }));
+
+    // --- Typo Map ---
+    root.querySelectorAll('[data-cf-action="typo-add"]').forEach(b => b.addEventListener('click', async () => {
+      const key = fieldVal('typo-key'), canonical = fieldVal('typo-canonical');
+      if (!key || !canonical) { pill('Both fields required', false); return; }
+      const ok = await insert('payroll_typo_map', { key, canonical });
+      if (ok) await reloadAndRerender('Typo added');
+    }));
+    root.querySelectorAll('[data-cf-action="typo-edit"]').forEach(b => b.addEventListener('click', async () => {
+      const id = b.dataset.id;
+      const next = prompt(`Canonical for "${b.dataset.key}":`, b.dataset.canonical);
+      if (!next || next === b.dataset.canonical) return;
+      const ok = await patch('payroll_typo_map', id, { canonical: next });
+      if (ok) await reloadAndRerender('Typo updated');
+    }));
+    root.querySelectorAll('[data-cf-action="typo-delete"]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm(`Delete typo "${b.dataset.key}"?`)) return;
+      const ok = await del('payroll_typo_map', b.dataset.id);
+      if (ok) await reloadAndRerender('Typo removed');
+    }));
+
+    // --- Alias Patterns ---
+    root.querySelectorAll('[data-cf-action="alias-add"]').forEach(b => b.addEventListener('click', async () => {
+      const pattern = fieldVal('alias-pattern');
+      const target  = fieldVal('alias-target');
+      const priority = parseInt(fieldVal('alias-priority'), 10);
+      if (!pattern || !target) { pill('Pattern + target required', false); return; }
+      if (!Number.isFinite(priority)) { pill('Valid priority required', false); return; }
+      // Validate the regex client-side so we don't write garbage.
+      try { new RegExp(pattern, 'i'); }
+      catch (e) { pill('Invalid regex: ' + e.message, false); return; }
+      const ok = await insert('payroll_alias_patterns', { pattern, target, priority });
+      if (ok) await reloadAndRerender('Alias added');
+    }));
+    root.querySelectorAll('[data-cf-action="alias-edit"]').forEach(b => b.addEventListener('click', async () => {
+      const id = b.dataset.id;
+      const nextPattern = prompt(`Regex source (case-insensitive):`, b.dataset.pattern);
+      if (nextPattern == null) return;
+      const nextTarget = prompt(`Target canonical:`, b.dataset.target);
+      if (nextTarget == null) return;
+      const nextPriority = prompt(`Priority (lower = earlier):`, b.dataset.priority);
+      if (nextPriority == null) return;
+      const prio = parseInt(nextPriority, 10);
+      if (!nextPattern || !nextTarget || !Number.isFinite(prio)) {
+        pill('Invalid values', false); return;
+      }
+      try { new RegExp(nextPattern, 'i'); }
+      catch (e) { pill('Invalid regex: ' + e.message, false); return; }
+      const ok = await patch('payroll_alias_patterns', id,
+        { pattern: nextPattern, target: nextTarget, priority: prio });
+      if (ok) await reloadAndRerender('Alias updated');
+    }));
+    root.querySelectorAll('[data-cf-action="alias-delete"]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm(`Delete alias /${b.dataset.pattern}/i?`)) return;
+      const ok = await del('payroll_alias_patterns', b.dataset.id);
+      if (ok) await reloadAndRerender('Alias removed');
+    }));
+
+    // --- Per-Agent Default Team ---
+    root.querySelectorAll('[data-cf-action="def-add"]').forEach(b => b.addEventListener('click', async () => {
+      const agent_name  = fieldVal('def-agent');
+      const default_team = fieldVal('def-team');
+      if (!agent_name || !default_team) { pill('Both fields required', false); return; }
+      const ok = await insert('payroll_default_team', { agent_name, default_team });
+      if (ok) await reloadAndRerender('Default added');
+    }));
+    root.querySelectorAll('[data-cf-action="def-edit"]').forEach(b => b.addEventListener('click', async () => {
+      const id = b.dataset.id;
+      const next = prompt(`Default team for ${b.dataset.agent}:`, b.dataset.team);
+      if (!next || next === b.dataset.team) return;
+      const ok = await patch('payroll_default_team', id, { default_team: next });
+      if (ok) await reloadAndRerender('Default updated');
+    }));
+    root.querySelectorAll('[data-cf-action="def-delete"]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm(`Delete default-team entry for "${b.dataset.agent}"?`)) return;
+      const ok = await del('payroll_default_team', b.dataset.id);
+      if (ok) await reloadAndRerender('Default removed');
+    }));
+
+    // --- Drop Standalone ---
+    root.querySelectorAll('[data-cf-action="drop-add"]').forEach(b => b.addEventListener('click', async () => {
+      const code = fieldVal('drop-code').toLowerCase();
+      if (!code) { pill('Code required', false); return; }
+      const ok = await insert('payroll_drop_standalone', { code });
+      if (ok) await reloadAndRerender('Code added');
+    }));
+    root.querySelectorAll('[data-cf-action="drop-delete"]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm(`Delete short-code "${b.dataset.code}"? Notes that contain only this code will stop being dropped.`)) return;
+      const ok = await del('payroll_drop_standalone', b.dataset.id);
+      if (ok) await reloadAndRerender('Code removed');
+    }));
   }
 
   function segWire() {

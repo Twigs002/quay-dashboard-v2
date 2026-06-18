@@ -26,83 +26,224 @@
 
   // ---------------------------------------------------------------------
   // Reference data — ported verbatim from build_consolidation.py
+  //
+  // Historically these were `const`s. They've since been promoted to a
+  // mutable CONFIG object so the Config sub-tab can swap in values
+  // pulled from Supabase (see loadConfigFromSupabase below). The
+  // values here stay as the hard-coded FALLBACK for first-load before
+  // the DB is reachable / when RLS denies the read / when the tables
+  // haven't been deployed yet — the algorithm must always have a sane
+  // baseline to fall back on.
   // ---------------------------------------------------------------------
 
-  // Spec §3.1 — 67 canonical divisions in display order. Order matters for
-  // the By Division pivot.
-  const CANONICAL_TEAMS = [
-    'Amigos', 'Assassins', 'Avengers', 'Babes', 'Ballers', 'Boets', 'Bulls',
-    'Cavaliers', 'Chargers', 'City Sunsets', 'Conquerors', 'Dealers',
-    'Dealmakers', 'Dixies', 'Dolphins', 'Donkeys', 'Dragons', 'Dutchmen',
-    'Falcons', 'Farmers', 'Furys', 'Gladiators', 'Goal Diggers', 'Gunslingers',
-    'Hawks', 'Headbangers', 'Hoekers', 'Hooligans', 'Hustlers', 'Invincibles',
-    'Knights', 'Koeksisters', 'Lions', 'Llamas', 'Musketeers', 'Panthers',
-    'Pirates', 'Power Rangers', 'Prom Queens', 'Proteas', 'Raccoons', 'Samurais',
-    'Slayers', 'Soccer Moms', 'Spartans', 'Surfers', 'Swesties', 'Targaryens',
-    'Tigers', 'TNT', 'Tornadoes', 'Warriors', 'Weasels', 'Wizards', 'Wolves',
-    'Wombats', 'Hout Baes', 'Rockets', 'Jaguars', 'Huntsmen', 'Vikings',
-    'Blitz', 'Komorants', 'Betties', 'Rebels', 'Vipers', 'Bergscape',
-  ]
+  const CONFIG = {
+    // Spec §3.1 — 67 canonical divisions in display order. Order matters
+    // for the By Division pivot.
+    CANONICAL_TEAMS: [
+      'Amigos', 'Assassins', 'Avengers', 'Babes', 'Ballers', 'Boets', 'Bulls',
+      'Cavaliers', 'Chargers', 'City Sunsets', 'Conquerors', 'Dealers',
+      'Dealmakers', 'Dixies', 'Dolphins', 'Donkeys', 'Dragons', 'Dutchmen',
+      'Falcons', 'Farmers', 'Furys', 'Gladiators', 'Goal Diggers', 'Gunslingers',
+      'Hawks', 'Headbangers', 'Hoekers', 'Hooligans', 'Hustlers', 'Invincibles',
+      'Knights', 'Koeksisters', 'Lions', 'Llamas', 'Musketeers', 'Panthers',
+      'Pirates', 'Power Rangers', 'Prom Queens', 'Proteas', 'Raccoons', 'Samurais',
+      'Slayers', 'Soccer Moms', 'Spartans', 'Surfers', 'Swesties', 'Targaryens',
+      'Tigers', 'TNT', 'Tornadoes', 'Warriors', 'Weasels', 'Wizards', 'Wolves',
+      'Wombats', 'Hout Baes', 'Rockets', 'Jaguars', 'Huntsmen', 'Vikings',
+      'Blitz', 'Komorants', 'Betties', 'Rebels', 'Vipers', 'Bergscape',
+    ],
 
-  // Spec §3.2 — typo / variant exact-match merges. Applied AFTER the title-case
-  // + suffix-strip + apostrophe-strip steps but BEFORE the alias-regex stage.
-  const TYPO_MAP = {
-    'Assasins': 'Assassins',
-    'Invicibles': 'Invincibles',
-    'Durchmen': 'Dutchmen',
-    'Dutchman': 'Dutchmen',
-    'Powerrangers': 'Power Rangers',
-    'Engineroom': 'Engine Room',
-    'Warrio': 'Warriors',
-    'Glads': 'Gladiators',
-    'Proms': 'Prom Queens',
-    'Tnt': 'TNT',
-    'Tt': 'TNT',
-    'Komarants': 'Komorants',
-    'Dealmalers': 'Dealmakers',
-    'Ln': 'Hout Baes',
-    // singulars → plural canonical
-    'Assassin': 'Assassins',
-    'Baller': 'Ballers',
-    'Charger': 'Chargers',
-    'Gunslinger': 'Gunslingers',
-    'Knight': 'Knights',
-    'Pirate': 'Pirates',
-    // spacing / casing variants
-    'Citysuns': 'City Sunsets',
-    'City Suns': 'City Sunsets',
-    'Soccermoms': 'Soccer Moms',
-    'Houtbaes': 'Hout Baes',
+    // Spec §3.2 — typo / variant exact-match merges. Applied AFTER the
+    // title-case + suffix-strip + apostrophe-strip steps but BEFORE the
+    // alias-regex stage.
+    TYPO_MAP: {
+      'Assasins': 'Assassins',
+      'Invicibles': 'Invincibles',
+      'Durchmen': 'Dutchmen',
+      'Dutchman': 'Dutchmen',
+      'Powerrangers': 'Power Rangers',
+      'Engineroom': 'Engine Room',
+      'Warrio': 'Warriors',
+      'Glads': 'Gladiators',
+      'Proms': 'Prom Queens',
+      'Tnt': 'TNT',
+      'Tt': 'TNT',
+      'Komarants': 'Komorants',
+      'Dealmalers': 'Dealmakers',
+      'Ln': 'Hout Baes',
+      // singulars → plural canonical
+      'Assassin': 'Assassins',
+      'Baller': 'Ballers',
+      'Charger': 'Chargers',
+      'Gunslinger': 'Gunslingers',
+      'Knight': 'Knights',
+      'Pirate': 'Pirates',
+      // spacing / casing variants
+      'Citysuns': 'City Sunsets',
+      'City Suns': 'City Sunsets',
+      'Soccermoms': 'Soccer Moms',
+      'Houtbaes': 'Hout Baes',
+    },
+
+    // Spec §3.3 — broader regex aliases. Applied AFTER TYPO_MAP. First
+    // match wins. Entries are [RegExp, target] tuples; always compiled
+    // with the `i` flag, mirroring the Python re.IGNORECASE compiles.
+    ALIAS_PATTERNS: [
+      [/^engine\s*room\b/i, 'Engine Room'],
+      [/^justin\b/i, 'Tigers'],
+      [/\bjustin\b/i, 'Tigers'],
+      [/\bhubspot\b/i, 'Hout Baes'],
+      [/^hout\s*baes\b/i, 'Hout Baes'],
+    ],
+
+    // Spec §3.5 — standalone short-codes that should be dropped entirely.
+    DROP_STANDALONE: new Set(['cm', 'na', 'va', 'nc', 'cma']),
+
+    // Spec §3.4 — per-employee default team for blank-notes shifts.
+    EMPLOYEE_DEFAULT_TEAM: {
+      'Claire Murch': 'Nelio Assiss',
+    },
+
+    // Derived lookups — rebuilt by _rebuildDerived() whenever
+    // CANONICAL_TEAMS changes.
+    CANONICAL_LC: {},
+    CANONICAL_SET: new Set(),
+
+    // Bumps every time loadConfigFromSupabase succeeds. Cheap signal the
+    // Config view can use to invalidate cached children if it ever needs
+    // to (currently it just re-renders on every mutation).
+    _version: 0,
   }
 
-  // Spec §3.3 — broader regex aliases. Applied AFTER TYPO_MAP. First match wins.
-  // (Patterns mirror the Python re.IGNORECASE compiles.)
-  const ALIAS_PATTERNS = [
-    [/^engine\s*room\b/i, 'Engine Room'],
-    [/^justin\b/i, 'Tigers'],
-    [/\bjustin\b/i, 'Tigers'],
-    [/\bhubspot\b/i, 'Hout Baes'],
-    [/^hout\s*baes\b/i, 'Hout Baes'],
-  ]
+  // Recompute the canonical-LC map + canonical Set from CONFIG.CANONICAL_TEAMS.
+  // Called once at module load and again after every successful DB hydrate.
+  function _rebuildDerived() {
+    const lc = {}
+    CONFIG.CANONICAL_TEAMS.forEach(t => { lc[t.toLowerCase()] = t })
+    CONFIG.CANONICAL_LC = lc
+    CONFIG.CANONICAL_SET = new Set(CONFIG.CANONICAL_TEAMS)
+  }
+  _rebuildDerived()
 
-  // Spec §3.5 — standalone short-codes that should be dropped entirely.
-  const DROP_STANDALONE = new Set(['cm', 'na', 'va', 'nc', 'cma'])
+  // Cache for the in-flight Supabase hydrate so concurrent Payroll-tab
+  // mounts share one network round-trip.
+  let _configLoadPromise = null
+  let _configLoadedOnce = false
 
-  // Spec §3.4 — per-employee default team for blank-notes shifts.
-  const EMPLOYEE_DEFAULT_TEAM = {
-    'Claire Murch': 'Nelio Assiss',
+  // Pulls all 5 reference tables in parallel and replaces the matching
+  // fields on CONFIG. On any error (table missing, RLS deny, network),
+  // logs a warning and leaves the static fallback constants in place.
+  async function loadConfigFromSupabase() {
+    if (!window.sb) {
+      console.warn('[payroll] Supabase client not ready; using static config fallback')
+      return false
+    }
+    try {
+      const [div, typo, alias, def, drop] = await Promise.all([
+        window.sb.from('payroll_canonical_divisions')
+          .select('id, name, display_order, active')
+          .order('display_order', { ascending: true }),
+        window.sb.from('payroll_typo_map')
+          .select('id, key, canonical')
+          .order('key', { ascending: true }),
+        window.sb.from('payroll_alias_patterns')
+          .select('id, pattern, target, priority')
+          .order('priority', { ascending: true }),
+        window.sb.from('payroll_default_team')
+          .select('id, agent_name, default_team')
+          .order('agent_name', { ascending: true }),
+        window.sb.from('payroll_drop_standalone')
+          .select('id, code')
+          .order('code', { ascending: true }),
+      ])
+      // If ANY of them errored, bail out — partial hydrate could leave
+      // CANONICAL_TEAMS empty (and normalizeTeam returning nothing).
+      const errs = [div.error, typo.error, alias.error, def.error, drop.error].filter(Boolean)
+      if (errs.length) {
+        console.warn('[payroll] config DB read failed; using static fallback:', errs)
+        return false
+      }
+
+      // CANONICAL_TEAMS — active rows only, in display_order.
+      if (Array.isArray(div.data) && div.data.length) {
+        CONFIG.CANONICAL_TEAMS = div.data
+          .filter(r => r.active !== false)
+          .map(r => r.name)
+        // Keep a side-channel that the view needs for the reorder UI.
+        CONFIG._canonicalRows = div.data
+      }
+
+      // TYPO_MAP — plain key→canonical object.
+      if (Array.isArray(typo.data)) {
+        const m = {}
+        const rows = []
+        typo.data.forEach(r => {
+          m[r.key] = r.canonical
+          rows.push(r)
+        })
+        CONFIG.TYPO_MAP = m
+        CONFIG._typoRows = rows
+      }
+
+      // ALIAS_PATTERNS — compile each source string with the `i` flag.
+      // Bad regex strings are warned about + skipped (not fatal).
+      if (Array.isArray(alias.data)) {
+        const pats = []
+        const rows = []
+        alias.data.forEach(r => {
+          try {
+            pats.push([new RegExp(r.pattern, 'i'), r.target])
+            rows.push(r)
+          } catch (e) {
+            console.warn('[payroll] skipping invalid alias pattern', r, e.message)
+          }
+        })
+        CONFIG.ALIAS_PATTERNS = pats
+        CONFIG._aliasRows = rows
+      }
+
+      // EMPLOYEE_DEFAULT_TEAM
+      if (Array.isArray(def.data)) {
+        const m = {}
+        const rows = []
+        def.data.forEach(r => {
+          m[r.agent_name] = r.default_team
+          rows.push(r)
+        })
+        CONFIG.EMPLOYEE_DEFAULT_TEAM = m
+        CONFIG._defaultRows = rows
+      }
+
+      // DROP_STANDALONE — stored lower-case in the DB, mirrored in the Set.
+      if (Array.isArray(drop.data)) {
+        CONFIG.DROP_STANDALONE = new Set(drop.data.map(r => String(r.code).toLowerCase()))
+        CONFIG._dropRows = drop.data
+      }
+
+      _rebuildDerived()
+      CONFIG._version++
+      _configLoadedOnce = true
+      return true
+    } catch (e) {
+      console.warn('[payroll] loadConfigFromSupabase threw; using static fallback', e)
+      return false
+    }
   }
 
-  // Build the lower-case lookup once — used for canonical-case fix in step 12.
-  const CANONICAL_LC = (function () {
-    const m = {}
-    CANONICAL_TEAMS.forEach(t => { m[t.toLowerCase()] = t })
-    return m
-  })()
+  // Public coalesced loader — re-uses an in-flight promise so multiple
+  // mounts during a single tab open don't fire parallel requests.
+  function reloadConfig() {
+    _configLoadPromise = loadConfigFromSupabase()
+      .finally(() => { _configLoadPromise = null })
+    return _configLoadPromise
+  }
 
-  // Set of canonical names for quick membership checks (used by the By Division
-  // view to figure out which raw teams are "non-canonical").
-  const CANONICAL_SET = new Set(CANONICAL_TEAMS)
+  // First-load helper used by app.js before the Payroll tab fetches shifts.
+  function ensureConfigLoaded() {
+    if (_configLoadedOnce) return Promise.resolve(true)
+    if (_configLoadPromise) return _configLoadPromise
+    return reloadConfig()
+  }
 
   // ---------------------------------------------------------------------
   // Regex helpers — ported from the Python module-level patterns
@@ -153,16 +294,16 @@
     // 8) Drop if empty
     if (!n) return ''
     // 9) Standalone short-code → drop
-    if (DROP_STANDALONE.has(n.toLowerCase())) return ''
+    if (CONFIG.DROP_STANDALONE.has(n.toLowerCase())) return ''
     // 10) Exact typo lookup
-    if (Object.prototype.hasOwnProperty.call(TYPO_MAP, n)) n = TYPO_MAP[n]
+    if (Object.prototype.hasOwnProperty.call(CONFIG.TYPO_MAP, n)) n = CONFIG.TYPO_MAP[n]
     // 11) Alias regex — first match wins
-    for (const [pat, target] of ALIAS_PATTERNS) {
+    for (const [pat, target] of CONFIG.ALIAS_PATTERNS) {
       if (pat.test(n)) { n = target; break }
     }
     // 12) Canonical-case fix
-    if (Object.prototype.hasOwnProperty.call(CANONICAL_LC, n.toLowerCase())) {
-      n = CANONICAL_LC[n.toLowerCase()]
+    if (Object.prototype.hasOwnProperty.call(CONFIG.CANONICAL_LC, n.toLowerCase())) {
+      n = CONFIG.CANONICAL_LC[n.toLowerCase()]
     }
     // 13) Return canonical (or non-canonical-but-cleaned) string
     return n
@@ -423,7 +564,7 @@
       }
       const teams = parseTeams(sh.note)
       if (!teams.length) {
-        const def = EMPLOYEE_DEFAULT_TEAM[emp]
+        const def = CONFIG.EMPLOYEE_DEFAULT_TEAM[emp]
         if (def) {
           _bumpTeam(emp, def, sh.shiftHours)
           if (sh.note) _addVariant(def, sh.note)
@@ -536,13 +677,16 @@
   // ---------------------------------------------------------------------
 
   window.PAYROLL = {
-    CANONICAL_TEAMS,
-    CANONICAL_LC,
-    CANONICAL_SET,
-    TYPO_MAP,
-    ALIAS_PATTERNS,
-    DROP_STANDALONE,
-    EMPLOYEE_DEFAULT_TEAM,
+    CONFIG,                       // mutable reference-data object (live)
+    // Back-compat getter properties so any caller still reaching for
+    // PAYROLL.CANONICAL_TEAMS etc. transparently reads from CONFIG.
+    get CANONICAL_TEAMS() { return CONFIG.CANONICAL_TEAMS },
+    get CANONICAL_LC()    { return CONFIG.CANONICAL_LC },
+    get CANONICAL_SET()   { return CONFIG.CANONICAL_SET },
+    get TYPO_MAP()        { return CONFIG.TYPO_MAP },
+    get ALIAS_PATTERNS()  { return CONFIG.ALIAS_PATTERNS },
+    get DROP_STANDALONE() { return CONFIG.DROP_STANDALONE },
+    get EMPLOYEE_DEFAULT_TEAM() { return CONFIG.EMPLOYEE_DEFAULT_TEAM },
     normalizeTeam,
     parseTeams,
     currentPayPeriod,
@@ -552,6 +696,10 @@
     roundHalfUp,
     fetchShiftsForPeriod,
     computeAllocations,
+    loadConfigFromSupabase,
+    reloadConfig,
+    ensureConfigLoaded,
+    _rebuildDerived,
     _runTests,
   }
 
@@ -607,6 +755,7 @@
       ['byDivision', 'By Division'],
       ['earnings', 'Earnings'],
       ['dataQuality', 'Data Quality'],
+      ['config', 'Config'],
     ]
     const activeView = (state && state.activeView) || 'allShifts'
     const subNav = subTabs.map(([id, label]) =>
@@ -614,7 +763,12 @@
     ).join('')
 
     let body = ''
-    if (state && state.loading) {
+    // Config sub-view doesn't need shifts/allocations — render it directly
+    // regardless of fetch state so the admin can still edit reference data
+    // while a long shift fetch is in flight.
+    if (activeView === 'config') {
+      body = V.payrollConfig(state)
+    } else if (state && state.loading) {
       body = `<div class="card card-pad" style="text-align:center;color:var(--muted);padding:40px">Loading shifts for ${esc(curLabel)}…</div>`
     } else if (state && state.error) {
       body = `<div class="card card-pad" style="color:var(--red)">Failed to load: ${esc(state.error)}</div>`
@@ -861,11 +1015,11 @@
     teamEmp.forEach(m => { if (m.size > maxHead) maxHead = m.size })
     if (maxHead < 1) maxHead = 1
 
-    // Non-canonical = anything in teamEmp not in CANONICAL_SET, except the
-    // (No team noted) bucket which goes last.
+    // Non-canonical = anything in teamEmp not in CONFIG.CANONICAL_SET,
+    // except the (No team noted) bucket which goes last.
     const nonCanonical = []
     teamEmp.forEach((_m, t) => {
-      if (!CANONICAL_SET.has(t) && t !== '(No team noted)') nonCanonical.push(t)
+      if (!CONFIG.CANONICAL_SET.has(t) && t !== '(No team noted)') nonCanonical.push(t)
     })
     nonCanonical.sort((a, b) => a.localeCompare(b))
     const hasNoTeam = teamEmp.has('(No team noted)')
@@ -903,7 +1057,7 @@
 
     let body = ''
     // Canonical rows first, in §3.1 order, including empty ones.
-    for (const team of CANONICAL_TEAMS) {
+    for (const team of CONFIG.CANONICAL_TEAMS) {
       const members = teamEmp.get(team)
       const note = (members && members.size) ? '' : 'no agents this period'
       body += rowFor(team, note)
@@ -941,7 +1095,7 @@
     const teams = Array.from(rawVariantsPerTeam.keys()).sort((a, b) => a.localeCompare(b))
     const rows = teams.map(t => {
       const variants = Array.from(rawVariantsPerTeam.get(t)).sort((a, b) => a.localeCompare(b))
-      const canonical = CANONICAL_SET.has(t)
+      const canonical = CONFIG.CANONICAL_SET.has(t)
       return `<tr>
         <td><b>${esc(t)}</b> ${canonical ? '' : '<span class="pill warn" style="font-size:10.5px;padding:2px 7px;margin-left:6px">non-canonical</span>'}</td>
         <td style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--slate)">${esc(variants.join(' | '))}</td>
@@ -964,6 +1118,292 @@
         </table></div>
       </div>`
   }
+
+  // ---------------------------------------------------------------------
+  // Config sub-view — super-only CRUD for the 5 reference-data tables.
+  //
+  // Rendered by V.payroll() when activeView === 'config'. All buttons
+  // carry data-payroll-config-* attributes so payrollConfigWire() in
+  // app.js can dispatch the right Supabase mutation.
+  // ---------------------------------------------------------------------
+
+  function _rowsCanonical() {
+    // Prefer the live DB row list (so we have ids + display_order to
+    // PATCH). Fall back to the static array if DB hasn't been hydrated.
+    if (CONFIG._canonicalRows && CONFIG._canonicalRows.length) {
+      return CONFIG._canonicalRows.slice().sort((a, b) =>
+        (a.display_order || 0) - (b.display_order || 0))
+    }
+    return CONFIG.CANONICAL_TEAMS.map((name, i) => ({
+      id: null, name, display_order: (i + 1) * 10, active: true,
+    }))
+  }
+  function _rowsTypo() {
+    if (CONFIG._typoRows && CONFIG._typoRows.length) {
+      return CONFIG._typoRows.slice().sort((a, b) => a.key.localeCompare(b.key))
+    }
+    return Object.entries(CONFIG.TYPO_MAP)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([key, canonical]) => ({ id: null, key, canonical }))
+  }
+  function _rowsAlias() {
+    if (CONFIG._aliasRows && CONFIG._aliasRows.length) {
+      return CONFIG._aliasRows.slice().sort((a, b) =>
+        (a.priority || 0) - (b.priority || 0))
+    }
+    return CONFIG.ALIAS_PATTERNS.map((p, i) => ({
+      id: null, pattern: p[0].source, target: p[1], priority: (i + 1) * 10,
+    }))
+  }
+  function _rowsDefault() {
+    if (CONFIG._defaultRows && CONFIG._defaultRows.length) {
+      return CONFIG._defaultRows.slice().sort((a, b) =>
+        a.agent_name.localeCompare(b.agent_name))
+    }
+    return Object.entries(CONFIG.EMPLOYEE_DEFAULT_TEAM)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([agent_name, default_team]) => ({ id: null, agent_name, default_team }))
+  }
+  function _rowsDrop() {
+    if (CONFIG._dropRows && CONFIG._dropRows.length) {
+      return CONFIG._dropRows.slice().sort((a, b) => a.code.localeCompare(b.code))
+    }
+    return Array.from(CONFIG.DROP_STANDALONE).sort()
+      .map(code => ({ id: null, code }))
+  }
+
+  function _seedNotice() {
+    // Tells the admin the static fallback is in play (so they know
+    // adds/edits will fail silently until the schema is deployed).
+    if (CONFIG._version > 0) return ''
+    return `<div class="card card-pad" style="background:#FFF6E0;border-color:#E3CC8E;color:#7A5A00;margin-bottom:14px;font-size:13px;line-height:1.5">
+      <b>Read-only fallback.</b> Reading from the static JS constants — either
+      the <code>payroll_*</code> tables aren't deployed yet, RLS blocked the
+      read, or the network is down. Edits won't persist until the schema in
+      <code>supabase/schema_payroll_config.sql</code> has been applied to
+      Supabase. Click <b>Refresh from DB</b> below after deploy.
+    </div>`
+  }
+
+  // Build a single section card (used by all 5 lists).
+  function _configCard(opts) {
+    // opts = { id, title, sub, addForm, rows, emptyMsg }
+    return `<div class="card payroll-config-card" data-config-id="${opts.id}">
+      <div class="card-head"><div>
+        <h3>${esc(opts.title)}</h3>
+        <div class="sub">${opts.sub}</div>
+      </div></div>
+      <div class="card-pad" style="border-top:1px solid var(--line)">
+        ${opts.addForm}
+      </div>
+      <div class="payroll-config-list">
+        ${opts.rows || `<div class="card-pad" style="color:var(--muted)">${opts.emptyMsg || 'No entries.'}</div>`}
+      </div>
+    </div>`
+  }
+
+  V.payrollConfig = function (_state) {
+    const canonRows = _rowsCanonical()
+    const typoRows  = _rowsTypo()
+    const aliasRows = _rowsAlias()
+    const defRows   = _rowsDefault()
+    const dropRows  = _rowsDrop()
+
+    // ----- Canonical Divisions -----
+    const canonAddForm = `
+      <div class="payroll-config-form">
+        <input type="text" data-cf-input="canon-name" placeholder="Division name (e.g. Phoenixes)" style="flex:1 1 220px">
+        <input type="number" data-cf-input="canon-order" placeholder="Order"
+               value="${canonRows.length ? (canonRows[canonRows.length-1].display_order + 10) : 10}"
+               style="width:90px">
+        <button class="btn btn-primary" data-cf-action="canon-add">+ Add division</button>
+      </div>`
+    const canonListHtml = canonRows.map((r, i) => `
+      <div class="payroll-config-row" data-cf-row="canon" data-cf-id="${esc(r.id || '')}" data-cf-name="${esc(r.name)}">
+        <div class="cf-handle">
+          <button class="btn-sm" data-cf-action="canon-up"   data-i="${i}" title="Move up"   ${i === 0 ? 'disabled' : ''}>▲</button>
+          <button class="btn-sm" data-cf-action="canon-down" data-i="${i}" title="Move down" ${i === canonRows.length - 1 ? 'disabled' : ''}>▼</button>
+          <span class="cf-ord tnum">${r.display_order}</span>
+        </div>
+        <div class="cf-name"><b>${esc(r.name)}</b></div>
+        <div class="cf-actions">
+          <button class="btn-sm" data-cf-action="canon-edit"   data-id="${esc(r.id || '')}" data-name="${esc(r.name)}">Edit</button>
+          <button class="btn-sm danger" data-cf-action="canon-delete" data-id="${esc(r.id || '')}" data-name="${esc(r.name)}">Delete</button>
+        </div>
+      </div>`).join('')
+
+    // ----- Typo Map -----
+    const typoAddForm = `
+      <div class="payroll-config-form">
+        <input type="text" data-cf-input="typo-key"       placeholder="Typed-as (e.g. Assasins)" style="flex:1 1 200px">
+        <span style="color:var(--muted);align-self:center">→</span>
+        <input type="text" data-cf-input="typo-canonical" placeholder="Canonical (e.g. Assassins)" style="flex:1 1 200px">
+        <button class="btn btn-primary" data-cf-action="typo-add">+ Add typo</button>
+      </div>`
+    const typoListHtml = typoRows.map(r => `
+      <div class="payroll-config-row" data-cf-row="typo" data-cf-id="${esc(r.id || '')}">
+        <div class="cf-name"><code>${esc(r.key)}</code> → <b>${esc(r.canonical)}</b></div>
+        <div class="cf-actions">
+          <button class="btn-sm" data-cf-action="typo-edit"   data-id="${esc(r.id || '')}" data-key="${esc(r.key)}" data-canonical="${esc(r.canonical)}">Edit</button>
+          <button class="btn-sm danger" data-cf-action="typo-delete" data-id="${esc(r.id || '')}" data-key="${esc(r.key)}">Delete</button>
+        </div>
+      </div>`).join('')
+
+    // ----- Alias Patterns -----
+    const aliasAddForm = `
+      <div class="payroll-config-form">
+        <input type="text" data-cf-input="alias-pattern" placeholder="Regex source (e.g. \\bjustin\\b)" style="flex:1 1 220px">
+        <span style="color:var(--muted);align-self:center">→</span>
+        <input type="text" data-cf-input="alias-target" placeholder="Canonical (e.g. Tigers)" style="flex:1 1 180px">
+        <input type="number" data-cf-input="alias-priority" placeholder="Priority"
+               value="${aliasRows.length ? (aliasRows[aliasRows.length-1].priority + 10) : 10}"
+               style="width:90px">
+        <button class="btn btn-primary" data-cf-action="alias-add">+ Add alias</button>
+      </div>
+      <div class="payroll-config-tester">
+        <label>Live test:</label>
+        <input type="text" data-cf-input="alias-test" placeholder="Type a raw note to see what it normalises to…" style="flex:1">
+        <span class="cf-test-out" data-cf-test-out>—</span>
+      </div>`
+    const aliasListHtml = aliasRows.map(r => `
+      <div class="payroll-config-row" data-cf-row="alias" data-cf-id="${esc(r.id || '')}">
+        <div class="cf-ord tnum">${r.priority}</div>
+        <div class="cf-name"><code>${esc(r.pattern)}</code> → <b>${esc(r.target)}</b></div>
+        <div class="cf-actions">
+          <button class="btn-sm" data-cf-action="alias-edit" data-id="${esc(r.id || '')}" data-pattern="${esc(r.pattern)}" data-target="${esc(r.target)}" data-priority="${r.priority}">Edit</button>
+          <button class="btn-sm danger" data-cf-action="alias-delete" data-id="${esc(r.id || '')}" data-pattern="${esc(r.pattern)}">Delete</button>
+        </div>
+      </div>`).join('')
+
+    // ----- Default Team -----
+    const defAddForm = `
+      <div class="payroll-config-form">
+        <input type="text" data-cf-input="def-agent"  placeholder="Agent name (e.g. Claire Murch)" style="flex:1 1 220px">
+        <span style="color:var(--muted);align-self:center">→</span>
+        <input type="text" data-cf-input="def-team"   placeholder="Default team (e.g. Nelio Assiss)" style="flex:1 1 200px">
+        <button class="btn btn-primary" data-cf-action="def-add">+ Add default</button>
+      </div>`
+    const defListHtml = defRows.map(r => `
+      <div class="payroll-config-row" data-cf-row="def" data-cf-id="${esc(r.id || '')}">
+        <div class="cf-name"><b>${esc(r.agent_name)}</b> → ${esc(r.default_team)}</div>
+        <div class="cf-actions">
+          <button class="btn-sm" data-cf-action="def-edit"   data-id="${esc(r.id || '')}" data-agent="${esc(r.agent_name)}" data-team="${esc(r.default_team)}">Edit</button>
+          <button class="btn-sm danger" data-cf-action="def-delete" data-id="${esc(r.id || '')}" data-agent="${esc(r.agent_name)}">Delete</button>
+        </div>
+      </div>`).join('')
+
+    // ----- Drop Standalone -----
+    const dropAddForm = `
+      <div class="payroll-config-form">
+        <input type="text" data-cf-input="drop-code" placeholder="Short-code (e.g. cm)" style="flex:1 1 160px">
+        <button class="btn btn-primary" data-cf-action="drop-add">+ Add code</button>
+      </div>`
+    const dropListHtml = dropRows.map(r => `
+      <div class="payroll-config-row" data-cf-row="drop" data-cf-id="${esc(r.id || '')}">
+        <div class="cf-name"><code>${esc(r.code)}</code></div>
+        <div class="cf-actions">
+          <button class="btn-sm danger" data-cf-action="drop-delete" data-id="${esc(r.id || '')}" data-code="${esc(r.code)}">Delete</button>
+        </div>
+      </div>`).join('')
+
+    return `
+      <div class="payroll-config" id="payrollConfig">
+        <div class="card card-pad" style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:start;gap:14px;flex-wrap:wrap">
+            <div style="max-width:680px">
+              <h3 style="margin:0 0 6px;font-family:var(--serif);font-size:18px">Reference data · Config</h3>
+              <div style="color:var(--slate);font-size:13px;line-height:1.55">
+                These five lists power the §4 algorithm: canonical divisions, exact typo merges,
+                regex aliases, per-agent default teams, and short-codes that get dropped entirely.
+                Edits go to Supabase and apply to the next Payroll re-render — use the
+                <i>Data Quality</i> sub-tab to spot new typos that need adding here.
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span class="cf-pill" data-cf-pill style="display:none"></span>
+              <button class="btn" data-cf-action="reload">↻ Refresh from DB</button>
+            </div>
+          </div>
+        </div>
+        ${_seedNotice()}
+        ${_configCard({
+          id: 'canon',
+          title: 'Canonical Divisions',
+          sub: `${canonRows.length} divisions in display order — drives the By Division pivot`,
+          addForm: canonAddForm,
+          rows: canonListHtml,
+        })}
+        ${_configCard({
+          id: 'typo',
+          title: 'Typo Map',
+          sub: `${typoRows.length} exact-match merges — applied after title-case, before alias regex`,
+          addForm: typoAddForm,
+          rows: typoListHtml,
+        })}
+        ${_configCard({
+          id: 'alias',
+          title: 'Alias Patterns',
+          sub: `${aliasRows.length} regex aliases — case-insensitive, first match wins (priority order)`,
+          addForm: aliasAddForm,
+          rows: aliasListHtml,
+        })}
+        ${_configCard({
+          id: 'def',
+          title: 'Per-Agent Default Team',
+          sub: `${defRows.length} agents — fallback team applied when the Employee-notes field is blank`,
+          addForm: defAddForm,
+          rows: defListHtml,
+        })}
+        ${_configCard({
+          id: 'drop',
+          title: 'Drop Standalone Short-codes',
+          sub: `${dropRows.length} codes — dropped entirely when they appear alone (e.g. "Cm")`,
+          addForm: dropAddForm,
+          rows: dropListHtml,
+        })}
+      </div>`
+  }
+
+  // Inject minimal CSS for the Config view. Idempotent — guarded by an
+  // attribute on <head>.
+  ;(function injectConfigCss() {
+    if (typeof document === 'undefined') return
+    if (document.documentElement.hasAttribute('data-payroll-config-css')) return
+    document.documentElement.setAttribute('data-payroll-config-css', '1')
+    const css = `
+      .payroll-config-card { margin-bottom:14px }
+      .payroll-config-form { display:flex; flex-wrap:wrap; gap:8px; align-items:center }
+      .payroll-config-form input { padding:8px 11px; border:1px solid var(--line); border-radius:8px; font-family:Montserrat; font-size:13px }
+      .payroll-config-tester { display:flex; gap:8px; align-items:center; margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); font-size:13px }
+      .payroll-config-tester label { font-weight:600; color:var(--slate); font-size:12px }
+      .payroll-config-tester input { padding:6px 10px; border:1px solid var(--line); border-radius:6px; font-family:Montserrat; font-size:12.5px }
+      .cf-test-out { font-family:ui-monospace,Menlo,monospace; font-size:12.5px; padding:4px 9px; background:#F3F0E5; border-radius:6px; color:#3D5BA6; font-weight:700; min-width:90px; text-align:center }
+      .cf-test-out.empty { color:var(--muted); font-weight:400 }
+      .payroll-config-list { padding:0 }
+      .payroll-config-row {
+        display:flex; align-items:center; gap:12px;
+        padding:9px 18px; border-top:1px solid var(--line);
+        font-size:13px;
+      }
+      .payroll-config-row:first-child { border-top:0 }
+      .payroll-config-row .cf-handle { display:flex; align-items:center; gap:4px; min-width:96px }
+      .payroll-config-row .cf-ord { color:var(--muted); font-size:11.5px; min-width:32px; text-align:right }
+      .payroll-config-row .cf-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+      .payroll-config-row .cf-name code { font-family:ui-monospace,Menlo,monospace; font-size:12px; background:#F3F0E5; padding:1px 6px; border-radius:4px }
+      .payroll-config-row .cf-actions { display:flex; gap:6px }
+      .btn-sm { padding:5px 10px; font-size:11.5px; border:1px solid var(--line); background:#fff; border-radius:6px; cursor:pointer; font-family:Montserrat; font-weight:600 }
+      .btn-sm:hover { background:#F3F0E5 }
+      .btn-sm:disabled { opacity:0.4; cursor:not-allowed }
+      .btn-sm.danger { color:var(--red); border-color:#E3BDB0 }
+      .btn-sm.danger:hover { background:#F8E5DC }
+      .cf-pill { padding:4px 10px; border-radius:14px; font-size:11.5px; font-weight:700; background:#DDF2DF; color:#1c873a }
+      .cf-pill.err { background:#F8E5DC; color:var(--red) }
+    `
+    const style = document.createElement('style')
+    style.id = 'payroll-config-css'
+    style.textContent = css
+    document.head.appendChild(style)
+  })()
 
   // Run the regression suite if the URL flag is set. Done LAST so VIEWS
   // is fully wired before tests print their summary.
