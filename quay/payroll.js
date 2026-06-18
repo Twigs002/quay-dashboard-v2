@@ -314,7 +314,7 @@
     // allows authenticated reads on both tables (used by other tabs).
     const [{ data: staff, error: sErr }, { data: events, error: eErr }] = await Promise.all([
       window.sb.from('staff')
-        .select('id, name, designation, division, active')
+        .select('id, name, designation, division, active, hourly_rate')
         .order('name', { ascending: true }),
       window.sb.from('events')
         .select('staff_id, ts, dir, note')
@@ -326,11 +326,13 @@
 
     const nameById = new Map()
     const designationById = new Map()
-    const divisionById = new Map();
+    const divisionById = new Map()
+    const rateById = new Map();
     (staff || []).forEach(s => {
       nameById.set(s.id, s.name || s.id)
       designationById.set(s.id, s.designation || '')
       divisionById.set(s.id, s.division || '')
+      rateById.set(s.id, s.hourly_rate == null ? null : Number(s.hourly_rate))
     })
 
     // Group events by staff_id, sort each group by ts asc (the order-by
@@ -366,6 +368,7 @@
             agentName: nameById.get(staffId) || staffId,
             designation: designationById.get(staffId) || '',
             division: divisionById.get(staffId) || '',
+            hourlyRate: rateById.get(staffId),
             clockInAt: openIn.ts,
             clockOutAt: ev.ts,
             shiftHours: hrs,
@@ -392,6 +395,7 @@
   function computeAllocations(shifts) {
     const empTeamHours = new Map()      // Map<agent, Map<team, hours>>
     const empTotalHours = new Map()     // Map<agent, hours>
+    const empMeta = new Map()           // Map<agent, {hourlyRate, designation, division}>
     const rawVariantsPerTeam = new Map() // Map<canonicalTeam, Set<rawStr>>
 
     function _bumpTeam(emp, team, hrs) {
@@ -409,6 +413,14 @@
       if (!sh || sh.shiftHours <= 0) continue
       const emp = sh.agentName
       empTotalHours.set(emp, (empTotalHours.get(emp) || 0) + sh.shiftHours)
+      // Stash per-agent metadata once — used by the Earnings sub-view.
+      if (!empMeta.has(emp)) {
+        empMeta.set(emp, {
+          hourlyRate: sh.hourlyRate == null ? null : Number(sh.hourlyRate),
+          designation: sh.designation || '',
+          division: sh.division || '',
+        })
+      }
       const teams = parseTeams(sh.note)
       if (!teams.length) {
         const def = EMPLOYEE_DEFAULT_TEAM[emp]
@@ -432,7 +444,7 @@
         for (const t of teams) _bumpTeam(emp, t, share)
       }
     }
-    return { empTeamHours, empTotalHours, rawVariantsPerTeam }
+    return { empTeamHours, empTotalHours, empMeta, rawVariantsPerTeam }
   }
 
   // ---------------------------------------------------------------------
@@ -573,6 +585,12 @@
     const mm = String(d.getMinutes()).padStart(2, '0')
     return `${hh}:${mm}`
   }
+  function _fmtZAR(amount) {
+    if (amount == null || !Number.isFinite(Number(amount))) return ''
+    return 'R ' + Number(amount).toLocaleString('en-ZA', {
+      minimumFractionDigits: 2, maximumFractionDigits: 2,
+    })
+  }
 
   // Top-level Payroll view: period picker + sub-tab nav + host for the
   // active sub-view. `state` is the module-level payrollState owned by app.js.
@@ -587,6 +605,7 @@
       ['allShifts', 'All Shifts'],
       ['perAgent', 'Per-Agent Allocations'],
       ['byDivision', 'By Division'],
+      ['earnings', 'Earnings'],
       ['dataQuality', 'Data Quality'],
     ]
     const activeView = (state && state.activeView) || 'allShifts'
@@ -605,8 +624,9 @@
       const shifts = state.shifts
       const alloc = state.allocations
       if (activeView === 'allShifts') body = V.payrollAllShifts(shifts)
-      else if (activeView === 'perAgent') body = V.payrollPerAgent(alloc.empTeamHours, alloc.empTotalHours)
+      else if (activeView === 'perAgent') body = V.payrollPerAgent(alloc.empTeamHours, alloc.empTotalHours, alloc.empMeta)
       else if (activeView === 'byDivision') body = V.payrollByDivision(alloc.empTeamHours, alloc.empTotalHours)
+      else if (activeView === 'earnings') body = V.payrollEarnings(alloc.empTotalHours, alloc.empMeta)
       else if (activeView === 'dataQuality') body = V.payrollDataQuality(alloc.rawVariantsPerTeam)
     }
 
@@ -700,7 +720,7 @@
   }
 
   // §5.2 — Per-Agent Allocations.
-  V.payrollPerAgent = function (empTeamHours, empTotalHours) {
+  V.payrollPerAgent = function (empTeamHours, empTotalHours, empMeta) {
     if (!empTeamHours || empTeamHours.size === 0) {
       return `<div class="card card-pad" style="color:var(--muted)">No allocations to show for this pay period.</div>`
     }
@@ -709,7 +729,7 @@
       <div class="card">
         <div class="card-head"><div>
           <h3>Per-Agent Allocations</h3>
-          <div class="sub">Each agent's pay-period hours broken down by division</div>
+          <div class="sub">Each agent's pay-period hours broken down by division · R column = hours × hourly_rate</div>
         </div></div>
         <div class="tbl-wrap"><table class="tbl">
           <thead><tr>
@@ -718,39 +738,110 @@
             <th class="num">Hours (HH:MM)</th>
             <th class="num">Hours (Decimal)</th>
             <th class="num">% of Agent's Time</th>
+            <th class="num">R-amount</th>
           </tr></thead>
           <tbody>`
     let first = true
     for (const agent of agents) {
-      if (!first) html += `<tr><td colspan="5" style="height:6px;background:transparent;border:0"></td></tr>`
+      if (!first) html += `<tr><td colspan="6" style="height:6px;background:transparent;border:0"></td></tr>`
       first = false
       const teams = Array.from(empTeamHours.get(agent).entries())
         .sort((a, b) => b[1] - a[1])
       const total = empTotalHours.get(agent) || teams.reduce((s, t) => s + t[1], 0)
-      let sumDec = 0, sumPct = 0
+      const rate = empMeta && empMeta.get(agent) ? empMeta.get(agent).hourlyRate : null
+      let sumDec = 0, sumPct = 0, sumPay = 0
       for (const [team, hrs] of teams) {
         const dec = Math.round(hrs * 100) / 100
         const pct = total > 0 ? (hrs / total) * 100 : 0
         sumDec += dec
         sumPct += pct
+        const pay = rate != null ? hrs * rate : null
+        if (pay != null) sumPay += pay
         html += `<tr>
           <td>${esc(agent)}</td>
           <td>${esc(team)}</td>
           <td class="num tnum">${decimalToHHMM(hrs)}</td>
           <td class="num tnum">${dec.toFixed(2)}</td>
           <td class="num tnum">${pct.toFixed(1)}%</td>
+          <td class="num tnum">${pay == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(pay)}</td>
         </tr>`
       }
       html += `<tr style="background:#FFF6E0;font-weight:700">
         <td>${esc(agent)} — TOTAL</td>
-        <td></td>
+        <td>${rate == null ? '<span style="font-weight:400;color:var(--muted);font-size:12px">no rate set</span>' : '<span style="font-weight:400;color:var(--muted);font-size:12px">@ ' + _fmtZAR(rate) + '/hr</span>'}</td>
         <td class="num tnum">${decimalToHHMM(total)}</td>
         <td class="num tnum">${sumDec.toFixed(2)}</td>
         <td class="num tnum">${sumPct.toFixed(1)}%</td>
+        <td class="num tnum">${rate == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(sumPay)}</td>
       </tr>`
     }
     html += `</tbody></table></div></div>`
     return html
+  }
+
+  // §+ — Earnings: payslip-style per-agent summary for whoever cuts cheques.
+  V.payrollEarnings = function (empTotalHours, empMeta) {
+    if (!empTotalHours || empTotalHours.size === 0) {
+      return `<div class="card card-pad" style="color:var(--muted)">No closed shifts in this pay period.</div>`
+    }
+    const agents = Array.from(empTotalHours.keys()).sort((a, b) => a.localeCompare(b))
+    let grandHours = 0, grandPay = 0, missingRate = 0
+    const rows = agents.map(agent => {
+      const total = empTotalHours.get(agent) || 0
+      const meta = empMeta ? empMeta.get(agent) : null
+      const rate = meta ? meta.hourlyRate : null
+      const designation = meta ? meta.designation : ''
+      const division = meta ? meta.division : ''
+      const pay = rate != null ? total * rate : null
+      grandHours += total
+      if (pay != null) grandPay += pay
+      else missingRate++
+      const nameParts = (agent || '').split(/\s+/)
+      const fn = nameParts.slice(0, -1).join(' ') || nameParts[0] || ''
+      const ln = nameParts.length > 1 ? nameParts[nameParts.length - 1] : ''
+      return `<tr>
+        <td>${esc(fn)}</td>
+        <td>${esc(ln)}</td>
+        <td>${esc(designation || '—')}</td>
+        <td>${esc(division || '—')}</td>
+        <td class="num tnum">${decimalToHHMM(total)}</td>
+        <td class="num tnum">${total.toFixed(2)}</td>
+        <td class="num tnum">${rate == null ? '<span style="color:var(--red)" title="No hourly_rate set in staff table">— missing</span>' : _fmtZAR(rate)}</td>
+        <td class="num tnum">${pay == null ? '<span style="color:var(--red)">—</span>' : _fmtZAR(pay)}</td>
+      </tr>`
+    }).join('')
+    const warn = missingRate > 0
+      ? `<div class="sub" style="color:var(--red);margin-top:8px"><b>${missingRate}</b> agent${missingRate === 1 ? '' : 's'} missing an hourly_rate — set it in the quay-clock admin (Edit Staff) so they appear in the total.</div>`
+      : ''
+    return `
+      <div class="card">
+        <div class="card-head"><div>
+          <h3>Earnings</h3>
+          <div class="sub">Total hours × hourly_rate per agent for the selected pay period</div>
+        </div></div>
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr>
+            <th>First name</th>
+            <th>Last name</th>
+            <th>Designation</th>
+            <th>Division</th>
+            <th class="num">Hours (HH:MM)</th>
+            <th class="num">Hours (Decimal)</th>
+            <th class="num">Hourly Rate</th>
+            <th class="num">Total Pay</th>
+          </tr></thead>
+          <tbody>${rows}
+            <tr style="background:#FFF6E0;font-weight:700">
+              <td colspan="4">TOTAL — ${agents.length} agent${agents.length === 1 ? '' : 's'}</td>
+              <td class="num tnum">${decimalToHHMM(grandHours)}</td>
+              <td class="num tnum">${grandHours.toFixed(2)}</td>
+              <td></td>
+              <td class="num tnum">${_fmtZAR(grandPay)}</td>
+            </tr>
+          </tbody>
+        </table></div>
+        ${warn}
+      </div>`
   }
 
   // §5.3 — By Division (wide pivot). Uses round-half-up for the displayed %.

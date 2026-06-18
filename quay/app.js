@@ -966,20 +966,58 @@
       return out;
     }
     if (view === 'perAgent') {
-      const out = [['Agent', 'Team / Division', 'Hours (HH:MM)', 'Hours (Decimal)', '% of Agent Time']];
+      const out = [['Agent', 'Team / Division', 'Hours (HH:MM)', 'Hours (Decimal)', '% of Agent Time', 'Hourly Rate', 'R-amount']];
       if (s.allocations) {
         const ETH = s.allocations.empTeamHours;
         const ETOT = s.allocations.empTotalHours;
+        const EMETA = s.allocations.empMeta || new Map();
         const agents = Array.from(ETH.keys()).sort((a, b) => a.localeCompare(b));
         agents.forEach(agent => {
           const teams = Array.from(ETH.get(agent).entries()).sort((a, b) => b[1] - a[1]);
           const total = ETOT.get(agent) || 0;
+          const rate = EMETA.get(agent) ? EMETA.get(agent).hourlyRate : null;
+          let sumPay = 0;
           teams.forEach(([t, hrs]) => {
             const pct = total > 0 ? (hrs / total) * 100 : 0;
-            out.push([agent, t, window.PAYROLL.decimalToHHMM(hrs), hrs.toFixed(2), pct.toFixed(1) + '%']);
+            const pay = rate != null ? hrs * rate : null;
+            if (pay != null) sumPay += pay;
+            out.push([agent, t, window.PAYROLL.decimalToHHMM(hrs), hrs.toFixed(2),
+              pct.toFixed(1) + '%', rate == null ? '' : rate.toFixed(2),
+              pay == null ? '' : pay.toFixed(2)]);
           });
-          out.push([agent + ' — TOTAL', '', window.PAYROLL.decimalToHHMM(total), total.toFixed(2), '100.0%']);
+          out.push([agent + ' — TOTAL', '', window.PAYROLL.decimalToHHMM(total),
+            total.toFixed(2), '100.0%',
+            rate == null ? '' : rate.toFixed(2),
+            rate == null ? '' : sumPay.toFixed(2)]);
         });
+      }
+      return out;
+    }
+    if (view === 'earnings') {
+      const out = [['First name', 'Last name', 'Designation', 'Division',
+        'Hours (HH:MM)', 'Hours (Decimal)', 'Hourly Rate', 'Total Pay']];
+      if (s.allocations) {
+        const ETOT = s.allocations.empTotalHours;
+        const EMETA = s.allocations.empMeta || new Map();
+        const agents = Array.from(ETOT.keys()).sort((a, b) => a.localeCompare(b));
+        let gHrs = 0, gPay = 0;
+        agents.forEach(agent => {
+          const total = ETOT.get(agent) || 0;
+          const meta = EMETA.get(agent) || {};
+          const rate = meta.hourlyRate;
+          const pay = rate != null ? total * rate : null;
+          gHrs += total;
+          if (pay != null) gPay += pay;
+          const parts = (agent || '').split(/\s+/);
+          const fn = parts.slice(0, -1).join(' ') || parts[0] || '';
+          const ln = parts.length > 1 ? parts[parts.length - 1] : '';
+          out.push([fn, ln, meta.designation || '', meta.division || '',
+            window.PAYROLL.decimalToHHMM(total), total.toFixed(2),
+            rate == null ? '' : rate.toFixed(2),
+            pay == null ? '' : pay.toFixed(2)]);
+        });
+        out.push(['TOTAL', '', '', '',
+          window.PAYROLL.decimalToHHMM(gHrs), gHrs.toFixed(2), '', gPay.toFixed(2)]);
       }
       return out;
     }
