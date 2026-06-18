@@ -364,6 +364,18 @@
       ma.addEventListener('change', redraw);
       mb.addEventListener('change', redraw);
     }
+    // Week vs Week dropdowns — same pattern as Month vs Month.
+    const wa = document.getElementById('cmpWeekA');
+    const wb = document.getElementById('cmpWeekB');
+    const wbody = document.getElementById('cmpWeekBody');
+    if (wa && wb && wbody) {
+      const weeksB = (Q.weeksBreakdown && Q.weeksBreakdown()) || [];
+      const redrawW = () => {
+        wbody.innerHTML = V.renderWeekCompare(weeksB, wa.value, wb.value);
+      };
+      wa.addEventListener('change', redrawW);
+      wb.addEventListener('change', redrawW);
+    }
   }
   // Click a month label to inline-expand its per-week breakdown.
   function monthlyWire() {

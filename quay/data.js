@@ -387,6 +387,46 @@ window.QUAY_READY = (async function () {
       });
   }
 
+  // Per-week breakdown across ALL weeks — newest-first.
+  // Mirrors monthlyBreakdown() but each record represents a single week,
+  // suitable for the Compare tab's Week vs Week picker.
+  function weeksBreakdown() {
+    return weeks.map(w => {
+      const t = _periodTotals([w]);
+      const names = new Set();
+      let seller = 0, rental = 0, email = 0, dfHours = 0;
+      (w.rm || []).forEach(a => {
+        if (a && a.name) names.add(a.name);
+        seller  += a.seller   || 0;
+        rental  += a.rental   || 0;
+        email   += a.email    || 0;
+        dfHours += a.workTime || 0;
+      });
+      (w.fancy || []).forEach(a => {
+        if (a && a.name) names.add(a.name);
+        seller  += a.seller   || 0;
+        rental  += a.rental   || 0;
+        email   += a.email    || 0;
+        dfHours += a.workTime || 0;
+      });
+      const d = new Date(w.weekStart + 'T00:00:00Z');
+      const label = 'Wk of ' + d.toLocaleDateString('en-GB', {
+        day: 'numeric', month: 'short', timeZone: 'UTC',
+      }) + ' (W' + isoWeekNum(d) + ')';
+      return {
+        key:         w.weekStart,
+        label,
+        activeCount: names.size,
+        calls:       t.calls,
+        leads:       t.leads,
+        successRate: +t.avgSuccess.toFixed(1),
+        cph:         dfHours ? +(t.calls / dfHours).toFixed(1) : 0,
+        seller, rental, email,
+        dfHours:     +dfHours.toFixed(2),
+      };
+    });
+  }
+
   // Per-week breakdown for the weeks inside a given calendar month —
   // used by the Monthly tab's click-to-expand drill-down.
   function weeksInMonth(monthK) {
@@ -640,7 +680,7 @@ window.QUAY_READY = (async function () {
     AGENTS: agentsForWeek(weeks[0]),  // current week, sorted natural
     WEEKS, WEEK_CALLS, WEEK_SUCCESS, trendSeriesFor,
     SOURCES, sourcesFor, campaignsFor,
-    monthlyBreakdown,
+    monthlyBreakdown, weeksBreakdown,
     dailyDates, dailyFor, latestDailyDate,
     MONTHS, MONTH_CALLS, MONTH_LEADS, MONTH_EMAILS, MONTH_RENTALS, MONTH_DFHOURS,
     PERIODS, DELTAS, agentsFor, totalsFor, prevTotalsFor, weeksInMonth,

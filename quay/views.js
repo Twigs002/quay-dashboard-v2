@@ -156,21 +156,24 @@ window.VIEWS = (function () {
   }
 
   // ---------------------------------------------------- COMPARE
-  // Month vs Month is data-driven from monthlyBreakdown(). The picker
-  // defaults to (latest, latest-1); on change the table re-renders
-  // in-place (no full route shell rebuild — handled in app.js segWire).
+  // Both Week-vs-Week and Month-vs-Month are data-driven from
+  // weeksBreakdown() / monthlyBreakdown(). The pickers default to
+  // (latest, latest-1); on change the inner body re-renders in place
+  // (no full route shell rebuild — handled in app.js segWire).
   function compare() {
     const months = (Q.monthlyBreakdown && Q.monthlyBreakdown()) || [];
-    // Default selection: most recent vs the month before.
-    const defA = months[0] ? months[0].key : '';
-    const defB = months[1] ? months[1].key : (months[0] ? months[0].key : '');
+    const weeksB = (Q.weeksBreakdown && Q.weeksBreakdown()) || [];
+
+    // Default selection: most recent vs the one before.
+    const defMA = months[0] ? months[0].key : '';
+    const defMB = months[1] ? months[1].key : (months[0] ? months[0].key : '');
+    const defWA = weeksB[0] ? weeksB[0].key : '';
+    const defWB = weeksB[1] ? weeksB[1].key : (weeksB[0] ? weeksB[0].key : '');
 
     const monthOpts = (selected) => months.map(m =>
       `<option value="${m.key}" ${m.key === selected ? 'selected' : ''}>${m.label}</option>`).join('');
-
-    // Week vs Week pulls from the existing PERIODS — this-week vs last-week.
-    const wA = Q.totalsFor('this-week');
-    const wB = Q.totalsFor('last-week');
+    const weekOpts = (selected) => weeksB.map(w =>
+      `<option value="${w.key}" ${w.key === selected ? 'selected' : ''}>${w.label}</option>`).join('');
 
     return `
     <div class="tab-view">
@@ -186,13 +189,15 @@ window.VIEWS = (function () {
       <!-- WEEK vs WEEK panel -->
       <div id="cmpWeekPanel">
         <div class="card mt">
-          <div class="card-head"><div><h3>This week vs Last week</h3><div class="sub">Calls, leads & success rate</div></div></div>
-          ${cmpTable([
-            ['Active callers',   wA.active,        wB.active,        { kind: 'count' }],
-            ['Total calls',      wA.calls,         wB.calls,         { kind: 'count' }],
-            ['Total leads',      wA.leads,         wB.leads,         { kind: 'count' }],
-            ['Avg success rate', wA.avgSuccess,    wB.avgSuccess,    { kind: 'pct',  suffix: '%' }],
-          ], 'This week', 'Last week')}
+          <div class="panel" style="gap:18px;flex-wrap:wrap;align-items:flex-end">
+            <div class="field"><label>Week A</label>
+              <select id="cmpWeekA">${weekOpts(defWA)}</select>
+            </div>
+            <div class="field"><label>Week B</label>
+              <select id="cmpWeekB">${weekOpts(defWB)}</select>
+            </div>
+          </div>
+          <div id="cmpWeekBody">${renderWeekCompare(weeksB, defWA, defWB)}</div>
         </div>
       </div>
 
@@ -201,16 +206,40 @@ window.VIEWS = (function () {
         <div class="card mt">
           <div class="panel" style="gap:18px;flex-wrap:wrap;align-items:flex-end">
             <div class="field"><label>Month A</label>
-              <select id="cmpMonthA">${monthOpts(defA)}</select>
+              <select id="cmpMonthA">${monthOpts(defMA)}</select>
             </div>
             <div class="field"><label>Month B</label>
-              <select id="cmpMonthB">${monthOpts(defB)}</select>
+              <select id="cmpMonthB">${monthOpts(defMB)}</select>
             </div>
           </div>
-          <div id="cmpMonthBody">${renderMonthCompare(months, defA, defB)}</div>
+          <div id="cmpMonthBody">${renderMonthCompare(months, defMA, defMB)}</div>
         </div>
       </div>
     </div>`;
+  }
+
+  // Renders just the inner week-comparison body — used both on initial
+  // mount and when the week dropdowns change (wired in app.js segWire).
+  // Same metric set as the Month view minus 'Weeks of data' (always 1).
+  function renderWeekCompare(weeks, keyA, keyB) {
+    const lookup = new Map(weeks.map(w => [w.key, w]));
+    const a = lookup.get(keyA);
+    const b = lookup.get(keyB);
+    if (!a || !b) {
+      return `<div class="muted" style="padding:24px;text-align:center;font-size:13.5px">
+        Pick two weeks to compare.
+      </div>`;
+    }
+    return cmpTable([
+      ['Active callers',   a.activeCount, b.activeCount, { kind: 'count' }],
+      ['Total calls',      a.calls,       b.calls,       { kind: 'count' }],
+      ['Avg success rate', a.successRate, b.successRate, { kind: 'pct',  suffix: '%' }],
+      ['Avg calls/hr',     a.cph,         b.cph,         { kind: 'rate', decimals: 1 }],
+      ['Seller leads',     a.seller,      b.seller,      { kind: 'count' }],
+      ['Rental leads',     a.rental,      b.rental,      { kind: 'count' }],
+      ['Emails collected', a.email,       b.email,       { kind: 'count' }],
+      ['Dialler hours',    a.dfHours,     b.dfHours,     { kind: 'hours' }],
+    ], a.label, b.label);
   }
 
   // Renders just the inner month-comparison body — used both on initial
@@ -630,5 +659,5 @@ window.VIEWS = (function () {
     </div>`;
   }
 
-  return { allStaff, compare, daily, manager, leadSources, monthly, renderMonthCompare, monthWeeksTable };
+  return { allStaff, compare, daily, manager, leadSources, monthly, renderMonthCompare, renderWeekCompare, monthWeeksTable };
 })();
