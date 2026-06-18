@@ -646,7 +646,7 @@ window.VIEWS = (function () {
         No weekly data for this month.
       </div>`;
     }
-    const srPill = sr => sr >= 18 ? 'ok' : sr >= 14 ? 'warn' : 'bad';
+    const srPill = sucClass;
     const body = weeks.map(w => `
       <tr>
         <td style="font-weight:600;color:var(--ink)">${w.label}</td>

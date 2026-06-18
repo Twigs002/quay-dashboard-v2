@@ -813,15 +813,60 @@
   }
 
   function csvCompare() {
-    const totals = key => Q.totalsFor(key);
-    const a = totals('this-week'), b = totals('last-week');
-    const header = ['Metric', 'This Week', 'Last Week', 'Δ'];
-    const delta = (x, y) => y ? +(((x - y) / y) * 100).toFixed(1) + ' %' : '—';
+    // Mirror whichever picker mode is currently active in the Compare tab.
+    // If the Month panel is visible, export the Month-A vs Month-B rows
+    // (9 metrics). Otherwise export Week-A vs Week-B (8 metrics).
+    const monthVisible = (() => {
+      const mo = document.getElementById('cmpMonthPanel');
+      return mo && mo.style.display !== 'none';
+    })();
+
+    const delta = (x, y, opts) => {
+      const d = Number(x) - Number(y);
+      const sign = d > 0 ? '+' : '';
+      if (opts === 'pct')   return sign + d.toFixed(1) + ' pts';
+      if (opts === 'hours') return sign + d.toFixed(2) + 'h';
+      if (opts === 'rate')  return sign + d.toFixed(1);
+      return sign + Math.round(d);
+    };
+
+    if (monthVisible) {
+      const months = (Q.monthlyBreakdown && Q.monthlyBreakdown()) || [];
+      const keyA = (document.getElementById('cmpMonthA') || {}).value || (months[0] && months[0].key);
+      const keyB = (document.getElementById('cmpMonthB') || {}).value || (months[1] && months[1].key);
+      const lookup = new Map(months.map(m => [m.key, m]));
+      const a = lookup.get(keyA), b = lookup.get(keyB);
+      if (!a || !b) return [['Metric','A','B','Change'], ['No data']];
+      const header = ['Metric', a.label, b.label, 'Change'];
+      return [header,
+        ['Weeks of data',    a.weeks,       b.weeks,       delta(a.weeks, b.weeks)],
+        ['Active callers',   a.activeCount, b.activeCount, delta(a.activeCount, b.activeCount)],
+        ['Total calls',      a.calls,       b.calls,       delta(a.calls, b.calls)],
+        ['Avg success rate', a.successRate.toFixed(1) + '%', b.successRate.toFixed(1) + '%', delta(a.successRate, b.successRate, 'pct')],
+        ['Avg calls/hr',     a.cph.toFixed(1), b.cph.toFixed(1), delta(a.cph, b.cph, 'rate')],
+        ['Seller leads',     a.seller,  b.seller,  delta(a.seller, b.seller)],
+        ['Rental leads',     a.rental,  b.rental,  delta(a.rental, b.rental)],
+        ['Emails collected', a.email,   b.email,   delta(a.email, b.email)],
+        ['Dialler hours',    a.dfHours.toFixed(2) + 'h', b.dfHours.toFixed(2) + 'h', delta(a.dfHours, b.dfHours, 'hours')],
+      ];
+    }
+
+    const weeks = (Q.weeksBreakdown && Q.weeksBreakdown()) || [];
+    const keyA = (document.getElementById('cmpWeekA') || {}).value || (weeks[0] && weeks[0].key);
+    const keyB = (document.getElementById('cmpWeekB') || {}).value || (weeks[1] && weeks[1].key);
+    const lookup = new Map(weeks.map(w => [w.key, w]));
+    const a = lookup.get(keyA), b = lookup.get(keyB);
+    if (!a || !b) return [['Metric','A','B','Change'], ['No data']];
+    const header = ['Metric', a.label, b.label, 'Change'];
     return [header,
-      ['Total calls', a.calls, b.calls, delta(a.calls, b.calls)],
-      ['Total leads', a.leads, b.leads, delta(a.leads, b.leads)],
-      ['Avg success rate %', a.avgSuccess, b.avgSuccess, (a.avgSuccess - b.avgSuccess).toFixed(1) + ' pts'],
-      ['Active callers', a.active, b.active, (a.active - b.active)],
+      ['Active callers',   a.activeCount, b.activeCount, delta(a.activeCount, b.activeCount)],
+      ['Total calls',      a.calls,       b.calls,       delta(a.calls, b.calls)],
+      ['Avg success rate', a.successRate.toFixed(1) + '%', b.successRate.toFixed(1) + '%', delta(a.successRate, b.successRate, 'pct')],
+      ['Avg calls/hr',     a.cph.toFixed(1), b.cph.toFixed(1), delta(a.cph, b.cph, 'rate')],
+      ['Seller leads',     a.seller,  b.seller,  delta(a.seller, b.seller)],
+      ['Rental leads',     a.rental,  b.rental,  delta(a.rental, b.rental)],
+      ['Emails collected', a.email,   b.email,   delta(a.email, b.email)],
+      ['Dialler hours',    a.dfHours.toFixed(2) + 'h', b.dfHours.toFixed(2) + 'h', delta(a.dfHours, b.dfHours, 'hours')],
     ];
   }
   function csvManager() {
