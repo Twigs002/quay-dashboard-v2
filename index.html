@@ -31,7 +31,9 @@
       s.src = src; s.onload = res; s.onerror = rej;
       document.body.appendChild(s);
     });
-    return load('quay/views.js').then(() => load('quay/app.js'));
+    return load('quay/views.js')
+      .then(() => load('quay/payroll.js'))
+      .then(() => load('quay/app.js'));
   }).catch(err => {
     document.getElementById('app').innerHTML =
       '<div style="padding:48px;font-family:sans-serif;color:#b1303a">' +

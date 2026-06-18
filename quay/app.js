@@ -61,8 +61,22 @@
     { id: 'monthly',    label: 'Monthly',        icon: I.cal2,     title: 'Monthly Breakdown',    sub: 'Month-by-month roll-up across every week of data' },
     { id: 'manager',    label: 'Manager Reports',icon: I.chart,    title: 'Manager Reports',      sub: 'Filter by date range and campaign' },
     { id: 'sources',    label: 'Lead Sources',   icon: I.target,   title: 'Lead Source Efficacy', sub: 'Which source converts best' },
+    { id: 'payroll',    label: 'Payroll',        icon: I.cal2,     title: 'Payroll · Divisions Allocations', sub: 'Pay-period hours by division — 21st → 20th' },
     { id: 'clocks',     label: 'Clocks',         icon: I.clock,    title: 'Clocks',               sub: 'Staff hours, requests & team — manage everything in one place' },
   ];
+
+  // ---- Payroll tab state (super-only) ----
+  // Holds the active pay period, sub-tab, cached shifts + allocations so
+  // the view doesn't re-fetch on every sub-tab toggle. Re-fetched whenever
+  // the period dropdown changes.
+  let payrollState = {
+    period: window.PAYROLL ? window.PAYROLL.currentPayPeriod() : null,
+    activeView: 'allShifts',
+    shifts: null,
+    allocations: null,
+    loading: false,
+    error: null,
+  };
 
   // ---------------------------------------------------- LOGIN
   let loginUser = localStorage.getItem('quay_dash_last_user') || '';
@@ -173,8 +187,11 @@
     // We're authenticated when supabase has an active session AND we know
     // the staff row. setSession({...staff}) is set by submitLogin/setSession.
     if (!session || !session.id) { renderLogin(); return; }
-    // Filter tabs by role: only superusers see Leadership.
-    const visibleTabs = TABS.filter(t => t.id !== 'leadership' || session.super);
+    // Filter tabs by role: only superusers see Leadership + Payroll.
+    const visibleTabs = TABS.filter(t =>
+      (t.id !== 'leadership' || session.super) &&
+      (t.id !== 'payroll'    || session.super)
+    );
     // If a non-super lands on a hidden tab (e.g. via deep link), bounce to overview.
     if (!visibleTabs.find(t => t.id === tab)) tab = 'overview';
     const navItems = visibleTabs.map(t => `
@@ -293,6 +310,7 @@
   function render() {
     const host = document.getElementById('content');
     if (tab === 'leadership' && !session?.super) { tab = 'overview'; }
+    if (tab === 'payroll'    && !session?.super) { tab = 'overview'; }
     if (tab === 'leadership')    { host.innerHTML = leadership(); afterLeadership(); }
     else if (tab === 'overview') { host.innerHTML = overview(); afterOverview(); }
     else if (tab === 'staff')    { host.innerHTML = V.allStaff(period); staffWire(); }
@@ -301,6 +319,7 @@
     else if (tab === 'monthly')  { host.innerHTML = V.monthly(); monthlyWire(); }
     else if (tab === 'manager')  { host.innerHTML = V.manager(period); managerWire(); }
     else if (tab === 'sources')  host.innerHTML = V.leadSources(period);
+    else if (tab === 'payroll')  { host.innerHTML = V.payroll(payrollState); payrollWire(); }
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
     // Any per-card "Export CSV" button shares the topbar export handler.
     document.querySelectorAll('#content .js-export').forEach(b => {
@@ -349,6 +368,56 @@
       });
     }
   }
+  // ---------------------------------------------------- PAYROLL (super-only)
+  function payrollWire() {
+    // Period picker — re-fetch when changed.
+    const sel = document.getElementById('payrollPeriod');
+    if (sel) sel.addEventListener('change', () => {
+      const all = window.PAYROLL.payPeriodsForPicker(12);
+      const next = all.find(p => p.label === sel.value);
+      if (!next) return;
+      payrollState.period = next;
+      payrollState.shifts = null;
+      payrollState.allocations = null;
+      payrollFetchAndRender();
+    });
+    // Sub-tab buttons — switch view without re-fetching.
+    document.querySelectorAll('#payrollSubNav button[data-payroll-view]').forEach(b => {
+      b.addEventListener('click', () => {
+        payrollState.activeView = b.dataset.payrollView;
+        // Re-render shell so the host pane swaps to the new sub-view.
+        shell();
+      });
+    });
+    // First mount: kick off the fetch if we haven't already.
+    if (payrollState.shifts === null && !payrollState.loading) {
+      payrollFetchAndRender();
+    }
+  }
+
+  async function payrollFetchAndRender() {
+    if (!window.PAYROLL) return;
+    payrollState.loading = true;
+    payrollState.error = null;
+    // Render the loading state immediately.
+    if (tab === 'payroll') shell();
+    try {
+      const { start, end } = payrollState.period;
+      const shifts = await window.PAYROLL.fetchShiftsForPeriod(start, end);
+      const allocations = window.PAYROLL.computeAllocations(shifts);
+      payrollState.shifts = shifts;
+      payrollState.allocations = allocations;
+    } catch (e) {
+      console.warn('[payroll] fetch failed', e);
+      payrollState.error = String(e.message || e);
+      payrollState.shifts = [];
+      payrollState.allocations = { empTeamHours: new Map(), empTotalHours: new Map(), rawVariantsPerTeam: new Map() };
+    } finally {
+      payrollState.loading = false;
+      if (tab === 'payroll') shell();
+    }
+  }
+
   function segWire() {
     document.querySelectorAll('.seg').forEach(seg =>
       seg.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
@@ -759,6 +828,7 @@
     else if (tab === 'manager')    rows = csvManager();
     else if (tab === 'monthly')    rows = csvMonthly();
     else if (tab === 'daily')      rows = csvDaily();
+    else if (tab === 'payroll')    rows = csvPayroll();
     else                            rows = csvAgents();
     downloadCSV(filename, rows);
   }
@@ -872,6 +942,105 @@
   function csvManager() {
     // Manager tab currently shows campaign data; reuse the campaign CSV.
     return csvCampaigns();
+  }
+
+  // Payroll exports whichever sub-view is currently active so the file
+  // mirrors what's on screen.
+  function csvPayroll() {
+    const s = payrollState || {};
+    const view = s.activeView || 'allShifts';
+    const periodLbl = s.period ? s.period.label : '';
+    if (view === 'allShifts') {
+      const out = [['Agent', 'Type', 'Date in', 'Time in', 'Date out', 'Time out', 'Employee notes', 'Shift hours (HH:MM)', 'Shift hours (Decimal)']];
+      (s.shifts || []).forEach(sh => {
+        const d = window.PAYROLL.decimalToHHMM(sh.shiftHours);
+        const fmtD = iso => iso ? new Date(iso).toISOString().slice(0, 10) : '';
+        const fmtT = iso => {
+          if (!iso) return '';
+          const dt = new Date(iso);
+          return `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+        };
+        out.push([sh.agentName, sh.designation || '', fmtD(sh.clockInAt), fmtT(sh.clockInAt),
+          fmtD(sh.clockOutAt), fmtT(sh.clockOutAt), sh.note || '', d, sh.shiftHours.toFixed(2)]);
+      });
+      return out;
+    }
+    if (view === 'perAgent') {
+      const out = [['Agent', 'Team / Division', 'Hours (HH:MM)', 'Hours (Decimal)', '% of Agent Time']];
+      if (s.allocations) {
+        const ETH = s.allocations.empTeamHours;
+        const ETOT = s.allocations.empTotalHours;
+        const agents = Array.from(ETH.keys()).sort((a, b) => a.localeCompare(b));
+        agents.forEach(agent => {
+          const teams = Array.from(ETH.get(agent).entries()).sort((a, b) => b[1] - a[1]);
+          const total = ETOT.get(agent) || 0;
+          teams.forEach(([t, hrs]) => {
+            const pct = total > 0 ? (hrs / total) * 100 : 0;
+            out.push([agent, t, window.PAYROLL.decimalToHHMM(hrs), hrs.toFixed(2), pct.toFixed(1) + '%']);
+          });
+          out.push([agent + ' — TOTAL', '', window.PAYROLL.decimalToHHMM(total), total.toFixed(2), '100.0%']);
+        });
+      }
+      return out;
+    }
+    if (view === 'byDivision') {
+      // Wide pivot — match the on-screen layout.
+      const ETH = s.allocations ? s.allocations.empTeamHours : new Map();
+      const ETOT = s.allocations ? s.allocations.empTotalHours : new Map();
+      const teamEmp = new Map();
+      ETH.forEach((teams, emp) => teams.forEach((hrs, t) => {
+        if (!teamEmp.has(t)) teamEmp.set(t, new Map());
+        teamEmp.get(t).set(emp, hrs);
+      }));
+      let maxHead = 1;
+      teamEmp.forEach(m => { if (m.size > maxHead) maxHead = m.size; });
+      const header = ['Division'];
+      for (let i = 1; i <= maxHead; i++) { header.push(`F NAME / LN NAME ${i}`); header.push('PERCENTAGE'); }
+      header.push('Notes');
+      const out = [header];
+      const rowFor = (team, note) => {
+        const members = teamEmp.get(team) || new Map();
+        const sorted = Array.from(members.entries()).map(([emp, hrs]) => {
+          const tot = ETOT.get(emp) || 0;
+          return { emp, pct: tot > 0 ? hrs / tot : 0 };
+        }).sort((a, b) => b.pct - a.pct);
+        const row = [team];
+        for (let i = 0; i < maxHead; i++) {
+          if (i < sorted.length) {
+            row.push(sorted[i].emp);
+            row.push(Math.round(window.PAYROLL.roundHalfUp(sorted[i].pct) * 100) + '%');
+          } else { row.push(''); row.push(''); }
+        }
+        row.push(note);
+        return row;
+      };
+      window.PAYROLL.CANONICAL_TEAMS.forEach(t => {
+        const members = teamEmp.get(t);
+        out.push(rowFor(t, (members && members.size) ? '' : 'no agents this period'));
+      });
+      const nonCanon = [];
+      teamEmp.forEach((_m, t) => {
+        if (!window.PAYROLL.CANONICAL_SET.has(t) && t !== '(No team noted)') nonCanon.push(t);
+      });
+      nonCanon.sort((a, b) => a.localeCompare(b));
+      if (nonCanon.length || teamEmp.has('(No team noted)')) {
+        out.push(['--- Not in master list — review ---']);
+        nonCanon.forEach(t => out.push(rowFor(t, 'Not in master list')));
+        if (teamEmp.has('(No team noted)')) out.push(rowFor('(No team noted)', 'Shifts where the Employee notes field was blank'));
+      }
+      return out;
+    }
+    if (view === 'dataQuality') {
+      const rv = (s.allocations || {}).rawVariantsPerTeam || new Map();
+      const out = [['Pay period', periodLbl], [], ['Canonical Team', 'Original notes / variants seen', '# variants']];
+      const teams = Array.from(rv.keys()).sort((a, b) => a.localeCompare(b));
+      teams.forEach(t => {
+        const variants = Array.from(rv.get(t)).sort((a, b) => a.localeCompare(b));
+        out.push([t, variants.join(' | '), variants.length]);
+      });
+      return out;
+    }
+    return [['No data']];
   }
 
   // Defensive: clear any leftover dark-mode state from earlier builds.
