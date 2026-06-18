@@ -40,6 +40,44 @@
     late_grace_min: 15,    // clocked in by 08:15 counts as on-time
     early_grace_min: 15,   // clocked out after 16:45 counts as full day
   };
+  // ---- SAST timezone helpers ----
+  // The dashboard can be opened from any browser timezone but every
+  // business date (pay period, EOD report calendar day, schedule week) is
+  // in Africa/Johannesburg (SAST, UTC+2 year-round, no DST). Reading
+  // .getDate()/.getHours() off a JS Date trusts the browser zone, which
+  // silently mis-bucket dates for off-shore supers. Use these helpers for
+  // anything date-bucketed by SAST.
+  const SAST_TZ = 'Africa/Johannesburg';
+  const _SAST_YMD_FMT = new Intl.DateTimeFormat('en-CA', {
+    timeZone: SAST_TZ, year: 'numeric', month: '2-digit', day: '2-digit',
+  });
+  const _SAST_HM_FMT = new Intl.DateTimeFormat('en-GB', {
+    timeZone: SAST_TZ, hour: '2-digit', minute: '2-digit',
+    hourCycle: 'h23', weekday: 'short',
+  });
+  // Returns the SAST calendar date string (yyyy-mm-dd) for a Date.
+  function sastDateStr(d) { return _SAST_YMD_FMT.format(d || new Date()); }
+  // Returns { hour, weekday } in SAST. weekday: 0=Sun..6=Sat to match
+  // JS Date.getDay() semantics.
+  function sastHourAndWeekday(d) {
+    const parts = _SAST_HM_FMT.formatToParts(d || new Date());
+    const hour = parseInt(parts.find(p => p.type === 'hour').value, 10);
+    const wd = parts.find(p => p.type === 'weekday').value; // 'Mon' .. 'Sun'
+    const WD = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    return { hour, weekday: WD[wd] != null ? WD[wd] : new Date().getDay() };
+  }
+  // SAST wall-clock date string (yyyy-mm-dd) → UTC ISO string for the
+  // SAST midnight of that day. SAST is UTC+2, so SAST 00:00 = UTC 22:00
+  // previous day.
+  function sastDateStartUtcISO(yyyyMmDd) {
+    const [y, m, d] = yyyyMmDd.split('-').map(s => parseInt(s, 10));
+    return new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0) - 2 * 3600 * 1000).toISOString();
+  }
+  function sastDateEndUtcISO(yyyyMmDd) {
+    const [y, m, d] = yyyyMmDd.split('-').map(s => parseInt(s, 10));
+    return new Date(Date.UTC(y, m - 1, d, 23, 59, 59, 999) - 2 * 3600 * 1000).toISOString();
+  }
+
   // Per-week schedule adherence — populated by loadScheduleData() then read
   // by overview()'s adherence card + redFlags(). Shape:
   //   { byStaff: Map<id, { name, days: { yyyy-mm-dd: { first, last } }, late, early, missed }>,
@@ -762,9 +800,12 @@
       loadReports().then(() => { if (tab === 'daily') populateDailyReports(); });
       return;
     }
-    // Filter to reports clocked-out on this calendar day (UTC).
-    const dayStart = date + 'T00:00:00';
-    const dayEnd   = date + 'T23:59:59';
+    // Filter to reports clocked-out on this SAST calendar day. The user
+    // picked `date` (yyyy-mm-dd) in the SAST-anchored picker; Supabase
+    // hands back r.clocked_out_at as UTC ISO ("…Z"). Convert the SAST
+    // 00:00→23:59 wall-clock bounds to UTC for string comparison.
+    const dayStart = sastDateStartUtcISO(date);
+    const dayEnd   = sastDateEndUtcISO(date);
     const dayReports = _reports.filter(r =>
       r.clocked_out_at >= dayStart && r.clocked_out_at <= dayEnd
     );
@@ -1562,9 +1603,27 @@
 
   function insights(t, d, top, bestSrc, risk, src) {
     const worstSrc = src[src.length - 1];
+    // Sign-aware momentum insight — the previous version hard-coded
+    // "climbed … momentum is healthy" even when call volume or success
+    // rate fell. Now we branch on the sign and switch to a "dropped …
+    // investigate trend" copy + red/down icon when negative.
+    const callsUp = (d.calls || 0) >= 0;
+    const succUp  = (d.success || 0) >= 0;
+    const momentumType = (callsUp && succUp) ? 'up'
+                      : (!callsUp && !succUp) ? 'down'
+                      : 'warn';
+    const callsCopy = callsUp
+      ? `<b>Call volume climbed ${Math.abs(d.calls)}%</b> versus the previous period`
+      : `<b>Call volume dropped ${Math.abs(d.calls)}%</b> versus the previous period`;
+    const succCopy = succUp
+      ? `success rate improved ${Math.abs(d.success)} pts — momentum is healthy across both desks.`
+      : `success rate slipped ${Math.abs(d.success)} pts — investigate the trend.`;
+    const momentumAction = (callsUp && succUp)
+      ? 'Lock in the current dialling cadence'
+      : 'Dig into what changed period-over-period';
     const items = [
-      { type: 'up', html: `<b>Call volume climbed ${Math.abs(d.calls)}%</b> versus the previous period while success rate improved ${Math.abs(d.success)} pts — momentum is healthy across both desks.`,
-        action: 'Lock in the current dialling cadence' },
+      { type: momentumType, html: `${callsCopy} while ${succCopy}`,
+        action: momentumAction },
       { type: 'info', html: `<b>${bestSrc.name}</b> is the strongest channel at <b>${bestSrc.conv}% conversion</b>, well ahead of ${worstSrc.name} (${worstSrc.conv}%).`,
         action: 'Shift spend toward ' + bestSrc.name },
       { type: 'warn', html: `<b>${risk.name}</b> is converting at just <b>${risk.success}%</b>, below the ${(CFG.BENCHMARKS && CFG.BENCHMARKS.rm_success_rate) || 17}% target despite ${fmt(risk.calls)} calls — likely a quality not volume issue.`,
@@ -1572,9 +1631,13 @@
       { type: 'up', html: `<b>${top.name}</b> leads the floor with ${fmt(top.calls)} calls and ${top.success}% success — a useful benchmark for the team.`,
         action: 'Share top-performer call recordings' },
     ];
+    const iconFor = t => t === 'up' ? I.up
+                       : t === 'down' ? I.down
+                       : t === 'warn' ? I.alert
+                       : I.spark;
     return items.map(it => `
       <div class="insight">
-        <div class="insight-ic ${it.type}">${it.type === 'up' ? I.up : it.type === 'warn' ? I.alert : I.spark}</div>
+        <div class="insight-ic ${it.type}">${iconFor(it.type)}</div>
         <div class="insight-body"><p>${it.html}</p>
           <div class="insight-action">${I.arrow}${it.action}</div></div>
       </div>`).join('');
@@ -2058,14 +2121,17 @@
         const rec = byStaff.get(e.staff_id);
         if (!rec) return;
         const d = new Date(e.ts);
-        const key = d.toISOString().slice(0, 10);
+        // Bucket by SAST calendar date, NOT UTC. An event at SAST 00:30
+        // (UTC 22:30 previous day) was previously bucketed against the
+        // wrong date, making the early-morning shift "disappear".
+        const key = sastDateStr(d);
         if (!rec.days[key]) rec.days[key] = { first: null, last: null };
         if (e.dir === 'in'  && !rec.days[key].first) rec.days[key].first = d;
         if (e.dir === 'out') rec.days[key].last = d;
       });
       // Compute aggregates per staff over Mon..min(today, Fri).
       const today = new Date(); today.setHours(0,0,0,0);
-      const lastWeekday = new Date(monday);
+      const todaySast = sastDateStr(new Date());
       // Loop Mon..Fri up to but not past today.
       const days = [];
       for (let i = 0; i < 5; i++) {
@@ -2077,19 +2143,25 @@
       byStaff.forEach((rec) => {
         let startSum = 0, startCount = 0, endSum = 0, endCount = 0;
         days.forEach(d => {
-          const key = d.toISOString().slice(0, 10);
+          // Key by SAST so it lines up with the bucket above.
+          const key = sastDateStr(d);
           const entry = rec.days[key];
           if (!entry || !entry.first) {
-            // Don't count today as 'missed' until past 09:00.
-            const isToday = d.toDateString() === today.toDateString();
-            if (!isToday || new Date().getHours() >= 9) rec.missed++;
+            // Don't count today as 'missed' until past 09:00 SAST.
+            const isToday = key === todaySast;
+            if (!isToday || sastHourAndWeekday().hour >= 9) rec.missed++;
             return;
           }
-          const startMin = entry.first.getHours() * 60 + entry.first.getMinutes();
+          // Compare in SAST wall-clock minutes (not browser-local).
+          const inS = sastHourAndWeekday(entry.first);
+          const startMin = inS.hour * 60
+            + parseInt(_SAST_HM_FMT.formatToParts(entry.first).find(p => p.type === 'minute').value, 10);
           startSum += startMin; startCount++;
           if (startMin > lateThreshold) rec.late++;
           if (entry.last) {
-            const endMin = entry.last.getHours() * 60 + entry.last.getMinutes();
+            const outS = sastHourAndWeekday(entry.last);
+            const endMin = outS.hour * 60
+              + parseInt(_SAST_HM_FMT.formatToParts(entry.last).find(p => p.type === 'minute').value, 10);
             endSum += endMin; endCount++;
             if (endMin < earlyThreshold) rec.early++;
           }
@@ -2132,7 +2204,8 @@
     }
     const rows = [...schedule.byStaff.values()];
     const totalStaff = rows.length;
-    const todayKey = new Date().toISOString().slice(0, 10);
+    // SAST today; bucket keys in loadScheduleData() are SAST yyyy-mm-dd.
+    const todayKey = sastDateStr(new Date());
     const clockedInToday = rows.filter(r => r.days[todayKey] && r.days[todayKey].first).length;
     const onTimeDays = rows.reduce((s, r) => s + (r.daysWorked - r.late), 0);
     const totalDays  = rows.reduce((s, r) => s + r.daysWorked + r.missed, 0);
@@ -2164,13 +2237,15 @@
   function scheduleFlags() {
     if (!schedule) return [];
     const out = [];
-    const today = new Date(); today.setHours(0,0,0,0);
-    const todayKey = today.toISOString().slice(0, 10);
-    const wkKey = schedule.weekStart ? schedule.weekStart.toISOString().slice(0, 10) : todayKey;
-    const dow = today.getDay();
+    // SAST anchors — todayKey must match the SAST-keyed bucket in
+    // loadScheduleData; dow/hour must read SAST so a super opening from
+    // London at 06:00 (SAST 08:00) doesn't see Friday as Thursday.
+    const todayKey = sastDateStr(new Date());
+    const wkKey = schedule.weekStart ? sastDateStr(schedule.weekStart) : todayKey;
+    const { hour: sastHour, weekday: dow } = sastHourAndWeekday();
     const isWeekday = dow >= 1 && dow <= 5;
-    // 1) Anyone not clocked in yet but it's past 09:00 on a weekday.
-    if (isWeekday && new Date().getHours() >= 9) {
+    // 1) Anyone not clocked in yet but it's past 09:00 SAST on a weekday.
+    if (isWeekday && sastHour >= 9) {
       schedule.byStaff.forEach(r => {
         const day = r.days[todayKey];
         if (!day || !day.first) {

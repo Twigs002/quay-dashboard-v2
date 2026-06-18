@@ -25,6 +25,43 @@
   'use strict'
 
   // ---------------------------------------------------------------------
+  // SAST timezone anchoring
+  //
+  // The dashboard can be opened by a super from anywhere (London on a
+  // weekend, Sydney during a conference, etc.) but every business meaning
+  // attached to a calendar date — the 21st-to-20th pay period boundary,
+  // the EOD-report filter, the schedule adherence week — is in
+  // Africa/Johannesburg (SAST, UTC+2 year-round, no DST). Reading
+  // d.getDate() / d.getHours() trusts the browser's local zone, which
+  // silently produces wrong data for off-shore users. Use _sastYMD /
+  // _sastParts to extract the SAST wall-clock components instead.
+  // ---------------------------------------------------------------------
+
+  const SAST_TZ = 'Africa/Johannesburg'
+
+  // Returns the calendar date in SAST as {y, m (0-indexed), d} regardless
+  // of the browser's local zone. Built on Intl.DateTimeFormat so it works
+  // even when the user is opened from London/Sydney/etc.
+  function _sastYMD(d) {
+    const when = d || new Date()
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: SAST_TZ, year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(when)
+    const get = k => parseInt(parts.find(p => p.type === k).value, 10)
+    return { y: get('year'), m: get('month') - 1, d: get('day') }
+  }
+
+  // Build a UTC ISO string for an explicit SAST wall-clock instant. SAST is
+  // UTC+2, so the equivalent UTC moment is the wall clock minus 2h. Caller
+  // passes Y/M/D and (optionally) H/M/S/ms in SAST. This decouples the
+  // function from the browser's local zone entirely.
+  function _sastWallToUtcISO(y, m, day, hh, mm, ss, ms) {
+    const utcMillis = Date.UTC(y, m, day, hh || 0, mm || 0, ss || 0, ms || 0)
+                    - 2 * 3600 * 1000
+    return new Date(utcMillis).toISOString()
+  }
+
+  // ---------------------------------------------------------------------
   // Reference data — ported verbatim from build_consolidation.py
   //
   // Historically these were `const`s. They've since been promoted to a
@@ -350,10 +387,10 @@
   // Period { start, end } where start/end are Date objects at SAST midnight
   // and 23:59:59.999 respectively. `label` is yyyy-mm-dd → yyyy-mm-dd.
   function currentPayPeriod(today) {
-    const d = today ? new Date(today) : new Date()
-    const y = d.getFullYear()
-    const m = d.getMonth()        // 0-indexed
-    const day = d.getDate()
+    // Read calendar parts in SAST, not in the browser's local zone, so a
+    // super opening the dashboard from London at 23:00 (SAST 01:00 next
+    // day) still rolls into the correct pay period.
+    const { y, m, d: day } = _sastYMD(today ? new Date(today) : new Date())
     let startY, startM, endY, endM
     if (day >= 21) {
       startY = y; startM = m
@@ -426,24 +463,36 @@
   // Supabase fetch + client-side shift pairing
   // ---------------------------------------------------------------------
 
-  // Convert a SAST-local Date to a UTC ISO string for the Supabase query.
-  // SAST is UTC+02:00 — so SAST midnight = UTC 22:00 the previous day.
-  function _sastDateToUtcISO(d) {
-    // Treat the Date as a wall-clock SAST timestamp. We DON'T trust the
-    // caller's browser zone — we re-anchor by extracting the YMD/HMS parts
-    // from the Date (which the caller built in local time, assumed SAST),
-    // then construct a UTC moment that represents the same wall-clock
-    // instant in SAST.
-    const y = d.getFullYear()
-    const m = d.getMonth()
-    const day = d.getDate()
-    const hh = d.getHours()
-    const mm = d.getMinutes()
-    const ss = d.getSeconds()
-    const ms = d.getMilliseconds()
-    // SAST = UTC+2, so the equivalent UTC moment is the wall clock minus 2h.
-    const utcMillis = Date.UTC(y, m, day, hh, mm, ss, ms) - 2 * 3600 * 1000
-    return new Date(utcMillis).toISOString()
+  // Convert a SAST wall-clock instant to a UTC ISO string for the Supabase
+  // query. SAST is UTC+02:00 — so SAST midnight = UTC 22:00 the previous
+  // day.
+  //
+  // Two calling conventions:
+  //   _sastDateToUtcISO(date)
+  //     — extracts the SAST calendar parts FROM THE DATE via Intl so the
+  //     result is independent of the browser's local zone. Useful for
+  //     "this instant on the wall clock in Joburg".
+  //   _sastDateToUtcISO({ y, m, d, hh, mm, ss, ms })
+  //     — caller supplies explicit SAST wall-clock parts. Useful when the
+  //     hh/mm/ss are literal constants (e.g. the 00:00:00.000 / 23:59:59.999
+  //     bounds that currentPayPeriod hands fetchShiftsForPeriod).
+  function _sastDateToUtcISO(input) {
+    if (input && typeof input === 'object' && !(input instanceof Date)) {
+      return _sastWallToUtcISO(input.y, input.m, input.d,
+        input.hh, input.mm, input.ss, input.ms)
+    }
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: SAST_TZ,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(input)
+    const get = k => parseInt(parts.find(p => p.type === k).value, 10)
+    const y = get('year'), m = get('month') - 1, day = get('day')
+    const hh = get('hour'), mm = get('minute'), ss = get('second')
+    // Intl doesn't surface sub-second precision; preserve the input's ms.
+    const ms = (input instanceof Date) ? input.getMilliseconds() : 0
+    return _sastWallToUtcISO(y, m, day, hh, mm, ss, ms)
   }
 
   // Pulls every event in [fromISO, toISO] in pages of PAGE_SIZE, since
@@ -457,10 +506,17 @@
     // floor would ever produce — abort rather than spin forever.
     const MAX_PAGES = 50
     for (let page = 0; page < MAX_PAGES; page++) {
+      // Tiebreaker on staff_id: PostgREST .range() pagination is only
+      // deterministic when the ORDER BY is total. Two events sharing an
+      // exact ts (rare but possible — two staff clocking in the same ms)
+      // could otherwise straddle a page boundary unpredictably and either
+      // duplicate or skip rows. ts asc, staff_id asc makes the page cut
+      // stable across requests.
       const { data, error } = await window.sb.from('events')
         .select('staff_id, ts, dir, note')
         .gte('ts', fromISO).lte('ts', toISO)
         .order('ts', { ascending: true })
+        .order('staff_id', { ascending: true })
         .range(offset, offset + PAGE_SIZE - 1)
       if (error) throw error
       if (!data || data.length === 0) break
@@ -735,6 +791,17 @@
   if (!window.VIEWS) window.VIEWS = {}
   const V = window.VIEWS
 
+  // Reusable export-button markup matching the rest of the dashboard's
+  // .card-head pattern. The global .js-export listener in app.js (around
+  // line 325) auto-wires the click handler to exportCurrentTab(), which
+  // routes per active Payroll sub-view via csvPayroll().
+  // window.ICON is guaranteed at module-init by index.html's defer order
+  // (lib.js → payroll.js); fall back to a literal arrow if absent (Node).
+  function _exportBtn() {
+    const dl = (window.ICON && window.ICON.download) || ''
+    return `<button class="btn js-export">${dl} Export CSV</button>`
+  }
+
   function esc(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -817,12 +884,12 @@
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between">
           <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
             <div class="field">
-              <label style="display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">PAY PERIOD</label>
-              <select id="payrollPeriod" style="padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-family:Montserrat;font-size:13.5px;min-width:240px">
+              <label>Pay period</label>
+              <select id="payrollPeriod" style="min-width:240px">
                 ${opts}
               </select>
             </div>
-            <div style="font-size:12px;color:var(--muted);max-width:380px;line-height:1.5">
+            <div class="muted" style="font-size:12px;max-width:380px;line-height:1.5">
               Quay 1 pay periods run the 21st through the 20th of the next month.
               Open shifts (still clocked in) are excluded until they close.
             </div>
@@ -855,6 +922,7 @@
             <h3>All Shifts</h3>
             <div class="sub">${byAgent.size} agent${byAgent.size === 1 ? '' : 's'} · ${totalShifts} shift${totalShifts === 1 ? '' : 's'} · ${decimalToHHMM(totalHours)} total</div>
           </div>
+          ${_exportBtn()}
         </div>
         <div class="tbl-wrap"><table class="tbl">
           <thead><tr>
@@ -908,10 +976,13 @@
     const agents = Array.from(empTeamHours.keys()).sort((a, b) => a.localeCompare(b))
     let html = `
       <div class="card">
-        <div class="card-head"><div>
-          <h3>Per-Agent Allocations</h3>
-          <div class="sub">Each agent's pay-period hours broken down by division · R column = hours × hourly_rate</div>
-        </div></div>
+        <div class="card-head">
+          <div>
+            <h3>Per-Agent Allocations</h3>
+            <div class="sub">Each agent's pay-period hours broken down by division · R column = hours × hourly_rate</div>
+          </div>
+          ${_exportBtn()}
+        </div>
         <div class="tbl-wrap"><table class="tbl">
           <thead><tr>
             <th>Agent</th>
@@ -947,7 +1018,7 @@
           <td class="num tnum">${pay == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(pay)}</td>
         </tr>`
       }
-      html += `<tr style="background:#FFF6E0;font-weight:700">
+      html += `<tr style="background:var(--paper);font-weight:700">
         <td>${esc(agent)} — TOTAL</td>
         <td>${rate == null ? '<span style="font-weight:400;color:var(--muted);font-size:12px">no rate set</span>' : '<span style="font-weight:400;color:var(--muted);font-size:12px">@ ' + _fmtZAR(rate) + '/hr</span>'}</td>
         <td class="num tnum">${decimalToHHMM(total)}</td>
@@ -996,10 +1067,13 @@
       : ''
     return `
       <div class="card">
-        <div class="card-head"><div>
-          <h3>Earnings</h3>
-          <div class="sub">Total hours × hourly_rate per agent for the selected pay period</div>
-        </div></div>
+        <div class="card-head">
+          <div>
+            <h3>Earnings</h3>
+            <div class="sub">Total hours × hourly_rate per agent for the selected pay period</div>
+          </div>
+          ${_exportBtn()}
+        </div>
         <div class="tbl-wrap"><table class="tbl">
           <thead><tr>
             <th>First name</th>
@@ -1012,7 +1086,7 @@
             <th class="num">Total Pay</th>
           </tr></thead>
           <tbody>${rows}
-            <tr style="background:#FFF6E0;font-weight:700">
+            <tr style="background:var(--paper);font-weight:700">
               <td colspan="4">TOTAL — ${agents.length} agent${agents.length === 1 ? '' : 's'}</td>
               <td class="num tnum">${decimalToHHMM(grandHours)}</td>
               <td class="num tnum">${grandHours.toFixed(2)}</td>
@@ -1093,7 +1167,7 @@
     if (nonCanonical.length || hasNoTeam) {
       const spanCols = 1 + maxHead * 2 + 1
       body += `<tr class="payroll-noncanon-sep">
-        <td colspan="${spanCols}" style="background:#C00000;color:#fff;text-align:center;font-weight:700;letter-spacing:0.4px;padding:10px">
+        <td colspan="${spanCols}" style="background:var(--red);color:#fff;text-align:center;font-weight:700;letter-spacing:0.4px;padding:10px">
           Not in master list — review
         </td>
       </tr>`
@@ -1103,10 +1177,13 @@
 
     return `
       <div class="card">
-        <div class="card-head"><div>
-          <h3>By Division</h3>
-          <div class="sub">Wide pivot · % of <i>that agent's</i> pay-period time on each division · round-half-up</div>
-        </div></div>
+        <div class="card-head">
+          <div>
+            <h3>By Division</h3>
+            <div class="sub">Wide pivot · % of <i>that agent's</i> pay-period time on each division · round-half-up</div>
+          </div>
+          ${_exportBtn()}
+        </div>
         <div class="tbl-wrap"><table class="tbl payroll-bydiv">
           <thead><tr>${headCells.join('')}</tr></thead>
           <tbody>${body}</tbody>
@@ -1216,7 +1293,7 @@
     if (nonCanonical.length || hasNoTeam) {
       const spanCols = 1 + maxHead * 5 + 1 + 1
       body += `<tr class="payroll-noncanon-sep">
-        <td colspan="${spanCols}" style="background:#C00000;color:#fff;text-align:center;font-weight:700;letter-spacing:0.4px;padding:10px">
+        <td colspan="${spanCols}" style="background:var(--red);color:#fff;text-align:center;font-weight:700;letter-spacing:0.4px;padding:10px">
           Not in master list — review
         </td>
       </tr>`
@@ -1235,7 +1312,7 @@
     }
     totalCells.push(`<td class="num tnum"><b>${_fmtZAR(gtRowTotal)}</b></td>`)
     totalCells.push('<td></td>')
-    body += `<tr style="background:#FFF6E0;font-weight:700">${totalCells.join('')}</tr>`
+    body += `<tr style="background:var(--paper);font-weight:700">${totalCells.join('')}</tr>`
 
     return `
       <div class="card">
