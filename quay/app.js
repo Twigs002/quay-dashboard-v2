@@ -1309,6 +1309,7 @@
         header.push(`Fancy / LN name ${i}`);
         header.push('Payroll amount');
         header.push('SDL');
+        header.push('Percentage');
         header.push('Div contribution');
       }
       header.push('Total Fancy/LN');
@@ -1328,7 +1329,8 @@
           const payroll = rate != null ? total * rate : null;
           const sdl = payroll != null ? payroll * SDL_RATE : null;
           const contrib = rate != null ? hrs * rate : null;
-          return { emp, payroll, sdl, contrib };
+          const pct = total > 0 ? (hrs / total) : 0;
+          return { emp, payroll, sdl, contrib, pct };
         }).sort((a, b) => (b.contrib || 0) - (a.contrib || 0));
         const row = [team];
         let rowTotal = 0;
@@ -1338,12 +1340,13 @@
             row.push(x.emp);
             row.push(fmt2(x.payroll));
             row.push(fmt2(x.sdl));
+            row.push((x.pct * 100).toFixed(1) + '%');
             row.push(fmt2(x.contrib));
             if (x.payroll != null) gtPayroll[i] += x.payroll;
             if (x.sdl != null)     gtSdl[i] += x.sdl;
             if (x.contrib != null) { gtContrib[i] += x.contrib; rowTotal += x.contrib; }
           } else {
-            row.push(''); row.push(''); row.push(''); row.push('');
+            row.push(''); row.push(''); row.push(''); row.push(''); row.push('');
           }
         }
         row.push(fmt2(rowTotal));
@@ -1368,7 +1371,7 @@
       // Grand-total row
       const tot = ['GRAND TOTAL'];
       for (let i = 0; i < maxHead; i++) {
-        tot.push(''); tot.push(fmt2(gtPayroll[i])); tot.push(fmt2(gtSdl[i])); tot.push(fmt2(gtContrib[i]));
+        tot.push(''); tot.push(fmt2(gtPayroll[i])); tot.push(fmt2(gtSdl[i])); tot.push(''); tot.push(fmt2(gtContrib[i]));
       }
       tot.push(fmt2(gtRowTotal));
       tot.push('');

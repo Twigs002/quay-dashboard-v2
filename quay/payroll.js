@@ -1146,12 +1146,13 @@
     nonCanonical.sort((a, b) => a.localeCompare(b))
     const hasNoTeam = teamEmp.has('(No team noted)')
 
-    // Header — 1 (division) + 4N (agent blocks) + 1 (total) + 1 (notes)
+    // Header — 1 (division) + 5N (agent blocks) + 1 (total) + 1 (notes)
     const headCells = ['<th>DIVISION</th>']
     for (let n = 1; n <= maxHead; n++) {
       headCells.push(`<th>FANCY / LN NAME ${n}</th>`)
       headCells.push(`<th class="num">PAYROLL AMOUNT</th>`)
       headCells.push(`<th class="num">SDL</th>`)
+      headCells.push(`<th class="num">PERCENTAGE</th>`)
       headCells.push(`<th class="num">DIV CONTRIBUTION</th>`)
     }
     headCells.push('<th class="num">TOTAL FANCY/LN</th>')
@@ -1173,7 +1174,11 @@
         const payroll = rate != null ? totalHrs * rate : null
         const sdl = payroll != null ? payroll * SDL_RATE : null
         const contrib = rate != null ? hrs * rate : null
-        return { emp, hrs, rate, payroll, sdl, contrib }
+        // PERCENTAGE = fraction of this agent's pay-period time spent
+        // on THIS division. Display as the same one-decimal %-of-time
+        // format used on the Per-Agent Allocations view.
+        const pct = totalHrs > 0 ? (hrs / totalHrs) : 0
+        return { emp, hrs, rate, payroll, sdl, contrib, pct }
       }).sort((a, b) => (b.contrib || 0) - (a.contrib || 0))
 
       const cells = [`<td><b>${esc(team)}</b></td>`]
@@ -1184,6 +1189,7 @@
           cells.push(`<td>${esc(x.emp)}</td>`)
           cells.push(`<td class="num tnum">${x.payroll == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(x.payroll)}</td>`)
           cells.push(`<td class="num tnum">${x.sdl == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(x.sdl)}</td>`)
+          cells.push(`<td class="num tnum">${(x.pct * 100).toFixed(1)}%</td>`)
           cells.push(`<td class="num tnum">${x.contrib == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(x.contrib)}</td>`)
           if (x.payroll != null) gtPayroll[i] += x.payroll
           if (x.sdl != null)     gtSdl[i] += x.sdl
@@ -1192,7 +1198,7 @@
             rowTotal += x.contrib
           }
         } else {
-          cells.push('<td></td><td></td><td></td><td></td>')
+          cells.push('<td></td><td></td><td></td><td></td><td></td>')
         }
       }
       cells.push(`<td class="num tnum"><b>${rowTotal > 0 ? _fmtZAR(rowTotal) : '<span style="color:var(--muted)">—</span>'}</b></td>`)
@@ -1208,7 +1214,7 @@
       body += rowFor(team, note)
     }
     if (nonCanonical.length || hasNoTeam) {
-      const spanCols = 1 + maxHead * 4 + 1 + 1
+      const spanCols = 1 + maxHead * 5 + 1 + 1
       body += `<tr class="payroll-noncanon-sep">
         <td colspan="${spanCols}" style="background:#C00000;color:#fff;text-align:center;font-weight:700;letter-spacing:0.4px;padding:10px">
           Not in master list — review
@@ -1224,6 +1230,7 @@
       totalCells.push('<td></td>')
       totalCells.push(`<td class="num tnum">${gtPayroll[i] ? _fmtZAR(gtPayroll[i]) : ''}</td>`)
       totalCells.push(`<td class="num tnum">${gtSdl[i] ? _fmtZAR(gtSdl[i]) : ''}</td>`)
+      totalCells.push('<td></td>')
       totalCells.push(`<td class="num tnum">${gtContrib[i] ? _fmtZAR(gtContrib[i]) : ''}</td>`)
     }
     totalCells.push(`<td class="num tnum"><b>${_fmtZAR(gtRowTotal)}</b></td>`)
