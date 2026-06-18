@@ -1031,12 +1031,31 @@
                 <div class="sub" style="font-size:11.5px;margin:0 0 8px">Session activity (work vs paused)</div>
                 ${timeRow('Work %', workP, 'var(--green)')}
               </div>
-              <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--slate);line-height:1.7">
-                <b style="color:var(--ink)">Leads breakdown</b><br>
-                Seller <b class="tnum" style="color:var(--ink)">${fmt(a.seller || 0)}</b> ·
-                Rental <b class="tnum" style="color:var(--ink)">${fmt(a.rental || 0)}</b> ·
-                Email <b class="tnum" style="color:var(--ink)">${fmt(a.email || 0)}</b>
-              </div>
+            </div>
+            <div class="card card-pad">
+              <h3 style="font-family:var(--serif);margin:0 0 4px;font-size:16px">Leads breakdown</h3>
+              <div class="sub" style="font-size:11.5px;margin-bottom:10px">Seller · Rental · Email · share of total leads</div>
+              ${(() => {
+                const sel = a.seller || 0, rnt = a.rental || 0, eml = a.email || 0;
+                const tot = sel + rnt + eml;
+                const pct = n => tot > 0 ? Math.round((n / tot) * 100) : 0;
+                const leadRow = (label, count, share, color) => `
+                  <div style="margin-top:10px">
+                    <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px">
+                      <span style="color:var(--slate);font-weight:600">${label}</span>
+                      <span class="tnum" style="color:var(--ink);font-weight:700">${fmt(count)} <span style="color:var(--muted);font-weight:600">· ${share}%</span></span>
+                    </div>
+                    <div class="eff-track"><span style="width:${Math.min(100, share)}%;background:${color}"></span></div>
+                  </div>`;
+                return `
+                  ${leadRow('Seller', sel, pct(sel), 'var(--blue)')}
+                  ${leadRow('Rental', rnt, pct(rnt), 'var(--amber)')}
+                  ${leadRow('Email',  eml, pct(eml), 'var(--green)')}
+                  <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;justify-content:space-between">
+                    <span>Total leads</span>
+                    <b class="tnum" style="color:var(--ink);font-weight:700">${fmt(tot)}</b>
+                  </div>`;
+              })()}
             </div>
           </div>
 
