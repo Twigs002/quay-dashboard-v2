@@ -6,6 +6,12 @@ fetch_dialfire.py (weekly fetch) and backfill_dialfire.py (historical backfill).
 """
 import re, json, time, requests, datetime
 from datetime import timezone, timedelta
+from zoneinfo import ZoneInfo
+
+# Floor timezone — all callers pass SAST dates (Africa/Johannesburg).
+# We compute the "today" reference here in SAST too so the relative-day
+# delta lines up with the day boundary the caller meant.
+SAST = ZoneInfo("Africa/Johannesburg")
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -46,12 +52,22 @@ RM_CAMPAIGNS = {
 # Date helpers
 # ---------------------------------------------------------------------------
 def dates_to_timespan(date_from, date_to):
-    """Convert absolute dates to Dialfire 'X-Yday' relative timespan.
+    """Convert absolute SAST dates to Dialfire 'X-Yday' relative timespan.
 
-    Dialfire timespan 'X-Yday' = from X days ago to Y days ago (UTC).
-    We subtract 1 from the end so the full end day is included.
+    Callers pass dates in SAST (Africa/Johannesburg) — see
+    fetch_dialfire_daily.py / fetch_dialfire.py / backfill_dialfire.py.
+    Previously this function computed "today" in UTC, which meant when the
+    workflow ran in a time-of-day where the UTC and SAST calendar dates
+    differed (between 22:00 UTC and 00:00 UTC), every (today-date).days
+    delta was off by one — pushing SAST-Saturday's calls into Sunday's
+    bucket and leaving Saturday empty in daily_data.json.
+
+    Reference day boundary now comes from SAST so it matches the caller.
+
+    Dialfire 'X-Yday' = from X days ago to Y days ago. We subtract 1 from
+    the end so the full end day is included.
     """
-    today = datetime.datetime.now(timezone.utc).date()
+    today = datetime.datetime.now(SAST).date()
     days_from = (today - date_from).days
     days_to   = (today - date_to).days - 1
     if days_to < 0:
