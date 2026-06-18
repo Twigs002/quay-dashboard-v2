@@ -2065,12 +2065,16 @@
       <!-- Revenue model — per-campaign breakdown that drove the ceiling -->
       ${revenueModelCard(camps0, teamRateLookup, rev.default, rentalRate)}
 
-      <!-- Top performers + Red flags -->
-      <div class="row g-2-1 mt" style="align-items:start">
-        <div class="card">
+      <!-- Top performers + Red flags. align-items:stretch so the
+           shorter Top-5 card fills the same row height as the
+           longer Red Flags card (with its attended-flags collapsible)
+           — without this the page shows a tall empty gap below the
+           Top-5 card and before Historical Comparison. -->
+      <div class="row g-2-1 mt" style="align-items:stretch">
+        <div class="card" style="display:flex;flex-direction:column">
           <div class="card-head"><div><h3>Top 5 performers</h3><div class="sub">Ranked by composite (success rate × calls)</div></div>
             <button class="btn" data-goto="staff">${I.eye} View all</button></div>
-          <div class="tbl-wrap"><table class="tbl">
+          <div class="tbl-wrap" style="flex:1"><table class="tbl">
             <thead><tr><th style="width:48px">Rank</th><th>Agent</th><th class="num">Calls</th><th class="num">Leads</th><th class="num">Success</th></tr></thead>
             <tbody>${top5.map((a, i) => {
               const medal = i === 0 ? 'g' : i === 1 ? 's' : i === 2 ? 'b' : 'n';
