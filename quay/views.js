@@ -4,8 +4,25 @@ window.VIEWS = (function () {
   const Q = window.QUAY, I = window.ICON, C = window.CHART;
   const fmt = n => n.toLocaleString('en-ZA');
   const initials = name => name.split(' ').map(w => w[0]).slice(0, 2).join('');
-  const effClass = e => e >= 70 ? 'ok' : e >= 60 ? 'warn' : 'bad';
-  const sucClass = s => s >= 15 ? 'ok' : s >= 11 ? 'warn' : 'bad';
+  // Shared performance-pill thresholds. Centralised here so every tab
+  // (Overview, All Staff, Daily, Monthly, drill-downs) reads the same
+  // green/amber/red boundary instead of drifting per-view literals.
+  // Anchored on CFG.QUAY_CONFIG.BENCHMARKS so changing the floor target
+  // ripples everywhere.
+  const _CFG = (window.QUAY_CONFIG && window.QUAY_CONFIG.BENCHMARKS) || {};
+  const _SR_TARGET = _CFG.rm_success_rate ?? 17;          // RM floor (Fancy is +3pts above, pill stays usable for both)
+  const _SR_WARN_BUFFER = 3;                              // pts below target → amber
+  const _EFF_TARGET = _CFG.efficiency ?? 70;
+  const _CPH_TARGET = _CFG.cph ?? 45;
+  // success-rate pill: ok at/above target, amber within 3pts below, red further below
+  const sucClass = s => s >= _SR_TARGET ? 'ok'
+                       : s >= (_SR_TARGET - _SR_WARN_BUFFER) ? 'warn' : 'bad';
+  // efficiency pill: ok ≥ 70, amber ≥ 60, red below
+  const effClass = e => e >= _EFF_TARGET ? 'ok'
+                       : e >= (_EFF_TARGET - 10) ? 'warn' : 'bad';
+  // CPH pill: ok ≥ 45, amber ≥ 35, red below
+  const cphClass = c => c >= _CPH_TARGET ? 'ok'
+                       : c >= (_CPH_TARGET - 10) ? 'warn' : 'bad';
 
   function agentRow(a, rank, scaleMax) {
     const sc = sucClass(a.success);
@@ -566,7 +583,9 @@ window.VIEWS = (function () {
   // so the two surfaces line up.
   function monthly() {
     const rows = Q.monthlyBreakdown ? Q.monthlyBreakdown() : [];
-    const srPill = sr => sr >= 18 ? 'ok' : sr >= 14 ? 'warn' : 'bad';
+    // Use the shared success-rate threshold (see sucClass at top of module)
+    // so Monthly Breakdown agrees with Overview / Leadership / All Staff.
+    const srPill = sucClass;
 
     const body = rows.length ? rows.map(r => `
       <tr data-month-row="${r.key}" class="month-row">
@@ -658,6 +677,10 @@ window.VIEWS = (function () {
       </table></div>
     </div>`;
   }
+
+  // Expose the pill helpers so app.js + other tab code can stop hand-rolling
+  // ad-hoc thresholds. Single source of truth = sucClass/effClass/cphClass.
+  window.QUAY_PILLS = { sucClass, effClass, cphClass };
 
   return { allStaff, compare, daily, manager, leadSources, monthly, renderMonthCompare, renderWeekCompare, monthWeeksTable };
 })();

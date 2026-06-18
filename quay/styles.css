@@ -187,24 +187,33 @@ button { font-family: inherit; cursor: pointer; }
 .topbar-titles p { margin: 2px 0 0; font-size: 13px; color: var(--slate); }
 .topbar-right { display: flex; align-items: center; gap: 14px; }
 
-/* Live red-flags badge — always visible, bright red while flags are open. */
+/* Live red-flags badge — only shown on Operational Overview; clicking
+   jumps to Manager Reports where flags are actioned. Solid brand red so
+   it reads as critical, never amber-ish. */
 .live-flags-badge {
   position: relative;
   display: inline-flex; align-items: center; gap: 7px;
-  border: 1px solid #F1BCB8; cursor: pointer;
+  border: 1px solid var(--red, #D20A03); cursor: pointer;
   padding: 7px 13px 7px 22px; border-radius: 999px;
-  font-family: Montserrat; font-size: 12px; font-weight: 700;
+  font-family: Montserrat; font-size: 12px; font-weight: 800;
   letter-spacing: 0.04em; text-transform: uppercase;
-  background: #FCE9E8; color: #8a1a13;
+  background: var(--red, #D20A03); color: #fff;
+  box-shadow: 0 2px 6px rgba(210, 10, 3, 0.22);
   transition: transform .15s ease, box-shadow .15s ease;
 }
-.live-flags-badge:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(210, 10, 3, 0.18); }
+.live-flags-badge:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(210, 10, 3, 0.32); }
 .live-flags-badge.active {
   background: var(--red, #D20A03); color: #fff; border-color: var(--red, #D20A03);
   box-shadow: 0 0 0 0 rgba(210, 10, 3, 0.55);
   animation: lfb-pulse 2.2s ease-out infinite;
 }
-.live-flags-badge.clear { opacity: 0.55; }
+/* "clear" = 0 open flags. Mute slightly but keep readable. */
+.live-flags-badge.clear {
+  background: #FCE9E8; color: var(--red, #D20A03);
+  border-color: #F1BCB8; box-shadow: none;
+}
+.live-flags-badge.clear .lfb-icon,
+.live-flags-badge.clear .lfb-count { color: var(--red, #D20A03); }
 .live-flags-badge .lfb-icon  { font-size: 13px; line-height: 1; }
 .live-flags-badge .lfb-count { font-size: 14px; font-weight: 800; min-width: 14px; text-align: center; }
 .live-flags-badge .lfb-label { font-size: 11px; }
@@ -405,6 +414,15 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   position: relative;
 }
 .insight:last-child { border-bottom: none; }
+/* Red-flag insights (type=warn or type=down) get an unambiguous red
+   left rail + red headline so they don't read as "minor warning". */
+.insight:has(.insight-ic.warn),
+.insight:has(.insight-ic.down) {
+  background: linear-gradient(90deg, var(--red-tint) 0%, transparent 70%);
+  box-shadow: inset 4px 0 0 0 var(--red, #D20A03);
+}
+.insight:has(.insight-ic.warn) .insight-body p b,
+.insight:has(.insight-ic.down) .insight-body p b { color: var(--red, #D20A03); }
 .insight-ack {
   align-self: flex-start;
   margin-left: auto; flex: none;
@@ -420,7 +438,9 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   width: 34px; height: 34px; border-radius: 9px; flex: none; display: grid; place-items: center;
 }
 .insight-ic.up { background: var(--green-tint); color: var(--green); }
-.insight-ic.warn { background: var(--amber-tint); color: var(--amber); }
+/* warn + down are RED in this app — these are red-flag rows, not advisories. */
+.insight-ic.warn,
+.insight-ic.down { background: var(--red-tint); color: var(--red, #D20A03); }
 .insight-ic.info { background: #E7EEF4; color: var(--blue); }
 .insight-ic .ic { width: 18px; height: 18px; }
 .insight-body p { margin: 0; font-size: 13.5px; color: var(--ink); line-height: 1.5; }

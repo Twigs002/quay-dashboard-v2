@@ -3,6 +3,16 @@
 (function () {
   const Q = window.QUAY, I = window.ICON, C = window.CHART, V = window.VIEWS;
   const CFG = window.QUAY_CONFIG || {};
+  // Shared green/amber/red helpers (single source of truth — see views.js).
+  // Fallbacks mirror CFG.BENCHMARKS in case views.js loads after this script.
+  const _PILLS = window.QUAY_PILLS || {
+    sucClass: s => s >= 17 ? 'ok' : s >= 14 ? 'warn' : 'bad',
+    effClass: e => e >= 70 ? 'ok' : e >= 60 ? 'warn' : 'bad',
+    cphClass: c => c >= 45 ? 'ok' : c >= 35 ? 'warn' : 'bad',
+  };
+  const sucClass = _PILLS.sucClass;
+  const effClass = _PILLS.effClass;
+  const cphClass = _PILLS.cphClass;
   const fmt = n => n.toLocaleString('en-ZA');
   const initials = name => name.split(' ').map(w => w[0]).slice(0, 2).join('');
 
@@ -207,12 +217,13 @@
             <div class="topbar-titles"><h1 id="tabTitle"></h1><p id="tabSub"></p></div>
           </div>
           <div class="topbar-right">
-            <button class="live-flags-badge" id="liveFlagsBadge" title="Jump to live red flags on Overview">
+            ${tab === 'overview' ? `
+            <button class="live-flags-badge" id="liveFlagsBadge" title="Open Manager Reports to action these flags">
               <span class="lfb-pulse"></span>
               <span class="lfb-icon">⚑</span>
               <span class="lfb-count" id="lfbCount">0</span>
               <span class="lfb-label">live red flag<span id="lfbS"></span></span>
-            </button>
+            </button>` : ''}
             <div class="period" id="period">
               ${Object.entries(Q.PERIODS).map(([k, p]) =>
                 `<button data-period="${k}" class="${k === period ? 'active' : ''}">${p.label}</button>`).join('')}
@@ -233,7 +244,7 @@
     document.getElementById('btnPrint').addEventListener('click', () => window.print());
     document.getElementById('btnExport').addEventListener('click', exportCurrentTab);
     const lfb = document.getElementById('liveFlagsBadge');
-    if (lfb) lfb.addEventListener('click', () => { tab = 'overview'; shell(); });
+    if (lfb) lfb.addEventListener('click', () => { tab = 'manager'; shell(); });
     updateLiveFlagsBadge();
     const so = document.getElementById('signOut');
     if (so) so.addEventListener('click', signOut);
@@ -608,7 +619,7 @@
     const hist = Q.agentHistory(name).slice(-12);  // last 12 weeks present
     const camps = Q.agentCampaigns(name, period);
     const onTarget = !!a.meetsTarget;
-    const sc = a.success >= 15 ? 'ok' : a.success >= 11 ? 'warn' : 'bad';
+    const sc = sucClass(a.success);
     const totals = camps.reduce((s, c) => ({
       calls: s.calls + c.calls, leads: s.leads + c.leads,
       seller: s.seller + c.seller, rental: s.rental + c.rental, email: s.email + c.email
@@ -620,7 +631,7 @@
         <td>${c.name}</td>
         <td class="num tnum">${fmt(c.calls)}</td>
         <td class="num tnum">${fmt(c.leads)}</td>
-        <td class="num"><span class="pill ${conv >= 15 ? 'ok' : conv >= 10 ? 'warn' : 'bad'}">${conv}%</span></td>
+        <td class="num"><span class="pill ${sucClass(+conv)}">${conv}%</span></td>
       </tr>`;
     }).join('') : `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:18px">No per-campaign breakdown for this period (week pre-dates the new fetcher field).</td></tr>`;
 
@@ -862,7 +873,7 @@
 
     const top10 = agents.slice(0, 6).map((a, i) => {
       const medal = i === 0 ? 'g' : i === 1 ? 's' : i === 2 ? 'b' : 'n';
-      const sc = a.success >= 15 ? 'ok' : a.success >= 11 ? 'warn' : 'bad';
+      const sc = sucClass(a.success);
       const bar = Math.min(100, (a.calls / agents[0].calls) * 100);
       return `<tr data-agent="${a.name}" style="cursor:pointer">
         <td><div class="medal ${medal}">${i + 1}</div></td>
@@ -935,7 +946,7 @@
             <div><div class="spot-name" style="margin:0">${risk.name}</div>
             <div class="spot-stat">below success target</div></div>
           </div>
-          <div class="spot-stat" style="margin-top:14px"><b>${risk.success}%</b> success · target <b>15%</b> · ${fmt(risk.calls)} calls</div>
+          <div class="spot-stat" style="margin-top:14px"><b>${risk.success}%</b> success · target <b>${(CFG.BENCHMARKS && CFG.BENCHMARKS.rm_success_rate) || 17}%</b> · ${fmt(risk.calls)} calls</div>
         </div>
       </div>
 
@@ -994,7 +1005,7 @@
         action: 'Lock in the current dialling cadence' },
       { type: 'info', html: `<b>${bestSrc.name}</b> is the strongest channel at <b>${bestSrc.conv}% conversion</b>, well ahead of ${worstSrc.name} (${worstSrc.conv}%).`,
         action: 'Shift spend toward ' + bestSrc.name },
-      { type: 'warn', html: `<b>${risk.name}</b> is converting at just <b>${risk.success}%</b>, below the 15% target despite ${fmt(risk.calls)} calls — likely a quality not volume issue.`,
+      { type: 'warn', html: `<b>${risk.name}</b> is converting at just <b>${risk.success}%</b>, below the ${(CFG.BENCHMARKS && CFG.BENCHMARKS.rm_success_rate) || 17}% target despite ${fmt(risk.calls)} calls — likely a quality not volume issue.`,
         action: 'Schedule a call-quality coaching session' },
       { type: 'up', html: `<b>${top.name}</b> leads the floor with ${fmt(top.calls)} calls and ${top.success}% success — a useful benchmark for the team.`,
         action: 'Share top-performer call recordings' },
@@ -1242,7 +1253,7 @@
             <thead><tr><th style="width:48px">Rank</th><th>Agent</th><th class="num">Calls</th><th class="num">Leads</th><th class="num">Success</th></tr></thead>
             <tbody>${top5.map((a, i) => {
               const medal = i === 0 ? 'g' : i === 1 ? 's' : i === 2 ? 'b' : 'n';
-              const sc = a.success >= 15 ? 'ok' : a.success >= 11 ? 'warn' : 'bad';
+              const sc = sucClass(a.success);
               return `<tr data-agent="${a.name}" style="cursor:pointer">
                 <td><div class="medal ${medal}">${i + 1}</div></td>
                 <td><div class="agent-cell"><div class="avatar">${initials(a.name)}</div>
