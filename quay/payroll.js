@@ -1316,10 +1316,13 @@
 
     return `
       <div class="card">
-        <div class="card-head"><div>
-          <h3>Division Costs</h3>
-          <div class="sub">Cost-attribution pivot · PAYROLL = total hrs × rate · SDL = 1.1% levy · DIV CONTRIBUTION = hours on this division × rate</div>
-        </div></div>
+        <div class="card-head">
+          <div>
+            <h3>Division Costs</h3>
+            <div class="sub">Cost-attribution pivot · PAYROLL = total hrs × rate · SDL = 1.1% levy · DIV CONTRIBUTION = hours on this division × rate</div>
+          </div>
+          ${_exportBtn()}
+        </div>
         <div class="tbl-wrap"><table class="tbl payroll-divcosts">
           <thead><tr>${headCells.join('')}</tr></thead>
           <tbody>${body}</tbody>
@@ -1344,10 +1347,13 @@
     }).join('')
     return `
       <div class="card">
-        <div class="card-head"><div>
-          <h3>Data Quality</h3>
-          <div class="sub">Every original Employee-notes fragment that resolved to each canonical team — spot bad merges + new typos</div>
-        </div></div>
+        <div class="card-head">
+          <div>
+            <h3>Data Quality</h3>
+            <div class="sub">Every original Employee-notes fragment that resolved to each canonical team — spot bad merges + new typos</div>
+          </div>
+          ${_exportBtn()}
+        </div>
         <div class="tbl-wrap"><table class="tbl">
           <thead><tr>
             <th style="width:24%">Canonical Team</th>

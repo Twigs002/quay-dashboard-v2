@@ -71,6 +71,7 @@
 }
 
 * { box-sizing: border-box; }
+.muted { color: var(--muted); }
 html, body { margin: 0; padding: 0; }
 body {
   font-family: var(--sans);
@@ -371,7 +372,17 @@ button { font-family: inherit; cursor: pointer; }
 .medal.n { background: var(--paper-2); color: var(--slate); }
 
 /* ============================================================ TABLE */
-.tbl-wrap { overflow-x: auto; }
+.tbl-wrap {
+  overflow-x: auto;
+  /* Scroll-shadow hint — fades in on edges when the table overflows
+     horizontally, so wide Payroll pivots reveal themselves on tablets. */
+  background:
+    linear-gradient(to right, var(--card), var(--card)) left  center / 18px 100% no-repeat,
+    linear-gradient(to right, var(--card), var(--card)) right center / 18px 100% no-repeat,
+    radial-gradient(farthest-side at 0    50%, rgba(30,46,89,.10), rgba(30,46,89,0)) left  center / 14px 100% no-repeat,
+    radial-gradient(farthest-side at 100% 50%, rgba(30,46,89,.10), rgba(30,46,89,0)) right center / 14px 100% no-repeat;
+  background-attachment: local, local, scroll, scroll;
+}
 table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .tbl thead th {
   text-align: left; padding: 12px 18px; font-size: 11px; letter-spacing: .08em;
