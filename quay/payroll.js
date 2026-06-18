@@ -446,6 +446,31 @@
     return new Date(utcMillis).toISOString()
   }
 
+  // Pulls every event in [fromISO, toISO] in pages of PAGE_SIZE, since
+  // PostgREST caps a single response at 1000 rows by default. Returns the
+  // full array of events ordered by ts asc. Throws on any page error.
+  async function _fetchAllEvents(fromISO, toISO) {
+    const PAGE_SIZE = 1000
+    const all = []
+    let offset = 0
+    // Safety cap: 50k events in a pay period is wildly more than the
+    // floor would ever produce — abort rather than spin forever.
+    const MAX_PAGES = 50
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const { data, error } = await window.sb.from('events')
+        .select('staff_id, ts, dir, note')
+        .gte('ts', fromISO).lte('ts', toISO)
+        .order('ts', { ascending: true })
+        .range(offset, offset + PAGE_SIZE - 1)
+      if (error) throw error
+      if (!data || data.length === 0) break
+      all.push(...data)
+      if (data.length < PAGE_SIZE) break
+      offset += PAGE_SIZE
+    }
+    return all
+  }
+
   async function fetchShiftsForPeriod(start, end) {
     if (!window.sb) throw new Error('Supabase client not initialised')
     const fromISO = _sastDateToUtcISO(start)
@@ -453,17 +478,17 @@
 
     // Pull staff first so we can name-decorate the shifts. RLS already
     // allows authenticated reads on both tables (used by other tabs).
-    const [{ data: staff, error: sErr }, { data: events, error: eErr }] = await Promise.all([
+    // PostgREST defaults to 1000 rows per query; a full 30-day pay
+    // period for ~30 staff easily exceeds that, leaving the tail of the
+    // period unpaired and the view empty. _fetchAllEvents paginates.
+    const [staffRes, events] = await Promise.all([
       window.sb.from('staff')
         .select('id, name, designation, division, active, hourly_rate')
         .order('name', { ascending: true }),
-      window.sb.from('events')
-        .select('staff_id, ts, dir, note')
-        .gte('ts', fromISO).lte('ts', toISO)
-        .order('ts', { ascending: true }),
+      _fetchAllEvents(fromISO, toISO),
     ])
-    if (sErr) throw sErr
-    if (eErr) throw eErr
+    if (staffRes.error) throw staffRes.error
+    const staff = staffRes.data
 
     const nameById = new Map()
     const designationById = new Map()
