@@ -387,6 +387,52 @@ window.QUAY_READY = (async function () {
       });
   }
 
+  // Per-week breakdown for the weeks inside a given calendar month —
+  // used by the Monthly tab's click-to-expand drill-down.
+  function weeksInMonth(monthK) {
+    const ws = (buckets.get(monthK) || []).slice().sort((a, b) =>
+      a.weekStart.localeCompare(b.weekStart)
+    );
+    return ws.map(w => {
+      const t = _periodTotals([w]);
+      const names = new Set();
+      let seller = 0, rental = 0, email = 0, dfHours = 0;
+      (w.rm || []).forEach(a => {
+        if (a && a.name) names.add(a.name);
+        seller  += a.seller   || 0;
+        rental  += a.rental   || 0;
+        email   += a.email    || 0;
+        dfHours += a.workTime || 0;
+      });
+      (w.fancy || []).forEach(a => {
+        if (a && a.name) names.add(a.name);
+        seller  += a.seller   || 0;
+        rental  += a.rental   || 0;
+        email   += a.email    || 0;
+        dfHours += a.workTime || 0;
+      });
+      const d = new Date(w.weekStart + 'T00:00:00Z');
+      const label = d.toLocaleDateString('en-GB', {
+        day: 'numeric', month: 'short', timeZone: 'UTC',
+      }) + ' (W' + isoWeekNum(d) + ')';
+      return {
+        weekStart:   w.weekStart,
+        label,
+        calls:       t.calls,
+        leads:       t.leads,
+        successRate: +t.avgSuccess.toFixed(1),
+        seller, rental, email,
+        dfHours:     +dfHours.toFixed(2),
+        cph:         dfHours ? +(t.calls / dfHours).toFixed(1) : 0,
+        activeCount: names.size,
+      };
+    });
+  }
+  function isoWeekNum(d) {
+    const onejan = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil(((d - onejan) / 86400000 + onejan.getUTCDay() + 1) / 7);
+  }
+
   // ---- Campaigns (per-campaign rollups from Dialfire data) ------------------
   // CAVEAT: an agent's stats appear under EVERY campaign they're on. Agents
   // working multiple campaigns will be double-counted across campaign rows.
@@ -597,7 +643,7 @@ window.QUAY_READY = (async function () {
     monthlyBreakdown,
     dailyDates, dailyFor, latestDailyDate,
     MONTHS, MONTH_CALLS, MONTH_LEADS, MONTH_EMAILS, MONTH_RENTALS, MONTH_DFHOURS,
-    PERIODS, DELTAS, agentsFor, totalsFor, prevTotalsFor,
+    PERIODS, DELTAS, agentsFor, totalsFor, prevTotalsFor, weeksInMonth,
     periodElapsed, project, trailingAvg,
     agentHistory, agentCampaigns,
   };

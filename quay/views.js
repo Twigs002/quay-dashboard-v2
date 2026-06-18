@@ -540,8 +540,10 @@ window.VIEWS = (function () {
     const srPill = sr => sr >= 18 ? 'ok' : sr >= 14 ? 'warn' : 'bad';
 
     const body = rows.length ? rows.map(r => `
-      <tr>
-        <td><a href="#" class="month-link" data-month-key="${r.key}">${r.label}</a></td>
+      <tr data-month-row="${r.key}" class="month-row">
+        <td><a href="#" class="month-link" data-month-key="${r.key}">
+          <span class="month-caret" aria-hidden="true">▸</span> ${r.label}
+        </a></td>
         <td class="muted">${r.weeks} week${r.weeks === 1 ? '' : 's'}</td>
         <td>
           <span class="pill" style="background:#E7EEF4;color:var(--blue);font-size:11px;padding:3px 9px">${r.rmCount} RMs</span>
@@ -552,6 +554,11 @@ window.VIEWS = (function () {
         <td class="num tnum">${fmt(r.seller)}</td>
         <td class="num tnum">${fmt(r.rental)}</td>
         <td class="num tnum">${fmt(r.email)}</td>
+      </tr>
+      <tr data-month-detail="${r.key}" style="display:none;background:#FAFBFC">
+        <td colspan="8" style="padding:0">
+          <div class="month-weeks-host" data-month-key="${r.key}"></div>
+        </td>
       </tr>`).join('') : `
       <tr><td colspan="8" class="muted" style="text-align:center;padding:34px">
         No monthly data yet — backfill needs to land first.
@@ -583,5 +590,45 @@ window.VIEWS = (function () {
     </div>`;
   }
 
-  return { allStaff, compare, daily, manager, leadSources, monthly, renderMonthCompare };
+  // Per-week breakdown table for the Monthly tab's drill-down.
+  function monthWeeksTable(monthKey) {
+    const weeks = (Q.weeksInMonth && Q.weeksInMonth(monthKey)) || [];
+    if (!weeks.length) {
+      return `<div class="muted" style="padding:18px;text-align:center;font-size:13px">
+        No weekly data for this month.
+      </div>`;
+    }
+    const srPill = sr => sr >= 18 ? 'ok' : sr >= 14 ? 'warn' : 'bad';
+    const body = weeks.map(w => `
+      <tr>
+        <td style="font-weight:600;color:var(--ink)">${w.label}</td>
+        <td class="num tnum">${w.activeCount}</td>
+        <td class="num tnum" style="font-weight:700">${fmt(w.calls)}</td>
+        <td class="num"><span class="pill ${srPill(w.successRate)}">${w.successRate}%</span></td>
+        <td class="num tnum">${w.cph}</td>
+        <td class="num tnum">${fmt(w.seller)}</td>
+        <td class="num tnum">${fmt(w.rental)}</td>
+        <td class="num tnum">${fmt(w.email)}</td>
+        <td class="num tnum">${w.dfHours.toFixed(2)}h</td>
+      </tr>`).join('');
+    return `<div style="padding:14px 18px">
+      <div class="sub" style="font-size:12px;margin-bottom:8px">Per-week breakdown</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr>
+          <th>Week of</th>
+          <th class="num">Callers</th>
+          <th class="num">Calls</th>
+          <th class="num">Success</th>
+          <th class="num">CPH</th>
+          <th class="num">Seller</th>
+          <th class="num">Rental</th>
+          <th class="num">Emails</th>
+          <th class="num">Dialler hrs</th>
+        </tr></thead>
+        <tbody>${body}</tbody>
+      </table></div>
+    </div>`;
+  }
+
+  return { allStaff, compare, daily, manager, leadSources, monthly, renderMonthCompare, monthWeeksTable };
 })();

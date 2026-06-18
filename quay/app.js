@@ -287,7 +287,7 @@
     else if (tab === 'staff')    { host.innerHTML = V.allStaff(period); staffWire(); }
     else if (tab === 'compare')  { host.innerHTML = V.compare(); segWire(); }
     else if (tab === 'daily')    { host.innerHTML = V.daily(period, dailyPicked); dailyWire(); }
-    else if (tab === 'monthly')  host.innerHTML = V.monthly();
+    else if (tab === 'monthly')  { host.innerHTML = V.monthly(); monthlyWire(); }
     else if (tab === 'manager')  { host.innerHTML = V.manager(period); managerWire(); }
     else if (tab === 'sources')  host.innerHTML = V.leadSources(period);
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
@@ -365,6 +365,33 @@
       mb.addEventListener('change', redraw);
     }
   }
+  // Click a month label to inline-expand its per-week breakdown.
+  function monthlyWire() {
+    document.querySelectorAll('a.month-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const key = link.dataset.monthKey;
+        const detail = document.querySelector(`tr[data-month-detail="${key}"]`);
+        const caret = link.querySelector('.month-caret');
+        if (!detail) return;
+        const isOpen = detail.style.display !== 'none';
+        if (isOpen) {
+          detail.style.display = 'none';
+          if (caret) caret.textContent = '▸';
+          return;
+        }
+        // Lazy-render the inner table on first open.
+        const host = detail.querySelector('.month-weeks-host');
+        if (host && !host.dataset.rendered) {
+          host.innerHTML = V.monthWeeksTable(key);
+          host.dataset.rendered = '1';
+        }
+        detail.style.display = '';
+        if (caret) caret.textContent = '▾';
+      });
+    });
+  }
+
   function dailyWire() {
     const available = (Q.dailyDates || []).slice();      // newest first
     const currentISO = () => new Date().toISOString().slice(0, 10);
