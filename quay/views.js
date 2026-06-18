@@ -156,62 +156,120 @@ window.VIEWS = (function () {
   }
 
   // ---------------------------------------------------- COMPARE
+  // Month vs Month is data-driven from monthlyBreakdown(). The picker
+  // defaults to (latest, latest-1); on change the table re-renders
+  // in-place (no full route shell rebuild — handled in app.js segWire).
   function compare() {
-    const A = { calls: 7396, leads: 498, success: 17.1, leadsE: 196, leadsR: 142 };
-    const B = { calls: 6810, leads: 461, success: 15.9, leadsE: 178, leadsR: 131 };
-    const metric = (label, a, b, suffix = '') => {
-      const diff = a - b, pct = ((diff / b) * 100).toFixed(1);
-      const up = diff >= 0;
-      return `<tr>
-        <td style="font-weight:600;color:var(--ink)">${label}</td>
-        <td class="num tnum">${fmt(a)}${suffix}</td>
-        <td class="num tnum">${fmt(b)}${suffix}</td>
-        <td class="num"><span class="delta ${up ? 'up' : 'down'}">${up ? I.up : I.down}${Math.abs(pct)}%</span></td>
-      </tr>`;
-    };
+    const months = (Q.monthlyBreakdown && Q.monthlyBreakdown()) || [];
+    // Default selection: most recent vs the month before.
+    const defA = months[0] ? months[0].key : '';
+    const defB = months[1] ? months[1].key : (months[0] ? months[0].key : '');
+
+    const monthOpts = (selected) => months.map(m =>
+      `<option value="${m.key}" ${m.key === selected ? 'selected' : ''}>${m.label}</option>`).join('');
+
+    // Week vs Week pulls from the existing PERIODS — this-week vs last-week.
+    const wA = Q.totalsFor('this-week');
+    const wB = Q.totalsFor('last-week');
+
     return `
     <div class="tab-view">
       <div class="card">
-        <div class="panel">
+        <div class="panel" style="gap:18px;flex-wrap:wrap">
           <div class="seg" id="cmpSeg">
-            <button class="active">${I.calendar} Week vs Week</button>
-            <button>${I.cal2} Month vs Month</button>
+            <button data-cmp-mode="week" class="active">${I.calendar} Week vs Week</button>
+            <button data-cmp-mode="month">${I.cal2} Month vs Month</button>
           </div>
-          <div class="field"><label>Period A</label><select><option>W23 · This week</option><option>W22</option></select></div>
-          <div class="field"><label>Period B</label><select><option>W21 · Week before</option><option>W22</option></select></div>
-          <button class="btn btn-primary">${I.scale} Compare</button>
         </div>
       </div>
 
-      <div class="row g-2 mt">
-        ${cmpHero('Week A', 'W23 · 1–5 Jun', A, 'win')}
-        ${cmpHero('Week B', 'W21 · 18–22 May', B, '')}
+      <!-- WEEK vs WEEK panel -->
+      <div id="cmpWeekPanel">
+        <div class="card mt">
+          <div class="card-head"><div><h3>This week vs Last week</h3><div class="sub">Calls, leads & success rate</div></div></div>
+          ${cmpTable([
+            ['Active callers',   wA.active,        wB.active,        { kind: 'count' }],
+            ['Total calls',      wA.calls,         wB.calls,         { kind: 'count' }],
+            ['Total leads',      wA.leads,         wB.leads,         { kind: 'count' }],
+            ['Avg success rate', wA.avgSuccess,    wB.avgSuccess,    { kind: 'pct',  suffix: '%' }],
+          ], 'This week', 'Last week')}
+        </div>
       </div>
 
-      <div class="card mt">
-        <div class="card-head"><div><h3>Side-by-side breakdown</h3><div class="sub">Week A vs Week B · variance</div></div></div>
-        <div class="tbl-wrap"><table class="tbl">
-          <thead><tr><th>Metric</th><th class="num">Week A</th><th class="num">Week B</th><th class="num">Change</th></tr></thead>
-          <tbody>
-            ${metric('Total calls', A.calls, B.calls)}
-            ${metric('Total leads', A.leads, B.leads)}
-            ${metric('Avg success rate', A.success, B.success, '%')}
-            ${metric('Email leads', A.leadsE, B.leadsE)}
-            ${metric('Rental leads', A.leadsR, B.leadsR)}
-          </tbody>
-        </table></div>
+      <!-- MONTH vs MONTH panel -->
+      <div id="cmpMonthPanel" style="display:none">
+        <div class="card mt">
+          <div class="panel" style="gap:18px;flex-wrap:wrap;align-items:flex-end">
+            <div class="field"><label>Month A</label>
+              <select id="cmpMonthA">${monthOpts(defA)}</select>
+            </div>
+            <div class="field"><label>Month B</label>
+              <select id="cmpMonthB">${monthOpts(defB)}</select>
+            </div>
+          </div>
+          <div id="cmpMonthBody">${renderMonthCompare(months, defA, defB)}</div>
+        </div>
       </div>
     </div>`;
   }
-  function cmpHero(tag, sub, d, cls) {
-    return `<div class="card spot ${cls}">
-      <div class="eyebrow">${tag} · ${sub}</div>
-      <div style="display:flex;gap:28px;flex-wrap:wrap;margin-top:14px">
-        <div><div class="kpi-label" style="margin:0">Calls</div><div class="spot-name" style="margin-top:2px">${fmt(d.calls)}</div></div>
-        <div><div class="kpi-label" style="margin:0">Leads</div><div class="spot-name" style="margin-top:2px">${fmt(d.leads)}</div></div>
-        <div><div class="kpi-label" style="margin:0">Success</div><div class="spot-name" style="margin-top:2px">${d.success}%</div></div>
-      </div>
-    </div>`;
+
+  // Renders just the inner month-comparison body — used both on initial
+  // mount and when the month dropdowns change (wired in app.js segWire).
+  function renderMonthCompare(months, keyA, keyB) {
+    const lookup = new Map(months.map(m => [m.key, m]));
+    const a = lookup.get(keyA);
+    const b = lookup.get(keyB);
+    if (!a || !b) {
+      return `<div class="muted" style="padding:24px;text-align:center;font-size:13.5px">
+        Pick two months to compare.
+      </div>`;
+    }
+    return cmpTable([
+      ['Weeks of data',    a.weeks,       b.weeks,       { kind: 'count' }],
+      ['Active callers',   a.activeCount, b.activeCount, { kind: 'count' }],
+      ['Total calls',      a.calls,       b.calls,       { kind: 'count' }],
+      ['Avg success rate', a.successRate, b.successRate, { kind: 'pct',  suffix: '%' }],
+      ['Avg calls/hr',     a.cph,         b.cph,         { kind: 'rate', decimals: 1 }],
+      ['Seller leads',     a.seller,      b.seller,      { kind: 'count' }],
+      ['Rental leads',     a.rental,      b.rental,      { kind: 'count' }],
+      ['Emails collected', a.email,       b.email,       { kind: 'count' }],
+      ['Dialler hours',    a.dfHours,     b.dfHours,     { kind: 'hours' }],
+    ], a.label, b.label);
+  }
+
+  // One reusable table renderer for both Week and Month comparisons.
+  // The Change column shows absolute delta with a unit-appropriate
+  // suffix — never a misleading % on raw hours.
+  function cmpTable(rows, labelA, labelB) {
+    const fmtVal = (v, opts) => {
+      if (opts.kind === 'pct')   return Number(v).toFixed(1) + (opts.suffix || '%');
+      if (opts.kind === 'hours') return Number(v).toFixed(2) + 'h';
+      if (opts.kind === 'rate')  return Number(v).toFixed(opts.decimals ?? 1);
+      return fmt(Math.round(Number(v) || 0));
+    };
+    const fmtDelta = (av, bv, opts) => {
+      const diff = Number(av) - Number(bv);
+      const sign = diff > 0 ? '+' : '';
+      if (opts.kind === 'pct')   return sign + diff.toFixed(1) + ' pts';
+      if (opts.kind === 'hours') return sign + diff.toFixed(2) + 'h';
+      if (opts.kind === 'rate')  return sign + diff.toFixed(opts.decimals ?? 1);
+      return sign + fmt(Math.round(diff));
+    };
+    const body = rows.map(([label, av, bv, opts]) => {
+      const diff = Number(av) - Number(bv);
+      const cls = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat';
+      const ic  = diff > 0 ? I.up : diff < 0 ? I.down : '';
+      return `<tr>
+        <td style="font-weight:600;color:var(--ink)">${label}</td>
+        <td class="num tnum">${fmtVal(av, opts)}</td>
+        <td class="num tnum">${fmtVal(bv, opts)}</td>
+        <td class="num"><span class="delta ${cls}">${ic}${fmtDelta(av, bv, opts)}</span></td>
+      </tr>`;
+    }).join('');
+    return `<div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Metric</th><th class="num">${labelA}</th><th class="num">${labelB}</th><th class="num">Change</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table></div>`;
   }
 
   // ---------------------------------------------------- DAILY
@@ -525,5 +583,5 @@ window.VIEWS = (function () {
     </div>`;
   }
 
-  return { allStaff, compare, daily, manager, leadSources, monthly };
+  return { allStaff, compare, daily, manager, leadSources, monthly, renderMonthCompare };
 })();

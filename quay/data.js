@@ -206,6 +206,16 @@ window.QUAY_READY = (async function () {
   const DELTAS = {};
   Object.keys(PERIODS).forEach(k => { DELTAS[k] = _delta(k); });
 
+  // Totals for the period immediately preceding `periodKey` — used by the
+  // Leadership "progress vs last period" bars instead of hard-coded targets.
+  function prevTotalsFor(periodKey) {
+    const p = PERIODS[periodKey] || PERIODS['this-week'];
+    const prev = weeks.slice((p.offset || 0) + p.weeks,
+                              (p.offset || 0) + p.weeks * 2);
+    if (!prev.length) return { calls: 0, leads: 0, avgSuccess: 0, active: 0 };
+    return _periodTotals(prev);
+  }
+
   // ---- Trend series (weekly, monthly) -------------------------------------
   const trendWeeks = weeks.slice(0, 12).reverse();   // oldest → newest
   const WEEKS = trendWeeks.map(w => {
@@ -327,22 +337,25 @@ window.QUAY_READY = (async function () {
         const rmNames = new Set();
         const fancyNames = new Set();
         let calls = 0, seller = 0, rental = 0, email = 0, leads = 0;
+        let dfHours = 0;
         ws.forEach(w => {
           (w.rm || []).forEach(a => {
             if (a && a.name) rmNames.add(a.name);
-            calls  += a.calls  || 0;
-            seller += a.seller || 0;
-            rental += a.rental || 0;
-            email  += a.email  || 0;
-            leads  += a.leads  || 0;
+            calls   += a.calls    || 0;
+            seller  += a.seller   || 0;
+            rental  += a.rental   || 0;
+            email   += a.email    || 0;
+            leads   += a.leads    || 0;
+            dfHours += a.workTime || 0;
           });
           (w.fancy || []).forEach(a => {
             if (a && a.name) fancyNames.add(a.name);
-            calls  += a.calls  || 0;
-            seller += a.seller || 0;
-            rental += a.rental || 0;
-            email  += a.email  || 0;
-            leads  += a.leads  || 0;
+            calls   += a.calls    || 0;
+            seller  += a.seller   || 0;
+            rental  += a.rental   || 0;
+            email   += a.email    || 0;
+            leads   += a.leads    || 0;
+            dfHours += a.workTime || 0;
           });
         });
         // Weighted-by-calls success rate so a big-volume week doesn't get
@@ -361,12 +374,15 @@ window.QUAY_READY = (async function () {
           weeks: ws.length,
           rmCount: rmNames.size,
           fancyCount: fancyNames.size,
+          activeCount: rmNames.size + fancyNames.size,
           calls,
           seller,
           rental,
           email,
           leads,
           successRate,
+          dfHours: +dfHours.toFixed(2),
+          cph: dfHours ? +(calls / dfHours).toFixed(1) : 0,
         };
       });
   }
@@ -581,7 +597,7 @@ window.QUAY_READY = (async function () {
     monthlyBreakdown,
     dailyDates, dailyFor, latestDailyDate,
     MONTHS, MONTH_CALLS, MONTH_LEADS, MONTH_EMAILS, MONTH_RENTALS, MONTH_DFHOURS,
-    PERIODS, DELTAS, agentsFor, totalsFor,
+    PERIODS, DELTAS, agentsFor, totalsFor, prevTotalsFor,
     periodElapsed, project, trailingAvg,
     agentHistory, agentCampaigns,
   };
