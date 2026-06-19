@@ -874,20 +874,14 @@
     return `
     <div class="tab-view">
       <div class="card card-pad">
-        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between">
-          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-            <div class="field">
-              <label>Pay period</label>
-              <select id="payrollPeriod" style="min-width:240px">
-                ${opts}
-              </select>
-            </div>
-            <div class="muted" style="font-size:12px;max-width:380px;line-height:1.5">
-              Quay 1 pay periods run the 21st through the 20th of the next month.
-              Open shifts (still clocked in) are excluded until they close.
-            </div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px">
+          <div class="field" style="margin-bottom:0">
+            <label>Pay period</label>
+            <select id="payrollPeriod" style="min-width:240px">
+              ${opts}
+            </select>
           </div>
-          <div class="seg" id="payrollSubNav">${subNav}</div>
+          <div class="seg" id="payrollSubNav" style="flex:1 1 auto">${subNav}</div>
         </div>
       </div>
       <div id="payrollBody" class="mt">${body}</div>
