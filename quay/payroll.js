@@ -848,8 +848,6 @@
       ['byDivision', 'By Division'],
       ['divisionCosts', 'Division Costs'],
       ['earnings', 'Earnings'],
-      ['dataQuality', 'Data Quality'],
-      ['config', 'Config'],
     ]
     const activeView = (state && state.activeView) || 'allShifts'
     const subNav = subTabs.map(([id, label]) =>
@@ -857,12 +855,7 @@
     ).join('')
 
     let body = ''
-    // Config sub-view doesn't need shifts/allocations — render it directly
-    // regardless of fetch state so the admin can still edit reference data
-    // while a long shift fetch is in flight.
-    if (activeView === 'config') {
-      body = V.payrollConfig(state)
-    } else if (state && state.loading) {
+    if (state && state.loading) {
       body = `<div class="card card-pad" style="text-align:center;color:var(--muted);padding:40px">Loading shifts for ${esc(curLabel)}…</div>`
     } else if (state && state.error) {
       body = `<div class="card card-pad" style="color:var(--red)">Failed to load: ${esc(state.error)}</div>`
@@ -876,7 +869,6 @@
       else if (activeView === 'byDivision') body = V.payrollByDivision(alloc.empTeamHours, alloc.empTotalHours)
       else if (activeView === 'divisionCosts') body = V.payrollDivisionCosts(alloc.empTeamHours, alloc.empTotalHours, alloc.empMeta)
       else if (activeView === 'earnings') body = V.payrollEarnings(alloc.empTotalHours, alloc.empMeta)
-      else if (activeView === 'dataQuality') body = V.payrollDataQuality(alloc.rawVariantsPerTeam)
     }
 
     return `

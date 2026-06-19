@@ -428,16 +428,10 @@
         shell();
       });
     });
-    // Wire the Config sub-view's add/edit/delete/reorder buttons (only
-    // present in the DOM when activeView === 'config').
-    if (payrollState.activeView === 'config') {
-      payrollConfigWire();
-    }
     // First mount: hydrate config from DB, then kick off the fetch if
     // we haven't already. Config load + shift fetch run in parallel so
     // tab open isn't bottle-necked by either.
-    if (payrollState.shifts === null && !payrollState.loading
-        && payrollState.activeView !== 'config') {
+    if (payrollState.shifts === null && !payrollState.loading) {
       payrollFetchAndRender();
     }
   }
