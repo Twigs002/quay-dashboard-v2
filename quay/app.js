@@ -125,7 +125,11 @@
   let loginUser = localStorage.getItem('quay_dash_last_user') || '';
 
   function renderLogin() {
-    const dots = [0,1,2,3].map(i =>
+    // 6-digit PIN, matched to quay-clock (admin-set-pin Edge Function
+    // refuses anything that isn't /^\d{6}$/). Hard-coded the literal
+    // here rather than DRYing because the dashboard has no shared
+    // constants module and one extra dot in an array is cheap.
+    const dots = [0,1,2,3,4,5].map(i =>
       `<div class="pin-dot ${i < pinBuf.length ? 'filled' : ''}"></div>`).join('');
     document.getElementById('app').innerHTML = `
       <div class="dash-login ${pinErr ? 'pin-error' : ''}">
@@ -151,10 +155,10 @@
     if (u) u.addEventListener('input', () => { loginUser = u.value; });
     document.querySelectorAll('.dash-login .key[data-d]').forEach(b =>
       b.addEventListener('click', () => {
-        if (pinBuf.length >= 4) return;
+        if (pinBuf.length >= 6) return;
         pinBuf += b.dataset.d; pinErr = false; loginError = '';
         renderLogin();
-        if (pinBuf.length === 4) submitLogin();
+        if (pinBuf.length === 6) submitLogin();
       }));
     const back = document.querySelector('.dash-login .key[data-back]');
     if (back) back.addEventListener('click', () => { pinBuf = pinBuf.slice(0, -1); renderLogin(); });
@@ -3093,7 +3097,7 @@
 
         // If the admin entered a new PIN, route it through admin-set-pin
         // (Edge Function) which uses the service role to reset the auth password.
-        if (f.pin && f.pin.length === 4) {
+        if (f.pin && f.pin.length === 6) {
           const { data: { session: s } } = await window.sb.auth.getSession();
           if (!s) throw new Error('Not signed in');
           const res = await fetch(`${CFG.SUPABASE_URL}/functions/v1/admin-set-pin`, {
