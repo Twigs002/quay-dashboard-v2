@@ -2494,12 +2494,12 @@
       </div>
       <div class="row g-2-1" style="gap:14px">
         <div class="kpi" style="padding:14px 16px">
-          <div class="kpi-lbl">Clocked in today</div>
+          <div class="kpi-label">Clocked in today</div>
           <div class="kpi-val tnum"><span class="pill ${inTone}" style="font-size:18px;font-weight:800;padding:6px 12px">${clockedInToday}/${totalStaff}</span></div>
           <div class="kpi-foot">staff on the clock right now</div>
         </div>
         <div class="kpi" style="padding:14px 16px">
-          <div class="kpi-lbl">Punctual this week</div>
+          <div class="kpi-label">Punctual this week</div>
           <div class="kpi-val tnum"><span class="pill ${punctTone}" style="font-size:18px;font-weight:800;padding:6px 12px">${punctuality}%</span></div>
           <div class="kpi-foot">on-time days / scheduled days · ${schedule.evaluatedDays} weekday${schedule.evaluatedDays===1?'':'s'} so far</div>
         </div>

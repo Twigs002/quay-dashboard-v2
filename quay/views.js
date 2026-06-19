@@ -81,8 +81,6 @@ window.VIEWS = (function () {
       <div class="card">
         <div class="panel" style="justify-content:space-between">
           <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
-            <div class="field"><label>From</label><input type="date" value="2026-06-01"></div>
-            <div class="field"><label>To</label><input type="date" value="2026-06-05"></div>
             <div class="field"><label>Team</label><select id="staffTeamFilter">
               ${selOpt('all', 'All teams')}
               ${selOpt('RM', 'RM')}
@@ -613,8 +611,8 @@ window.VIEWS = (function () {
         </a></td>
         <td class="muted">${r.weeks} week${r.weeks === 1 ? '' : 's'}</td>
         <td>
-          <span class="pill" style="background:#E7EEF4;color:var(--blue);font-size:11px;padding:3px 9px">${r.rmCount} RMs</span>
-          <span class="pill" style="background:#F3EBF8;color:#5A4FCF;font-size:11px;padding:3px 9px;margin-left:6px">${r.fancyCount} Fancy</span>
+          <span class="pill rm" style="font-size:11px;padding:3px 9px">${r.rmCount} RMs</span>
+          <span class="pill fancy" style="font-size:11px;padding:3px 9px;margin-left:6px">${r.fancyCount} Fancy</span>
         </td>
         <td class="num tnum" style="font-weight:700">${fmt(r.calls)}</td>
         <td class="num"><span class="pill ${srPill(r.successRate)}">${r.successRate}%</span></td>
