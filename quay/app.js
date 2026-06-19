@@ -2852,15 +2852,15 @@
             <label class="field"><span>Username (login id)</span>
               <input type="text" value="${escapeHtml(f.id)}" disabled>
             </label>
-            <label class="field"><span>PIN (4 digits — leave blank to keep current)</span>
-              <input id="tmPin" type="text" inputmode="numeric" maxlength="4" value="${escapeHtml(f.pin)}" placeholder="••••">
+            <label class="field"><span>PIN (6 digits — leave blank to keep current)</span>
+              <input id="tmPin" type="text" inputmode="numeric" maxlength="6" value="${escapeHtml(f.pin)}" placeholder="••••••">
             </label>` : `
             <label class="field"><span>Username</span>
               <input id="tmId" type="text" value="${escapeHtml(f.id)}" placeholder="auto from name" autocapitalize="off">
               <div class="muted" style="font-size:11px;margin-top:3px">Lower-case, no spaces. Auto-generated from name; edit to override.</div>
             </label>
-            <label class="field"><span>PIN (4 digits, they'll use this to log in)</span>
-              <input id="tmPin" type="text" inputmode="numeric" maxlength="4" value="${escapeHtml(f.pin)}" placeholder="4 digits">
+            <label class="field"><span>PIN (6 digits, they'll use this to log in)</span>
+              <input id="tmPin" type="text" inputmode="numeric" maxlength="6" value="${escapeHtml(f.pin)}" placeholder="6 digits">
             </label>
           `}
           <label class="field"><span>Designation</span>
@@ -2951,7 +2951,7 @@
     });
     if (idIn) idIn.addEventListener('input', () => { idTouched = true; f.id = idIn.value; });
     if (pin)  pin.addEventListener('input', () => {
-      f.pin = pin.value.replace(/\D/g, '').slice(0, 4); pin.value = f.pin;
+      f.pin = pin.value.replace(/\D/g, '').slice(0, 6); pin.value = f.pin;
     });
     document.getElementById('tmDesignation').addEventListener('change', (e) => {
       f.designation = e.target.value;
@@ -2982,8 +2982,8 @@
     if (!f) return;
     f.error = '';
     if (!f.name.trim()) { f.error = 'Name is required'; shell(); return; }
-    if (f.mode === 'add' && (!f.pin || f.pin.length !== 4)) {
-      f.error = 'PIN must be 4 digits';
+    if (f.mode === 'add' && (!f.pin || f.pin.length !== 6)) {
+      f.error = 'PIN must be 6 digits';
       shell(); return;
     }
     f.busy = true; shell();
