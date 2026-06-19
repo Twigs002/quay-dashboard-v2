@@ -1565,8 +1565,11 @@
           const total = ETOT.get(emp) || 0;
           const payroll = rate != null ? total * rate : null;
           const sdl = payroll != null ? payroll * SDL_RATE : null;
-          const contrib = rate != null ? hrs * rate : null;
           const pct = total > 0 ? (hrs / total) : 0;
+          // Match bookkeeper worksheet formula: ((PAYROLL + SDL) × PERCENTAGE) / 2
+          const contrib = (payroll != null && sdl != null)
+            ? ((payroll + sdl) * pct) / 2
+            : null;
           return { emp, payroll, sdl, contrib, pct };
         }).sort((a, b) => (b.contrib || 0) - (a.contrib || 0));
         const row = [team];
