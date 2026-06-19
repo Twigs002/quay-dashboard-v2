@@ -808,22 +808,23 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
   }
 
+  // SAST-anchored — must not vary with the viewer's browser timezone.
   function _fmtDateLabel(iso) {
     if (!iso) return ''
     const d = new Date(iso)
     if (!Number.isFinite(d.getTime())) return ''
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const dd = String(d.getDate()).padStart(2, '0')
-    return `${y}-${m}-${dd}`
+    const { y, m, d: day } = _sastYMD(d)
+    return `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
   }
   function _fmtTimeLabel(iso) {
     if (!iso) return ''
     const d = new Date(iso)
     if (!Number.isFinite(d.getTime())) return ''
-    const hh = String(d.getHours()).padStart(2, '0')
-    const mm = String(d.getMinutes()).padStart(2, '0')
-    return `${hh}:${mm}`
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: SAST_TZ, hour: '2-digit', minute: '2-digit', hour12: false,
+    }).formatToParts(d)
+    const get = k => parts.find(p => p.type === k).value
+    return `${get('hour')}:${get('minute')}`
   }
   function _fmtZAR(amount) {
     if (amount == null || !Number.isFinite(Number(amount))) return ''
@@ -1241,9 +1242,16 @@
     headCells.push('<th class="num">TOTAL FANCY/LN</th>')
     headCells.push('<th>NOTES</th>')
 
-    // Running grand-totals (bottom row)
-    let gtPayroll = new Array(maxHead).fill(0)
-    let gtSdl = new Array(maxHead).fill(0)
+    // Running grand-totals (bottom row).
+    // PAYROLL and SDL are floor-level totals — each agent contributes once
+    // regardless of how many division rows they appear on. (Per-slot sums
+    // would multiply every agent's pay by the number of divisions they
+    // touched, which is the bug we hit.) DIV CONTRIBUTION is genuinely
+    // per-slot — slot i = "cost flowed to the i-th-rank agent across all
+    // divisions" — and stays an array.
+    const gtCountedEmps = new Set()
+    let gtPayrollTotal = 0
+    let gtSdlTotal = 0
     let gtContrib = new Array(maxHead).fill(0)
     let gtRowTotal = 0
 
@@ -1279,8 +1287,11 @@
           cells.push(`<td class="num tnum">${x.sdl == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(x.sdl)}</td>`)
           cells.push(`<td class="num tnum">${(x.pct * 100).toFixed(1)}%</td>`)
           cells.push(`<td class="num tnum">${x.contrib == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(x.contrib)}</td>`)
-          if (x.payroll != null) gtPayroll[i] += x.payroll
-          if (x.sdl != null)     gtSdl[i] += x.sdl
+          if (!gtCountedEmps.has(x.emp)) {
+            if (x.payroll != null) gtPayrollTotal += x.payroll
+            if (x.sdl != null)     gtSdlTotal += x.sdl
+            gtCountedEmps.add(x.emp)
+          }
           if (x.contrib != null) {
             gtContrib[i] += x.contrib
             rowTotal += x.contrib
@@ -1313,12 +1324,13 @@
       if (hasNoTeam) body += rowFor('(No team noted)', 'Shifts where the Employee notes field was blank')
     }
 
-    // Grand-total row
+    // Grand-total row. PAYROLL/SDL floor totals print once in slot 0;
+    // the per-slot CONTRIB sums print across all slots.
     const totalCells = ['<td><b>GRAND TOTAL</b></td>']
     for (let i = 0; i < maxHead; i++) {
       totalCells.push('<td></td>')
-      totalCells.push(`<td class="num tnum">${gtPayroll[i] ? _fmtZAR(gtPayroll[i]) : ''}</td>`)
-      totalCells.push(`<td class="num tnum">${gtSdl[i] ? _fmtZAR(gtSdl[i]) : ''}</td>`)
+      totalCells.push(`<td class="num tnum">${i === 0 && gtPayrollTotal ? _fmtZAR(gtPayrollTotal) : ''}</td>`)
+      totalCells.push(`<td class="num tnum">${i === 0 && gtSdlTotal ? _fmtZAR(gtSdlTotal) : ''}</td>`)
       totalCells.push('<td></td>')
       totalCells.push(`<td class="num tnum">${gtContrib[i] ? _fmtZAR(gtContrib[i]) : ''}</td>`)
     }

@@ -1552,8 +1552,11 @@
       header.push('Total Fancy/LN');
       header.push('Notes');
       const out = [header];
-      const gtPayroll = new Array(maxHead).fill(0);
-      const gtSdl = new Array(maxHead).fill(0);
+      // Floor-level PAYROLL/SDL totals (each agent once) + per-slot CONTRIB.
+      // Mirrors the on-screen Division Costs grand-total semantics.
+      const gtCountedEmps = new Set();
+      let gtPayrollTotal = 0;
+      let gtSdlTotal = 0;
       const gtContrib = new Array(maxHead).fill(0);
       let gtRowTotal = 0;
       const fmt2 = n => (n == null ? '' : Number(n).toFixed(2));
@@ -1582,8 +1585,11 @@
             row.push(fmt2(x.sdl));
             row.push((x.pct * 100).toFixed(1) + '%');
             row.push(fmt2(x.contrib));
-            if (x.payroll != null) gtPayroll[i] += x.payroll;
-            if (x.sdl != null)     gtSdl[i] += x.sdl;
+            if (!gtCountedEmps.has(x.emp)) {
+              if (x.payroll != null) gtPayrollTotal += x.payroll;
+              if (x.sdl != null)     gtSdlTotal += x.sdl;
+              gtCountedEmps.add(x.emp);
+            }
             if (x.contrib != null) { gtContrib[i] += x.contrib; rowTotal += x.contrib; }
           } else {
             row.push(''); row.push(''); row.push(''); row.push(''); row.push('');
@@ -1608,10 +1614,14 @@
         nonCanon.forEach(t => out.push(rowFor(t, 'Not in master list')));
         if (teamEmp.has('(No team noted)')) out.push(rowFor('(No team noted)', 'Shifts where the Employee notes field was blank'));
       }
-      // Grand-total row
+      // Grand-total row — floor PAYROLL/SDL in slot 0 only, per-slot CONTRIB.
       const tot = ['GRAND TOTAL'];
       for (let i = 0; i < maxHead; i++) {
-        tot.push(''); tot.push(fmt2(gtPayroll[i])); tot.push(fmt2(gtSdl[i])); tot.push(''); tot.push(fmt2(gtContrib[i]));
+        tot.push('');
+        tot.push(i === 0 ? fmt2(gtPayrollTotal) : '');
+        tot.push(i === 0 ? fmt2(gtSdlTotal) : '');
+        tot.push('');
+        tot.push(fmt2(gtContrib[i]));
       }
       tot.push(fmt2(gtRowTotal));
       tot.push('');
