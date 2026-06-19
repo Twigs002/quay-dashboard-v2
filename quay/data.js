@@ -676,6 +676,24 @@ window.QUAY_READY = (async function () {
     return Object.values(byCamp).sort((a, b) => b.calls - a.calls);
   }
 
+  // Map a period key onto a {fromISO, toISO} range, used by Supabase
+  // queries that need a date filter (e.g. clock_out_reports lookups for
+  // the All Staff "LN & Assistants" sub-tab). Earliest day in the period's
+  // week-slice → start; latest weekStart + 7 days → end.
+  function periodDateRange(periodKey) {
+    const slice = _sliceFor(periodKey);
+    if (!slice.length) {
+      const to = new Date();
+      const from = new Date(to.getTime() - 30 * 86400 * 1000);
+      return { fromISO: from.toISOString(), toISO: to.toISOString() };
+    }
+    const earliest = slice[slice.length - 1].weekStart;
+    const latest   = slice[0].weekStart;
+    const fromISO = new Date(earliest + 'T00:00:00Z').toISOString();
+    const toMs    = new Date(latest + 'T00:00:00Z').getTime() + 7 * 86400 * 1000;
+    return { fromISO, toISO: new Date(toMs).toISOString() };
+  }
+
   window.QUAY = {
     AGENTS: agentsForWeek(weeks[0]),  // current week, sorted natural
     WEEKS, WEEK_CALLS, WEEK_SUCCESS, trendSeriesFor,
@@ -686,6 +704,7 @@ window.QUAY_READY = (async function () {
     PERIODS, DELTAS, agentsFor, totalsFor, prevTotalsFor, weeksInMonth,
     periodElapsed, project, trailingAvg,
     agentHistory, agentCampaigns,
+    periodDateRange,
   };
   return window.QUAY;
 })();

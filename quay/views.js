@@ -88,8 +88,9 @@ window.VIEWS = (function () {
             </select></div>
           </div>
           <div class="seg" id="staffSeg">
-            <button class="active" data-view="overall">Overall Report</button>
-            <button data-view="per">Per Caller</button>
+            <button class="active" data-view="overall">Callers · Overall</button>
+            <button data-view="per">Callers · Per agent</button>
+            <button data-view="ln">LN &amp; Assistants</button>
           </div>
         </div>
       </div>
@@ -128,7 +129,172 @@ window.VIEWS = (function () {
       </div>
 
       <div class="mt staff-cards" id="staffPerCaller" style="display:none">${cards}</div>
+
+      <!-- LN & Assistants — Supabase-fed, hydrated by app.js lnReportsLoad() -->
+      <div class="mt" id="staffLnReports" style="display:none">
+        <div class="card card-pad" style="color:var(--muted);text-align:center;padding:40px">
+          Click <b>LN &amp; Assistants</b> above to load this period's end-of-day reports.
+        </div>
+      </div>
     </div>`;
+  }
+
+  // ---- LN & Assistants — end-of-day report submissions ---------------
+  // Renders a summary table (one row per staff member) + a chronological
+  // detail list. Data comes from public.clock_out_reports via Supabase;
+  // app.js owns the fetch + caches per-period.
+  function lnReports(reports) {
+    if (!Array.isArray(reports) || reports.length === 0) {
+      return `<div class="card card-pad" style="color:var(--muted);text-align:center;padding:40px">
+        No end-of-day reports submitted in this period.
+      </div>`;
+    }
+    // Aggregate per staff_id.
+    const byStaff = new Map();
+    reports.forEach(r => {
+      const k = r.staff_id;
+      if (!byStaff.has(k)) {
+        byStaff.set(k, {
+          staff_id: k,
+          name: (r.staff && r.staff.name) || r.staff_id,
+          designation: r.designation || '',
+          divisions: new Set(),
+          reports: 0,
+          hs_tasks: 0, hs_calls: 0, hs_emails: 0, hs_was: 0, hs_answered: 0, hs_leads: 0, hs_recon: 0,
+          df_calls: 0, df_emails: 0, df_leads: 0, df_hours: 0,
+          wa_sent: 0, wa_resp: 0, wa_leads: 0,
+        });
+      }
+      const t = byStaff.get(k);
+      if (r.division) t.divisions.add(r.division);
+      t.reports     += 1;
+      t.hs_tasks    += r.hs_tasks_completed   || 0;
+      t.hs_calls    += r.hs_calls_made        || 0;
+      t.hs_emails   += r.hs_emails_sent       || 0;
+      t.hs_was      += r.hs_whatsapps_sent    || 0;
+      t.hs_answered += r.hs_answered_contacts || 0;
+      t.hs_leads    += r.hs_leads_vals        || 0;
+      t.hs_recon    += r.hs_reconverted_leads || 0;
+      t.df_calls    += r.df_calls             || 0;
+      t.df_emails   += r.df_email_successes   || 0;
+      t.df_leads    += r.df_leads_vals        || 0;
+      t.df_hours    += Number(r.df_hours      || 0);
+      t.wa_sent     += r.wa_sent              || 0;
+      t.wa_resp     += r.wa_responses         || 0;
+      t.wa_leads    += r.wa_leads_vals        || 0;
+    });
+    const summary = Array.from(byStaff.values()).sort((a, b) => b.reports - a.reports || a.name.localeCompare(b.name));
+
+    const designationPill = (d) => {
+      const lc = (d || '').toLowerCase();
+      const cls = lc === 'ln' ? 'rm' : (lc === 'assistant' ? 'fancy' : '');
+      const label = lc === 'ln' ? 'LN' : (lc === 'assistant' ? 'Assistant' : (d || '—'));
+      return `<span class="pill ${cls}" style="font-size:10.5px;padding:2px 8px">${label}</span>`;
+    };
+
+    const summaryRows = summary.map(t => {
+      const calls  = t.hs_calls + t.df_calls;
+      const emails = t.hs_emails + t.df_emails;
+      const was    = t.hs_was + t.wa_sent;
+      const leads  = t.hs_leads + t.df_leads + t.wa_leads;
+      return `<tr
+        data-name="${escapeHtml(t.name)}"
+        data-reports="${t.reports}"
+        data-tasks="${t.hs_tasks}"
+        data-calls="${calls}"
+        data-emails="${emails}"
+        data-was="${was}"
+        data-leads="${leads}">
+        <td><b>${escapeHtml(t.name)}</b></td>
+        <td>${designationPill(t.designation)}</td>
+        <td class="muted" style="font-size:12px">${escapeHtml(Array.from(t.divisions).join(', ') || '—')}</td>
+        <td class="num tnum">${t.reports}</td>
+        <td class="num tnum">${fmt(t.hs_tasks)}</td>
+        <td class="num tnum">${fmt(calls)}</td>
+        <td class="num tnum">${fmt(emails)}</td>
+        <td class="num tnum">${fmt(was)}</td>
+        <td class="num tnum">${fmt(leads)}</td>
+        <td class="num tnum">${t.df_hours ? t.df_hours.toFixed(1) + 'h' : '—'}</td>
+      </tr>`;
+    }).join('');
+
+    // Recent submissions detail — newest first, all fields, notes
+    // truncated with click-to-expand (mirrors the requests reason cell).
+    const fmtDate = iso => {
+      if (!iso) return '';
+      const d = new Date(iso);
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', timeZone: 'Africa/Johannesburg' })
+           + ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Africa/Johannesburg' });
+    };
+    const recent = reports.slice(0, 80);  // already ordered desc by app.js
+    const detailRows = recent.map(r => {
+      const name = (r.staff && r.staff.name) || r.staff_id;
+      const hsTotal = (r.hs_tasks_completed||0) + (r.hs_calls_made||0) + (r.hs_emails_sent||0) + (r.hs_whatsapps_sent||0);
+      const dfTotal = (r.df_calls||0) + (r.df_email_successes||0);
+      const waTotal = (r.wa_sent||0);
+      return `<tr>
+        <td class="tnum" style="font-size:12px">${fmtDate(r.clocked_out_at)}</td>
+        <td>${name}</td>
+        <td>${designationPill(r.designation)}</td>
+        <td class="muted" style="font-size:12px">${escapeHtml(r.division || '—')}</td>
+        <td class="num tnum">${fmt(hsTotal)}</td>
+        <td class="num tnum">${fmt(dfTotal)}</td>
+        <td class="num tnum">${fmt(waTotal)}</td>
+        <td class="num tnum">${fmt((r.hs_leads_vals||0)+(r.df_leads_vals||0)+(r.wa_leads_vals||0))}</td>
+        <td class="muted reason-cell" title="${esc(r.notes || '')}" style="max-width:280px;font-size:12px">
+          <div class="reason-text">${esc(r.notes || '—')}</div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    return `
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>LN &amp; Assistants — summary</h3>
+            <div class="sub">${summary.length} staff · ${reports.length} report${reports.length === 1 ? '' : 's'} this period · totals aggregate HubSpot + DialFire + WhatsApp where overlap</div>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr>
+            <th data-sort="name|str">Staff<span class="sort-ind"></span></th>
+            <th>Role</th>
+            <th>Divisions</th>
+            <th class="num" data-sort="reports|num">#<span class="sort-ind"></span></th>
+            <th class="num" data-sort="tasks|num">Tasks<span class="sort-ind"></span></th>
+            <th class="num" data-sort="calls|num">Calls<span class="sort-ind"></span></th>
+            <th class="num" data-sort="emails|num">Emails<span class="sort-ind"></span></th>
+            <th class="num" data-sort="was|num">WhatsApps<span class="sort-ind"></span></th>
+            <th class="num" data-sort="leads|num">Leads<span class="sort-ind"></span></th>
+            <th class="num">DF hrs</th>
+          </tr></thead>
+          <tbody>${summaryRows}</tbody>
+        </table></div>
+      </div>
+
+      <div class="card mt">
+        <div class="card-head">
+          <div>
+            <h3>Recent submissions</h3>
+            <div class="sub">Newest first · click a notes cell to expand · showing ${recent.length} of ${reports.length}</div>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr>
+            <th>When (SAST)</th>
+            <th>Staff</th>
+            <th>Role</th>
+            <th>Division</th>
+            <th class="num">HubSpot Σ</th>
+            <th class="num">DialFire Σ</th>
+            <th class="num">WhatsApp Σ</th>
+            <th class="num">Leads</th>
+            <th>Notes</th>
+          </tr></thead>
+          <tbody>${detailRows}</tbody>
+        </table></div>
+      </div>
+    `;
   }
 
   // ---- Per-caller card (richer per-agent view from real fields) ----
@@ -699,5 +865,5 @@ window.VIEWS = (function () {
   // ad-hoc thresholds. Single source of truth = sucClass/effClass/cphClass.
   window.QUAY_PILLS = { sucClass, effClass, cphClass };
 
-  return { allStaff, compare, daily, manager, leadSources, monthly, renderMonthCompare, renderWeekCompare, monthWeeksTable };
+  return { allStaff, lnReports, compare, daily, manager, leadSources, monthly, renderMonthCompare, renderWeekCompare, monthWeeksTable };
 })();

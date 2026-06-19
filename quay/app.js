@@ -32,6 +32,10 @@
   let tab = 'overview'; // default landing; switched to 'leadership' for superusers below
   let dailyPicked = null; // selected date on the Daily Stats tab (yyyy-mm-dd)
   let staffTeamFilter = 'all'; // 'all' | 'RM' | 'Fancy' — All Staff tab team dropdown
+  // Cache for the LN & Assistants sub-tab so flipping between segs
+  // doesn't re-hit Supabase. Keyed by period so a period change forces
+  // a refetch on next click.
+  let lnReportsState = { period: null, loading: false, error: null, data: null };
 
   // ---- standard schedule (8am–5pm Mon–Fri) ----
   // Soft target: we surface variance, we don't enforce it.
@@ -898,6 +902,7 @@
     const seg = document.getElementById('staffSeg');
     const overall = document.getElementById('staffOverall');
     const per = document.getElementById('staffPerCaller');
+    const lnPane = document.getElementById('staffLnReports');
     if (!seg || !overall || !per) return;
     seg.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
       seg.querySelectorAll('button').forEach(x => x.classList.remove('active'));
@@ -905,6 +910,10 @@
       const view = b.dataset.view;
       overall.style.display = view === 'overall' ? '' : 'none';
       per.style.display     = view === 'per'     ? 'grid' : 'none';
+      if (lnPane) lnPane.style.display = view === 'ln' ? '' : 'none';
+      // Lazy-load LN reports on first click for this period — and on
+      // re-click after a period change. The cache key is the period.
+      if (view === 'ln') lnReportsHydrate();
     }));
     // Team filter — re-render the tab when the dropdown changes so the
     // KPI strip, table, and per-caller cards all reflect the filtered set.
@@ -915,6 +924,60 @@
     });
     sortableWire(document.getElementById('staffOverall'));
     wireAgentClicks();
+    // Re-wire the LN notes expandable cells if hydration already happened
+    // for the current period (e.g. after a re-render).
+    lnReportsWireDetails();
+  }
+
+  // Fetch clock_out_reports for the current period, render into the
+  // staffLnReports container. Safe to call repeatedly — second call for
+  // the same period uses the cached data.
+  async function lnReportsHydrate() {
+    const lnPane = document.getElementById('staffLnReports');
+    if (!lnPane) return;
+    // Cache hit — render from memory.
+    if (lnReportsState.period === period && lnReportsState.data) {
+      lnPane.innerHTML = V.lnReports(lnReportsState.data);
+      sortableWire(lnPane);
+      lnReportsWireDetails();
+      return;
+    }
+    if (lnReportsState.loading && lnReportsState.period === period) return;
+    if (!window.sb) {
+      lnPane.innerHTML = `<div class="card card-pad" style="color:var(--red)">Supabase client not initialised — can't load reports.</div>`;
+      return;
+    }
+    lnReportsState = { period, loading: true, error: null, data: null };
+    lnPane.innerHTML = `<div class="card card-pad" style="text-align:center;color:var(--muted);padding:40px">Loading end-of-day reports for ${escapeHtml((Q.PERIODS[period]||{}).label || period)}…</div>`;
+    try {
+      const { fromISO, toISO } = Q.periodDateRange(period);
+      // FK embed: PostgREST resolves clock_out_reports.staff_id → public.staff.
+      const { data, error } = await window.sb.from('clock_out_reports')
+        .select('id, staff_id, designation, division, clocked_out_at, hs_tasks_completed, hs_calls_made, hs_emails_sent, hs_whatsapps_sent, hs_answered_contacts, hs_leads_vals, hs_reconverted_leads, df_calls, df_email_successes, df_leads_vals, df_hours, wa_sent, wa_responses, wa_leads_vals, notes, staff:staff_id(name)')
+        .gte('clocked_out_at', fromISO)
+        .lte('clocked_out_at', toISO)
+        .order('clocked_out_at', { ascending: false });
+      if (error) throw error;
+      lnReportsState = { period, loading: false, error: null, data: data || [] };
+      lnPane.innerHTML = V.lnReports(lnReportsState.data);
+      sortableWire(lnPane);
+      lnReportsWireDetails();
+    } catch (e) {
+      lnReportsState = { period, loading: false, error: e, data: null };
+      lnPane.innerHTML = `<div class="card card-pad" style="color:var(--red)">Could not load reports: ${escapeHtml(String(e.message || e))}</div>`;
+    }
+  }
+
+  // Click-to-expand for the truncated notes cell in the recent-submissions
+  // table. Mirrors the request-reason cell behaviour in the Clocks tab.
+  function lnReportsWireDetails() {
+    const lnPane = document.getElementById('staffLnReports');
+    if (!lnPane) return;
+    lnPane.querySelectorAll('td.reason-cell').forEach(cell => {
+      if (cell.dataset.bound === '1') return;
+      cell.dataset.bound = '1';
+      cell.addEventListener('click', () => cell.classList.toggle('details-open'));
+    });
   }
 
   // ---- Sortable tables: th[data-sort="key|type"] makes a header sortable.
