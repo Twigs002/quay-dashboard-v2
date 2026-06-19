@@ -1199,9 +1199,11 @@
   //   PAYROLL AMOUNT     = agent's pay-period gross (totalHours × hourly_rate)
   //   SDL                = PAYROLL × 0.011 (SA Skills Development Levy)
   //   PERCENTAGE         = div_hours / total_hours (agent's time share)
-  //   DIV CONTRIBUTION   = ((PAYROLL + SDL) × PERCENTAGE) / 2
-  //                        (matches the bookkeeper's worksheet formula
-  //                        =((D2+E2)*F2)/2 — confirmed 2026-06-19)
+  //   DIV CONTRIBUTION   = (PAYROLL × PERCENTAGE) / 2 + (SDL × PERCENTAGE)
+  //                        Only the PAYROLL portion is halved; SDL is
+  //                        paid in full at its pro-rated share (the SDL
+  //                        column itself stays at PAYROLL × 0.011 too —
+  //                        not halved).
   //   TOTAL FANCY/LN     = sum of DIV CONTRIBUTION across agents in this row
   V.payrollDivisionCosts = function (empTeamHours, empTotalHours, empMeta) {
     const SDL_RATE = 0.011
@@ -1258,10 +1260,11 @@
         // on THIS division. Display as the same one-decimal %-of-time
         // format used on the Per-Agent Allocations view.
         const pct = totalHrs > 0 ? (hrs / totalHrs) : 0
-        // DIV CONTRIBUTION mirrors the bookkeeper's worksheet formula
-        // exactly: ((PAYROLL + SDL) × PERCENTAGE) / 2
+        // DIV CONTRIBUTION = (PAYROLL × PCT) / 2 + (SDL × PCT)
+        // SDL is NOT halved — only the payroll portion is. SDL itself is
+        // PAYROLL × 0.011 and stays at its pro-rated full value here.
         const contrib = (payroll != null && sdl != null)
-          ? ((payroll + sdl) * pct) / 2
+          ? (payroll * pct) / 2 + (sdl * pct)
           : null
         return { emp, hrs, rate, payroll, sdl, contrib, pct }
       }).sort((a, b) => (b.contrib || 0) - (a.contrib || 0))

@@ -1566,9 +1566,9 @@
           const payroll = rate != null ? total * rate : null;
           const sdl = payroll != null ? payroll * SDL_RATE : null;
           const pct = total > 0 ? (hrs / total) : 0;
-          // Match bookkeeper worksheet formula: ((PAYROLL + SDL) × PERCENTAGE) / 2
+          // (PAYROLL × PCT) / 2 + (SDL × PCT) — SDL is NOT halved.
           const contrib = (payroll != null && sdl != null)
-            ? ((payroll + sdl) * pct) / 2
+            ? (payroll * pct) / 2 + (sdl * pct)
             : null;
           return { emp, payroll, sdl, contrib, pct };
         }).sort((a, b) => (b.contrib || 0) - (a.contrib || 0));
