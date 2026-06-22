@@ -1,6 +1,23 @@
-"""Pull weekly clocked hours per agent from Supabase and write
-data/clock_data.json. Used by quay/data.js to feed real ct hours into
-the Work Time tab.
+"""Pull clocked hours per agent from Supabase and write
+data/clock_data.json. Used by quay/data.js to feed real clocked hours into
+the All Staff page (and any other view that wants real CT instead of the
+df/0.85 estimate).
+
+Output shape (current):
+
+    {
+      "generated_at": "...",
+      "source": "supabase" | "unset" | "error",
+      "agents": [ ... THIS WEEK rows, kept for backwards compat ... ],
+      "week_start": "...", "week_end": "...",
+      "periods": {
+        "this-week":  { "agents": [...], "from": "...", "to": "..." },
+        "last-week":  { ... },
+        "this-month": { ... },        # 21st of prev month → 20th of this (Quay pay cycle)
+        "last-90":    { ... },
+        "all-time":   { ... },        # last 365 days as a stand-in for "all time"
+      }
+    }
 
 Environment:
   SUPABASE_URL                 — project URL, e.g. https://<proj>.supabase.co
@@ -22,13 +39,46 @@ import requests
 ROOT = Path(__file__).resolve().parent.parent
 OUT  = ROOT / "data" / "clock_data.json"
 
+PAGE_SIZE = 1000  # PostgREST default cap — must paginate for periods > a few weeks
 
-def week_window(now: datetime.datetime) -> tuple[str, str]:
+
+def week_window(now: datetime.datetime) -> tuple[datetime.datetime, datetime.datetime]:
     monday = (now - datetime.timedelta(days=now.weekday())).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
     sunday = monday + datetime.timedelta(days=6, hours=23, minutes=59, seconds=59)
-    return monday.isoformat() + "Z", sunday.isoformat() + "Z"
+    return monday, sunday
+
+
+def last_week_window(now: datetime.datetime) -> tuple[datetime.datetime, datetime.datetime]:
+    m, s = week_window(now - datetime.timedelta(days=7))
+    return m, s
+
+
+def pay_cycle_window(now: datetime.datetime) -> tuple[datetime.datetime, datetime.datetime]:
+    """Quay pay cycle: 21st of month M-1 → 20th of month M (inclusive)."""
+    if now.day >= 21:
+        start_year, start_month = now.year, now.month
+    else:
+        # Cycle started LAST month's 21st
+        if now.month == 1:
+            start_year, start_month = now.year - 1, 12
+        else:
+            start_year, start_month = now.year, now.month - 1
+    start = datetime.datetime(start_year, start_month, 21, 0, 0, 0, tzinfo=now.tzinfo)
+    # End = 20th of next month, 23:59:59
+    if start_month == 12:
+        end_year, end_month = start_year + 1, 1
+    else:
+        end_year, end_month = start_year, start_month + 1
+    end = datetime.datetime(end_year, end_month, 20, 23, 59, 59, tzinfo=now.tzinfo)
+    return start, end
+
+
+def last_n_days_window(now: datetime.datetime, n: int) -> tuple[datetime.datetime, datetime.datetime]:
+    end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    start = (now - datetime.timedelta(days=n - 1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    return start, end
 
 
 def normalise_name(name: str) -> str:
@@ -37,10 +87,65 @@ def normalise_name(name: str) -> str:
     return s.strip()
 
 
+def fetch_window(supabase_url: str, service_key: str,
+                 frm: datetime.datetime, to: datetime.datetime) -> list[dict]:
+    """Page through every clock-OUT event in [frm, to]. duration_hrs is set on
+    OUT rows only, so summing OUTs gives the right total."""
+    rows: list[dict] = []
+    offset = 0
+    headers = {
+        "apikey": service_key,
+        "Authorization": f"Bearer {service_key}",
+        "Accept": "application/json",
+    }
+    while True:
+        params = {
+            "select": "duration_hrs,staff_id,staff(name)",
+            "dir":    "eq.out",
+            "ts":     f"gte.{frm.isoformat()}",
+        }
+        url = (f"{supabase_url}/rest/v1/events?{urlencode(params)}"
+               f"&ts=lte.{to.isoformat()}"
+               f"&order=ts.asc"
+               f"&offset={offset}&limit={PAGE_SIZE}")
+        r = requests.get(url, headers=headers, timeout=60)
+        r.raise_for_status()
+        batch = r.json() or []
+        rows.extend(batch)
+        if len(batch) < PAGE_SIZE:
+            break
+        offset += PAGE_SIZE
+    return rows
+
+
+def aggregate(rows: list[dict]) -> list[dict]:
+    """Rows -> [{id, name, name_normalised, hours, sessions}, ...]."""
+    by_agent: dict[str, dict] = {}
+    for row in rows:
+        sid  = row.get("staff_id") or ""
+        name = (row.get("staff") or {}).get("name") or sid
+        hrs  = float(row.get("duration_hrs") or 0)
+        agg  = by_agent.setdefault(sid, {"id": sid, "name": name, "hours": 0.0, "sessions": 0})
+        agg["hours"] += hrs
+        agg["sessions"] += 1
+    out = []
+    for a in by_agent.values():
+        out.append({
+            "id": a["id"],
+            "name": a["name"],
+            "name_normalised": normalise_name(a["name"]),
+            "hours": round(a["hours"], 3),
+            "sessions": a["sessions"],
+        })
+    return out
+
+
 def write_payload(payload: dict) -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
-    print(f"[fetch_clock] wrote {OUT.relative_to(ROOT)} ({len(payload.get('agents', []))} agents)")
+    print(f"[fetch_clock] wrote {OUT.relative_to(ROOT)} "
+          f"({len(payload.get('agents', []))} this-week agents; "
+          f"periods: {list((payload.get('periods') or {}).keys())})")
 
 
 def main() -> int:
@@ -51,63 +156,52 @@ def main() -> int:
         write_payload({
             "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "week_start": None, "week_end": None, "agents": [], "source": "unset",
+            "periods": {},
         })
         return 0
 
     now = datetime.datetime.now(datetime.timezone.utc)
-    week_from, week_to = week_window(now)
 
-    # PostgREST: pull this week's `out` events (duration_hrs is set on out only),
-    # plus the staff names via a select join.
-    params = {
-        "select": "duration_hrs,staff_id,staff(name)",
-        "dir":    "eq.out",
-        "ts":     f"gte.{week_from}",  # primary range filter
-    }
-    url = f"{supabase_url}/rest/v1/events?{urlencode(params)}&ts=lte.{week_to}"
-    headers = {
-        "apikey": service_key,
-        "Authorization": f"Bearer {service_key}",
-        "Accept": "application/json",
+    windows = {
+        "this-week":  week_window(now),
+        "last-week":  last_week_window(now),
+        "this-month": pay_cycle_window(now),     # Quay pay-cycle (21→20)
+        "last-90":    last_n_days_window(now, 90),
+        "all-time":   last_n_days_window(now, 365),
     }
 
+    periods: dict[str, dict] = {}
     try:
-        r = requests.get(url, headers=headers, timeout=30)
-        r.raise_for_status()
-        rows = r.json()
+        for key, (frm, to) in windows.items():
+            rows = fetch_window(supabase_url, service_key, frm, to)
+            periods[key] = {
+                "from": frm.isoformat(),
+                "to":   to.isoformat(),
+                "agents": aggregate(rows),
+            }
+            print(f"[fetch_clock] {key}: {len(rows)} events -> {len(periods[key]['agents'])} agents")
     except Exception as exc:
         print(f"[fetch_clock] WARN: Supabase fetch failed: {exc}")
         write_payload({
-            "generated_at": now.isoformat(), "week_start": week_from, "week_end": week_to,
+            "generated_at": now.isoformat(),
+            "week_start": windows["this-week"][0].isoformat(),
+            "week_end":   windows["this-week"][1].isoformat(),
             "agents": [], "source": "error", "error": str(exc),
+            "periods": {},
         })
         return 0
 
-    by_agent: dict[str, dict] = {}
-    for row in rows:
-        sid  = row.get("staff_id") or ""
-        name = (row.get("staff") or {}).get("name") or sid
-        hrs  = float(row.get("duration_hrs") or 0)
-        agg  = by_agent.setdefault(sid, {"id": sid, "name": name, "hours": 0.0, "sessions": 0})
-        agg["hours"] += hrs
-        agg["sessions"] += 1
-
-    agents = []
-    for a in by_agent.values():
-        agents.append({
-            "id": a["id"],
-            "name": a["name"],
-            "name_normalised": normalise_name(a["name"]),
-            "hours": round(a["hours"], 3),
-            "sessions": a["sessions"],
-        })
-
+    # Back-compat: top-level "agents" + week bounds mirror this-week so
+    # any existing consumer that hasn't been migrated to `periods` keeps
+    # rendering correctly.
+    this_week = periods["this-week"]
     write_payload({
         "generated_at": now.isoformat(),
-        "week_start": week_from,
-        "week_end": week_to,
-        "agents": agents,
-        "source": "supabase",
+        "week_start":   this_week["from"],
+        "week_end":     this_week["to"],
+        "agents":       this_week["agents"],
+        "source":       "supabase",
+        "periods":      periods,
     })
     return 0
 

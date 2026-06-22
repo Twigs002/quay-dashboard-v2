@@ -21,13 +21,36 @@ window.QUAY_READY = (async function () {
   // Build a name → clocked hours map from the quay-clock fetcher output.
   // We try both raw and prettified names so PascalCase/dashed/snake_case
   // entries all match agents from Dialfire.
+  //
+  // `clockByName` mirrors THIS-WEEK clock data (used inside agentsForWeek
+  // when normalising per-week agent records). `clockByPeriod` carries the
+  // full per-period totals so agentsFor(period) can overwrite `ct` with
+  // the right window's real hours instead of the df/0.85 estimate.
   const clockByName = new Map();
-  if (clockData && Array.isArray(clockData.agents)) {
-    clockData.agents.forEach(a => {
+  const clockByPeriod = new Map(); // period -> Map<nameLower, hours>
+  const buildNameMap = (agents) => {
+    const m = new Map();
+    (agents || []).forEach(a => {
       const hours = Number(a.hours) || 0;
-      if (a.name) clockByName.set(a.name.toLowerCase(), hours);
-      if (a.name_normalised) clockByName.set(a.name_normalised.toLowerCase(), hours);
+      if (a.name) m.set(a.name.toLowerCase(), hours);
+      if (a.name_normalised) m.set(a.name_normalised.toLowerCase(), hours);
     });
+    return m;
+  };
+  if (clockData) {
+    if (Array.isArray(clockData.agents)) {
+      // Back-compat / this-week shortcut for agentsForWeek.
+      clockData.agents.forEach(a => {
+        const hours = Number(a.hours) || 0;
+        if (a.name) clockByName.set(a.name.toLowerCase(), hours);
+        if (a.name_normalised) clockByName.set(a.name_normalised.toLowerCase(), hours);
+      });
+    }
+    if (clockData.periods && typeof clockData.periods === 'object') {
+      Object.entries(clockData.periods).forEach(([periodKey, payload]) => {
+        clockByPeriod.set(periodKey, buildNameMap(payload && payload.agents));
+      });
+    }
   }
 
   // history may or may not include the current week; ensure latest first.
@@ -160,7 +183,23 @@ window.QUAY_READY = (async function () {
 
   function agentsFor(periodKey) {
     const slice = _sliceFor(periodKey);
-    return aggregateWeeks(slice).sort((a, b) => b.calls - a.calls);
+    const list = aggregateWeeks(slice);
+    // If the fetcher produced per-period clock data, override each agent's
+    // clocked hours with the real total for THIS period (rather than
+    // summing per-week this-week estimates across the slice).
+    const periodMap = clockByPeriod.get(periodKey);
+    if (periodMap && periodMap.size > 0) {
+      list.forEach(a => {
+        const lookupKey = (a.name || '').toLowerCase();
+        const real = periodMap.get(lookupKey);
+        if (real != null && real > 0) {
+          a.ct = +real.toFixed(1);
+          a.ctSource = 'clock';
+          a.eff = a.df > 0 ? Math.round((a.df / a.ct) * 100) : a.eff;
+        }
+      });
+    }
+    return list.sort((a, b) => b.calls - a.calls);
   }
 
   function totalsFor(periodKey) {
