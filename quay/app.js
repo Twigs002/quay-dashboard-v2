@@ -32,6 +32,10 @@
   let tab = 'overview'; // default landing; switched to 'leadership' for superusers below
   let dailyPicked = null; // selected date on the Daily Stats tab (yyyy-mm-dd)
   let staffTeamFilter = 'all'; // 'all' | 'RM' | 'Fancy' — All Staff tab team dropdown
+  // Active segment on the All Staff tab: 'overall' | 'per' | 'ln'. Persisted
+  // across re-renders (e.g. period change) so users don't get bounced back
+  // to Callers · Overall every time the page rebuilds.
+  let staffSegView = 'overall';
   // Cache for the LN & Assistants sub-tab so flipping between segs
   // doesn't re-hit Supabase. Keyed by period so a period change forces
   // a refetch on next click.
@@ -932,6 +936,7 @@
       seg.querySelectorAll('button').forEach(x => x.classList.remove('active'));
       b.classList.add('active');
       const view = b.dataset.view;
+      staffSegView = view;
       overall.style.display = view === 'overall' ? '' : 'none';
       per.style.display     = view === 'per'     ? 'grid' : 'none';
       if (lnPane) lnPane.style.display = view === 'ln' ? '' : 'none';
@@ -939,6 +944,13 @@
       // re-click after a period change. The cache key is the period.
       if (view === 'ln') lnReportsHydrate();
     }));
+    // Restore last-active segment after a re-render (period change, etc.).
+    // The view always mounts with 'overall' as the active class, so we
+    // trigger a programmatic click on the saved segment to swap it back.
+    if (staffSegView && staffSegView !== 'overall') {
+      const restoreBtn = seg.querySelector(`button[data-view="${staffSegView}"]`);
+      if (restoreBtn) restoreBtn.click();
+    }
     // Team filter — re-render the tab when the dropdown changes so the
     // KPI strip, table, and per-caller cards all reflect the filtered set.
     const teamSel = document.getElementById('staffTeamFilter');
