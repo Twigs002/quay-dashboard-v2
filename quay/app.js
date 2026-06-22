@@ -2389,9 +2389,14 @@
   // enriched with today's Dialfire call/lead counts when available.
   function renderLiveFloor() {
     const todayKey = sastDateStr(new Date());
-    const onlineCards = [];
-    const offlineCards = [];
-    const breakCards = [];
+    // Sort hierarchy (top -> bottom):
+    //   1. Active callers — calls > 0, ordered by calls desc (matches the
+    //      quay-clock admin vibe of "people doing things first").
+    //   2. On-the-clock but no calls yet.
+    //   3. Already clocked out for the day.
+    //   4. Not in yet / no schedule entry.
+    // Each card is collected with a sort key so we can flatten at the end.
+    const cards = [];  // [{key: [bucket, -calls, name], html}]
 
     // Per-agent today's calls/leads. PRIMARY source is the live_stats table
     // (Mac daemon polls Dialfire every ~90s, pushes via Supabase realtime).
@@ -2407,6 +2412,7 @@
 
     let onlineCount = 0, offlineCount = 0, totalRoster = 0;
     let totalCallsToday = 0, totalLeadsToday = 0;
+    let activeCallerCount = 0;
 
     if (schedule && schedule.byStaff && schedule.byStaff.size) {
       schedule.byStaff.forEach(rec => {
@@ -2433,6 +2439,7 @@
         const todayLeads = liveRow ? liveRow.leads : (dailyAgent ? dailyAgent.leads : null);
         if (todayCalls != null) totalCallsToday += todayCalls;
         if (todayLeads != null) totalLeadsToday += todayLeads;
+        if (todayCalls && todayCalls > 0) activeCallerCount++;
 
         const fmtT = (d) => d ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Johannesburg' }) : '—';
         const elapsedMs = inAt ? (Math.max(outAt || new Date(), inAt) - inAt) : 0;
@@ -2463,9 +2470,27 @@
             </div>
           </div>
         </div>`;
-        (isIn ? onlineCards : offlineCards).push(html);
+        // Bucket: 0=actively calling today, 1=on clock no calls,
+        // 2=clocked out, 3=not in yet. Sort within bucket by calls desc
+        // then name asc. The Map iteration order is staff-table order so
+        // names tie-break alphabetically anyway when stable-sorted.
+        const callsForSort = todayCalls || 0;
+        let bucket;
+        if (callsForSort > 0) bucket = 0;
+        else if (isIn) bucket = 1;
+        else if (outAt) bucket = 2;
+        else bucket = 3;
+        cards.push({ bucket, calls: callsForSort, name: rec.name || '', html });
       });
     }
+    // Sort + render in the requested order. Active callers float to the top
+    // (highest calls first), then on-the-clock with zero, then clocked-out,
+    // then not-in-yet.
+    cards.sort((a, b) => {
+      if (a.bucket !== b.bucket) return a.bucket - b.bucket;
+      if (a.calls !== b.calls) return b.calls - a.calls;
+      return a.name.localeCompare(b.name);
+    });
 
     // Live-stats freshness wins as the headline "last update" when we have
     // it — it's what makes the dashboard actually live.
@@ -2499,8 +2524,8 @@
       </div>
     </div>`;
 
-    const grid = onlineCards.concat(offlineCards).length
-      ? `<div class="live-grid">${onlineCards.concat(offlineCards).join('')}</div>`
+    const grid = cards.length
+      ? `<div class="live-grid">${cards.map(c => c.html).join('')}</div>`
       : `<div class="card card-pad" style="text-align:center;color:var(--muted);padding:60px 20px">
           ${schedule ? 'No clock-in events recorded yet for the active roster.' : 'Loading live floor data — clock events are streaming from quay-clock.'}
         </div>`;
