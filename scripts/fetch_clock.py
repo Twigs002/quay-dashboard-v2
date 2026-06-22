@@ -167,10 +167,17 @@ def main() -> int:
 
     now = datetime.datetime.now(datetime.timezone.utc)
 
+    # `this-month` here mirrors quay/data.js's PERIODS definition: a rolling
+    # 4-week window ending at the most-recent Sunday. The Quay pay cycle
+    # (21st → 20th) is a separate concept used by quay-clock's timesheets;
+    # don't conflate the two or the All Staff KPI will mismatch the data.js
+    # weekly-slice aggregations.
+    this_week_start, this_week_end = week_window(now)
+    four_weeks_start = this_week_start - datetime.timedelta(days=21)
     windows = {
-        "this-week":  week_window(now),
+        "this-week":  (this_week_start, this_week_end),
         "last-week":  last_week_window(now),
-        "this-month": pay_cycle_window(now),     # Quay pay-cycle (21→20)
+        "this-month": (four_weeks_start, this_week_end),  # rolling 4 weeks
         "last-90":    last_n_days_window(now, 90),
         "all-time":   last_n_days_window(now, 365),
     }

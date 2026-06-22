@@ -575,48 +575,6 @@ window.VIEWS = (function () {
   // ---------------------------------------------------- MANAGER
   function manager(period) {
     period = period || 'this-week';
-    // Real campaign data — the same source the Lead Sources tab uses.
-    const camps = (Q.campaignsFor(period) || []).slice().sort((a, b) => b.calls - a.calls);
-    const totals = camps.reduce((t, c) => {
-      t.calls += c.calls || 0;
-      t.seller += c.seller || 0;
-      t.rental += c.rental || 0;
-      t.email += c.email || 0;
-      t.leads += c.leads || 0;
-      return t;
-    }, { calls: 0, seller: 0, rental: 0, email: 0, leads: 0 });
-    const rows = camps.map((c, i) => {
-      const conv = c.conv != null ? c.conv : (c.calls ? +((c.leads / c.calls) * 100).toFixed(1) : 0);
-      const cv = conv >= 12 ? 'ok' : conv >= 7 ? 'warn' : 'bad';
-      return `<tr data-campaign="${escapeHtml(c.name)}"
-                  data-name="${escapeHtml(c.name)}"
-                  data-calls="${c.calls || 0}"
-                  data-seller="${c.seller || 0}"
-                  data-rental="${c.rental || 0}"
-                  data-email="${c.email || 0}"
-                  data-conv="${conv}"
-                  style="cursor:pointer">
-        <td class="num" style="color:var(--muted);font-weight:700;width:40px">${i + 1}</td>
-        <td><div class="agent-cell">
-          <span style="width:11px;height:11px;border-radius:3px;background:${c.color || '#3D5BA6'};display:inline-block"></span>
-          <span class="agent-name">${c.name}</span></div></td>
-        <td class="num tnum">${fmt(c.calls || 0)}</td>
-        <td class="num tnum">${fmt(c.seller || 0)}</td>
-        <td class="num tnum">${fmt(c.rental || 0)}</td>
-        <td class="num tnum">${fmt(c.email || 0)}</td>
-        <td class="num"><span class="pill ${cv}">${conv}%</span></td>
-      </tr>`;
-    }).join('');
-    const totalRow = camps.length ? `<tr style="background:var(--paper);font-weight:700">
-      <td></td>
-      <td style="color:var(--ink)">All campaigns</td>
-      <td class="num tnum">${fmt(totals.calls)}</td>
-      <td class="num tnum">${fmt(totals.seller)}</td>
-      <td class="num tnum">${fmt(totals.rental)}</td>
-      <td class="num tnum">${fmt(totals.email)}</td>
-      <td class="num tnum">${totals.calls ? +((totals.leads / totals.calls) * 100).toFixed(1) : 0}%</td>
-    </tr>` : '';
-    const periodLabel = (Q.PERIODS[period] && Q.PERIODS[period].label) || period;
 
     // ---- Monthly graphs --------------------------------------------------
     // Re-uses the Operational Overview's miniCard painter (.mc el is wired
@@ -644,32 +602,13 @@ window.VIEWS = (function () {
           ${monthCard('Emails',  I.mail,   Q.MONTH_EMAILS,  '#2E6FB0')}
         </div>
       </div>`;
+    // Tab is "Red Flags" — show the flags card first (the actionable bit)
+    // and the monthly trend strip below as context. Campaign breakdown table
+    // was retired (lives in the Operational Overview's campaign drill-downs).
     return `
     <div class="tab-view">
+      <div id="managerFlagsHost"></div>
       ${monthlyGraphs}
-      <div class="mt" id="managerFlagsHost"></div>
-      <div class="card mt">
-        <div class="card-head">
-          <div><h3>Campaign performance · ${periodLabel}</h3>
-            <div class="sub">${camps.length} campaign${camps.length === 1 ? '' : 's'} with activity · ranked by calls done</div></div>
-          <button class="btn js-export">${I.download} Export CSV</button>
-        </div>
-        <div class="tbl-wrap"><table class="tbl" id="managerCampTable">
-          <thead><tr>
-            <th class="num" style="width:40px">#</th>
-            <th data-sort="name|str">Campaign<span class="sort-ind"></span></th>
-            <th class="num" data-sort="calls|num">Calls done<span class="sort-ind"></span></th>
-            <th class="num" data-sort="seller|num">Seller leads<span class="sort-ind"></span></th>
-            <th class="num" data-sort="rental|num">Rental leads<span class="sort-ind"></span></th>
-            <th class="num" data-sort="email|num">Emails<span class="sort-ind"></span></th>
-            <th class="num" data-sort="conv|num">Conv. %<span class="sort-ind"></span></th>
-          </tr></thead>
-          <tbody>
-            ${rows || `<tr><td colspan="7" class="muted" style="text-align:center;padding:30px">No campaign activity for ${periodLabel.toLowerCase()} yet.</td></tr>`}
-          </tbody>
-          ${totalRow ? `<tfoot>${totalRow}</tfoot>` : ''}
-        </table></div>
-      </div>
     </div>`;
   }
 
