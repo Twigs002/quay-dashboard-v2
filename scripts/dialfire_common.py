@@ -64,8 +64,10 @@ def dates_to_timespan(date_from, date_to):
 
     Reference day boundary now comes from SAST so it matches the caller.
 
-    Dialfire 'X-Yday' = from X days ago to Y days ago. We subtract 1 from
-    the end so the full end day is included.
+    For RANGES (e.g. the weekly Mon→Sun fetch) we keep the original
+    semantics: subtract 1 from the end so the full end day is included
+    while the boundary at Y stays open. Single-day buckets must use
+    `single_day_timespan()` instead — see its docstring for why.
     """
     today = datetime.datetime.now(SAST).date()
     days_from = (today - date_from).days
@@ -75,6 +77,29 @@ def dates_to_timespan(date_from, date_to):
     if days_from < days_to:
         days_from = days_to
     return f"{days_from}-{days_to}day"
+
+
+def single_day_timespan(d):
+    """Dialfire timespan covering exactly one SAST calendar day.
+
+    The shared dates_to_timespan helper is built for ranges where the end
+    boundary is "today" (so subtracting 1 from `days_to` makes the
+    inclusive-on-X / exclusive-on-Y window land on the right Sunday).
+    For a single-day fetch in the daily Dialfire pipeline, the same
+    subtraction produced timespans like "7-6day" which Dialfire treats
+    as inclusive-inclusive — returning Sun + Mon combined and storing
+    Monday's call total under Sunday's bucket. Symptom: Sundays show
+    non-zero call counts in daily_data.json even though the office is
+    closed.
+
+    Emitting `N-Nday` (with N = days-ago for that single date) keeps the
+    Dialfire window exactly one day wide.
+    """
+    today = datetime.datetime.now(SAST).date()
+    n = (today - d).days
+    if n < 0:
+        n = 0
+    return f"{n}-{n}day"
 
 
 # ---------------------------------------------------------------------------

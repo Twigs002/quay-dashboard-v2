@@ -20,7 +20,7 @@ import pytz
 
 from dialfire_common import (
     LOCALE, API_BASE,
-    dates_to_timespan, fetch_json, fetch_lead_counts,
+    single_day_timespan, fetch_json, fetch_lead_counts,
     _norm_camp, parse_row, merge_agent_row, finalize,
 )
 
@@ -211,7 +211,10 @@ def main():
 
     fetched_dates = set()
     for d in dates:
-        ts = dates_to_timespan(d, d)
+        # Single-day fetches use the inclusive-inclusive 'N-Nday' form so
+        # Dialfire doesn't merge two adjacent days under one bucket (the
+        # original cause of non-zero Sunday entries in daily_data.json).
+        ts = single_day_timespan(d)
         print(f"\n--- {d} | timespan={ts} ---")
 
         agents = {}
