@@ -2436,11 +2436,12 @@
         const liveRow = liveStatsFor(rec.name);
         const dailyAgent = callsByName.get(fullKey) || (flKey && callsByName.get(flKey)) || null;
         const todayCalls  = liveRow ? liveRow.calls         : (dailyAgent ? dailyAgent.calls  : null);
-        const todayLeads  = liveRow ? liveRow.leads         : (dailyAgent ? dailyAgent.leads  : null);
+        // "Leads" = seller leads only. Rental + email stay as their own columns.
+        const todayLeads  = liveRow ? liveRow.seller_leads  : (dailyAgent ? (dailyAgent.seller || 0) : null);
         const todayRental = liveRow ? liveRow.rental_leads  : (dailyAgent ? dailyAgent.rental : null);
         const todayEmail  = liveRow ? liveRow.email_leads   : (dailyAgent ? dailyAgent.email  : null);
         if (todayCalls != null) totalCallsToday += todayCalls;
-        if (todayLeads != null) totalLeadsToday += todayLeads;
+        if (todayLeads != null) totalLeadsToday += todayLeads;  // seller leads only
         if (todayCalls && todayCalls > 0) activeCallerCount++;
 
         const fmtT = (d) => d ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Johannesburg' }) : '—';

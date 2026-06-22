@@ -118,8 +118,12 @@ window.QUAY_READY = (async function () {
 
   function _normAgent(a, team, idx) {
     const calls = a.calls || 0;
-    const leads = a.success || 0;            // real "success" = leads converted
-    const successRate = a.successRate || (calls ? (leads / calls) * 100 : 0);
+    // "Lead" = SELLER lead only (per business definition). Dialfire's `success`
+    // column counts every positive outcome including auto-emails, which made
+    // Knights look like 87 leads when it was 8 sellers + 1 rental + 75 emails.
+    // Rental + email stay as their own breakdown columns.
+    const leads = a.seller || 0;
+    const successRate = calls ? +((leads / calls) * 100).toFixed(1) : 0;
     const talkHrs = a.talkTime || 0;
     const workHrs = a.workTime || 0;
     const pauseHrs = a.pauseTime || 0;
@@ -600,7 +604,9 @@ window.QUAY_READY = (async function () {
               _agents: new Set(), _exact: true,
             };
             cur.calls  += stats.calls   || 0;
-            cur.leads  += stats.success || 0;
+            // 'leads' = seller leads only (per business definition).
+            // Rental + email stay as their own columns.
+            cur.leads  += stats.seller  || 0;
             cur.seller += stats.seller  || 0;
             cur.rental += stats.rental  || 0;
             cur.email  += stats.email   || 0;
@@ -624,7 +630,7 @@ window.QUAY_READY = (async function () {
               _agents: new Set(), _exact: false,
             };
             cur.calls  += agent.calls   || 0;
-            cur.leads  += agent.success || 0;
+            cur.leads  += agent.seller  || 0;     // seller only
             cur.seller += agent.seller  || 0;
             cur.rental += agent.rental  || 0;
             cur.email  += agent.email   || 0;
