@@ -28,12 +28,36 @@ window.QUAY_READY = (async function () {
   // the right window's real hours instead of the df/0.85 estimate.
   const clockByName = new Map();
   const clockByPeriod = new Map(); // period -> Map<nameLower, hours>
+  // Index by full name AND "first last" (skipping middle names) — Dialfire's
+  // prettified agent names are usually short ("Douglas Nkulu") while
+  // Supabase staff carry full names ("Douglas Mpiana Nkulu"). Without the
+  // first+last fallback the All Staff page kept showing 'est' for last-week
+  // even though the timesheets were imported.
   const buildNameMap = (agents) => {
     const m = new Map();
+    const stash = (key, hours) => {
+      if (!key) return;
+      // First write wins if multiple staff share the same first+last (rare).
+      if (!m.has(key)) m.set(key, hours);
+    };
     (agents || []).forEach(a => {
       const hours = Number(a.hours) || 0;
-      if (a.name) m.set(a.name.toLowerCase(), hours);
-      if (a.name_normalised) m.set(a.name_normalised.toLowerCase(), hours);
+      if (a.name) {
+        const full = a.name.toLowerCase().trim();
+        stash(full, hours);
+        const parts = a.name.trim().split(/\s+/);
+        if (parts.length >= 2) {
+          stash((parts[0] + ' ' + parts[parts.length - 1]).toLowerCase(), hours);
+        }
+      }
+      if (a.name_normalised) {
+        const full = a.name_normalised.toLowerCase().trim();
+        stash(full, hours);
+        const parts = a.name_normalised.trim().split(/\s+/);
+        if (parts.length >= 2) {
+          stash((parts[0] + ' ' + parts[parts.length - 1]).toLowerCase(), hours);
+        }
+      }
     });
     return m;
   };
@@ -190,8 +214,17 @@ window.QUAY_READY = (async function () {
     const periodMap = clockByPeriod.get(periodKey);
     if (periodMap && periodMap.size > 0) {
       list.forEach(a => {
-        const lookupKey = (a.name || '').toLowerCase();
-        const real = periodMap.get(lookupKey);
+        const name = (a.name || '').trim();
+        let real = periodMap.get(name.toLowerCase());
+        // Dialfire prettified names tend to be "First Last" while Supabase
+        // staff names often have middle names. Fall back to first+last so
+        // "Douglas Nkulu" matches "Douglas Mpiana Nkulu".
+        if (real == null) {
+          const parts = name.split(/\s+/);
+          if (parts.length >= 2) {
+            real = periodMap.get((parts[0] + ' ' + parts[parts.length - 1]).toLowerCase());
+          }
+        }
         if (real != null && real > 0) {
           a.ct = +real.toFixed(1);
           a.ctSource = 'clock';
