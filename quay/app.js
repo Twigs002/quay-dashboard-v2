@@ -2288,6 +2288,60 @@
       </div>`;
   }
 
+  // Live Dialfire stats pushed by the local Mac daemon (every ~90s).
+  // Reads from public.live_stats; the dashboard subscribes via Supabase
+  // realtime in subscribeRealtime() so updates land instantly.
+  let liveStats = []; // [{ staff_id, name, calls, leads, work_hours, success_rate, updated_at }]
+  let liveStatsByName = new Map(); // lookup: name lowercased + first+last form
+  async function loadLiveStats() {
+    if (!window.sb) return;
+    try {
+      const { data, error } = await window.sb
+        .from('live_stats')
+        .select('staff_id,name,calls,leads,work_hours,success_rate,updated_at')
+        .order('calls', { ascending: false });
+      if (error) throw error;
+      liveStats = data || [];
+      liveStatsByName = new Map();
+      const stash = (key, row) => {
+        if (key && !liveStatsByName.has(key)) liveStatsByName.set(key, row);
+      };
+      liveStats.forEach(row => {
+        const n = (row.name || '').trim();
+        if (n) {
+          stash(n.toLowerCase(), row);
+          const parts = n.split(/\s+/);
+          if (parts.length >= 2) {
+            stash((parts[0] + ' ' + parts[parts.length - 1]).toLowerCase(), row);
+          }
+        }
+      });
+    } catch (e) {
+      console.warn('[live] loadLiveStats failed', e.message || e);
+    }
+  }
+  function liveStatsFor(name) {
+    const n = (name || '').trim().toLowerCase();
+    if (!n) return null;
+    let row = liveStatsByName.get(n);
+    if (!row) {
+      const parts = name.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        row = liveStatsByName.get((parts[0] + ' ' + parts[parts.length - 1]).toLowerCase());
+      }
+    }
+    return row || null;
+  }
+  function liveStatsFreshness() {
+    if (!liveStats.length) return null;
+    let latest = 0;
+    liveStats.forEach(r => {
+      const t = r.updated_at ? new Date(r.updated_at).getTime() : 0;
+      if (t > latest) latest = t;
+    });
+    return latest ? new Date(latest) : null;
+  }
+
   // ─── Floor Health + Live Floor ──────────────────────────────────────
   // Quick "is the floor healthy?" pill for executives. Reads from the same
   // flag/KPI sources the rest of the dashboard uses so it never drifts.
@@ -2339,9 +2393,10 @@
     const offlineCards = [];
     const breakCards = [];
 
-    // Today's Dialfire stats per (lowercase-trimmed) name. Most recent daily
-    // entry — usually yesterday's full day, which is fine for the "today
-    // so far" demo card (the fetcher catches up every morning).
+    // Per-agent today's calls/leads. PRIMARY source is the live_stats table
+    // (Mac daemon polls Dialfire every ~90s, pushes via Supabase realtime).
+    // If no live row for an agent we fall back to the most-recent daily
+    // snapshot so newly-clocked-in agents aren't blank between daemon polls.
     const latestDate = (Q.latestDailyDate && Q.latestDailyDate()) || null;
     const todayList = latestDate ? (Q.dailyFor && Q.dailyFor(latestDate)) || [] : [];
     const callsByName = new Map();
@@ -2368,13 +2423,14 @@
         const pillClass = isIn ? 'live-pill live-pill--in' : 'live-pill live-pill--out';
         const pillText  = isIn ? 'On the clock' : (outAt ? 'Clocked out' : 'Not in yet');
 
-        // Match today's Dialfire stats (loose match: try full + first+last).
+        // Prefer live_stats; fall back to the daily snapshot.
         const fullKey = (rec.name || '').toLowerCase().trim();
         const parts = (rec.name || '').trim().split(/\s+/);
         const flKey = parts.length >= 2 ? (parts[0] + ' ' + parts[parts.length - 1]).toLowerCase() : null;
+        const liveRow = liveStatsFor(rec.name);
         const dailyAgent = callsByName.get(fullKey) || (flKey && callsByName.get(flKey)) || null;
-        const todayCalls = dailyAgent ? dailyAgent.calls : null;
-        const todayLeads = dailyAgent ? dailyAgent.leads : null;
+        const todayCalls = liveRow ? liveRow.calls : (dailyAgent ? dailyAgent.calls : null);
+        const todayLeads = liveRow ? liveRow.leads : (dailyAgent ? dailyAgent.leads : null);
         if (todayCalls != null) totalCallsToday += todayCalls;
         if (todayLeads != null) totalLeadsToday += todayLeads;
 
@@ -2411,9 +2467,15 @@
       });
     }
 
-    const refreshedAt = schedule && schedule.asOf
-      ? schedule.asOf.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Johannesburg' })
+    // Live-stats freshness wins as the headline "last update" when we have
+    // it — it's what makes the dashboard actually live.
+    const liveTs = liveStatsFreshness();
+    const refreshedAt = (liveTs || (schedule && schedule.asOf))
+      ? (liveTs || schedule.asOf).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Africa/Johannesburg' })
       : '—';
+    const liveBadge = liveTs
+      ? '<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#DCF3E5;color:#0E6B3A;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-left:6px">● Live</span>'
+      : '<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#FFE9CB;color:#6B3F00;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-left:6px">Snapshot</span>';
     const summary = `<div class="live-summary">
       <div class="live-summary-stat">
         <div class="live-summary-val tnum">${onlineCount}</div>
@@ -2433,7 +2495,7 @@
       </div>
       <div class="live-refresh-meta">
         ${floorHealthPillHtml()}<br>
-        <span style="display:inline-block;margin-top:8px">Refreshed ${escapeHtml(refreshedAt)} SAST · auto-updates on clock events</span>
+        <span style="display:inline-block;margin-top:8px">Refreshed ${escapeHtml(refreshedAt)} SAST${liveBadge}</span>
       </div>
     </div>`;
 
@@ -2449,9 +2511,12 @@
   function liveFloorWire() {
     // Re-render the Live Floor on any new clock event. We piggy-back on the
     // existing realtime channel — wireRealtimeChannel() is already invoked
-    // elsewhere; here we just refresh schedule and re-render this tab.
-    if (window.sb && !schedule) {
-      loadScheduleData().then(() => { if (tab === 'live') render(); });
+    // elsewhere; here we just refresh schedule + live_stats and re-render.
+    if (window.sb) {
+      if (!schedule) loadScheduleData().then(() => { if (tab === 'live') render(); });
+      // Always do an initial pull of live_stats so the tab isn't empty
+      // while we wait for the next daemon push.
+      loadLiveStats().then(() => { if (tab === 'live') render(); });
     }
   }
 
@@ -3411,6 +3476,16 @@
             if (dashIsBusy()) return;
             if (tab === 'overview' || tab === 'leadership' || tab === 'manager') shell();
           });
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'live_stats' }, () => {
+          // Mac daemon just upserted fresh Dialfire numbers. Reload + repaint
+          // the Live Floor if it's the active tab. Other tabs read from the
+          // weekly snapshot so they don't need this realtime nudge.
+          if (typeof loadLiveStats === 'function') {
+            loadLiveStats().then(() => {
+              if (!dashIsBusy() && tab === 'live') shell();
+            });
+          }
         })
         .subscribe();
     } catch (e) { console.warn('[rt] subscribe failed', e); }
