@@ -106,6 +106,7 @@
   const TABS = [
     { id: 'leadership', label: 'Leadership',     icon: I.medal,    title: 'Leadership Overview',  sub: 'Strategic snapshot for directors · revenue, targets, red flags' },
     { id: 'overview',   label: 'Overview',       icon: I.trophy,   title: 'Operational Overview', sub: 'A single view of call-floor performance' },
+    { id: 'live',       label: 'Live Floor',     icon: I.users,    title: 'Live Floor',           sub: "Who's on the clock now · today's calls + leads · mobile-friendly" },
     { id: 'staff',      label: 'All Staff',      icon: I.calendar, title: 'All Staff Report',     sub: 'Drill into agent-level performance' },
     { id: 'compare',    label: 'Compare',        icon: I.scale,    title: 'Period Comparison',    sub: 'Week vs week · month vs month' },
     { id: 'daily',      label: 'Daily Stats',    icon: I.cal2,     title: 'Daily Stats',          sub: 'Per-caller performance for a single day' },
@@ -392,6 +393,7 @@
     else if (tab === 'sources')  host.innerHTML = V.leadSources(period);
     else if (tab === 'payroll')  { host.innerHTML = V.payroll(payrollState); payrollWire(); }
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
+    else if (tab === 'live')     { host.innerHTML = renderLiveFloor(); liveFloorWire(); }
     // Any per-card "Export CSV" button shares the topbar export handler.
     document.querySelectorAll('#content .js-export').forEach(b => {
       if (b.__exportWired) return; b.__exportWired = true;
@@ -1804,6 +1806,7 @@
 
     return `
     <div class="tab-view">
+      <div style="margin-bottom:16px">${floorHealthPillHtml()}</div>
       <!-- KPIs -->
       <div class="row kpis">
         ${kpi(I.phone, 'Total Calls', fmt(t.calls), d.calls, 'vs previous ' + Q.PERIODS[period].label.toLowerCase())}
@@ -2124,6 +2127,7 @@
 
     return `
     <div class="tab-view">
+      <div style="margin-bottom:16px">${floorHealthPillHtml()}</div>
       <!-- Hero KPIs -->
       <div class="row kpis">
         ${kpi(I.phone,   'Total Calls',        fmt(t.calls), d.calls,   'vs previous ' + Q.PERIODS[period].label.toLowerCase())}
@@ -2282,6 +2286,183 @@
           </tbody>
         </table></div>
       </div>`;
+  }
+
+  // ─── Floor Health + Live Floor ──────────────────────────────────────
+  // Quick "is the floor healthy?" pill for executives. Reads from the same
+  // flag/KPI sources the rest of the dashboard uses so it never drifts.
+  function floorHealth() {
+    const flags = (typeof currentFlags === 'function') ? currentFlags() : [];
+    const openFlagCount = flags.filter(f => !f.key || !flagAcks.has(f.key)).length;
+    let t = { calls: 0, leads: 0, avgSuccess: 0 };
+    try { t = Q.totalsFor(period) || t; } catch {}
+    const targetSR = (CFG.RED_FLAGS && CFG.RED_FLAGS.target_success_rate) || 12;
+    const sr = t.avgSuccess || 0;
+
+    let status = 'green';
+    const reasons = [];
+    if (openFlagCount >= 3) {
+      status = 'red';
+      reasons.push(`${openFlagCount} open red flags`);
+    } else if (openFlagCount >= 1) {
+      status = 'amber';
+      reasons.push(`${openFlagCount} open red flag${openFlagCount === 1 ? '' : 's'}`);
+    }
+    if (sr > 0 && sr < targetSR * 0.7) {
+      status = 'red';
+      reasons.push(`Success rate ${sr.toFixed(1)}% (target ${targetSR}%)`);
+    } else if (sr > 0 && sr < targetSR) {
+      if (status !== 'red') status = 'amber';
+      reasons.push(`Success rate ${sr.toFixed(1)}% below ${targetSR}% target`);
+    }
+    if (status === 'green') reasons.push('All metrics on track');
+    return { status, reasons, openFlagCount, successRate: sr };
+  }
+
+  function floorHealthPillHtml() {
+    const h = floorHealth();
+    const labelMap = { green: 'Healthy', amber: 'Watch', red: 'Critical' };
+    return `<button class="health-pill health-pill--${h.status}" id="floorHealthPill"
+              title="${escapeHtml(h.reasons.join(' · '))}">
+      <span class="health-dot"></span>
+      <span class="health-status">Floor: ${labelMap[h.status]}</span>
+      <span class="health-reason">${escapeHtml(h.reasons.join(' · '))}</span>
+    </button>`;
+  }
+
+  // The Live Floor view: one card per agent currently clocked in (or out
+  // today), driven by schedule.byStaff (loaded from Supabase events) and
+  // enriched with today's Dialfire call/lead counts when available.
+  function renderLiveFloor() {
+    const todayKey = sastDateStr(new Date());
+    const onlineCards = [];
+    const offlineCards = [];
+    const breakCards = [];
+
+    // Today's Dialfire stats per (lowercase-trimmed) name. Most recent daily
+    // entry — usually yesterday's full day, which is fine for the "today
+    // so far" demo card (the fetcher catches up every morning).
+    const latestDate = (Q.latestDailyDate && Q.latestDailyDate()) || null;
+    const todayList = latestDate ? (Q.dailyFor && Q.dailyFor(latestDate)) || [] : [];
+    const callsByName = new Map();
+    todayList.forEach(a => {
+      const k = (a.name || '').trim().toLowerCase();
+      if (k) callsByName.set(k, a);
+    });
+
+    let onlineCount = 0, offlineCount = 0, totalRoster = 0;
+    let totalCallsToday = 0, totalLeadsToday = 0;
+
+    if (schedule && schedule.byStaff && schedule.byStaff.size) {
+      schedule.byStaff.forEach(rec => {
+        totalRoster++;
+        const today = rec.days && rec.days[todayKey];
+        const inAt = today && today.first ? today.first : null;
+        const outAt = today && today.last ? today.last : null;
+        const isIn = !!(inAt && (!outAt || outAt < inAt));
+        if (isIn) onlineCount++; else offlineCount++;
+
+        const initials = (rec.name || '?').split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+        const avColor = avatarColor(rec.name);
+        const cardClass = isIn ? 'live-card live-card--in' : 'live-card live-card--out';
+        const pillClass = isIn ? 'live-pill live-pill--in' : 'live-pill live-pill--out';
+        const pillText  = isIn ? 'On the clock' : (outAt ? 'Clocked out' : 'Not in yet');
+
+        // Match today's Dialfire stats (loose match: try full + first+last).
+        const fullKey = (rec.name || '').toLowerCase().trim();
+        const parts = (rec.name || '').trim().split(/\s+/);
+        const flKey = parts.length >= 2 ? (parts[0] + ' ' + parts[parts.length - 1]).toLowerCase() : null;
+        const dailyAgent = callsByName.get(fullKey) || (flKey && callsByName.get(flKey)) || null;
+        const todayCalls = dailyAgent ? dailyAgent.calls : null;
+        const todayLeads = dailyAgent ? dailyAgent.leads : null;
+        if (todayCalls != null) totalCallsToday += todayCalls;
+        if (todayLeads != null) totalLeadsToday += todayLeads;
+
+        const fmtT = (d) => d ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Johannesburg' }) : '—';
+        const elapsedMs = inAt ? (Math.max(outAt || new Date(), inAt) - inAt) : 0;
+        const elapsedH = elapsedMs > 0 ? (elapsedMs / 3.6e6) : 0;
+        const elapsedTxt = elapsedH > 0 ? `${Math.floor(elapsedH)}h ${Math.round((elapsedH % 1) * 60)}m` : '—';
+
+        const html = `<div class="${cardClass}" data-agent-id="${escapeHtml(rec.id)}">
+          <div class="live-card-head">
+            <div class="live-av" style="background:${avColor}">${initials}</div>
+            <div style="flex:1 1 auto;min-width:0">
+              <div class="live-card-name">${escapeHtml(rec.name)}</div>
+              <div class="live-card-team">${isIn ? 'In at ' + fmtT(inAt) + ' · ' + elapsedTxt : (outAt ? 'Out at ' + fmtT(outAt) : 'Awaiting clock-in')}</div>
+            </div>
+            <span class="${pillClass}">${pillText}</span>
+          </div>
+          <div class="live-card-meta">
+            <div>
+              <div class="live-stat-label">Calls today</div>
+              <div class="live-stat-val tnum">${todayCalls != null ? fmt(todayCalls) : '—'}</div>
+            </div>
+            <div>
+              <div class="live-stat-label">Leads</div>
+              <div class="live-stat-val tnum">${todayLeads != null ? fmt(todayLeads) : '—'}</div>
+            </div>
+            <div>
+              <div class="live-stat-label">Conv.</div>
+              <div class="live-stat-val tnum">${(todayCalls && todayLeads != null) ? ((todayLeads / todayCalls) * 100).toFixed(1) + '%' : '—'}</div>
+            </div>
+          </div>
+        </div>`;
+        (isIn ? onlineCards : offlineCards).push(html);
+      });
+    }
+
+    const refreshedAt = schedule && schedule.asOf
+      ? schedule.asOf.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Johannesburg' })
+      : '—';
+    const summary = `<div class="live-summary">
+      <div class="live-summary-stat">
+        <div class="live-summary-val tnum">${onlineCount}</div>
+        <div class="live-summary-label">On the clock</div>
+      </div>
+      <div class="live-summary-stat">
+        <div class="live-summary-val tnum">${totalRoster - onlineCount}</div>
+        <div class="live-summary-label">Not in yet</div>
+      </div>
+      <div class="live-summary-stat">
+        <div class="live-summary-val tnum">${fmt(totalCallsToday)}</div>
+        <div class="live-summary-label">Calls today</div>
+      </div>
+      <div class="live-summary-stat">
+        <div class="live-summary-val tnum">${fmt(totalLeadsToday)}</div>
+        <div class="live-summary-label">Leads today</div>
+      </div>
+      <div class="live-refresh-meta">
+        ${floorHealthPillHtml()}<br>
+        <span style="display:inline-block;margin-top:8px">Refreshed ${escapeHtml(refreshedAt)} SAST · auto-updates on clock events</span>
+      </div>
+    </div>`;
+
+    const grid = onlineCards.concat(offlineCards).length
+      ? `<div class="live-grid">${onlineCards.concat(offlineCards).join('')}</div>`
+      : `<div class="card card-pad" style="text-align:center;color:var(--muted);padding:60px 20px">
+          ${schedule ? 'No clock-in events recorded yet for the active roster.' : 'Loading live floor data — clock events are streaming from quay-clock.'}
+        </div>`;
+
+    return `<div class="tab-view">${summary}${grid}</div>`;
+  }
+
+  function liveFloorWire() {
+    // Re-render the Live Floor on any new clock event. We piggy-back on the
+    // existing realtime channel — wireRealtimeChannel() is already invoked
+    // elsewhere; here we just refresh schedule and re-render this tab.
+    if (window.sb && !schedule) {
+      loadScheduleData().then(() => { if (tab === 'live') render(); });
+    }
+  }
+
+  // Build a deterministic avatar background for a name. Same Quay-blue palette
+  // as the quay-clock admin so the look is consistent across the suite.
+  const _AVATAR_PALETTE = ['#3D5BA6','#1E3A8A','#3F7BC4','#2F8FB3'];
+  function avatarColor(name) {
+    const s = (name || '').toLowerCase();
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return _AVATAR_PALETTE[h % _AVATAR_PALETTE.length];
   }
 
   // Computes the same flags the Overview card shows, for re-use elsewhere
@@ -3194,7 +3375,7 @@
       if (document.visibilityState !== 'visible') { _rtPending = true; return; }
       loadScheduleData().then(() => {
         updateLiveFlagsBadge();
-        if (!dashIsBusy() && (tab === 'overview' || tab === 'leadership')) shell();
+        if (!dashIsBusy() && (tab === 'overview' || tab === 'leadership' || tab === 'live')) shell();
       });
     }, 2000);
   }
