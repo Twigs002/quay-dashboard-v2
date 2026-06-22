@@ -759,11 +759,13 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
   backdrop-filter: blur(4px); z-index: 1000; animation: fadeIn .15s ease-out;
 }
 .modal {
-  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  width: min(960px, 94vw); max-height: 90vh; overflow: auto;
+  /* Anchor below the topbar so the elevated topbar (z-index 1002) doesn't
+     visually clip the modal's title bar. ~80px = topbar height + a gap. */
+  position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+  width: min(960px, 94vw); max-height: calc(100vh - 100px); overflow: auto;
   background: var(--bg, #F7F9FC); border-radius: 16px;
   box-shadow: 0 24px 70px rgba(15, 30, 60, .25);
-  z-index: 1001; animation: popIn .18s ease-out;
+  z-index: 1001; animation: popInTop .18s ease-out;
 }
 .modal-head {
   position: sticky; top: 0; background: #fff;
@@ -776,6 +778,10 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes popIn { from { opacity: 0; transform: translate(-50%, -48%) scale(.97); }
                    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+/* Matches .modal which is anchored below the topbar (top: 80px) and only
+   needs horizontal centering — the X-axis translate must stay constant. */
+@keyframes popInTop { from { opacity: 0; transform: translateX(-50%) scale(.97); }
+                      to   { opacity: 1; transform: translateX(-50%) scale(1); } }
 
 /* ── Dashboard login overlay (everyone who logs in is admin) ─────────── */
 .dash-login {

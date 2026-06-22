@@ -38,6 +38,7 @@ window.QUAY_READY = (async function () {
     'geneva gomes':   'Geneva Maggie-Nela Gomez',
     'lauren carolus': 'Lauren Stacey Carolus',
     'nicolette':      'Nicolette Van Der Berg',
+    'test':           'Jason Hendricks',
   };
   // Reverse index: canonical -> [alias, ...] so we can stash extra map keys
   // when building each period's lookup.
