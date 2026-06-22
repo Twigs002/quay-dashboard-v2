@@ -2463,20 +2463,20 @@
               <div class="live-stat-label">Calls</div>
               <div class="live-stat-val tnum">${todayCalls != null ? fmt(todayCalls) : '—'}</div>
             </div>
-            <div>
-              <div class="live-stat-label">Leads</div>
+            <div title="Calls touching leads in LEAD status. Includes follow-up calls — true per-period leads need Dialfire Processing report scope.">
+              <div class="live-stat-label">Lead·calls</div>
               <div class="live-stat-val tnum">${todayLeads != null ? fmt(todayLeads) : '—'}</div>
             </div>
-            <div>
-              <div class="live-stat-label">Rental</div>
+            <div title="Calls touching leads in RENTAL_LEAD status. Same caveat as Lead·calls.">
+              <div class="live-stat-label">Rental·calls</div>
               <div class="live-stat-val tnum">${todayRental != null ? fmt(todayRental) : '—'}</div>
             </div>
-            <div>
-              <div class="live-stat-label">Email</div>
+            <div title="Calls touching leads in GOT_EMAIL status. Includes follow-up calls to previously-emailed leads.">
+              <div class="live-stat-label">Email·calls</div>
               <div class="live-stat-val tnum">${todayEmail != null ? fmt(todayEmail) : '—'}</div>
             </div>
-            <div>
-              <div class="live-stat-label">Conv.</div>
+            <div title="Lead·calls ÷ total calls. Not a true conversion rate until Dialfire's per-period transitions endpoint is integrated.">
+              <div class="live-stat-label">L/C %</div>
               <div class="live-stat-val tnum">${(todayCalls && todayLeads != null) ? ((todayLeads / todayCalls) * 100).toFixed(1) + '%' : '—'}</div>
             </div>
           </div>
