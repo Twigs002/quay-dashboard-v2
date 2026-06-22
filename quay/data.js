@@ -678,6 +678,21 @@ window.QUAY_READY = (async function () {
   function periodElapsed(periodKey) {
     const now = new Date();
     if (periodKey === 'this-week') {
+      // The 'this-week' bucket in weekly_data is whichever week the Dialfire
+      // fetcher last wrote. On Mondays the fetcher returns last week's full
+      // Mon-Sun (intentional; otherwise Monday morning shows ~0 calls). In
+      // that case the projection should NOT divide by today's day-of-week —
+      // the data is already a complete week, so we treat elapsed = total.
+      const sowIso = (() => {
+        const d = new Date();
+        const day = (d.getDay() + 6) % 7; // 0=Mon..6=Sun
+        d.setHours(0,0,0,0); d.setDate(d.getDate() - day);
+        return d.toISOString().slice(0, 10);
+      })();
+      const dataWeekStart = (weeks[0] && weeks[0].weekStart) || null;
+      if (dataWeekStart && dataWeekStart !== sowIso) {
+        return { elapsed: 5, total: 5, fraction: 1 };
+      }
       const dow = now.getDay(); // 0=Sun, 1=Mon..6=Sat
       const workedDays = (dow === 0 || dow === 6) ? 5 : Math.min(5, dow);
       return { elapsed: workedDays, total: 5, fraction: workedDays / 5 };
