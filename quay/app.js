@@ -2298,7 +2298,7 @@
     try {
       const { data, error } = await window.sb
         .from('live_stats')
-        .select('staff_id,name,calls,leads,work_hours,success_rate,updated_at')
+        .select('staff_id,name,calls,leads,seller_leads,rental_leads,email_leads,work_hours,success_rate,updated_at')
         .order('calls', { ascending: false });
       if (error) throw error;
       liveStats = data || [];
@@ -2435,8 +2435,10 @@
         const flKey = parts.length >= 2 ? (parts[0] + ' ' + parts[parts.length - 1]).toLowerCase() : null;
         const liveRow = liveStatsFor(rec.name);
         const dailyAgent = callsByName.get(fullKey) || (flKey && callsByName.get(flKey)) || null;
-        const todayCalls = liveRow ? liveRow.calls : (dailyAgent ? dailyAgent.calls : null);
-        const todayLeads = liveRow ? liveRow.leads : (dailyAgent ? dailyAgent.leads : null);
+        const todayCalls  = liveRow ? liveRow.calls         : (dailyAgent ? dailyAgent.calls  : null);
+        const todayLeads  = liveRow ? liveRow.leads         : (dailyAgent ? dailyAgent.leads  : null);
+        const todayRental = liveRow ? liveRow.rental_leads  : (dailyAgent ? dailyAgent.rental : null);
+        const todayEmail  = liveRow ? liveRow.email_leads   : (dailyAgent ? dailyAgent.email  : null);
         if (todayCalls != null) totalCallsToday += todayCalls;
         if (todayLeads != null) totalLeadsToday += todayLeads;
         if (todayCalls && todayCalls > 0) activeCallerCount++;
@@ -2457,12 +2459,20 @@
           </div>
           <div class="live-card-meta">
             <div>
-              <div class="live-stat-label">Calls today</div>
+              <div class="live-stat-label">Calls</div>
               <div class="live-stat-val tnum">${todayCalls != null ? fmt(todayCalls) : '—'}</div>
             </div>
             <div>
               <div class="live-stat-label">Leads</div>
               <div class="live-stat-val tnum">${todayLeads != null ? fmt(todayLeads) : '—'}</div>
+            </div>
+            <div>
+              <div class="live-stat-label">Rental</div>
+              <div class="live-stat-val tnum">${todayRental != null ? fmt(todayRental) : '—'}</div>
+            </div>
+            <div>
+              <div class="live-stat-label">Email</div>
+              <div class="live-stat-val tnum">${todayEmail != null ? fmt(todayEmail) : '—'}</div>
             </div>
             <div>
               <div class="live-stat-label">Conv.</div>
