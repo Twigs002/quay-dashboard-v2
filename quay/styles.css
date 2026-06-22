@@ -720,7 +720,9 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
 
 /* Print / PDF stylesheet */
 @media print {
-  @page { size: A4; margin: 14mm; }
+  /* Dashboard content is wider than it is tall — landscape keeps cards
+     readable and stops the layout collapsing into a portrait strip. */
+  @page { size: A4 landscape; margin: 12mm; }
   body { background: #fff !important; }
   .sidebar, .topbar, .modal-backdrop, .modal { display: none !important; }
   .app, .main, .content, #tab-exec.active, #content { display: block !important; padding: 0 !important; margin: 0 !important; min-height: 0 !important; background: #fff !important; }

@@ -241,8 +241,8 @@ window.VIEWS = (function () {
         <td class="num tnum">${fmt(dfTotal)}</td>
         <td class="num tnum">${fmt(waTotal)}</td>
         <td class="num tnum">${fmt((r.hs_leads_vals||0)+(r.df_leads_vals||0)+(r.wa_leads_vals||0))}</td>
-        <td class="muted reason-cell" title="${esc(r.notes || '')}" style="max-width:280px;font-size:12px">
-          <div class="reason-text">${esc(r.notes || '—')}</div>
+        <td class="muted reason-cell" title="${escapeHtml(r.notes || '')}" style="max-width:280px;font-size:12px">
+          <div class="reason-text">${escapeHtml(r.notes || '—')}</div>
         </td>
       </tr>`;
     }).join('');
