@@ -290,7 +290,7 @@
           </div>
           <div class="topbar-right">
             ${tab === 'overview' ? `
-            <button class="live-flags-badge" id="liveFlagsBadge" title="Open Manager Reports to action these flags">
+            <button class="live-flags-badge" id="liveFlagsBadge" title="Open Red Flags to action these flags">
               <span class="lfb-pulse"></span>
               <span class="lfb-icon">⚑</span>
               <span class="lfb-count" id="lfbCount">0</span>
@@ -916,14 +916,9 @@
       host.innerHTML = flagsCardHtml(currentFlags());
       wireFlagAckButtons(host);
     }
-    // Sortable campaign table — reuses the same sortableWire() the All
-    // Staff table uses. Click any th[data-sort] header to toggle asc/desc.
-    sortableWire(document.getElementById('managerCampTable'));
-    // Drill-down: click a campaign row → open the per-campaign + per-caller
-    // modal so the user can see who worked it.
-    document.querySelectorAll('#managerCampTable tbody tr[data-campaign]').forEach(tr => {
-      tr.addEventListener('click', () => openCampaignModal(tr.dataset.campaign));
-    });
+    // The Red Flags tab used to host a sortable campaign table; that table
+    // was retired when the tab was simplified to flags + monthly trends.
+    // Campaign drill-downs are now only reachable from the Overview tab.
   }
 
   function staffWire() {
@@ -1208,8 +1203,8 @@
   }
 
   // ---------------------------------------------------- CAMPAIGN DRILL-DOWN
-  // Click a row in the Manager Reports campaign table → modal showing the
-  // campaign totals up top and a per-agent breakdown. Per-agent-per-campaign
+  // Click a campaign row (Overview tab, lead-sources view) → modal showing
+  // the campaign totals up top and a per-agent breakdown. Per-agent-per-campaign
   // numbers come from Q.agentCampaigns(agent, period) (backed by
   // weekly_data.json's by_agent_campaign). If a week pre-dates that field
   // the agent simply won't appear in the per-campaign list for that week —
@@ -2290,7 +2285,7 @@
   }
 
   // Computes the same flags the Overview card shows, for re-use elsewhere
-  // (e.g. Manager Reports). Mirrors the prelude inside overview() but only
+  // (e.g. the Red Flags tab). Mirrors the prelude inside overview() but only
   // grabs the inputs redFlags() actually needs.
   function currentFlags() {
     if (!Q || !Q.agentsFor || !Q.DELTAS) return [];

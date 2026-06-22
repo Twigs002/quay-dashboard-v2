@@ -200,7 +200,7 @@ button { font-family: inherit; cursor: pointer; }
 .topbar-right { display: flex; align-items: center; gap: 14px; }
 
 /* Live red-flags badge — only shown on Operational Overview; clicking
-   jumps to Manager Reports where flags are actioned. Solid brand red so
+   jumps to the Red Flags tab where they are actioned. Solid brand red so
    it reads as critical, never amber-ish. */
 .live-flags-badge {
   position: relative;
