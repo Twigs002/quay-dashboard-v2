@@ -99,15 +99,20 @@ def fetch_window(supabase_url: str, service_key: str,
         "Accept": "application/json",
     }
     while True:
-        params = {
-            "select": "duration_hrs,staff_id,staff(name)",
-            "dir":    "eq.out",
-            "ts":     f"gte.{frm.isoformat()}",
-        }
-        url = (f"{supabase_url}/rest/v1/events?{urlencode(params)}"
-               f"&ts=lte.{to.isoformat()}"
-               f"&order=ts.asc"
-               f"&offset={offset}&limit={PAGE_SIZE}")
+        # PostgREST supports repeated `ts` query params (gte + lte). Encode
+        # the whole param list at once so the '+' inside ISO timezone offsets
+        # gets percent-encoded; concatenating a second &ts=lte.…+00:00 by
+        # hand turned the '+' into a space and produced 400 Bad Request.
+        params = [
+            ("select", "duration_hrs,staff_id,staff(name)"),
+            ("dir",    "eq.out"),
+            ("ts",     f"gte.{frm.isoformat()}"),
+            ("ts",     f"lte.{to.isoformat()}"),
+            ("order",  "ts.asc"),
+            ("offset", str(offset)),
+            ("limit",  str(PAGE_SIZE)),
+        ]
+        url = f"{supabase_url}/rest/v1/events?{urlencode(params)}"
         r = requests.get(url, headers=headers, timeout=60)
         r.raise_for_status()
         batch = r.json() or []
