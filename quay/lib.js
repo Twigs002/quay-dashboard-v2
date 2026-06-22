@@ -44,7 +44,7 @@ window.CHART = (function () {
     host.innerHTML = '';
     const W = 760, H = 280, padL = 46, padR = 46, padT = 18, padB = 34;
     const iw = W - padL - padR, ih = H - padT - padB;
-    const svg = E('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', height: 'auto', preserveAspectRatio: 'xMidYMid meet' });
+    const svg = E('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', preserveAspectRatio: 'xMidYMid meet', style: 'height:auto' });
 
     const bMax = Math.max(...bars) * 1.12;
     const lMin = Math.min(...line) - 2, lMax = Math.max(...line) + 2;
@@ -101,7 +101,7 @@ window.CHART = (function () {
     host.innerHTML = '';
     const size = 200, r = 76, cx = size / 2, cy = size / 2, sw = 26;
     const total = segments.reduce((s, x) => s + x.value, 0);
-    const svg = E('svg', { viewBox: `0 0 ${size} ${size}`, width: '100%', height: 'auto' });
+    const svg = E('svg', { viewBox: `0 0 ${size} ${size}`, width: '100%', style: 'height:auto' });
     const C = 2 * Math.PI * r;
     let offset = 0;
     svg.appendChild(E('circle', { cx, cy, r, fill: 'none', stroke: '#EDF1F8', 'stroke-width': sw }));
@@ -146,7 +146,7 @@ window.CHART = (function () {
     const W = 240, H = 64, n = values.length, gap = 5;
     const bw = (W - gap * (n - 1)) / n;
     const max = Math.max(...values) * 1.08;
-    const svg = E('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', height: 'auto', preserveAspectRatio: 'none' });
+    const svg = E('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', preserveAspectRatio: 'none', style: 'height:auto' });
     values.forEach((v, i) => {
       const bh = (v / max) * H;
       const last = i === n - 1;
