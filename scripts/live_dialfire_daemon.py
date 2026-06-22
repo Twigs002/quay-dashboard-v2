@@ -155,10 +155,18 @@ def staff_slug(name):
     return s or "unknown"
 
 
+def prettify(name):
+    """Dialfire returns CamelCase names ("LisabellPanze"); the dashboard
+    expects spaced ones ("Lisabell Panze") so its first+last name lookups
+    match the Supabase staff roster. Mirrors quay/data.js's prettifyName."""
+    import re
+    return re.sub(r"([a-z])([A-Z])", r"\1 \2", (name or "").replace("_", " ")).strip()
+
+
 def build_rows(agents, now_iso):
     out = []
     for a in agents.values():
-        n = (a.get("name") or "").strip()
+        n = prettify((a.get("name") or "").strip())
         if not n:
             continue
         out.append({
@@ -242,10 +250,27 @@ def main():
 
     supabase_url = (os.environ.get("SUPABASE_URL") or "").strip()
     service_key  = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
+    if not service_key:
+        # Fall back to macOS Keychain so the plist doesn't have to embed the
+        # secret. Match the entry created in the setup step:
+        #   security add-generic-password -s SUPABASE_SERVICE_ROLE_KEY \
+        #     -a supabase-quay-clock -w '<jwt>'
+        try:
+            import subprocess
+            service_key = subprocess.check_output(
+                ["security", "find-generic-password",
+                 "-s", "SUPABASE_SERVICE_ROLE_KEY",
+                 "-a", "supabase-quay-clock", "-w"],
+                stderr=subprocess.DEVNULL,
+            ).decode().strip()
+        except Exception:
+            pass
     if not supabase_url:
         raise SystemExit("ERROR: SUPABASE_URL env var not set.")
     if not service_key:
-        raise SystemExit("ERROR: SUPABASE_SERVICE_ROLE_KEY env var not set.")
+        raise SystemExit(
+            "ERROR: SUPABASE_SERVICE_ROLE_KEY not in env or Keychain "
+            "(service=SUPABASE_SERVICE_ROLE_KEY, account=supabase-quay-clock).")
 
     campaigns, source = load_campaigns()
 
