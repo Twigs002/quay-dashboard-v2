@@ -170,22 +170,33 @@ button { font-family: inherit; cursor: pointer; }
 /* ---------------- Main ---------------- */
 .main { display: flex; flex-direction: column; min-width: 0; }
 .topbar {
-  position: sticky; top: 0; z-index: 20;
+  position: sticky; top: 0; z-index: 1002;
   background: rgba(244,240,231,.86);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
   padding: 16px 36px;
   display: flex; align-items: center; justify-content: space-between; gap: 24px;
 }
+/* The agent drill-down modal backdrop (z-index 1000) covered the topbar so
+   clicking the period buttons hit the backdrop's close handler instead — the
+   modal closed and the period change never registered. Lifting the topbar
+   above the backdrop lets period changes flow through while the modal stays
+   open and re-renders with the new period (see openAgentModal in app.js). */
 .topbar-left { display: flex; align-items: center; gap: 16px; min-width: 0; }
 .topbar-titles { flex: 1 1 auto; min-width: 0; }
 .topbar-titles h1 {
   font-family: var(--serif);
   font-size: 21px; font-weight: 800; margin: 0; letter-spacing: .04em;
   color: var(--ink); white-space: nowrap; text-transform: uppercase;
+  overflow: hidden; text-overflow: ellipsis;
 }
 .topbar-right { flex: none; }
-.topbar-titles p { margin: 2px 0 0; font-size: 13px; color: var(--slate); }
+/* Subtitle stays on a single line — wrapping over 3 lines (when the red-flags
+   pill is showing on Overview) made the topbar tower over the page. */
+.topbar-titles p {
+  margin: 2px 0 0; font-size: 13px; color: var(--slate);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .topbar-right { display: flex; align-items: center; gap: 14px; }
 
 /* Live red-flags badge — only shown on Operational Overview; clicking

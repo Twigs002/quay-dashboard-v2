@@ -100,7 +100,7 @@ window.VIEWS = (function () {
         ${miniStat('Total calls', fmt(tCalls), 'across selected range', I.phone)}
         ${miniStat('Total leads', fmt(tLeads), 'seller · rental · email', I.target)}
         ${miniStat('Avg efficiency', avgEff + '%', 'DialFire ÷ clocked time · target ≥70%', I.bolt)}
-        ${miniStat('Dialler vs clocked', totDf.toFixed(0) + 'h / ' + totCt.toFixed(0) + 'h', haveClock ? 'real data from quay-clock' : 'estimated — no clock data yet', I.clock)}
+        ${miniStat('Dialler vs clocked', totDf.toFixed(0) + ' / ' + totCt.toFixed(0) + 'h', haveClock ? 'real data from quay-clock' : 'estimated — no clock data yet', I.clock)}
       </div>
 
       <div class="card mt" id="staffOverall">
@@ -338,11 +338,13 @@ window.VIEWS = (function () {
   }
 
   function miniStat(label, value, sub, icon) {
+    // Allow the value to wrap (around a slash, for ratios like "1344 / 1581h")
+    // when the 5-card row gets tight. Single-word values still fit on one line.
     return `<div class="card card-pad">
-      <div style="display:flex;align-items:center;gap:12px">
+      <div style="display:flex;align-items:center;gap:12px;min-width:0">
         <div class="kpi-ic">${icon}</div>
-        <div><div class="kpi-label" style="margin:0;white-space:nowrap">${label}</div>
-        <div style="font-family:var(--serif);font-size:24px;font-weight:600;color:var(--ink);line-height:1.15;white-space:nowrap">${value}</div></div>
+        <div style="min-width:0;flex:1 1 auto"><div class="kpi-label" style="margin:0;white-space:nowrap">${label}</div>
+        <div style="font-family:var(--serif);font-size:24px;font-weight:600;color:var(--ink);line-height:1.15;overflow-wrap:break-word">${value}</div></div>
       </div>
       <div class="kpi-foot" style="margin-top:12px">${sub}</div>
     </div>`;

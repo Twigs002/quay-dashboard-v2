@@ -36,6 +36,10 @@
   // doesn't re-hit Supabase. Keyed by period so a period change forces
   // a refetch on next click.
   let lnReportsState = { period: null, loading: false, error: null, data: null };
+  // Name of the agent currently shown in the drill-down modal (or null if
+  // closed). Top-bar period clicks check this to re-render the modal with
+  // the new period's data instead of leaving the user on the underlying tab.
+  let currentAgentModalName = null;
 
   // ---- standard schedule (8am–5pm Mon–Fri) ----
   // Soft target: we surface variance, we don't enforce it.
@@ -286,7 +290,7 @@
               <span class="lfb-pulse"></span>
               <span class="lfb-icon">⚑</span>
               <span class="lfb-count" id="lfbCount">0</span>
-              <span class="lfb-label">live red flag<span id="lfbS"></span></span>
+              <span class="lfb-label">red flag<span id="lfbS"></span></span>
             </button>` : ''}
             <div class="period" id="period">
               ${Object.entries(Q.PERIODS).map(([k, p]) =>
@@ -300,11 +304,27 @@
       </main>`;
 
     document.querySelectorAll('.nav-item').forEach(b =>
-      b.addEventListener('click', () => { tab = b.dataset.tab; shell(); }));
+      b.addEventListener('click', () => {
+        // Switching tabs makes the agent drill-down's context stale — close it.
+        closeAgentModalIfOpen();
+        tab = b.dataset.tab; shell();
+      }));
     const navMobile = document.getElementById('navMobile');
-    if (navMobile) navMobile.addEventListener('change', () => { tab = navMobile.value; shell(); });
+    if (navMobile) navMobile.addEventListener('change', () => {
+      closeAgentModalIfOpen();
+      tab = navMobile.value; shell();
+    });
     document.querySelectorAll('#period button').forEach(b =>
-      b.addEventListener('click', () => { period = b.dataset.period; shell(); }));
+      b.addEventListener('click', () => {
+        period = b.dataset.period;
+        // Preserve an open agent drill-down across the period change. The
+        // shell rebuild re-renders #app (the modal lives in a body-level
+        // mount so it survives), but the modal's data is stale until we
+        // re-open it with the new period.
+        const reopenAgent = currentAgentModalName;
+        shell();
+        if (reopenAgent) openAgentModal(reopenAgent);
+      }));
     document.getElementById('btnPrint').addEventListener('click', () => window.print());
     document.getElementById('btnExport').addEventListener('click', exportCurrentTab);
     const lfb = document.getElementById('liveFlagsBadge');
@@ -1022,10 +1042,18 @@
     });
   }
   // ---------------------------------------------------- AGENT DRILL-DOWN
+  function closeAgentModalIfOpen() {
+    const mount = document.getElementById('agentModalMount');
+    if (mount) mount.innerHTML = '';
+    document.body.style.overflow = '';
+    currentAgentModalName = null;
+  }
+
   function openAgentModal(name) {
     const all = Q.agentsFor(period);
     const a = all.find(x => x.name === name);
-    if (!a) return;
+    if (!a) { currentAgentModalName = null; return; }
+    currentAgentModalName = name;
     const hist = Q.agentHistory(name).slice(-12);  // last 12 weeks present
     const camps = Q.agentCampaigns(name, period);
     const onTarget = !!a.meetsTarget;
@@ -1148,6 +1176,7 @@
       mount.innerHTML = '';
       document.body.style.overflow = '';
       document.removeEventListener('keydown', escClose);
+      currentAgentModalName = null;
     };
     const escClose = e => { if (e.key === 'Escape') close(); };
     document.getElementById('agentModalClose').addEventListener('click', close);
