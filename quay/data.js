@@ -28,6 +28,25 @@ window.QUAY_READY = (async function () {
   // the right window's real hours instead of the df/0.85 estimate.
   const clockByName = new Map();
   const clockByPeriod = new Map(); // period -> Map<nameLower, hours>
+  // Aliases: Dialfire's prettified agent name -> canonical Supabase staff
+  // name. Add new entries here when an agent shows 'est' on All Staff but
+  // clearly has Supabase clock events. Keys are lowercase. Mirrors known
+  // nicknames + spelling diffs that the first+last fallback can't bridge.
+  const CLOCK_ALIAS_DIALFIRE_TO_CANONICAL = {
+    'gio':            'Giovon Van Wyk',
+    'declan t':       'Declan Ryder Tyler',
+    'geneva gomes':   'Geneva Maggie-Nela Gomez',
+    'lauren carolus': 'Lauren Stacey Carolus',
+    'nicolette':      'Nicolette Van Der Berg',
+  };
+  // Reverse index: canonical -> [alias, ...] so we can stash extra map keys
+  // when building each period's lookup.
+  const CLOCK_ALIASES_BY_CANONICAL = {};
+  Object.entries(CLOCK_ALIAS_DIALFIRE_TO_CANONICAL).forEach(([alias, canonical]) => {
+    const key = canonical.toLowerCase();
+    (CLOCK_ALIASES_BY_CANONICAL[key] = CLOCK_ALIASES_BY_CANONICAL[key] || []).push(alias);
+  });
+
   // Index by full name AND "first last" (skipping middle names) — Dialfire's
   // prettified agent names are usually short ("Douglas Nkulu") while
   // Supabase staff carry full names ("Douglas Mpiana Nkulu"). Without the
@@ -42,22 +61,20 @@ window.QUAY_READY = (async function () {
     };
     (agents || []).forEach(a => {
       const hours = Number(a.hours) || 0;
-      if (a.name) {
-        const full = a.name.toLowerCase().trim();
+      const stashAllForms = (name) => {
+        if (!name) return;
+        const full = name.toLowerCase().trim();
         stash(full, hours);
-        const parts = a.name.trim().split(/\s+/);
+        const parts = name.trim().split(/\s+/);
         if (parts.length >= 2) {
           stash((parts[0] + ' ' + parts[parts.length - 1]).toLowerCase(), hours);
         }
-      }
-      if (a.name_normalised) {
-        const full = a.name_normalised.toLowerCase().trim();
-        stash(full, hours);
-        const parts = a.name_normalised.trim().split(/\s+/);
-        if (parts.length >= 2) {
-          stash((parts[0] + ' ' + parts[parts.length - 1]).toLowerCase(), hours);
-        }
-      }
+        // Any registered Dialfire-side aliases for this canonical name.
+        const aliases = CLOCK_ALIASES_BY_CANONICAL[full];
+        if (aliases) aliases.forEach(alias => stash(alias.toLowerCase(), hours));
+      };
+      stashAllForms(a.name);
+      stashAllForms(a.name_normalised);
     });
     return m;
   };
