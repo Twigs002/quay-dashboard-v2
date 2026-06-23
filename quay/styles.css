@@ -452,11 +452,9 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   outline: 2px solid var(--navy-800);
   outline-offset: 2px;
 }
-.tbl tr[data-agent]:focus-visible,
-.tbl tr[data-month-row]:focus-visible {
-  outline: 2px solid var(--navy-800);
-  outline-offset: -2px;
-}
+/* Clickable table rows (data-agent / data-month-row) intentionally have no
+   :focus-visible rule until they're made keyboard-focusable (tabindex="0" +
+   Enter/Space handlers). The rule was inert and gave a false sense of a11y. */
 
 /* Nav section headings (sidebar grouping) */
 .nav-section {

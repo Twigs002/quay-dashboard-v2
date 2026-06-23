@@ -1128,7 +1128,7 @@
               <div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap">
                 <span class="pill ${a.team === 'RM' ? 'rm' : 'fancy'}" style="font-size:10.5px">${a.team}</span>
                 <span class="pill ${sc}" style="font-size:10.5px">${a.success}% success</span>
-                ${onTarget ? '<span class="pill ok" style="font-size:10.5px">✓ on target</span>' : ''}
+                ${onTarget ? '<span class="pill ok" style="font-size:10.5px">on target</span>' : ''}
               </div>
             </div>
           </div>
@@ -2154,7 +2154,7 @@
 
     return `
     <div class="tab-view">
-      <div class="construction-banner" role="status" aria-live="polite">
+      <div class="construction-banner" role="note">
         <svg class="cb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
         <div>
           <b>Still under construction</b> — this view is a work in progress.
@@ -2211,6 +2211,7 @@
         </div>
       </div>
 
+      <div class="divider-note">Revenue model</div>
       <!-- Revenue model — per-campaign breakdown that drove the ceiling -->
       ${revenueModelCard(camps0, teamRateLookup, rev.default, rentalRate)}
 
@@ -2378,47 +2379,10 @@
     return latest ? new Date(latest) : null;
   }
 
-  // ─── Floor Health + Live Floor ──────────────────────────────────────
-  // Quick "is the floor healthy?" pill for executives. Reads from the same
-  // flag/KPI sources the rest of the dashboard uses so it never drifts.
-  function floorHealth() {
-    const flags = (typeof currentFlags === 'function') ? currentFlags() : [];
-    const openFlagCount = flags.filter(f => !f.key || !flagAcks.has(f.key)).length;
-    let t = { calls: 0, leads: 0, avgSuccess: 0 };
-    try { t = Q.totalsFor(period) || t; } catch {}
-    const targetSR = (CFG.RED_FLAGS && CFG.RED_FLAGS.target_success_rate) || 12;
-    const sr = t.avgSuccess || 0;
+  // (Floor Health pill removed 2026-06-23 per user — kept only the small
+  // red-flag count badge in the topbar on Overview. The wide pill was
+  // duplicating that signal under the page title.)
 
-    let status = 'green';
-    const reasons = [];
-    if (openFlagCount >= 3) {
-      status = 'red';
-      reasons.push(`${openFlagCount} open red flags`);
-    } else if (openFlagCount >= 1) {
-      status = 'amber';
-      reasons.push(`${openFlagCount} open red flag${openFlagCount === 1 ? '' : 's'}`);
-    }
-    if (sr > 0 && sr < targetSR * 0.7) {
-      status = 'red';
-      reasons.push(`Success rate ${sr.toFixed(1)}% (target ${targetSR}%)`);
-    } else if (sr > 0 && sr < targetSR) {
-      if (status !== 'red') status = 'amber';
-      reasons.push(`Success rate ${sr.toFixed(1)}% below ${targetSR}% target`);
-    }
-    if (status === 'green') reasons.push('All metrics on track');
-    return { status, reasons, openFlagCount, successRate: sr };
-  }
-
-  function floorHealthPillHtml() {
-    const h = floorHealth();
-    const labelMap = { green: 'Healthy', amber: 'Watch', red: 'Critical' };
-    return `<button class="health-pill health-pill--${h.status}" id="floorHealthPill"
-              title="${escapeHtml(h.reasons.join(' · '))}">
-      <span class="health-dot"></span>
-      <span class="health-status">Floor: ${labelMap[h.status]}</span>
-      <span class="health-reason">${escapeHtml(h.reasons.join(' · '))}</span>
-    </button>`;
-  }
 
   // The Live Floor view: one card per agent currently clocked in (or out
   // today), driven by schedule.byStaff (loaded from Supabase events) and

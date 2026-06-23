@@ -314,7 +314,7 @@ window.VIEWS = (function () {
           <div class="agent-name" style="font-size:15.5px;line-height:1.2">${a.name}</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px">
             <span class="pill ${a.team === 'RM' ? 'rm' : 'fancy'}" style="font-size:10px;padding:2px 8px">${a.team}</span>
-            ${onTarget ? '<span class="pill ok" style="font-size:10px;padding:2px 8px">✓ on target</span>' : ''}
+            ${onTarget ? '<span class="pill ok" style="font-size:10px;padding:2px 8px">on target</span>' : ''}
             <span class="pill ${sc}" style="font-size:10px;padding:2px 8px">${a.success}% success</span>
           </div>
         </div>
@@ -650,7 +650,7 @@ window.VIEWS = (function () {
 
     return `
     <div class="tab-view">
-      <div class="construction-banner" role="status" aria-live="polite">
+      <div class="construction-banner" role="note">
         <svg class="cb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
         <div>
           <b>Still under construction</b> — historical weeks still over-count when agents work multiple campaigns.
