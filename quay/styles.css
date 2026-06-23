@@ -452,9 +452,14 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   outline: 2px solid var(--navy-800);
   outline-offset: 2px;
 }
-/* Clickable table rows (data-agent / data-month-row) intentionally have no
-   :focus-visible rule until they're made keyboard-focusable (tabindex="0" +
-   Enter/Space handlers). The rule was inert and gave a false sense of a11y. */
+/* Clickable rows / cards (data-agent) — wireAgentClicks() in app.js makes
+   them tabindex=0 + role=button and binds Enter/Space, so this focus ring
+   is keyboard-reachable. Month-row drill-downs use a real <a> inside the
+   row, so the anchor's default focus ring is sufficient. */
+[data-agent]:focus-visible {
+  outline: 2px solid var(--navy-800);
+  outline-offset: -2px;
+}
 
 /* Nav section headings (sidebar grouping) */
 .nav-section {

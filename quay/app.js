@@ -318,13 +318,12 @@
             <div class="topbar-titles"><h1 id="tabTitle"></h1><p id="tabSub"></p></div>
           </div>
           <div class="topbar-right">
-            ${tab === 'overview' ? `
             <button class="live-flags-badge" id="liveFlagsBadge" title="Open Red Flags to action these flags">
               <span class="lfb-pulse"></span>
               <span class="lfb-icon">⚑</span>
               <span class="lfb-count" id="lfbCount">0</span>
               <span class="lfb-label">red flag<span id="lfbS"></span></span>
-            </button>` : ''}
+            </button>
             <div class="period" id="period">
               ${Object.entries(Q.PERIODS).map(([k, p]) =>
                 `<button data-period="${k}" class="${k === period ? 'active' : ''}">${p.label}</button>`).join('')}
@@ -1837,7 +1836,7 @@
       <!-- KPIs -->
       <div class="row kpis">
         ${kpi(I.phone, 'Total Calls', fmt(t.calls), d.calls, 'vs previous ' + Q.PERIODS[period].label.toLowerCase())}
-        ${kpi(I.trophy, 'Avg Success Rate', t.avgSuccess + '%', d.success, 'all positive outcomes ÷ calls')}
+        ${kpi(I.trophy, 'Avg Success Rate', t.avgSuccess + '%', d.success, 'successes ÷ calls')}
         ${kpi(I.target, 'Total Leads', fmt(t.leads), d.leads, 'seller · rental · email')}
         ${kpi(I.users, 'Active Callers', t.active + '', d.active, 'RM + Fancy desks combined')}
       </div>
@@ -2164,10 +2163,10 @@
       <!-- Hero KPIs -->
       <div class="row kpis">
         ${kpi(I.phone,   'Total Calls',        fmt(t.calls), d.calls,   'vs previous ' + Q.PERIODS[period].label.toLowerCase())}
-        ${kpi(I.trophy,  'Success Rate',       t.avgSuccess + '%', d.success, 'all positive outcomes ÷ calls · matches Dialfire')}
+        ${kpi(I.trophy,  'Success Rate',       t.avgSuccess + '%', d.success, 'successes ÷ calls')}
         ${kpi(I.bolt,    'Team Efficiency',    eff + '%', null, 'dialler ÷ clocked-in time')}
         ${kpi(I.medal,   'Estimated revenue',  'R ' + fmt(Math.round(revenue)), null,
-              fmt(sellerLeads) + ' seller × team rate + ' + fmt(rentalLeads) + ' rental × R' + fmt(rentalRate) + ' · emails R0')}
+              fmt(sellerLeads) + ' seller · ' + fmt(rentalLeads) + ' rental — see model below')}
       </div>
 
       <div class="divider-note">Strategic snapshot</div>
@@ -2729,14 +2728,26 @@
   }
 
   // Globally wire any element with data-agent to open the drill-down modal.
+  // Rows / cards are made keyboard-focusable here (tabindex=0 + role=button)
+  // so the existing :focus-visible ring fires and Enter/Space activate the
+  // same handler as a click. WCAG 2.1.1 (keyboard) compliance for
+  // mouse-only "rows that act like buttons".
   function wireAgentClicks(scope) {
     (scope || document).querySelectorAll('[data-agent]').forEach(el => {
       if (el.__agentWired) return;
       el.__agentWired = true;
-      el.addEventListener('click', e => {
-        // Don't intercept clicks on buttons inside the row
+      if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+      if (!el.hasAttribute('role'))     el.setAttribute('role', 'button');
+      const activate = e => {
         if (e.target.closest('button, a, input, select')) return;
         openAgentModal(el.dataset.agent);
+      };
+      el.addEventListener('click', activate);
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          activate(e);
+        }
       });
     });
   }

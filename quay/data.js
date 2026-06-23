@@ -264,10 +264,10 @@ window.QUAY_READY = (async function () {
     const list = agentsFor(periodKey);
     const calls = list.reduce((s, a) => s + a.calls, 0);
     const leads = list.reduce((s, a) => s + a.leads, 0);
-    // weighted-by-calls success rate
-    const avgSuccess = calls
-      ? +((list.reduce((s, a) => s + a.success * a.calls, 0) / calls).toFixed(1))
-      : 0;
+    // Sum the raw `success` counts directly — avoids the ~0.05% drift from
+    // multiplying calls × a.success (which is toFixed(1)-rounded per agent).
+    const successCount = list.reduce((s, a) => s + (a.rawSuccess || 0), 0);
+    const avgSuccess = calls ? +((successCount / calls) * 100).toFixed(1) : 0;
     return { calls, leads, avgSuccess, active: list.length };
   }
 
@@ -276,9 +276,8 @@ window.QUAY_READY = (async function () {
     const list = aggregateWeeks(weekSlice);
     const calls = list.reduce((s, a) => s + a.calls, 0);
     const leads = list.reduce((s, a) => s + a.leads, 0);
-    const avgSuccess = calls
-      ? (list.reduce((s, a) => s + a.success * a.calls, 0) / calls)
-      : 0;
+    const successCount = list.reduce((s, a) => s + (a.rawSuccess || 0), 0);
+    const avgSuccess = calls ? (successCount / calls) * 100 : 0;
     return { calls, leads, avgSuccess, active: list.length };
   }
 
