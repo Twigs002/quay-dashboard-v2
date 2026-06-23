@@ -437,6 +437,84 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .pill.ok    { background: var(--green-tint); color: var(--green); }
 .pill.warn  { background: var(--amber-tint); color: var(--amber); }
 .pill.bad   { background: var(--red-tint); color: var(--red); }
+/* Non-colour glyph so status is readable for colour-blind users (WCAG 1.4.1).
+   Skips the team pills (.pill.rm / .pill.fancy) which are identity, not status. */
+.pill.ok::before  { content: '\2714\00a0'; font-weight: 800; }   /* ✔ */
+.pill.warn::before{ content: '\0021\00a0'; font-weight: 800; }   /* ! */
+.pill.bad::before { content: '\2715\00a0'; font-weight: 800; }   /* ✕ */
+
+/* Focus-visible rings — keyboard users need to see where they are. */
+.nav-item:focus-visible,
+.period button:focus-visible,
+.btn:focus-visible,
+.signed-out:focus-visible,
+.nav-toggle:focus-visible {
+  outline: 2px solid var(--navy-800);
+  outline-offset: 2px;
+}
+.tbl tr[data-agent]:focus-visible,
+.tbl tr[data-month-row]:focus-visible {
+  outline: 2px solid var(--navy-800);
+  outline-offset: -2px;
+}
+
+/* Nav section headings (sidebar grouping) */
+.nav-section {
+  font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+  font-weight: 700; color: var(--on-navy-dim);
+  padding: 14px 16px 6px;
+}
+.nav-section:first-child { padding-top: 4px; }
+.nav-collapsed .nav-section {
+  padding: 12px 0 4px; text-align: center;
+}
+.nav-collapsed .nav-section span { display: none; }
+.nav-collapsed .nav-section::before {
+  content: ''; display: block; height: 1px;
+  background: rgba(255,255,255,.12); margin: 0 16px;
+}
+
+/* Collapsible "About these numbers" footer inside a card */
+.card-explainer {
+  border-top: 1px solid var(--line);
+  padding: 12px 22px 16px;
+  font-size: 12.5px; color: var(--slate); line-height: 1.65;
+}
+.card-explainer > summary {
+  cursor: pointer; list-style: none; font-weight: 600; color: var(--ink);
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 0;
+}
+.card-explainer > summary::-webkit-details-marker { display: none; }
+.card-explainer > summary::after {
+  content: '▸'; margin-left: auto; color: var(--muted); transition: transform .15s;
+}
+.card-explainer[open] > summary::after { transform: rotate(90deg); }
+.card-explainer > summary .ic { width: 14px; height: 14px; color: var(--brass-deep); }
+.card-explainer p { margin: 8px 0; }
+
+/* Mobile touch-target compliance (≥44px) for the period switcher */
+@media (max-width: 1080px) {
+  .period button { min-height: 44px; padding: 8px 14px; }
+  .btn           { min-height: 44px; }
+}
+
+/* "Still under construction" banner for in-progress tabs */
+.construction-banner {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; margin-bottom: 18px;
+  background: var(--amber-tint);
+  border: 1px solid var(--yellow-soft);
+  border-left: 4px solid var(--yellow);
+  border-radius: var(--r);
+  color: var(--ink);
+  font-size: 13px; line-height: 1.45;
+}
+.construction-banner .cb-ic {
+  width: 22px; height: 22px; flex: none; color: var(--yellow-deep);
+}
+.construction-banner b { color: var(--yellow-deep); font-weight: 700; }
+.construction-banner .cb-sub { color: var(--slate); font-size: 12px; }
 
 /* mini bar inside table cell */
 .cell-bar { display: flex; align-items: center; gap: 9px; justify-content: flex-end; }

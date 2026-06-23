@@ -118,12 +118,13 @@ window.QUAY_READY = (async function () {
 
   function _normAgent(a, team, idx) {
     const calls = a.calls || 0;
-    // "Lead" = SELLER lead only (per business definition). Dialfire's `success`
-    // column counts every positive outcome including auto-emails, which made
-    // Knights look like 87 leads when it was 8 sellers + 1 rental + 75 emails.
-    // Rental + email stay as their own breakdown columns.
+    // "Lead" = SELLER lead only (per business definition) — keeps the count
+    // honest: an email-collected outcome is a success but not a lead.
+    // "Success Rate" = Dialfire's raw `success` column ÷ calls, matching v1
+    // and the team's 12% target (all positive outcomes, not seller-only).
     const leads = a.seller || 0;
-    const successRate = calls ? +((leads / calls) * 100).toFixed(1) : 0;
+    const rawSuccess = a.success || 0;
+    const successRate = calls ? +((rawSuccess / calls) * 100).toFixed(1) : 0;
     const talkHrs = a.talkTime || 0;
     const workHrs = a.workTime || 0;
     const pauseHrs = a.pauseTime || 0;
@@ -150,6 +151,7 @@ window.QUAY_READY = (async function () {
       team,
       calls,
       leads,
+      rawSuccess,
       talkMin: Math.round(talkHrs * 60),
       df: +workHrs.toFixed(1),
       pauseHrs: +pauseHrs.toFixed(2),
@@ -182,6 +184,7 @@ window.QUAY_READY = (async function () {
         } else {
           prev.calls += a.calls;
           prev.leads += a.leads;
+          prev.rawSuccess = (prev.rawSuccess || 0) + (a.rawSuccess || 0);
           prev.talkMin += a.talkMin;
           prev.df = +(prev.df + a.df).toFixed(1);
           prev.ct = +(prev.ct + a.ct).toFixed(1);
@@ -203,7 +206,7 @@ window.QUAY_READY = (async function () {
         ? +((a.df / (a.df + a.pauseHrs)) * 100).toFixed(1) : 0;
       return {
         ...a,
-        success: a.calls ? +((a.leads / a.calls) * 100).toFixed(1) : 0,
+        success: a.calls ? +(((a.rawSuccess || 0) / a.calls) * 100).toFixed(1) : 0,
         eff: a.ct ? Math.round((a.df / a.ct) * 100) : 85,
         cph: a.df ? +((a.calls / a.df).toFixed(1)) : 0,
         talkPct, workPct,

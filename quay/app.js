@@ -104,17 +104,17 @@
     navPref === 'open' ? false : navPref === 'collapsed' ? true : window.innerWidth < AUTO_BP;
 
   const TABS = [
-    { id: 'leadership', label: 'Leadership',     icon: I.medal,    title: 'Leadership Overview',  sub: 'Strategic snapshot for directors · revenue, targets, red flags' },
-    { id: 'overview',   label: 'Overview',       icon: I.trophy,   title: 'Operational Overview', sub: 'A single view of call-floor performance' },
-    { id: 'live',       label: 'Live Floor',     icon: I.users,    title: 'Live Floor',           sub: "Who's on the clock now · today's calls + leads · mobile-friendly" },
-    { id: 'staff',      label: 'All Staff',      icon: I.calendar, title: 'All Staff Report',     sub: 'Drill into agent-level performance' },
-    { id: 'compare',    label: 'Compare',        icon: I.scale,    title: 'Period Comparison',    sub: 'Week vs week · month vs month' },
-    { id: 'daily',      label: 'Daily Stats',    icon: I.cal2,     title: 'Daily Stats',          sub: 'Per-caller performance for a single day' },
-    { id: 'monthly',    label: 'Monthly',        icon: I.cal2,     title: 'Monthly Breakdown',    sub: 'Month-by-month roll-up across every week of data' },
-    { id: 'manager',    label: 'Red Flags',      icon: I.chart,    title: 'Red Flags',            sub: 'Auto-detected this period · monthly trends below' },
-    { id: 'sources',    label: 'Lead Sources',   icon: I.target,   title: 'Lead Source Efficacy', sub: 'Which source converts best' },
-    { id: 'payroll',    label: 'Payroll',        icon: I.cal2,     title: 'Payroll · Divisions Allocations', sub: 'Pay-period hours by division — 21st → 20th' },
-    { id: 'clocks',     label: 'Clocks',         icon: I.clock,    title: 'Clocks',               sub: 'Staff hours, requests & team — manage everything in one place' },
+    { id: 'leadership', section: 'Performance', label: 'Leadership',     icon: I.medal,    title: 'Leadership Overview',  sub: 'Strategic snapshot for directors · revenue, targets, red flags' },
+    { id: 'overview',   section: 'Performance', label: 'Overview',       icon: I.trophy,   title: 'Operational Overview', sub: 'A single view of call-floor performance' },
+    { id: 'live',       section: 'Performance', label: 'Live Floor',     icon: I.users,    title: 'Live Floor',           sub: "Who's on the clock now · today's calls + leads · mobile-friendly" },
+    { id: 'staff',      section: 'People',      label: 'All Staff',      icon: I.calendar, title: 'All Staff Report',     sub: 'Drill into agent-level performance' },
+    { id: 'manager',    section: 'People',      label: 'Red Flags',      icon: I.chart,    title: 'Red Flags',            sub: 'Auto-detected this period · monthly trends below' },
+    { id: 'daily',      section: 'Time',        label: 'Daily Stats',    icon: I.cal2,     title: 'Daily Stats',          sub: 'Per-caller performance for a single day' },
+    { id: 'monthly',    section: 'Time',        label: 'Monthly',        icon: I.cal2,     title: 'Monthly Breakdown',    sub: 'Month-by-month roll-up across every week of data' },
+    { id: 'compare',    section: 'Time',        label: 'Compare',        icon: I.scale,    title: 'Period Comparison',    sub: 'Week vs week · month vs month' },
+    { id: 'sources',    section: 'Strategy',    label: 'Lead Sources',   icon: I.target,   title: 'Lead Source Efficacy', sub: 'Which source converts best' },
+    { id: 'clocks',     section: 'Admin',       label: 'Clocks',         icon: I.clock,    title: 'Clocks',               sub: 'Staff hours, requests & team — manage everything in one place' },
+    { id: 'payroll',    section: 'Admin',       label: 'Payroll',        icon: I.cal2,     title: 'Payroll · Divisions Allocations', sub: 'Pay-period hours by division — 21st → 20th' },
   ];
 
   // ---- Payroll tab state (super-only) ----
@@ -238,6 +238,25 @@
     renderLogin();
   }
 
+  // Human-readable date range for the active period — e.g. "16–22 Jun 2026".
+  // Anchors numbers to a concrete window so screenshots stay interpretable.
+  function periodRangeSuffix() {
+    try {
+      if (!Q.periodDateRange) return '';
+      const r = Q.periodDateRange(period);
+      if (!r || !r.fromISO || !r.toISO) return '';
+      const from = new Date(r.fromISO);
+      const to   = new Date(new Date(r.toISO).getTime() - 86400 * 1000); // inclusive end
+      const monthYear = d => d.toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' });
+      const day = d => d.getDate();
+      const sameMonth = from.getFullYear() === to.getFullYear() && from.getMonth() === to.getMonth();
+      const label = sameMonth
+        ? `${day(from)}–${day(to)} ${monthYear(to)}`
+        : `${day(from)} ${from.toLocaleDateString('en-ZA',{month:'short'})} – ${day(to)} ${monthYear(to)}`;
+      return ` · ${label}`;
+    } catch { return ''; }
+  }
+
   // ---------------------------------------------------- SHELL
   function shell() {
     // We're authenticated when supabase has an active session AND we know
@@ -250,10 +269,20 @@
     );
     // If a non-super lands on a hidden tab (e.g. via deep link), bounce to overview.
     if (!visibleTabs.find(t => t.id === tab)) tab = 'overview';
-    const navItems = visibleTabs.map(t => `
-      <button class="nav-item ${t.id === tab ? 'active' : ''}" data-tab="${t.id}" title="${t.label}">
-        ${t.icon}<span>${t.label}</span>
-      </button>`).join('');
+    // Group nav items by section (Performance / People / Time / Strategy / Admin).
+    // Reduces cognitive load — see Miller's 7±2.
+    const sectionOrder = ['Performance', 'People', 'Time', 'Strategy', 'Admin'];
+    const navItems = sectionOrder
+      .map(sec => {
+        const items = visibleTabs.filter(t => t.section === sec);
+        if (!items.length) return '';
+        const buttons = items.map(t => `
+          <button class="nav-item ${t.id === tab ? 'active' : ''}" data-tab="${t.id}" title="${t.label}">
+            ${t.icon}<span>${t.label}</span>
+          </button>`).join('');
+        return `<div class="nav-section"><span>${sec}</span></div>${buttons}`;
+      })
+      .join('');
     const navMobileOptions = visibleTabs.map(t =>
       `<option value="${t.id}" ${t.id === tab ? 'selected' : ''}>${t.label}</option>`
     ).join('');
@@ -267,7 +296,6 @@
           ${navMobileOptions}
         </select>
         <nav class="nav">
-          <div class="nav-label">Performance</div>
           ${navItems}
         </nav>
         <div class="sidebar-foot">
@@ -369,7 +397,7 @@
 
     const meta = TABS.find(t => t.id === tab);
     document.getElementById('tabTitle').textContent = meta.title;
-    document.getElementById('tabSub').textContent = meta.sub;
+    document.getElementById('tabSub').textContent = meta.sub + periodRangeSuffix();
     // Stamp print-time metadata used by the @media print header strip
     document.body.dataset.printTitle  = meta.title;
     document.body.dataset.printPeriod = (Q.PERIODS[period] || {}).label || period;
@@ -1806,11 +1834,10 @@
 
     return `
     <div class="tab-view">
-      <div style="margin-bottom:16px">${floorHealthPillHtml()}</div>
       <!-- KPIs -->
       <div class="row kpis">
         ${kpi(I.phone, 'Total Calls', fmt(t.calls), d.calls, 'vs previous ' + Q.PERIODS[period].label.toLowerCase())}
-        ${kpi(I.trophy, 'Avg Success Rate', t.avgSuccess + '%', d.success, 'contact-to-lead conversion')}
+        ${kpi(I.trophy, 'Avg Success Rate', t.avgSuccess + '%', d.success, 'all positive outcomes ÷ calls')}
         ${kpi(I.target, 'Total Leads', fmt(t.leads), d.leads, 'seller · rental · email')}
         ${kpi(I.users, 'Active Callers', t.active + '', d.active, 'RM + Fancy desks combined')}
       </div>
@@ -2127,16 +2154,23 @@
 
     return `
     <div class="tab-view">
-      <div style="margin-bottom:16px">${floorHealthPillHtml()}</div>
+      <div class="construction-banner" role="status" aria-live="polite">
+        <svg class="cb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+        <div>
+          <b>Still under construction</b> — this view is a work in progress.
+          <div class="cb-sub">Numbers, layout, and metrics may change while we finalise the leadership snapshot.</div>
+        </div>
+      </div>
       <!-- Hero KPIs -->
       <div class="row kpis">
         ${kpi(I.phone,   'Total Calls',        fmt(t.calls), d.calls,   'vs previous ' + Q.PERIODS[period].label.toLowerCase())}
-        ${kpi(I.trophy,  'Success Rate',       t.avgSuccess + '%', d.success, 'contact-to-lead conversion')}
+        ${kpi(I.trophy,  'Success Rate',       t.avgSuccess + '%', d.success, 'all positive outcomes ÷ calls · matches Dialfire')}
         ${kpi(I.bolt,    'Team Efficiency',    eff + '%', null, 'dialler ÷ clocked-in time')}
-        ${kpi(I.medal,   'Revenue ceiling',    'R ' + fmt(Math.round(revenue)), null,
+        ${kpi(I.medal,   'Estimated revenue',  'R ' + fmt(Math.round(revenue)), null,
               fmt(sellerLeads) + ' seller × team rate + ' + fmt(rentalLeads) + ' rental × R' + fmt(rentalRate) + ' · emails R0')}
       </div>
 
+      <div class="divider-note">Strategic snapshot</div>
       <!-- Team split + Target progress -->
       <div class="row g-2-1 mt">
         <div style="display:flex;flex-direction:column;gap:16px">
@@ -2160,6 +2194,7 @@
         </div>
       </div>
 
+      <div class="divider-note">Performance trends</div>
       <!-- Top campaigns + Trend -->
       <div class="row g-2-1 mt">
         <div class="card">
@@ -2184,11 +2219,12 @@
            longer Red Flags card (with its attended-flags collapsible)
            — without this the page shows a tall empty gap below the
            Top-5 card and before Historical Comparison. -->
+      <div class="divider-note">People &amp; flags</div>
       <div class="row g-2-1 mt" style="align-items:stretch">
         <div class="card" style="display:flex;flex-direction:column">
-          <div class="card-head"><div><h3>Top 5 performers</h3><div class="sub">Ranked by composite (success rate × calls)</div></div>
+          <div class="card-head"><div><h3 id="leadership-top5-h">Top 5 performers</h3><div class="sub">Ranked by composite (success rate × calls)</div></div>
             <button class="btn" data-goto="staff">${I.eye} View all</button></div>
-          <div class="tbl-wrap" style="flex:1"><table class="tbl">
+          <div class="tbl-wrap" style="flex:1"><table class="tbl" aria-labelledby="leadership-top5-h">
             <thead><tr><th style="width:48px">Rank</th><th>Agent</th><th class="num">Calls</th><th class="num">Leads</th><th class="num">Success</th></tr></thead>
             <tbody>${top5.map((a, i) => {
               const medal = i === 0 ? 'g' : i === 1 ? 's' : i === 2 ? 'b' : 'n';
@@ -2530,8 +2566,7 @@
         <div class="live-summary-label">Leads today</div>
       </div>
       <div class="live-refresh-meta">
-        ${floorHealthPillHtml()}<br>
-        <span style="display:inline-block;margin-top:8px">Refreshed ${escapeHtml(refreshedAt)} SAST${liveBadge}</span>
+        <span style="display:inline-block">Refreshed ${escapeHtml(refreshedAt)} SAST${liveBadge}</span>
       </div>
     </div>`;
 

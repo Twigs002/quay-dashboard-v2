@@ -136,7 +136,7 @@ window.CHART = (function () {
     const area = d + `L${w} ${h} L0 ${h} Z`;
     return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" preserveAspectRatio="none">
       <path d="${area}" fill="${color}" opacity=".12"/>
-      <path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="${d}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>`;
   }
 

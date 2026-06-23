@@ -650,6 +650,13 @@ window.VIEWS = (function () {
 
     return `
     <div class="tab-view">
+      <div class="construction-banner" role="status" aria-live="polite">
+        <svg class="cb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+        <div>
+          <b>Still under construction</b> — historical weeks still over-count when agents work multiple campaigns.
+          <div class="cb-sub">Once the Dialfire per-campaign backfill lands, conversion rates and lead splits will be exact across all periods.</div>
+        </div>
+      </div>
       <div class="row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
         ${miniStat('Best converter', best.name, best.conv + '% (' + fmt(best.leads) + ' / ' + fmt(best.calls) + ')', I.star)}
         ${miniStat('Seller leads', fmt(totalSeller), 'across all campaigns', I.medal)}
@@ -658,12 +665,12 @@ window.VIEWS = (function () {
         ${miniStat('Campaigns running', camps.length + '', best.agentsCount + ' agents on top campaign', I.layers)}
       </div>
 
-      <div class="row g-2-1 mt">
+      <div class="mt">
         <div class="card">
-          <div class="card-head"><div><h3>Campaign performance</h3>
+          <div class="card-head"><div><h3 id="lead-sources-tbl-h">Campaign performance</h3>
             <div class="sub">Ranked by call volume · ${Q.PERIODS[period || 'this-week'].label} · variants like SURFERS_NA + SURFERS_CM are grouped</div></div>
             <button class="btn js-export">${I.download} Export CSV</button></div>
-          <div class="tbl-wrap"><table class="tbl">
+          <div class="tbl-wrap"><table class="tbl" aria-labelledby="lead-sources-tbl-h">
             <thead><tr>
               <th class="num">#</th><th>Campaign</th>
               <th class="num">Agents</th><th class="num">Calls</th>
@@ -673,29 +680,18 @@ window.VIEWS = (function () {
             </tr></thead>
             <tbody>${rows}</tbody>
           </table></div>
-        </div>
-
-        <div class="card card-pad">
-          <div class="eyebrow">${camps[0].exact ? I.check : I.alert} About these numbers</div>
-          ${camps[0].exact ? `
-            <p style="font-size:12.5px;color:var(--slate);line-height:1.7;margin-top:10px">
-              <b style="color:var(--green)">Exact attribution.</b>
-              The Dialfire fetcher now stores per-agent stats per campaign, so
-              when an agent works multiple campaigns each row reflects only
-              the calls/leads they made on that specific campaign.
-            </p>` : `
-            <p style="font-size:12.5px;color:var(--slate);line-height:1.7;margin-top:10px">
-              Each agent's call/lead/email totals appear under <b>every campaign they're tagged on</b>.
-              When agents work multiple campaigns, the per-campaign rows
-              <b>over-count</b>. (Historical week — pre-dates the per-campaign breakdown.)
-            </p>`}
-          <p style="font-size:12.5px;color:var(--slate);line-height:1.7;margin-top:10px">
-            Variants like <code>SURFERS_NA</code>, <code>SURFERS_CM</code> and <code>SURFERS</code> are merged into one <b>SURFERS</b> row.
-          </p>
-          <div style="font-size:12.5px;color:var(--slate);line-height:1.7;margin-top:14px">
-            <b style="color:var(--ink)">Period totals:</b><br>
-            ${fmt(totalCalls)} calls · ${fmt(totalLeads)} leads · ${fmt(totalEmails)} emails
-          </div>
+          <details class="card-explainer">
+            <summary>${camps[0].exact ? I.check : I.alert} About these numbers · period totals: ${fmt(totalCalls)} calls · ${fmt(totalLeads)} leads · ${fmt(totalEmails)} emails</summary>
+            ${camps[0].exact ? `
+              <p><b style="color:var(--green)">Exact attribution.</b>
+                The Dialfire fetcher now stores per-agent stats per campaign, so
+                when an agent works multiple campaigns each row reflects only
+                the calls/leads they made on that specific campaign.</p>` : `
+              <p>Each agent's call/lead/email totals appear under <b>every campaign they're tagged on</b>.
+                When agents work multiple campaigns, the per-campaign rows
+                <b>over-count</b>. (Historical week — pre-dates the per-campaign breakdown.)</p>`}
+            <p>Variants like <code>SURFERS_NA</code>, <code>SURFERS_CM</code> and <code>SURFERS</code> are merged into one <b>SURFERS</b> row.</p>
+          </details>
         </div>
       </div>
     </div>`;
