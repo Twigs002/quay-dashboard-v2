@@ -1,6 +1,14 @@
 {
-  "agents": [],
-  "generated_at": "2026-06-22T11:19:02.717041+00:00",
+  "agents": [
+    {
+      "hours": 0.004,
+      "id": "admin",
+      "name": "Admin",
+      "name_normalised": "Admin",
+      "sessions": 1
+    }
+  ],
+  "generated_at": "2026-06-23T04:52:50.820815+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -360,10 +368,17 @@
           "name": "Sheldon",
           "name_normalised": "Sheldon",
           "sessions": 2
+        },
+        {
+          "hours": 0.004,
+          "id": "admin",
+          "name": "Admin",
+          "name_normalised": "Admin",
+          "sessions": 1
         }
       ],
-      "from": "2025-06-23T00:00:00+00:00",
-      "to": "2026-06-22T23:59:59+00:00"
+      "from": "2025-06-24T00:00:00+00:00",
+      "to": "2026-06-23T23:59:59+00:00"
     },
     "last-90": {
       "agents": [
@@ -723,10 +738,17 @@
           "name": "Sheldon",
           "name_normalised": "Sheldon",
           "sessions": 2
+        },
+        {
+          "hours": 0.004,
+          "id": "admin",
+          "name": "Admin",
+          "name_normalised": "Admin",
+          "sessions": 1
         }
       ],
-      "from": "2026-03-25T00:00:00+00:00",
-      "to": "2026-06-22T23:59:59+00:00"
+      "from": "2026-03-26T00:00:00+00:00",
+      "to": "2026-06-23T23:59:59+00:00"
     },
     "last-week": {
       "agents": [
@@ -1393,13 +1415,28 @@
           "name": "Sheldon",
           "name_normalised": "Sheldon",
           "sessions": 2
+        },
+        {
+          "hours": 0.004,
+          "id": "admin",
+          "name": "Admin",
+          "name_normalised": "Admin",
+          "sessions": 1
         }
       ],
       "from": "2026-06-01T00:00:00+00:00",
       "to": "2026-06-28T23:59:59+00:00"
     },
     "this-week": {
-      "agents": [],
+      "agents": [
+        {
+          "hours": 0.004,
+          "id": "admin",
+          "name": "Admin",
+          "name_normalised": "Admin",
+          "sessions": 1
+        }
+      ],
       "from": "2026-06-22T00:00:00+00:00",
       "to": "2026-06-28T23:59:59+00:00"
     }
