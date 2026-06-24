@@ -1135,15 +1135,15 @@
         </div>
         <div class="modal-body">
           <div class="row g-3">
-            <div class="card card-pad"><div class="kpi-label" style="margin:0">Calls (${Q.PERIODS[period].label})</div><div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">${fmt(a.calls)}</div></div>
+            <div class="card card-pad"><div class="kpi-label" style="margin:0">Handlings (${Q.PERIODS[period].label})</div><div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">${fmt(a.calls)}</div></div>
             <div class="card card-pad"><div class="kpi-label" style="margin:0">Leads</div><div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">${fmt(a.leads)}</div></div>
             <div class="card card-pad"><div class="kpi-label" style="margin:0">Dialler hrs</div><div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">${a.df.toFixed(1)}h</div></div>
-            <div class="card card-pad"><div class="kpi-label" style="margin:0">CPH</div><div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">${a.cph || '—'}</div></div>
+            <div class="card card-pad"><div class="kpi-label" style="margin:0">HPH</div><div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">${a.cph || '—'}</div></div>
           </div>
 
           <div class="row g-2-1 mt">
             <div class="card">
-              <div class="card-head"><div><h3>Weekly trend</h3><div class="sub">Last ${hist.length} weeks · calls + success rate</div></div></div>
+              <div class="card-head"><div><h3>Weekly trend</h3><div class="sub">Last ${hist.length} weeks · handlings + success rate</div></div></div>
               <div class="chart-wrap"><div id="agentTrend"></div></div>
             </div>
             <div class="card card-pad">
@@ -1186,9 +1186,9 @@
 
           <div class="card mt">
             <div class="card-head"><div><h3>Per-campaign breakdown</h3>
-              <div class="sub">${camps.length ? `${camps.length} campaigns · totals: ${fmt(totals.calls)} calls / ${fmt(totals.leads)} leads` : 'No data'}</div></div></div>
+              <div class="sub">${camps.length ? `${camps.length} campaigns · totals: ${fmt(totals.calls)} handlings / ${fmt(totals.leads)} leads` : 'No data'}</div></div></div>
             <div class="tbl-wrap"><table class="tbl">
-              <thead><tr><th>Campaign</th><th class="num">Calls</th><th class="num">Leads</th><th class="num">Conv.</th></tr></thead>
+              <thead><tr><th>Campaign</th><th class="num">Handlings</th><th class="num">Leads</th><th class="num">Conv.</th></tr></thead>
               <tbody>${campRows}</tbody>
             </table></div>
           </div>
@@ -1348,10 +1348,10 @@
               <thead><tr>
                 <th>Agent</th>
                 <th>Team</th>
-                <th class="num">Calls</th>
+                <th class="num">Handlings</th>
                 <th class="num">Leads</th>
                 <th class="num">Success</th>
-                <th class="num">CPH</th>
+                <th class="num">HPH</th>
               </tr></thead>
               <tbody>${rowsHtml}</tbody>
             </table></div>
@@ -1421,8 +1421,8 @@
 
   function csvAgents() {
     const agents = Q.agentsFor(period);
-    const header = ['Name', 'Team', 'Calls', 'Leads', 'Success %', 'Connect %',
-      'CPH', 'Dialler hrs', 'Talk hrs', 'Seller', 'Rental', 'Email',
+    const header = ['Name', 'Team', 'Handlings', 'Leads', 'Success %', 'Connect %',
+      'HPH', 'Dialler hrs', 'Talk hrs', 'Seller', 'Rental', 'Email',
       'Meets target', 'Campaigns'];
     const out = [header];
     agents.forEach(a => out.push([
@@ -1436,7 +1436,7 @@
   }
   function csvCampaigns() {
     const camps = Q.campaignsFor(period);
-    const header = ['Campaign', 'Agents', 'Calls', 'Leads', 'Seller', 'Rental',
+    const header = ['Campaign', 'Agents', 'Handlings', 'Leads', 'Seller', 'Rental',
       'Email', 'Conversion %', 'Attribution'];
     const out = [header];
     camps.forEach(c => out.push([
@@ -1448,7 +1448,7 @@
   function csvDaily() {
     const date = dailyPicked || (Q.latestDailyDate && Q.latestDailyDate()) || null;
     const agents = (date && Q.dailyFor) ? (Q.dailyFor(date) || []) : [];
-    const header = ['Date','Name','Team','Calls','Leads','Success %','Connect %','Dialler hrs','Clocked hrs','Eff %','Seller','Rental','Email'];
+    const header = ['Date','Name','Team','Handlings','Leads','Success %','Connect %','Dialler hrs','Clocked hrs','Eff %','Seller','Rental','Email'];
     const out = [header];
     agents.forEach(a => out.push([
       date, a.name, a.team, a.calls, a.leads, a.success, a.connect,
@@ -1459,7 +1459,7 @@
 
   function csvMonthly() {
     const rows = Q.monthlyBreakdown ? Q.monthlyBreakdown() : [];
-    const header = ['Month','Weeks','RMs','Fancy','Total Calls','Success %','Seller Leads','Rental Leads','Emails'];
+    const header = ['Month','Weeks','RMs','Fancy','Total Handlings','Success %','Seller Leads','Rental Leads','Emails'];
     const out = [header];
     rows.forEach(r => out.push([
       r.label, r.weeks, r.rmCount, r.fancyCount, r.calls, r.successRate,
@@ -1497,9 +1497,9 @@
       return [header,
         ['Weeks of data',    a.weeks,       b.weeks,       delta(a.weeks, b.weeks)],
         ['Active callers',   a.activeCount, b.activeCount, delta(a.activeCount, b.activeCount)],
-        ['Total calls',      a.calls,       b.calls,       delta(a.calls, b.calls)],
+        ['Total handlings',  a.calls,       b.calls,       delta(a.calls, b.calls)],
         ['Avg success rate', a.successRate.toFixed(1) + '%', b.successRate.toFixed(1) + '%', delta(a.successRate, b.successRate, 'pct')],
-        ['Avg calls/hr',     a.cph.toFixed(1), b.cph.toFixed(1), delta(a.cph, b.cph, 'rate')],
+        ['Avg handlings/hr', a.cph.toFixed(1), b.cph.toFixed(1), delta(a.cph, b.cph, 'rate')],
         ['Seller leads',     a.seller,  b.seller,  delta(a.seller, b.seller)],
         ['Rental leads',     a.rental,  b.rental,  delta(a.rental, b.rental)],
         ['Emails collected', a.email,   b.email,   delta(a.email, b.email)],
@@ -1516,9 +1516,9 @@
     const header = ['Metric', a.label, b.label, 'Change'];
     return [header,
       ['Active callers',   a.activeCount, b.activeCount, delta(a.activeCount, b.activeCount)],
-      ['Total calls',      a.calls,       b.calls,       delta(a.calls, b.calls)],
+      ['Total handlings',  a.calls,       b.calls,       delta(a.calls, b.calls)],
       ['Avg success rate', a.successRate.toFixed(1) + '%', b.successRate.toFixed(1) + '%', delta(a.successRate, b.successRate, 'pct')],
-      ['Avg calls/hr',     a.cph.toFixed(1), b.cph.toFixed(1), delta(a.cph, b.cph, 'rate')],
+      ['Avg handlings/hr', a.cph.toFixed(1), b.cph.toFixed(1), delta(a.cph, b.cph, 'rate')],
       ['Seller leads',     a.seller,  b.seller,  delta(a.seller, b.seller)],
       ['Rental leads',     a.rental,  b.rental,  delta(a.rental, b.rental)],
       ['Emails collected', a.email,   b.email,   delta(a.email, b.email)],
@@ -1827,7 +1827,7 @@
     const srcRows = src.map(s => `
       <div class="src-row">
         <div class="src-name"><span class="legend-swatch" style="background:${s.color}"></span>${s.name}</div>
-        <div class="src-meta">${fmt(s.calls)} calls · ${s.conv}%</div>
+        <div class="src-meta">${fmt(s.calls)} handlings · ${s.conv}%</div>
         <div class="src-bar"><span style="width:${(s.calls / src[0].calls) * 100}%;background:${s.color}"></span></div>
       </div>`).join('');
 
@@ -1835,8 +1835,8 @@
     <div class="tab-view">
       <!-- KPIs -->
       <div class="row kpis">
-        ${kpi(I.phone, 'Total Calls', fmt(t.calls), d.calls, 'vs previous ' + Q.PERIODS[period].label.toLowerCase())}
-        ${kpi(I.trophy, 'Avg Success Rate', t.avgSuccess + '%', d.success, 'successes ÷ calls')}
+        ${kpi(I.phone, 'Total Handlings', fmt(t.calls), d.calls, 'vs previous ' + Q.PERIODS[period].label.toLowerCase())}
+        ${kpi(I.trophy, 'Avg Success Rate', t.avgSuccess + '%', d.success, 'calls ÷ handlings')}
         ${kpi(I.target, 'Total Leads', fmt(t.leads), d.leads, 'seller · rental · email')}
         ${kpi(I.users, 'Active Callers', t.active + '', d.active, 'RM + Fancy desks combined')}
       </div>
@@ -1845,16 +1845,16 @@
       <div class="row g-2-1 mt">
         <div class="card">
           <div class="card-head">
-            <div><h3>Weekly Performance Trend</h3><div class="sub">Calls &amp; success rate · trailing window ending ${Q.PERIODS[period].label.toLowerCase()}</div></div>
+            <div><h3>Weekly Performance Trend</h3><div class="sub">Handlings &amp; success rate · trailing window ending ${Q.PERIODS[period].label.toLowerCase()}</div></div>
             <div class="legend" style="padding:0">
-              <span class="legend-item"><span class="legend-swatch" style="background:#FDC503"></span>Calls</span>
+              <span class="legend-item"><span class="legend-swatch" style="background:#FDC503"></span>Handlings</span>
               <span class="legend-item"><span class="legend-swatch" style="background:#3D5BA6"></span>Success rate</span>
             </div>
           </div>
           <div class="chart-wrap"><div id="trendChart"></div></div>
         </div>
         <div class="card">
-          <div class="card-head"><div><h3>Lead Sources</h3><div class="sub">Share of calls · ${Q.PERIODS[period].label}</div></div></div>
+          <div class="card-head"><div><h3>Lead Sources</h3><div class="sub">Share of handlings · ${Q.PERIODS[period].label}</div></div></div>
           <div style="display:flex;justify-content:center;padding:18px 24px 6px"><div id="donut" style="max-width:200px;width:100%"></div></div>
           <div class="src-list">${srcRows}</div>
         </div>
@@ -1869,13 +1869,13 @@
             <div><div class="spot-name" style="margin:0">${top.name}</div>
             <div class="spot-stat">${top.team} desk</div></div>
           </div>
-          <div class="spot-stat" style="margin-top:14px"><b>${fmt(top.calls)}</b> calls · <b>${top.leads}</b> leads · <b>${top.success}%</b> success</div>
+          <div class="spot-stat" style="margin-top:14px"><b>${fmt(top.calls)}</b> handlings · <b>${top.leads}</b> leads · <b>${top.success}%</b> success</div>
         </div>
         <div class="card spot">
           <div class="eyebrow">${I.target} Best Converting Source</div>
           <div class="spot-name">${bestSrc.name}</div>
           <div class="spot-stat" style="margin-top:6px">Leading conversion across all channels</div>
-          <div class="spot-stat" style="margin-top:14px"><b>${bestSrc.conv}%</b> conversion · <b>${fmt(bestSrc.leads)}</b> leads from <b>${fmt(bestSrc.calls)}</b> calls</div>
+          <div class="spot-stat" style="margin-top:14px"><b>${bestSrc.conv}%</b> conversion · <b>${fmt(bestSrc.leads)}</b> leads from <b>${fmt(bestSrc.calls)}</b> handlings</div>
         </div>
         <div class="card spot risk">
           <div class="eyebrow" style="color:var(--red)">${I.alert} At Risk</div>
@@ -1884,7 +1884,7 @@
             <div><div class="spot-name" style="margin:0">${risk.name}</div>
             <div class="spot-stat">below success target</div></div>
           </div>
-          <div class="spot-stat" style="margin-top:14px"><b>${risk.success}%</b> success · target <b>${(CFG.BENCHMARKS && CFG.BENCHMARKS.rm_success_rate) || 17}%</b> · ${fmt(risk.calls)} calls</div>
+          <div class="spot-stat" style="margin-top:14px"><b>${risk.success}%</b> success · target <b>${(CFG.BENCHMARKS && CFG.BENCHMARKS.rm_success_rate) || 17}%</b> · ${fmt(risk.calls)} handlings</div>
         </div>
       </div>
 
@@ -1896,10 +1896,10 @@
       <!-- insights + top10 -->
       <div class="row g-2-1 mt" style="align-items:start">
         <div class="card">
-          <div class="card-head"><div><h3>Top 6 Performers</h3><div class="sub">Ranked by calls · open All Staff for the full roster</div></div>
+          <div class="card-head"><div><h3>Top 6 Performers</h3><div class="sub">Ranked by handlings · open All Staff for the full roster</div></div>
             <button class="btn" data-goto="staff">${I.eye} View all</button></div>
           <div class="tbl-wrap"><table class="tbl">
-            <thead><tr><th style="width:48px">Rank</th><th>Agent</th><th class="num">Calls</th><th class="num">Leads</th><th class="num">Success</th><th class="num">Volume</th></tr></thead>
+            <thead><tr><th style="width:48px">Rank</th><th>Agent</th><th class="num">Handlings</th><th class="num">Leads</th><th class="num">Success</th><th class="num">Volume</th></tr></thead>
             <tbody>${top10}</tbody>
           </table></div>
         </div>
@@ -1912,7 +1912,7 @@
       <!-- monthly -->
       <div class="divider-note">Historical breakdown · monthly trend</div>
       <div class="row mini-grid">
-        ${miniCard('Calls', I.phone, Q.MONTH_CALLS, '#3D5BA6')}
+        ${miniCard('Handlings', I.phone, Q.MONTH_CALLS, '#3D5BA6')}
         ${miniCard('Leads', I.target, Q.MONTH_LEADS, '#B98A02')}
         ${miniCard('Emails', I.mail, Q.MONTH_EMAILS, '#2E6FB0')}
         ${miniCard('Rentals', I.home, Q.MONTH_RENTALS, '#4C6BB8')}
@@ -1948,8 +1948,8 @@
                       : (!callsUp && !succUp) ? 'down'
                       : 'warn';
     const callsCopy = callsUp
-      ? `<b>Call volume climbed ${Math.abs(d.calls)}%</b> versus the previous period`
-      : `<b>Call volume dropped ${Math.abs(d.calls)}%</b> versus the previous period`;
+      ? `<b>Handling volume climbed ${Math.abs(d.calls)}%</b> versus the previous period`
+      : `<b>Handling volume dropped ${Math.abs(d.calls)}%</b> versus the previous period`;
     const succCopy = succUp
       ? `success rate improved ${Math.abs(d.success)} pts — momentum is healthy across both desks.`
       : `success rate slipped ${Math.abs(d.success)} pts — investigate the trend.`;
@@ -1961,9 +1961,9 @@
         action: momentumAction },
       { type: 'info', html: `<b>${bestSrc.name}</b> is the strongest channel at <b>${bestSrc.conv}% conversion</b>, well ahead of ${worstSrc.name} (${worstSrc.conv}%).`,
         action: 'Shift spend toward ' + bestSrc.name },
-      { type: 'warn', html: `<b>${risk.name}</b> is converting at just <b>${risk.success}%</b>, below the ${(CFG.BENCHMARKS && CFG.BENCHMARKS.rm_success_rate) || 17}% target despite ${fmt(risk.calls)} calls — likely a quality not volume issue.`,
+      { type: 'warn', html: `<b>${risk.name}</b> is converting at just <b>${risk.success}%</b>, below the ${(CFG.BENCHMARKS && CFG.BENCHMARKS.rm_success_rate) || 17}% target despite ${fmt(risk.calls)} handlings — likely a quality not volume issue.`,
         action: 'Schedule a call-quality coaching session' },
-      { type: 'up', html: `<b>${top.name}</b> leads the floor with ${fmt(top.calls)} calls and ${top.success}% success — a useful benchmark for the team.`,
+      { type: 'up', html: `<b>${top.name}</b> leads the floor with ${fmt(top.calls)} handlings and ${top.success}% success — a useful benchmark for the team.`,
         action: 'Share top-performer call recordings' },
     ];
     const iconFor = t => t === 'up' ? I.up
@@ -2162,8 +2162,8 @@
       </div>
       <!-- Hero KPIs -->
       <div class="row kpis">
-        ${kpi(I.phone,   'Total Calls',        fmt(t.calls), d.calls,   'vs previous ' + Q.PERIODS[period].label.toLowerCase())}
-        ${kpi(I.trophy,  'Success Rate',       t.avgSuccess + '%', d.success, 'successes ÷ calls')}
+        ${kpi(I.phone,   'Total Handlings',    fmt(t.calls), d.calls,   'vs previous ' + Q.PERIODS[period].label.toLowerCase())}
+        ${kpi(I.trophy,  'Success Rate',       t.avgSuccess + '%', d.success, 'calls ÷ handlings')}
         ${kpi(I.bolt,    'Team Efficiency',    eff + '%', null, 'dialler ÷ clocked-in time')}
         ${kpi(I.medal,   'Estimated revenue',  'R ' + fmt(Math.round(revenue)), null,
               fmt(sellerLeads) + ' seller · ' + fmt(rentalLeads) + ' rental — see model below')}
@@ -2185,8 +2185,8 @@
             <h3 style="margin:0">Pace vs last period</h3>
             <div class="sub">${period === 'this-week' || period === 'last-week' ? 'Beat last week’s totals' : 'Beat last month’s totals'} · auto-set from actuals</div>
           </div></div>
-          ${tgtBar('Total calls', t.calls, tgtCalls)}
-          ${tgtBar('Total leads', t.leads, tgtLeads)}
+          ${tgtBar('Total handlings', t.calls, tgtCalls)}
+          ${tgtBar('Total leads',     t.leads, tgtLeads)}
           <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);line-height:1.7">
             Revenue estimate uses <b style="color:var(--ink)">R${fmt(rev.seller || rev.default)} seller / R${fmt(rev.rental || rev.default)} rental / R${fmt(rev.email || rev.default)} email</b>. Adjust in <code>quay/config.js</code> for accuracy.
           </div>
@@ -2197,15 +2197,15 @@
       <!-- Top campaigns + Trend -->
       <div class="row g-2-1 mt">
         <div class="card">
-          <div class="card-head"><div><h3>Weekly trend</h3><div class="sub">Calls &amp; success rate · 12 weeks</div></div>
+          <div class="card-head"><div><h3>Weekly trend</h3><div class="sub">Handlings &amp; success rate · 12 weeks</div></div>
             <div class="legend" style="padding:0">
-              <span class="legend-item"><span class="legend-swatch" style="background:#FDC503"></span>Calls</span>
+              <span class="legend-item"><span class="legend-swatch" style="background:#FDC503"></span>Handlings</span>
               <span class="legend-item"><span class="legend-swatch" style="background:#3D5BA6"></span>Success</span>
             </div></div>
           <div class="chart-wrap"><div id="lTrendChart"></div></div>
         </div>
         <div class="card">
-          <div class="card-head"><div><h3>Top campaigns by share</h3><div class="sub">% of total calls this period</div></div></div>
+          <div class="card-head"><div><h3>Top campaigns by share</h3><div class="sub">% of total handlings this period</div></div></div>
           <div class="src-list">${campRows || '<div style="padding:18px 24px;color:var(--muted);font-size:13px">No campaign data yet.</div>'}</div>
         </div>
       </div>
@@ -2222,10 +2222,10 @@
       <div class="divider-note">People &amp; flags</div>
       <div class="row g-2-1 mt" style="align-items:stretch">
         <div class="card" style="display:flex;flex-direction:column">
-          <div class="card-head"><div><h3 id="leadership-top5-h">Top 5 performers</h3><div class="sub">Ranked by composite (success rate × calls)</div></div>
+          <div class="card-head"><div><h3 id="leadership-top5-h">Top 5 performers</h3><div class="sub">Ranked by composite (success rate × handlings)</div></div>
             <button class="btn" data-goto="staff">${I.eye} View all</button></div>
           <div class="tbl-wrap" style="flex:1"><table class="tbl" aria-labelledby="leadership-top5-h">
-            <thead><tr><th style="width:48px">Rank</th><th>Agent</th><th class="num">Calls</th><th class="num">Leads</th><th class="num">Success</th></tr></thead>
+            <thead><tr><th style="width:48px">Rank</th><th>Agent</th><th class="num">Handlings</th><th class="num">Leads</th><th class="num">Success</th></tr></thead>
             <tbody>${top5.map((a, i) => {
               const medal = i === 0 ? 'g' : i === 1 ? 's' : i === 2 ? 'b' : 'n';
               const sc = sucClass(a.success);
@@ -2274,9 +2274,9 @@
     return `
       <div class="divider-note">Historical comparison · this period vs recent averages</div>
       <div class="row g-3">
-        ${cmpCard('Calls vs 4-week avg',  t.calls, avgCalls4,  'Avg last 4 weeks')}
-        ${cmpCard('Calls vs 12-week avg', t.calls, avgCalls12, 'Avg last 12 weeks')}
-        ${cmpCard('Leads vs 4-week avg',  t.leads, avgLeads4,  'Avg last 4 weeks')}
+        ${cmpCard('Handlings vs 4-week avg',  t.calls, avgCalls4,  'Avg last 4 weeks')}
+        ${cmpCard('Handlings vs 12-week avg', t.calls, avgCalls12, 'Avg last 12 weeks')}
+        ${cmpCard('Leads vs 4-week avg',      t.leads, avgLeads4,  'Avg last 4 weeks')}
       </div>`;
   }
 
@@ -2528,7 +2528,7 @@
       </div>
       <div class="live-summary-stat">
         <div class="live-summary-val tnum">${fmt(totalCallsToday)}</div>
-        <div class="live-summary-label">Calls today</div>
+        <div class="live-summary-label">Handlings today</div>
       </div>
       <div class="live-summary-stat">
         <div class="live-summary-val tnum">${fmt(totalLeadsToday)}</div>
@@ -2689,7 +2689,7 @@
     if (deltas && deltas.calls != null && deltas.calls <= cd) {
       flags.push({ type: 'down',
         key: `calls_drop:${period}:${wk}`,
-        html: `<b>Call volume down ${Math.abs(deltas.calls)}%</b> vs previous period — investigate cause.`,
+        html: `<b>Handling volume down ${Math.abs(deltas.calls)}%</b> vs previous period — investigate cause.`,
         action: 'Open Compare tab for week-vs-week breakdown' });
     }
     // 2) RM team below target by more than threshold — only when we actually

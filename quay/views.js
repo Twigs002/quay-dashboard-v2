@@ -97,7 +97,7 @@ window.VIEWS = (function () {
 
       <div class="row mt" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
         ${miniStat('Roster size', agents.length + ' agents', rosterSub, I.users)}
-        ${miniStat('Total calls', fmt(tCalls), 'across selected range', I.phone)}
+        ${miniStat('Total handlings', fmt(tCalls), 'across selected range', I.phone)}
         ${miniStat('Total leads', fmt(tLeads), 'seller · rental · email', I.target)}
         ${miniStat('Avg efficiency', avgEff + '%', 'DialFire ÷ clocked time · target ≥70%', I.bolt)}
         ${miniStat('Dialler vs clocked', totDf.toFixed(0) + ' / ' + totCt.toFixed(0) + 'h', haveClock ? 'real data from quay-clock' : 'estimated — no clock data yet', I.clock)}
@@ -105,7 +105,7 @@ window.VIEWS = (function () {
 
       <div class="card mt" id="staffOverall">
         <div class="card-head">
-          <div><h3>Agent-level performance</h3><div class="sub">Calls · leads · dialler vs clocked hours · efficiency · click any column to sort</div></div>
+          <div><h3>Agent-level performance</h3><div class="sub">Handlings · leads · dialler vs clocked hours · efficiency · click any column to sort</div></div>
           <button class="btn js-export">${I.download} Export CSV</button>
         </div>
         <div class="tbl-wrap">
@@ -114,7 +114,7 @@ window.VIEWS = (function () {
               <th class="num">#</th>
               <th data-sort="name|str">Agent<span class="sort-ind"></span></th>
               <th data-sort="team|str">Team<span class="sort-ind"></span></th>
-              <th class="num" data-sort="calls|num">Calls<span class="sort-ind"></span></th>
+              <th class="num" data-sort="calls|num">Handlings<span class="sort-ind"></span></th>
               <th class="num" data-sort="leads|num">Leads<span class="sort-ind"></span></th>
               <th class="num" data-sort="success|num">Success<span class="sort-ind"></span></th>
               <th class="num" data-sort="connect|num">Connect<span class="sort-ind"></span></th>
@@ -262,7 +262,7 @@ window.VIEWS = (function () {
             <th>Divisions</th>
             <th class="num" data-sort="reports|num">#<span class="sort-ind"></span></th>
             <th class="num" data-sort="tasks|num">Tasks<span class="sort-ind"></span></th>
-            <th class="num" data-sort="calls|num">Calls<span class="sort-ind"></span></th>
+            <th class="num" data-sort="calls|num">Handlings<span class="sort-ind"></span></th>
             <th class="num" data-sort="emails|num">Emails<span class="sort-ind"></span></th>
             <th class="num" data-sort="was|num">WhatsApps<span class="sort-ind"></span></th>
             <th class="num" data-sort="leads|num">Leads<span class="sort-ind"></span></th>
@@ -320,9 +320,9 @@ window.VIEWS = (function () {
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px 16px">
-        ${stat('Calls', fmt(a.calls))}
-        ${stat('Leads', fmt(a.leads))}
-        ${stat('CPH', a.cph || '—')}
+        ${stat('Handlings', fmt(a.calls))}
+        ${stat('Leads',     fmt(a.leads))}
+        ${stat('HPH',       a.cph || '—')}
         ${stat('Dialler hrs', a.df.toFixed(1) + 'h')}
         ${stat('Work %',  (a.workPct != null ? a.workPct : 0) + '%')}
         ${stat('Talk %',  (a.talkPct != null ? a.talkPct : a.connect) + '%')}
@@ -427,9 +427,9 @@ window.VIEWS = (function () {
     }
     return cmpTable([
       ['Active callers',   a.activeCount, b.activeCount, { kind: 'count' }],
-      ['Total calls',      a.calls,       b.calls,       { kind: 'count' }],
+      ['Total handlings',  a.calls,       b.calls,       { kind: 'count' }],
       ['Avg success rate', a.successRate, b.successRate, { kind: 'pct',  suffix: '%' }],
-      ['Avg calls/hr',     a.cph,         b.cph,         { kind: 'rate', decimals: 1 }],
+      ['Avg handlings/hr', a.cph,         b.cph,         { kind: 'rate', decimals: 1 }],
       ['Seller leads',     a.seller,      b.seller,      { kind: 'count' }],
       ['Rental leads',     a.rental,      b.rental,      { kind: 'count' }],
       ['Emails collected', a.email,       b.email,       { kind: 'count' }],
@@ -451,9 +451,9 @@ window.VIEWS = (function () {
     return cmpTable([
       ['Weeks of data',    a.weeks,       b.weeks,       { kind: 'count' }],
       ['Active callers',   a.activeCount, b.activeCount, { kind: 'count' }],
-      ['Total calls',      a.calls,       b.calls,       { kind: 'count' }],
+      ['Total handlings',  a.calls,       b.calls,       { kind: 'count' }],
       ['Avg success rate', a.successRate, b.successRate, { kind: 'pct',  suffix: '%' }],
-      ['Avg calls/hr',     a.cph,         b.cph,         { kind: 'rate', decimals: 1 }],
+      ['Avg handlings/hr', a.cph,         b.cph,         { kind: 'rate', decimals: 1 }],
       ['Seller leads',     a.seller,      b.seller,      { kind: 'count' }],
       ['Rental leads',     a.rental,      b.rental,      { kind: 'count' }],
       ['Emails collected', a.email,       b.email,       { kind: 'count' }],
@@ -547,7 +547,7 @@ window.VIEWS = (function () {
         </div>
       </div>
       <div class="row g-3 mt">
-        ${miniStat('Calls', fmt(totCalls), prettyDate, I.phone)}
+        ${miniStat('Handlings', fmt(totCalls), prettyDate, I.phone)}
         ${miniStat('Leads', fmt(totLeads), 'seller · rental · email', I.target)}
         ${miniStat('Active callers', agents.length + '', 'logged dialling time', I.users)}
       </div>
@@ -555,7 +555,7 @@ window.VIEWS = (function () {
         <div class="card-head"><div><h3>Per-caller performance — ${escapeHtml(prettyDate)}</h3><div class="sub">${available.length} day${available.length === 1 ? '' : 's'} of history available</div></div></div>
         ${agents.length ? `
           <div class="tbl-wrap"><table class="tbl">
-            <thead><tr><th class="num">#</th><th>Agent</th><th>Team</th><th class="num">Calls</th><th class="num">Leads</th><th class="num">Success</th><th class="num">Connect</th><th class="num">Dialler</th><th class="num">Clocked</th><th class="num">Eff %</th><th class="num">Volume</th></tr></thead>
+            <thead><tr><th class="num">#</th><th>Agent</th><th>Team</th><th class="num">Handlings</th><th class="num">Leads</th><th class="num">Success</th><th class="num">Connect</th><th class="num">Dialler</th><th class="num">Clocked</th><th class="num">Eff %</th><th class="num">Volume</th></tr></thead>
             <tbody>${rows}</tbody>
           </table></div>
         ` : `<div class="muted" style="padding:24px;text-align:center;font-size:13.5px;line-height:1.6">${emptyMsg}</div>`}
@@ -596,7 +596,7 @@ window.VIEWS = (function () {
           <div><h3 style="margin:0">Monthly trends</h3><div class="sub">Last 8 months across the engine room · ${Q.MONTHS[0]} → ${Q.MONTHS[Q.MONTHS.length - 1]}</div></div>
         </div>
         <div class="row mini-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
-          ${monthCard('Calls',   I.phone,  Q.MONTH_CALLS,   '#3D5BA6')}
+          ${monthCard('Handlings', I.phone, Q.MONTH_CALLS, '#3D5BA6')}
           ${monthCard('Leads',   I.target, Q.MONTH_LEADS,   '#B98A02')}
           ${monthCard('Rentals', I.home,   Q.MONTH_RENTALS, '#4C6BB8')}
           ${monthCard('Emails',  I.mail,   Q.MONTH_EMAILS,  '#2E6FB0')}
@@ -658,7 +658,7 @@ window.VIEWS = (function () {
         </div>
       </div>
       <div class="row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
-        ${miniStat('Best converter', best.name, best.conv + '% (' + fmt(best.leads) + ' / ' + fmt(best.calls) + ')', I.star)}
+        ${miniStat('Best converter', best.name, best.conv + '% (' + fmt(best.leads) + ' / ' + fmt(best.calls) + ' handlings)', I.star)}
         ${miniStat('Seller leads', fmt(totalSeller), 'across all campaigns', I.medal)}
         ${miniStat('Rental leads', fmt(totalRental), 'across all campaigns', I.home)}
         ${miniStat('Email leads',  fmt(totalEmails), 'across all campaigns', I.mail)}
@@ -668,12 +668,12 @@ window.VIEWS = (function () {
       <div class="mt">
         <div class="card">
           <div class="card-head"><div><h3 id="lead-sources-tbl-h">Campaign performance</h3>
-            <div class="sub">Ranked by call volume · ${Q.PERIODS[period || 'this-week'].label} · variants like SURFERS_NA + SURFERS_CM are grouped</div></div>
+            <div class="sub">Ranked by handling volume · ${Q.PERIODS[period || 'this-week'].label} · variants like SURFERS_NA + SURFERS_CM are grouped</div></div>
             <button class="btn js-export">${I.download} Export CSV</button></div>
           <div class="tbl-wrap"><table class="tbl" aria-labelledby="lead-sources-tbl-h">
             <thead><tr>
               <th class="num">#</th><th>Campaign</th>
-              <th class="num">Agents</th><th class="num">Calls</th>
+              <th class="num">Agents</th><th class="num">Handlings</th>
               <th class="num">Leads</th><th class="num">Seller</th>
               <th class="num">Rental</th><th class="num">Email</th>
               <th class="num">Conv.</th><th class="num">Volume</th>
@@ -681,13 +681,13 @@ window.VIEWS = (function () {
             <tbody>${rows}</tbody>
           </table></div>
           <details class="card-explainer">
-            <summary>${camps[0].exact ? I.check : I.alert} About these numbers · period totals: ${fmt(totalCalls)} calls · ${fmt(totalLeads)} leads · ${fmt(totalEmails)} emails</summary>
+            <summary>${camps[0].exact ? I.check : I.alert} About these numbers · period totals: ${fmt(totalCalls)} handlings · ${fmt(totalLeads)} leads · ${fmt(totalEmails)} emails</summary>
             ${camps[0].exact ? `
               <p><b style="color:var(--green)">Exact attribution.</b>
                 The Dialfire fetcher now stores per-agent stats per campaign, so
                 when an agent works multiple campaigns each row reflects only
-                the calls/leads they made on that specific campaign.</p>` : `
-              <p>Each agent's call/lead/email totals appear under <b>every campaign they're tagged on</b>.
+                the handlings/leads they made on that specific campaign.</p>` : `
+              <p>Each agent's handling/lead/email totals appear under <b>every campaign they're tagged on</b>.
                 When agents work multiple campaigns, the per-campaign rows
                 <b>over-count</b>. (Historical week — pre-dates the per-campaign breakdown.)</p>`}
             <p>Variants like <code>SURFERS_NA</code>, <code>SURFERS_CM</code> and <code>SURFERS</code> are merged into one <b>SURFERS</b> row.</p>
@@ -746,7 +746,7 @@ window.VIEWS = (function () {
             <th>Month</th>
             <th>Weeks</th>
             <th>Callers</th>
-            <th class="num">Total Calls</th>
+            <th class="num">Total Handlings</th>
             <th class="num">Success Rate</th>
             <th class="num">Seller Leads</th>
             <th class="num">Rental Leads</th>
@@ -785,9 +785,9 @@ window.VIEWS = (function () {
         <thead><tr>
           <th>Week of</th>
           <th class="num">Callers</th>
-          <th class="num">Calls</th>
+          <th class="num">Handlings</th>
           <th class="num">Success</th>
-          <th class="num">CPH</th>
+          <th class="num">HPH</th>
           <th class="num">Seller</th>
           <th class="num">Rental</th>
           <th class="num">Emails</th>
