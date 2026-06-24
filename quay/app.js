@@ -2434,11 +2434,13 @@
         const flKey = parts.length >= 2 ? (parts[0] + ' ' + parts[parts.length - 1]).toLowerCase() : null;
         const liveRow = liveStatsFor(rec.name);
         const dailyAgent = callsByName.get(fullKey) || (flKey && callsByName.get(flKey)) || null;
-        const todayCalls  = liveRow ? liveRow.calls         : (dailyAgent ? dailyAgent.calls  : null);
+        const todayCalls    = liveRow ? liveRow.calls         : (dailyAgent ? dailyAgent.calls  : null);
+        const todayAnswered = liveRow ? liveRow.leads         : (dailyAgent ? dailyAgent.success : null);
         // "Leads" = seller leads only. Rental + email stay as their own columns.
-        const todayLeads  = liveRow ? liveRow.seller_leads  : (dailyAgent ? (dailyAgent.seller || 0) : null);
-        const todayRental = liveRow ? liveRow.rental_leads  : (dailyAgent ? dailyAgent.rental : null);
-        const todayEmail  = liveRow ? liveRow.email_leads   : (dailyAgent ? dailyAgent.email  : null);
+        const todayLeads    = liveRow ? liveRow.seller_leads  : (dailyAgent ? (dailyAgent.seller || 0) : null);
+        const todayRental   = liveRow ? liveRow.rental_leads  : (dailyAgent ? dailyAgent.rental : null);
+        const todayEmail    = liveRow ? liveRow.email_leads   : (dailyAgent ? dailyAgent.email  : null);
+        const todaySuccess  = liveRow ? liveRow.success_rate  : (dailyAgent ? dailyAgent.successRate : null);
         if (todayCalls != null) totalCallsToday += todayCalls;
         if (todayLeads != null) totalLeadsToday += todayLeads;  // seller leads only
         if (todayCalls && todayCalls > 0) activeCallerCount++;
@@ -2462,6 +2464,10 @@
               <div class="live-stat-label">Calls</div>
               <div class="live-stat-val tnum">${todayCalls != null ? fmt(todayCalls) : '—'}</div>
             </div>
+            <div title="Answered / connected calls — Dialfire's 'success' column.">
+              <div class="live-stat-label">Answered</div>
+              <div class="live-stat-val tnum">${todayAnswered != null ? fmt(todayAnswered) : '—'}</div>
+            </div>
             <div title="Calls touching leads in LEAD status. Includes follow-up calls — true per-period leads need Dialfire Processing report scope.">
               <div class="live-stat-label">Lead·calls</div>
               <div class="live-stat-val tnum">${todayLeads != null ? fmt(todayLeads) : '—'}</div>
@@ -2474,9 +2480,9 @@
               <div class="live-stat-label">Email·calls</div>
               <div class="live-stat-val tnum">${todayEmail != null ? fmt(todayEmail) : '—'}</div>
             </div>
-            <div title="Lead·calls ÷ total calls. Not a true conversion rate until Dialfire's per-period transitions endpoint is integrated.">
-              <div class="live-stat-label">L/C %</div>
-              <div class="live-stat-val tnum">${(todayCalls && todayLeads != null) ? ((todayLeads / todayCalls) * 100).toFixed(1) + '%' : '—'}</div>
+            <div title="Dialfire success rate (answered ÷ calls).">
+              <div class="live-stat-label">Success rate</div>
+              <div class="live-stat-val tnum">${todaySuccess != null ? todaySuccess.toFixed(1) + '%' : '—'}</div>
             </div>
           </div>
         </div>`;
