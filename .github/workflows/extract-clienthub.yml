@@ -1,0 +1,46 @@
+name: Extract CLIENTHUB campaigns (one-off sync)
+
+# Reads DIALFIRE_CAMPAIGNS, filters to CLIENTHUB-related entries, and
+# writes them to a private artifact so the live daemon's local
+# ~/.dialfire-campaigns.json can be brought in sync. Manual trigger only.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: extract-clienthub
+  cancel-in-progress: true
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Filter campaigns
+        env:
+          DIALFIRE_CAMPAIGNS: ${{ secrets.DIALFIRE_CAMPAIGNS }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          raw = (os.environ.get("DIALFIRE_CAMPAIGNS") or "").strip()
+          if not raw:
+              print("ERROR: DIALFIRE_CAMPAIGNS secret is empty", file=sys.stderr)
+              sys.exit(1)
+          data = json.loads(raw)
+          if not isinstance(data, list):
+              print("ERROR: secret is not a JSON list", file=sys.stderr); sys.exit(1)
+          matches = [c for c in data
+                     if isinstance(c, dict)
+                     and "CLIENTHUB" in (c.get("name") or "").upper()]
+          print(f"Total campaigns in secret: {len(data)}")
+          print(f"CLIENTHUB matches: {len(matches)}")
+          for m in matches:
+              print(f"  - {m.get('name')}")
+          with open("clienthub_campaigns.json", "w") as f:
+              json.dump(matches, f, indent=2)
+          PY
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: clienthub-campaigns
+          path: clienthub_campaigns.json
+          retention-days: 1
