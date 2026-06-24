@@ -3141,6 +3141,7 @@
   let _teamLoading = false;
   let _teamFilter = '';
   let _teamModal = null;        // form state when modal is open
+  let _forgotThisWeek = [];     // forgot-to-clock-out events since Monday SAST
 
   async function loadTeam() {
     if (!window.sb) return;
@@ -3157,12 +3158,17 @@
       // and self-corrected ("Auto clock-out after long shift…") rows.
       const since30 = new Date(Date.now() - 30 * 24 * 3600e3).toISOString();
       const { data: forgotEvents } = await window.sb
-        .from('events').select('staff_id')
+        .from('events').select('staff_id, ts')
         .or('note.ilike.%forgot%,note.ilike.%Auto clock-out%')
-        .gte('ts', since30);
+        .gte('ts', since30)
+        .order('ts', { ascending: false });
       const forgotByStaff = new Map();
+      // This-week digest (Mon..Sun SAST of the current week).
+      const weekStart = startOfThisWeek(new Date());
+      _forgotThisWeek = [];
       (forgotEvents || []).forEach(e => {
         forgotByStaff.set(e.staff_id, (forgotByStaff.get(e.staff_id) || 0) + 1);
+        if (new Date(e.ts) >= weekStart) _forgotThisWeek.push(e);
       });
       // One small query per staff to grab their last two events — same
       // pattern the clock admin uses. Cheap for an office-sized roster.
@@ -3224,8 +3230,38 @@
       return h < 24 ? h + 'h ago' : Math.round(h / 24) + 'd ago';
     };
 
+    // Forgot-to-clock-out · this week digest. Aggregates rows from
+    // _forgotThisWeek (populated by loadTeam) so admin sees who slipped
+    // up over the current week at a glance.
+    const nameById = new Map((_team || []).map(s => [s.id, s.name]));
+    const weekByStaff = new Map();
+    (_forgotThisWeek || []).forEach(e => {
+      if (!weekByStaff.has(e.staff_id)) weekByStaff.set(e.staff_id, []);
+      weekByStaff.get(e.staff_id).push(e.ts);
+    });
+    const weekRows = Array.from(weekByStaff.entries())
+      .map(([id, tsList]) => ({ id, name: nameById.get(id) || id, count: tsList.length, dates: tsList }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+    const fmtShort = (iso) => new Date(iso).toLocaleDateString('en-GB',
+      { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Africa/Johannesburg' });
+    const weekHtml = weekRows.length === 0
+      ? `<div class="muted" style="font-size:13px;line-height:1.6">Nobody has forgotten to clock out this week. 🎉</div>`
+      : weekRows.map(r => `
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 0">
+            <span class="pill ${r.count >= 2 ? 'bad' : 'warn'}" style="font-size:11px;padding:3px 9px;flex:0 0 auto">⚠️ ${r.count}×</span>
+            <span style="font-weight:600;color:var(--ink);flex:0 0 auto">${escapeHtml(r.name)}</span>
+            <span class="muted" style="font-size:12px">${r.dates.map(fmtShort).join(' · ')}</span>
+          </div>`).join('');
+
     return `<div class="tab-view">
-      <div class="card card-pad">
+      <div class="card card-pad" style="border-left:4px solid ${weekRows.length === 0 ? 'var(--green,#0E6B3A)' : '#8B1A1A'}">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px">
+          <h3 style="margin:0;font-family:var(--serif);font-size:15px">Forgot to clock out · this week</h3>
+          <span class="muted" style="font-size:12px">${_forgotThisWeek.length} incident${_forgotThisWeek.length === 1 ? '' : 's'} since Monday SAST</span>
+        </div>
+        ${weekHtml}
+      </div>
+      <div class="card card-pad mt">
         <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
           <input id="teamSearch" type="search" placeholder="Search name or designation..."
                  value="${escapeHtml(_teamFilter)}"
