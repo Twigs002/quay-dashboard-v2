@@ -1,14 +1,21 @@
 {
   "agents": [
     {
-      "hours": 0.004,
-      "id": "admin",
-      "name": "Admin",
-      "name_normalised": "Admin",
+      "hours": 0.0,
+      "id": "diego",
+      "name": "diego",
+      "name_normalised": "diego",
       "sessions": 1
+    },
+    {
+      "hours": 0.153,
+      "id": "test-manager",
+      "name": "Test manager",
+      "name_normalised": "Test manager",
+      "sessions": 3
     }
   ],
-  "generated_at": "2026-06-23T04:52:50.820815+00:00",
+  "generated_at": "2026-06-24T05:06:49.082673+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -346,7 +353,7 @@
           "id": "diego",
           "name": "diego",
           "name_normalised": "diego",
-          "sessions": 2
+          "sessions": 3
         },
         {
           "hours": 7.617,
@@ -370,15 +377,15 @@
           "sessions": 2
         },
         {
-          "hours": 0.004,
-          "id": "admin",
-          "name": "Admin",
-          "name_normalised": "Admin",
-          "sessions": 1
+          "hours": 0.153,
+          "id": "test-manager",
+          "name": "Test manager",
+          "name_normalised": "Test manager",
+          "sessions": 3
         }
       ],
-      "from": "2025-06-24T00:00:00+00:00",
-      "to": "2026-06-23T23:59:59+00:00"
+      "from": "2025-06-25T00:00:00+00:00",
+      "to": "2026-06-24T23:59:59+00:00"
     },
     "last-90": {
       "agents": [
@@ -716,7 +723,7 @@
           "id": "diego",
           "name": "diego",
           "name_normalised": "diego",
-          "sessions": 2
+          "sessions": 3
         },
         {
           "hours": 7.617,
@@ -740,15 +747,15 @@
           "sessions": 2
         },
         {
-          "hours": 0.004,
-          "id": "admin",
-          "name": "Admin",
-          "name_normalised": "Admin",
-          "sessions": 1
+          "hours": 0.153,
+          "id": "test-manager",
+          "name": "Test manager",
+          "name_normalised": "Test manager",
+          "sessions": 3
         }
       ],
-      "from": "2026-03-26T00:00:00+00:00",
-      "to": "2026-06-23T23:59:59+00:00"
+      "from": "2026-03-27T00:00:00+00:00",
+      "to": "2026-06-24T23:59:59+00:00"
     },
     "last-week": {
       "agents": [
@@ -1393,7 +1400,7 @@
           "id": "diego",
           "name": "diego",
           "name_normalised": "diego",
-          "sessions": 2
+          "sessions": 3
         },
         {
           "hours": 7.617,
@@ -1417,11 +1424,11 @@
           "sessions": 2
         },
         {
-          "hours": 0.004,
-          "id": "admin",
-          "name": "Admin",
-          "name_normalised": "Admin",
-          "sessions": 1
+          "hours": 0.153,
+          "id": "test-manager",
+          "name": "Test manager",
+          "name_normalised": "Test manager",
+          "sessions": 3
         }
       ],
       "from": "2026-06-01T00:00:00+00:00",
@@ -1430,11 +1437,18 @@
     "this-week": {
       "agents": [
         {
-          "hours": 0.004,
-          "id": "admin",
-          "name": "Admin",
-          "name_normalised": "Admin",
+          "hours": 0.0,
+          "id": "diego",
+          "name": "diego",
+          "name_normalised": "diego",
           "sessions": 1
+        },
+        {
+          "hours": 0.153,
+          "id": "test-manager",
+          "name": "Test manager",
+          "name_normalised": "Test manager",
+          "sessions": 3
         }
       ],
       "from": "2026-06-22T00:00:00+00:00",
