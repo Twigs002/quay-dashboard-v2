@@ -2450,12 +2450,18 @@
         const elapsedH = elapsedMs > 0 ? (elapsedMs / 3.6e6) : 0;
         const elapsedTxt = elapsedH > 0 ? `${Math.floor(elapsedH)}h ${Math.round((elapsedH % 1) * 60)}m` : '—';
 
+        const forgotTs = rec.forgotRecentTs ? new Date(rec.forgotRecentTs) : null;
+        const forgotBadge = forgotTs
+          ? `<div title="Forgot to clock out · auto-correction recorded ${forgotTs.toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Africa/Johannesburg'})} SAST" style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:999px;background:#FFE0E0;color:#8B1A1A;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase">⚠️ Forgot to clock out</div>`
+          : '';
+
         const html = `<div class="${cardClass}" data-agent-id="${escapeHtml(rec.id)}">
           <div class="live-card-head">
             <div class="live-av" style="background:${avColor}">${initials}</div>
             <div style="flex:1 1 auto;min-width:0">
               <div class="live-card-name">${escapeHtml(rec.name)}</div>
               <div class="live-card-team">${isIn ? 'In at ' + fmtT(inAt) + ' · ' + elapsedTxt : (outAt ? 'Out at ' + fmtT(outAt) : 'Awaiting clock-in')}</div>
+              ${forgotBadge}
             </div>
             <span class="${pillClass}">${pillText}</span>
           </div>
@@ -2772,7 +2778,8 @@
       // Admins + superusers are exempt from clock-in expectations — they
       // don't need to clock in, so we drop them from schedule adherence
       // entirely (no late/missed flags, not counted in % punctual).
-      const [{ data: staff }, { data: events }] = await Promise.all([
+      const since48 = new Date(Date.now() - 48 * 3600e3).toISOString();
+      const [{ data: staff }, { data: events }, { data: forgotEvents }] = await Promise.all([
         window.sb.from('staff')
           .select('id, name, active, is_admin')
           .eq('active', true)
@@ -2780,11 +2787,20 @@
         window.sb.from('events').select('staff_id, ts, dir')
           .gte('ts', monday.toISOString()).lte('ts', weekEnd.toISOString())
           .order('ts', { ascending: true }),
+        window.sb.from('events').select('staff_id, ts')
+          .or('note.ilike.%forgot%,note.ilike.%Auto clock-out%')
+          .gte('ts', since48)
+          .order('ts', { ascending: false }),
       ]);
+      const forgotRecentByStaff = new Map();
+      (forgotEvents || []).forEach(e => {
+        if (!forgotRecentByStaff.has(e.staff_id)) forgotRecentByStaff.set(e.staff_id, e.ts);
+      });
       const byStaff = new Map();
       (staff || []).forEach(s => byStaff.set(s.id, {
         id: s.id, name: s.name, days: {},
         late: 0, early: 0, missed: 0, avgStartMin: null, avgEndMin: null,
+        forgotRecentTs: forgotRecentByStaff.get(s.id) || null,
       }));
       (events || []).forEach(e => {
         const rec = byStaff.get(e.staff_id);
@@ -3136,6 +3152,18 @@
         .eq('active', true)
         .order('name', { ascending: true });
       if (error) throw error;
+      // One batched query for forgot-to-clock-out incidents in the last
+      // 30 days — both admin-fixed ("Auto-corrected: forgot to clock out")
+      // and self-corrected ("Auto clock-out after long shift…") rows.
+      const since30 = new Date(Date.now() - 30 * 24 * 3600e3).toISOString();
+      const { data: forgotEvents } = await window.sb
+        .from('events').select('staff_id')
+        .or('note.ilike.%forgot%,note.ilike.%Auto clock-out%')
+        .gte('ts', since30);
+      const forgotByStaff = new Map();
+      (forgotEvents || []).forEach(e => {
+        forgotByStaff.set(e.staff_id, (forgotByStaff.get(e.staff_id) || 0) + 1);
+      });
       // One small query per staff to grab their last two events — same
       // pattern the clock admin uses. Cheap for an office-sized roster.
       const decorated = await Promise.all((staff || []).map(async (s) => {
@@ -3150,7 +3178,7 @@
           if (e.dir === 'out' && !lastOut) lastOut = e.ts;
         });
         if (lastIn && (!lastOut || lastIn > lastOut)) status = 'in';
-        return { ...s, status, lastIn, lastOut };
+        return { ...s, status, lastIn, lastOut, forgotCount30d: forgotByStaff.get(s.id) || 0 };
       }));
       decorated.sort((a, b) => {
         if (a.status !== b.status) return a.status === 'in' ? -1 : 1;
@@ -3213,19 +3241,25 @@
             <th>Status</th>
             <th>Designation</th>
             <th>Last clocked</th>
+            <th class="num" title="Times this staffer forgot to clock out in the last 30 days (admin-corrected or self-corrected events).">Forgot 30d</th>
             <th class="r"></th>
           </tr></thead>
           <tbody>
-            ${_team == null ? '<tr><td colspan="5" class="muted" style="text-align:center;padding:30px">Loading…</td></tr>' :
-              rows.length === 0 ? '<tr><td colspan="5" class="muted" style="text-align:center;padding:30px">No staff match.</td></tr>' :
-              rows.map(s => `<tr>
+            ${_team == null ? '<tr><td colspan="6" class="muted" style="text-align:center;padding:30px">Loading…</td></tr>' :
+              rows.length === 0 ? '<tr><td colspan="6" class="muted" style="text-align:center;padding:30px">No staff match.</td></tr>' :
+              rows.map(s => {
+                const fc = s.forgotCount30d || 0;
+                const fpill = fc === 0 ? `<span class="muted tnum" style="font-size:12px">0</span>`
+                            : `<span class="pill ${fc >= 3 ? 'bad' : 'warn'}" style="font-size:11px;padding:3px 9px" title="${fc} forgot-to-clock-out incident${fc === 1 ? '' : 's'} in the last 30 days">⚠️ ${fc}</span>`;
+                return `<tr>
                 <td><div class="agent-cell"><div class="avatar">${escapeHtml(initialsOf(s.name))}</div>
                   <div class="agent-name">${escapeHtml(s.name)}</div></div></td>
                 <td><span class="pill ${s.status === 'in' ? 'ok' : ''}" style="font-size:11px;padding:3px 9px">${s.status === 'in' ? '● On the clock' : 'Clocked out'}</span></td>
                 <td>${escapeHtml(desigLabel(s.designation))}</td>
                 <td class="muted tnum" style="font-size:12.5px">${s.status === 'in' ? 'in ' + rel(s.lastIn) : (s.lastOut ? 'out ' + rel(s.lastOut) : '—')}</td>
+                <td class="num">${fpill}</td>
                 <td class="r"><button class="btn small" data-edit-staff-id="${escapeHtml(s.id)}">Edit</button></td>
-              </tr>`).join('')}
+              </tr>`;}).join('')}
           </tbody>
         </table></div>
       </div>
