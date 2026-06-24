@@ -1087,19 +1087,23 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
 .live-pill--break { background: #FFE9CB; color: #6B3F00; }
 
 .live-card-meta {
-  display: flex;
-  flex-direction: row;
-  gap: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 12px 14px;
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid var(--line, #E5EAF2);
 }
+.live-card-meta > div { min-width: 0; }
 .live-stat-label {
   font-size: 10.5px;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .live-stat-val {
   font-family: var(--serif);
