@@ -163,10 +163,21 @@ def prettify(name):
     return re.sub(r"([a-z])([A-Z])", r"\1 \2", (name or "").replace("_", " ")).strip()
 
 
+# Dialfire usernames the quay-clock roster can't match via first+last
+# fallback. Keys are post-prettify; values are the exact clock-roster
+# display name. Add an entry whenever a Dialfire login is shorter or
+# spelled differently from the clock record.
+NAME_ALIASES = {
+    "Gio":      "Giovon Van Wyk",
+    "Declan T": "Declan Ryder Tyler",
+}
+
+
 def build_rows(agents, now_iso):
     out = []
     for a in agents.values():
         n = prettify((a.get("name") or "").strip())
+        n = NAME_ALIASES.get(n, n)
         if not n:
             continue
         out.append({
