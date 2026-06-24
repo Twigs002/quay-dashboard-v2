@@ -2460,12 +2460,12 @@
             <span class="${pillClass}">${pillText}</span>
           </div>
           <div class="live-card-meta">
-            <div>
-              <div class="live-stat-label">Calls</div>
+            <div title="Total dial attempts — Dialfire's 'completed' column.">
+              <div class="live-stat-label">Handlings</div>
               <div class="live-stat-val tnum">${todayCalls != null ? fmt(todayCalls) : '—'}</div>
             </div>
-            <div title="Answered / connected calls — Dialfire's 'success' column.">
-              <div class="live-stat-label">Answered</div>
+            <div title="Connected calls (an actual conversation) — Dialfire's 'success' column.">
+              <div class="live-stat-label">Calls</div>
               <div class="live-stat-val tnum">${todayAnswered != null ? fmt(todayAnswered) : '—'}</div>
             </div>
             <div title="Calls touching leads in LEAD status. Includes follow-up calls — true per-period leads need Dialfire Processing report scope.">
