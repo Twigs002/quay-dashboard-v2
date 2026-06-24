@@ -159,26 +159,49 @@ def load_campaigns():
 # Date range
 # ---------------------------------------------------------------------------
 def get_date_range(now_sast):
-    """Return list of dates from START_DATE to END_DATE (inclusive).
+    """Return list of dates to fetch.
 
-    Defaults: END_DATE = yesterday SAST, START_DATE = 30 days before END_DATE.
+    Explicit range: when START_DATE or END_DATE env vars are set, return
+    [START_DATE..END_DATE] inclusive (defaults: END=yesterday SAST,
+    START = END-30d).
+
+    Default (no env vars): self-healing — always re-fetch the last 7 days
+    through today SAST (so the evening run captures the day that just
+    ended), plus any dates missing from existing daily_data.json within
+    the last 30 days. Lets a single successful run auto-backfill gaps
+    from earlier cancelled runs.
     """
-    yesterday = now_sast.date() - timedelta(days=1)
-    end_str   = (os.environ.get("END_DATE") or "").strip() or str(yesterday)
-    end       = datetime.datetime.strptime(end_str, "%Y-%m-%d").date()
+    today     = now_sast.date()
+    yesterday = today - timedelta(days=1)
+    end_env   = (os.environ.get("END_DATE") or "").strip()
+    start_env = (os.environ.get("START_DATE") or "").strip()
 
-    start_str = (os.environ.get("START_DATE") or "").strip() or str(end - timedelta(days=30))
-    start     = datetime.datetime.strptime(start_str, "%Y-%m-%d").date()
+    if end_env or start_env:
+        end   = datetime.datetime.strptime(end_env or str(yesterday), "%Y-%m-%d").date()
+        start = datetime.datetime.strptime(start_env or str(end - timedelta(days=30)), "%Y-%m-%d").date()
+        if start > end:
+            start = end
+        out, d = [], start
+        while d <= end:
+            out.append(d)
+            d += timedelta(days=1)
+        return out
 
-    if start > end:
-        start = end
+    dates = {today - timedelta(days=i) for i in range(8)}
 
-    dates = []
-    d = start
-    while d <= end:
-        dates.append(d)
+    try:
+        with open("data/daily_data.json") as f:
+            existing_dates = {e.get("date") for e in json.load(f) if isinstance(e, dict)}
+    except (FileNotFoundError, json.JSONDecodeError):
+        existing_dates = set()
+
+    d = today - timedelta(days=30)
+    while d <= yesterday:
+        if str(d) not in existing_dates:
+            dates.add(d)
         d += timedelta(days=1)
-    return dates
+
+    return sorted(dates)
 
 
 # ---------------------------------------------------------------------------

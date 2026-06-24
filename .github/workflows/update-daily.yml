@@ -2,23 +2,27 @@ name: Update Daily Data
 
 on:
   schedule:
-    # Runs at 06:00 SAST (04:00 UTC) every day
-    - cron: '0 4 * * *'
+    # Evening run: 19:00 SAST (17:00 UTC) — pulls today's data after close
+    # of business so it's ready overnight.
+    - cron: '0 17 * * *'
+    # Morning safety net: 07:00 SAST (05:00 UTC) — self-heals any gap if
+    # the evening run was cancelled, queued, or failed.
+    - cron: '0 5 * * *'
 
   workflow_dispatch:
     inputs:
       start_date:
-        description: Start date YYYY-MM-DD leave blank for 30 days ago
+        description: Start date YYYY-MM-DD leave blank for self-heal (last 7d + missing)
         required: false
         default: ''
       end_date:
-        description: End date YYYY-MM-DD leave blank for yesterday
+        description: End date YYYY-MM-DD leave blank for self-heal (last 7d + missing)
         required: false
         default: ''
 
 concurrency:
-  group: data-update
-  cancel-in-progress: true
+  group: daily-data-update
+  cancel-in-progress: false
 
 jobs:
   fetch-daily:
