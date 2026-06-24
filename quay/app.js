@@ -3175,12 +3175,14 @@
          || (s.designation || '').toLowerCase().includes(q)
     );
     const desigLabel = (d) => ({
-      super_admin: 'Super Admin',
-      manager:     'Manager',
-      rm:          'RM',
-      fancy:       'Fancy',
-      ln:          'LN',
-      assistant:   'Assistant',
+      super_admin:    'Super Admin',
+      manager:        'Manager',
+      rm:             'RM',
+      fancy:          'Fancy',
+      ln:             'LN',
+      assistant:      'Assistant',
+      broker:         'Broker',
+      rental_support: 'Rental Support',
     }[d] || (d || '—'));
     const onCount = (_team || []).filter(s => s.status === 'in').length;
     const totalCount = (_team || []).length;
@@ -3239,12 +3241,14 @@
     const f = _teamModal;
     const isEdit = f.mode === 'edit';
     const designations = [
-      ['super_admin', 'Super Admin'],
-      ['manager',     'Manager'],
-      ['rm',          'RM (Relationship Manager)'],
-      ['fancy',       'Fancy Caller'],
-      ['ln',          'LN (Lead Nurturer)'],
-      ['assistant',   'Assistant'],
+      ['super_admin',    'Super Admin'],
+      ['manager',        'Manager'],
+      ['rm',             'RM (Relationship Manager)'],
+      ['fancy',          'Fancy Caller'],
+      ['ln',             'LN (Lead Nurturer)'],
+      ['assistant',      'Assistant'],
+      ['broker',         'Broker'],
+      ['rental_support', 'Rental Support'],
     ];
     return `<div class="modal-back" id="teamModalBack"></div>
       <div class="modal" role="dialog" style="width:min(560px, calc(100vw - 32px))">
