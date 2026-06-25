@@ -2785,10 +2785,16 @@
       // entirely (no late/missed flags, not counted in % punctual).
       const since48 = new Date(Date.now() - 48 * 3600e3).toISOString();
       const [{ data: staff }, { data: events }, { data: forgotEvents }] = await Promise.all([
+        // Pull is_admin/is_super/designation so we can drop admins,
+        // super admins, and managers — they're exempt from clock-in
+        // tracking and shouldn't appear on the live floor or in
+        // adherence stats.
         window.sb.from('staff')
-          .select('id, name, active, is_admin')
+          .select('id, name, active, is_admin, is_super, designation')
           .eq('active', true)
-          .eq('is_admin', false),
+          .eq('is_admin', false)
+          .eq('is_super', false)
+          .not('designation', 'in', '(manager,super_admin)'),
         window.sb.from('events').select('staff_id, ts, dir')
           .gte('ts', monday.toISOString()).lte('ts', weekEnd.toISOString())
           .order('ts', { ascending: true }),
@@ -3156,6 +3162,18 @@
   let _teamModal = null;        // form state when modal is open
   let _forgotThisWeek = [];     // forgot-to-clock-out events since Monday SAST
 
+  // Admin / Manager / Super Admin are exempt from clock-in expectations —
+  // they're not callers, so we don't count them in 'on the clock' stats,
+  // don't track forgot-to-clock-out for them, and skip schedule-adherence
+  // checks. Designation-based so it survives a manager not having
+  // is_admin set.
+  function isExemptStaff(s) {
+    if (!s) return false;
+    if (s.is_super || s.is_admin) return true;
+    const d = String(s.designation || '').toLowerCase();
+    return d === 'super_admin' || d === 'manager';
+  }
+
   async function loadTeam() {
     if (!window.sb) return;
     _teamLoading = true;
@@ -3179,7 +3197,11 @@
       // This-week digest (Mon..Sun SAST of the current week).
       const weekStart = startOfThisWeek(new Date());
       _forgotThisWeek = [];
+      // Admin / Manager rows shouldn't appear in forgot-to-clock-out
+      // tracking — they're exempt from the whole clock-in flow.
+      const exemptIds = new Set((staff || []).filter(isExemptStaff).map(s => s.id));
       (forgotEvents || []).forEach(e => {
+        if (exemptIds.has(e.staff_id)) return;
         forgotByStaff.set(e.staff_id, (forgotByStaff.get(e.staff_id) || 0) + 1);
         if (new Date(e.ts) >= weekStart) _forgotThisWeek.push(e);
       });
@@ -3231,8 +3253,11 @@
       broker:         'Broker',
       rental_support: 'Rental Support',
     }[d] || (d || '—'));
-    const onCount = (_team || []).filter(s => s.status === 'in').length;
-    const totalCount = (_team || []).length;
+    // Only count staff who are subject to clock-in (excludes admins,
+    // super admins, and managers — they don't need to clock in).
+    const trackable = (_team || []).filter(s => !isExemptStaff(s));
+    const onCount = trackable.filter(s => s.status === 'in').length;
+    const totalCount = trackable.length;
 
     const rel = (iso) => {
       if (!iso) return '—';
@@ -3297,15 +3322,24 @@
             ${_team == null ? '<tr><td colspan="6" class="muted" style="text-align:center;padding:30px">Loading…</td></tr>' :
               rows.length === 0 ? '<tr><td colspan="6" class="muted" style="text-align:center;padding:30px">No staff match.</td></tr>' :
               rows.map(s => {
-                const fc = s.forgotCount30d || 0;
-                const fpill = fc === 0 ? `<span class="muted tnum" style="font-size:12px">0</span>`
-                            : `<span class="pill ${fc >= 3 ? 'bad' : 'warn'}" style="font-size:11px;padding:3px 9px" title="${fc} forgot-to-clock-out incident${fc === 1 ? '' : 's'} in the last 30 days">⚠️ ${fc}</span>`;
+                const exempt = isExemptStaff(s);
+                const fc = exempt ? 0 : (s.forgotCount30d || 0);
+                const fpill = exempt
+                  ? `<span class="muted" style="font-size:11px">—</span>`
+                  : (fc === 0 ? `<span class="muted tnum" style="font-size:12px">0</span>`
+                              : `<span class="pill ${fc >= 3 ? 'bad' : 'warn'}" style="font-size:11px;padding:3px 9px" title="${fc} forgot-to-clock-out incident${fc === 1 ? '' : 's'} in the last 30 days">⚠️ ${fc}</span>`);
+                const statusPill = exempt
+                  ? `<span class="pill" style="font-size:11px;padding:3px 9px;background:#EEF0F6;color:#7A8499" title="Admins and managers are exempt from clock-in tracking">Exempt</span>`
+                  : `<span class="pill ${s.status === 'in' ? 'ok' : ''}" style="font-size:11px;padding:3px 9px">${s.status === 'in' ? '● On the clock' : 'Clocked out'}</span>`;
+                const lastCell = exempt
+                  ? `<span class="muted" style="font-size:12.5px">—</span>`
+                  : (s.status === 'in' ? 'in ' + rel(s.lastIn) : (s.lastOut ? 'out ' + rel(s.lastOut) : '—'));
                 return `<tr>
                 <td><div class="agent-cell"><div class="avatar">${escapeHtml(initialsOf(s.name))}</div>
                   <div class="agent-name">${escapeHtml(s.name)}</div></div></td>
-                <td><span class="pill ${s.status === 'in' ? 'ok' : ''}" style="font-size:11px;padding:3px 9px">${s.status === 'in' ? '● On the clock' : 'Clocked out'}</span></td>
+                <td>${statusPill}</td>
                 <td>${escapeHtml(desigLabel(s.designation))}</td>
-                <td class="muted tnum" style="font-size:12.5px">${s.status === 'in' ? 'in ' + rel(s.lastIn) : (s.lastOut ? 'out ' + rel(s.lastOut) : '—')}</td>
+                <td class="muted tnum" style="font-size:12.5px">${lastCell}</td>
                 <td class="num">${fpill}</td>
                 <td class="r"><button class="btn small" data-edit-staff-id="${escapeHtml(s.id)}">Edit</button></td>
               </tr>`;}).join('')}
