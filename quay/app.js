@@ -1837,7 +1837,6 @@
 
     return `
     <div class="tab-view">
-      ${lnDailyRecapCard()}
       <!-- KPIs -->
       <div class="row kpis">
         ${kpi(I.phone, 'Total Calls', fmt(t.calls), d.calls, 'vs previous ' + Q.PERIODS[period].label.toLowerCase())}
@@ -1893,9 +1892,10 @@
         </div>
       </div>
 
-      <!-- schedule adherence (real clock-in data) -->
+      <!-- schedule adherence (real clock-in data) + LN daily recap -->
       <div class="mt">
         ${scheduleAdherenceCard()}
+        ${lnDailyRecapCard()}
       </div>
 
       <!-- insights + top10 -->

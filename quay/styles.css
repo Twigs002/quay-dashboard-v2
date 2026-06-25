@@ -1457,11 +1457,11 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
 }
 
 /* ─── LN Daily Recap (Overview) ────────────────────────────────────
-   Secondary context strip above the headline KPI row. Quieter surface
-   (--paper-2) + smaller serif so the eye treats it as yesterday's
-   frame, not today's lead story.                                   */
+   Sits directly under Schedule adherence on the Operational Overview.
+   White card + brand colours so the two cards feel like a matched
+   pair; the recap reads as "yesterday's frame", not today's lead. */
 .ln-recap {
-  background: var(--paper-2);
+  background: var(--card);
   display: grid;
   grid-template-columns: minmax(220px, 1.2fr) 2.6fr;
   column-gap: 28px;
