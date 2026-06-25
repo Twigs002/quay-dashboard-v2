@@ -3374,15 +3374,20 @@
                   ? `<span class="muted" style="font-size:12.5px">—</span>`
                   : (ab ? '<span class="muted" style="font-size:12.5px">—</span>'
                         : (s.status === 'in' ? 'in ' + rel(s.lastIn) : (s.lastOut ? 'out ' + rel(s.lastOut) : '—')));
+                // Action buttons. Login-detail editing lives in the
+                // Clocks tab (the quay-clock admin iframe). On Staff
+                // Directory we only surface absence-related actions:
+                //   - absent today: Unmark + Edit (edits the absence)
+                //   - clocked out: Mark absent
+                //   - on the clock / exempt: no buttons
                 const actionBtn = exempt
-                  ? `<button class="btn small" data-edit-staff-id="${escapeHtml(s.id)}">Edit</button>`
+                  ? ''
                   : (ab
                       ? `<button class="btn small" data-unmark-absent-id="${escapeHtml(s.id)}" title="Unmark absent">Unmark</button>
-                         <button class="btn small" data-edit-staff-id="${escapeHtml(s.id)}">Edit</button>`
+                         <button class="btn small" data-edit-absent-id="${escapeHtml(s.id)}" data-edit-absent-name="${escapeHtml(s.name)}" title="Edit absence (reason, note, range)">Edit</button>`
                       : (s.status === 'in'
-                          ? `<button class="btn small" data-edit-staff-id="${escapeHtml(s.id)}">Edit</button>`
-                          : `<button class="btn small" data-mark-absent-id="${escapeHtml(s.id)}" data-mark-absent-name="${escapeHtml(s.name)}" title="Mark absent today">Mark absent</button>
-                             <button class="btn small" data-edit-staff-id="${escapeHtml(s.id)}">Edit</button>`));
+                          ? ''
+                          : `<button class="btn small" data-mark-absent-id="${escapeHtml(s.id)}" data-mark-absent-name="${escapeHtml(s.name)}" title="Mark absent today">Mark absent</button>`));
                 return `<tr>
                 <td><div class="agent-cell"><div class="avatar">${escapeHtml(initialsOf(s.name))}</div>
                   <div class="agent-name">${escapeHtml(s.name)}</div></div></td>
@@ -3419,10 +3424,11 @@
     ).join('');
     const days = _dayCount(f.startDate, f.endDate);
     const cta = busy ? 'Saving…' : (days === 1 ? 'Confirm absent' : `Confirm absent · ${days} days`);
+    const title = f.mode === 'edit' ? 'Edit absence' : 'Mark absent';
     return `<div class="modal-back" id="absenceModalBack"></div>
       <div class="modal" role="dialog" style="width:min(440px, calc(100vw - 32px))">
         <div class="modal-head">
-          <h3 style="margin:0">Mark absent · ${escapeHtml(f.name)}</h3>
+          <h3 style="margin:0">${title} · ${escapeHtml(f.name)}</h3>
           <button class="modal-close" id="absenceModalClose">×</button>
         </div>
         <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
@@ -3623,10 +3629,28 @@
       b.addEventListener('click', () => {
         const today = sastDateStr(new Date());
         _absenceModal = {
+          mode: 'create',
           staffId: b.dataset.markAbsentId,
           name:    b.dataset.markAbsentName,
           reason:  'Sick',
           note:    '',
+          startDate: today,
+          endDate:   today,
+          busy: false, error: '',
+        };
+        shell();
+      });
+    });
+    document.querySelectorAll('button[data-edit-absent-id]').forEach(b => {
+      b.addEventListener('click', () => {
+        const today = sastDateStr(new Date());
+        const ab = _absencesToday.get(b.dataset.editAbsentId) || {};
+        _absenceModal = {
+          mode: 'edit',
+          staffId: b.dataset.editAbsentId,
+          name:    b.dataset.editAbsentName,
+          reason:  ab.reason || 'Sick',
+          note:    ab.reason_note || '',
           startDate: today,
           endDate:   today,
           busy: false, error: '',
