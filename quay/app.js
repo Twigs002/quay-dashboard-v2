@@ -2411,9 +2411,13 @@
   let _lnRoleFilter = 'all';        // all | ln | assistant
   let _lnDivisionFilter = 'all';    // 'all' or a division string
   let _lnExpandedRow = null;        // staff_id of the row whose notes drawer is open
+  let _lnDateFrom = null;           // 'YYYY-MM-DD' SAST when admin overrides the global period
+  let _lnDateTo   = null;           // 'YYYY-MM-DD' SAST
 
   function _lnPeriodRange() {
-    // Map the global `period` to a [from, to] SAST date range.
+    // Map the global `period` to a [from, to] SAST date range — unless
+    // the LN tab's custom-range picker has overridden it, in which case
+    // those dates win.
     const now = new Date();
     const todaySast = sastDateStr(now);
     const startOfDay = (s) => new Date(s + 'T00:00:00+02:00');
@@ -2424,13 +2428,17 @@
       x.setDate(x.getDate() - dow);
       return sastDateStr(x);
     };
+    if (_lnDateFrom && _lnDateTo) {
+      const [a, b] = _lnDateFrom <= _lnDateTo ? [_lnDateFrom, _lnDateTo] : [_lnDateTo, _lnDateFrom];
+      return { from: startOfDay(a), to: endOfDay(b), fromKey: a, toKey: b, custom: true };
+    }
     let fromKey, toKey;
     if (period === 'this-week')      { fromKey = sastMonday(now);                                                 toKey = todaySast; }
     else if (period === 'last-week') { const d = new Date(now); d.setDate(d.getDate() - 7); fromKey = sastMonday(d); const e = new Date(fromKey + 'T00:00:00+02:00'); e.setDate(e.getDate() + 6); toKey = sastDateStr(e); }
     else if (period === 'this-month'){ const d = new Date(now); fromKey = sastDateStr(new Date(d.getFullYear(), d.getMonth(), 1));  toKey = todaySast; }
     else if (period === 'last-month'){ const d = new Date(now); d.setMonth(d.getMonth() - 1); fromKey = sastDateStr(new Date(d.getFullYear(), d.getMonth(), 1)); toKey = sastDateStr(new Date(d.getFullYear(), d.getMonth() + 1, 0)); }
     else                              { fromKey = sastDateStr(new Date(Date.now() - 30 * 86400e3)); toKey = todaySast; }
-    return { from: startOfDay(fromKey), to: endOfDay(toKey), fromKey, toKey };
+    return { from: startOfDay(fromKey), to: endOfDay(toKey), fromKey, toKey, custom: false };
   }
 
   function _lnAggregate(reports, range) {
@@ -2634,10 +2642,18 @@
 
     return `<div class="tab-view">
       <div class="card card-pad">
-        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between">
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
           <div>
             <h3 style="margin:0;font-family:var(--serif);font-size:17px">LN &amp; Assistants Leaderboard</h3>
-            <div class="sub" style="margin-top:4px">${lns.length} ${lns.length === 1 ? 'person' : 'people'} reporting · ${range.fromKey} → ${range.toKey} SAST · raw fields from each end-of-day submission</div>
+            <div class="sub" style="margin-top:4px">${lns.length} ${lns.length === 1 ? 'person' : 'people'} reporting · ${range.fromKey} → ${range.toKey} SAST${range.custom ? ' · <b>custom range</b>' : ''} · raw fields from each end-of-day submission</div>
+          </div>
+          <div class="ln-date-picker" aria-label="Custom date range">
+            <label class="muted" for="lnDateFrom">From</label>
+            <input id="lnDateFrom" type="date" value="${_lnDateFrom || ''}" max="${sastDateStr(new Date())}">
+            <span class="muted" aria-hidden="true">→</span>
+            <label class="muted" for="lnDateTo">To</label>
+            <input id="lnDateTo" type="date" value="${_lnDateTo || ''}" max="${sastDateStr(new Date())}">
+            ${range.custom ? `<button class="btn" id="lnDateClear" type="button" style="padding:5px 10px;font-size:12px">Clear</button>` : ''}
           </div>
         </div>
       </div>
@@ -2773,6 +2789,16 @@
           toggleRow(tr.dataset.lnRow);
         }
       });
+    });
+    // Custom date-range picker. Both ends required before the override
+    // kicks in — partial input keeps the global period in effect.
+    const dFrom = document.getElementById('lnDateFrom');
+    const dTo   = document.getElementById('lnDateTo');
+    if (dFrom) dFrom.addEventListener('change', (e) => { _lnDateFrom = e.target.value || null; shell(); });
+    if (dTo)   dTo.addEventListener('change',   (e) => { _lnDateTo   = e.target.value || null; shell(); });
+    const dClear = document.getElementById('lnDateClear');
+    if (dClear) dClear.addEventListener('click', () => {
+      _lnDateFrom = null; _lnDateTo = null; shell();
     });
   }
 
