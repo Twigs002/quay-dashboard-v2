@@ -2419,7 +2419,12 @@
         const today = rec.days && rec.days[todayKey];
         const inAt = today && today.first ? today.first : null;
         const outAt = today && today.last ? today.last : null;
-        const isIn = !!(inAt && (!outAt || outAt < inAt));
+        // Currently clocked in if the most-recent event today was an 'in'.
+        // Falls back to the first/last comparison for older days that
+        // pre-date the latestDir tracking.
+        const isIn = today && today.latestDir
+          ? today.latestDir === 'in'
+          : !!(inAt && (!outAt || outAt < inAt));
         if (isIn) onlineCount++; else offlineCount++;
 
         const initials = (rec.name || '?').split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
@@ -2810,9 +2815,17 @@
         // (UTC 22:30 previous day) was previously bucketed against the
         // wrong date, making the early-morning shift "disappear".
         const key = sastDateStr(d);
-        if (!rec.days[key]) rec.days[key] = { first: null, last: null };
+        if (!rec.days[key]) rec.days[key] = { first: null, last: null, latestDir: null, latestTs: null };
         if (e.dir === 'in'  && !rec.days[key].first) rec.days[key].first = d;
         if (e.dir === 'out') rec.days[key].last = d;
+        // Track the most-recent event regardless of direction. Mid-shift
+        // team changes write a synthetic out+in pair; without this the
+        // live floor would treat the agent as clocked out after the out
+        // half and miss the immediately-following re-in.
+        if (!rec.days[key].latestTs || d >= rec.days[key].latestTs) {
+          rec.days[key].latestTs  = d;
+          rec.days[key].latestDir = e.dir;
+        }
       });
       // Compute aggregates per staff over Mon..min(today, Fri).
       const today = new Date(); today.setHours(0,0,0,0);
