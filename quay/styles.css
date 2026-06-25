@@ -1332,6 +1332,43 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
 }
 .ln-filters .ln-div-select:hover { border-color: var(--blue-800); color: var(--blue-800); }
 
+/* Notes drawer — clicking any row with a note expands a full-width
+   drawer underneath showing the complete note (the truncated cell + the
+   hover-only title attribute would otherwise fail WCAG 2.5.1 on touch). */
+.ln-leaderboard tbody tr.has-note { cursor: pointer; }
+.ln-leaderboard tbody tr.has-note:focus-visible {
+  outline: 2px solid var(--blue-800); outline-offset: -2px;
+}
+.ln-leaderboard tbody tr.expanded > td { background: var(--card-2); }
+.ln-leaderboard tbody tr.expanded td.ln-col-name { background: var(--card-2); }
+.ln-notes-chev {
+  display: inline-block; margin-left: 4px;
+  color: var(--muted); font-size: 10px;
+  transition: transform .15s;
+}
+.ln-leaderboard tbody tr.expanded .ln-notes-chev { color: var(--blue-800); }
+.ln-leaderboard tbody tr.ln-drawer:hover > td,
+.ln-leaderboard tbody tr.ln-drawer:hover td.ln-col-name {
+  background: var(--paper);
+}
+.ln-leaderboard tbody tr.ln-drawer > td {
+  background: var(--paper);
+  border-top: 2px solid var(--blue-800);
+  padding: 14px 18px 18px;
+}
+.ln-drawer-inner { display: flex; flex-direction: column; gap: 6px; }
+.ln-drawer-label {
+  font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+  font-weight: 700; color: var(--muted);
+}
+.ln-drawer-note {
+  white-space: pre-wrap;
+  color: var(--ink);
+  font-size: 13.5px;
+  line-height: 1.55;
+  max-width: 90ch;
+}
+
 /* ─── LN Daily Recap (Overview) ────────────────────────────────────
    Secondary context strip above the headline KPI row. Quieter surface
    (--paper-2) + smaller serif so the eye treats it as yesterday's

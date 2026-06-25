@@ -2697,7 +2697,16 @@
                 const cls = (r.designation || '').toLowerCase() === 'ln' ? 'rm' : 'fancy';
                 const note = r.note || '';
                 const noteShort = note.length > 60 ? note.slice(0, 60) + '…' : note;
-                return `<tr>
+                const hasNote = !!note;
+                const isExpanded = hasNote && _lnExpandedRow === r.staffId;
+                const rowAttrs = hasNote
+                  ? ` class="has-note${isExpanded ? ' expanded' : ''}" data-ln-row="${escapeHtml(String(r.staffId))}" tabindex="0" role="button" aria-expanded="${isExpanded}"`
+                  : '';
+                const chev = hasNote ? `<span class="ln-notes-chev" aria-hidden="true">${isExpanded ? '▴' : '▾'}</span>` : '';
+                const drawer = isExpanded
+                  ? `<tr class="ln-drawer"><td colspan="20"><div class="ln-drawer-inner"><div class="ln-drawer-label">${escapeHtml(r.name)} — notes</div><div class="ln-drawer-note">${escapeHtml(note)}</div></div></td></tr>`
+                  : '';
+                return `<tr${rowAttrs}>
                   <td class="ln-col-name"><b>${escapeHtml(r.name)}</b></td>
                   <td><span class="pill ${cls}" style="font-size:10.5px;padding:2px 8px">${role}</span></td>
                   <td class="muted" style="font-size:12px">${escapeHtml(Array.from(r.divisions).join(' / ') || '—')}</td>
@@ -2717,8 +2726,8 @@
                   ${numCell(r.waLeads,      'ln-col-wa')}
                   <td class="num"><span class="pill ${r.compliance >= 0.9 ? 'ok' : r.compliance >= 0.6 ? 'warn' : 'bad'}" style="font-size:11px;padding:2px 8px">${fmtPct(r.compliance)}</span></td>
                   <td>${_lnSparkSvg(r.byDay, range)}</td>
-                  <td class="muted" style="font-size:12px;max-width:240px" title="${escapeHtml(note)}">${escapeHtml(noteShort) || '<span class="muted">—</span>'}</td>
-                </tr>`;
+                  <td class="muted" style="font-size:12px;max-width:240px">${escapeHtml(noteShort) || '<span class="muted">—</span>'}${chev}</td>
+                </tr>${drawer}`;
               }).join('')}
           </tbody>
         </table></div>
@@ -2749,6 +2758,19 @@
     if (divSel) divSel.addEventListener('change', (e) => {
       _lnDivisionFilter = e.target.value || 'all';
       shell();
+    });
+    const toggleRow = (id) => {
+      _lnExpandedRow = (_lnExpandedRow === id) ? null : id;
+      shell();
+    };
+    document.querySelectorAll('tr[data-ln-row]').forEach(tr => {
+      tr.addEventListener('click', () => toggleRow(tr.dataset.lnRow));
+      tr.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggleRow(tr.dataset.lnRow);
+        }
+      });
     });
   }
 
