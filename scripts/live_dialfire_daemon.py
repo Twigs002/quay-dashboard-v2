@@ -170,6 +170,7 @@ def prettify(name):
 NAME_ALIASES = {
     "Gio":      "Giovon Van Wyk",
     "Declan T": "Declan Ryder Tyler",
+    "Test":     "Jason Hendricks",
 }
 
 
