@@ -1295,6 +1295,43 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
 }
 .ln-leaderboard tbody tr:hover td.ln-col-name { background: var(--card-2); }
 
+/* LN filter row — role chips + division dropdown above the table. */
+.ln-filters {
+  display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+  padding: 12px 16px; border-bottom: 1px solid var(--line);
+}
+.ln-filters .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.ln-filters .chip {
+  border: 1px solid var(--line); background: var(--card);
+  color: var(--slate); padding: 6px 12px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 700; font-family: inherit;
+  display: inline-flex; gap: 6px; align-items: center;
+  cursor: pointer; transition: all .12s;
+}
+.ln-filters .chip:hover { border-color: var(--blue-800); color: var(--blue-800); }
+.ln-filters .chip.active {
+  background: var(--blue-800); color: #fff; border-color: var(--blue-800);
+}
+.ln-filters .chip-count {
+  background: var(--paper); color: var(--slate);
+  padding: 1px 7px; border-radius: 999px; font-size: 10.5px;
+}
+.ln-filters .chip.active .chip-count {
+  background: rgba(255,255,255,.18); color: #fff;
+}
+.ln-filters .ln-div-wrap {
+  display: flex; gap: 8px; align-items: center; margin-left: auto;
+}
+.ln-filters .ln-div-select {
+  border: 1px solid var(--line); background: var(--card);
+  color: var(--slate); padding: 6px 28px 6px 12px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 700; font-family: inherit;
+  cursor: pointer; appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234A566D' d='M2 4l4 4 4-4z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+}
+.ln-filters .ln-div-select:hover { border-color: var(--blue-800); color: var(--blue-800); }
+
 /* ─── LN Daily Recap (Overview) ────────────────────────────────────
    Secondary context strip above the headline KPI row. Quieter surface
    (--paper-2) + smaller serif so the eye treats it as yesterday's

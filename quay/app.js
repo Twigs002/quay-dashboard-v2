@@ -2524,11 +2524,24 @@
       return `<div class="tab-view"><div class="card card-pad" style="text-align:center;color:var(--muted);padding:60px 20px">Loading end-of-day reports…</div></div>`;
     }
     const range = _lnPeriodRange();
-    const lns = _lnAggregate(_reports, range)
+    // Unfiltered baseline (everyone in role + period). Used to compute chip
+    // counts and division dropdown options so they stay stable as filters
+    // narrow the visible roster.
+    const allLns = _lnAggregate(_reports, range)
       .filter(r => {
         const d = (r.designation || '').toLowerCase();
         return d === 'ln' || d === 'assistant';
       });
+    const roleOf = (r) => (r.designation || '').toLowerCase();
+    const lns = allLns.filter(r => {
+      if (_lnRoleFilter === 'ln' && roleOf(r) !== 'ln') return false;
+      if (_lnRoleFilter === 'assistant' && roleOf(r) !== 'assistant') return false;
+      if (_lnDivisionFilter !== 'all') {
+        const divs = Array.from(r.divisions || []);
+        if (!divs.includes(_lnDivisionFilter)) return false;
+      }
+      return true;
+    });
 
     // Notes per staff (most recent in range — shown truncated in table).
     const notesByStaff = new Map();
@@ -2606,6 +2619,17 @@
       return `<th class="${cls}${extra ? ' ' + extra : ''}" style="cursor:pointer" data-ln-sort="${k}" ${tip ? `title="${escapeHtml(tip)}"` : ''}>${escapeHtml(label)}${sortIndic(k)}</th>`;
     };
 
+    // Filter row counts + division options use the unfiltered baseline.
+    const lnCount     = allLns.filter(r => roleOf(r) === 'ln').length;
+    const assistCount = allLns.filter(r => roleOf(r) === 'assistant').length;
+    const divisionSet = new Set();
+    allLns.forEach(r => (r.divisions || new Set()).forEach(d => d && divisionSet.add(d)));
+    const divisionList = Array.from(divisionSet).sort((a, b) => a.localeCompare(b));
+    const roleChip = (k, label, count) =>
+      `<button class="chip${_lnRoleFilter === k ? ' active' : ''}" data-ln-role="${k}" type="button">${escapeHtml(label)}<span class="chip-count tnum">${count}</span></button>`;
+    const divOpts = `<option value="all">All divisions</option>` +
+      divisionList.map(d => `<option value="${escapeHtml(d)}"${d === _lnDivisionFilter ? ' selected' : ''}>${escapeHtml(d)}</option>`).join('');
+
     return `<div class="tab-view">
       <div class="card card-pad">
         <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between">
@@ -2624,6 +2648,17 @@
       </div>
 
       <div class="card mt">
+        <div class="ln-filters">
+          <div class="chips" role="group" aria-label="Filter by role">
+            ${roleChip('all', 'All', lnCount + assistCount)}
+            ${roleChip('ln', 'LNs', lnCount)}
+            ${roleChip('assistant', 'Assistants', assistCount)}
+          </div>
+          <div class="ln-div-wrap">
+            <label class="muted" style="font-size:12px" for="lnDivFilter">Division</label>
+            <select id="lnDivFilter" class="ln-div-select" aria-label="Filter by division">${divOpts}</select>
+          </div>
+        </div>
         <div class="tbl-wrap"><table class="tbl tbl-sortable ln-leaderboard">
           <thead>
             <tr class="ln-grouphdr">
@@ -2703,6 +2738,17 @@
         }
         shell();
       });
+    });
+    document.querySelectorAll('button[data-ln-role]').forEach(b => {
+      b.addEventListener('click', () => {
+        _lnRoleFilter = b.dataset.lnRole;
+        shell();
+      });
+    });
+    const divSel = document.getElementById('lnDivFilter');
+    if (divSel) divSel.addEventListener('change', (e) => {
+      _lnDivisionFilter = e.target.value || 'all';
+      shell();
     });
   }
 
