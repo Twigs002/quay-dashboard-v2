@@ -109,6 +109,7 @@
     { id: 'live',       section: 'Performance', label: 'Live Floor',     icon: I.users,    title: 'Live Floor',           sub: "Who's on the clock now · today's calls + leads · mobile-friendly" },
     { id: 'staff',      section: 'People',      label: 'All Staff',      icon: I.calendar, title: 'All Staff Report',     sub: 'Drill into agent-level performance' },
     { id: 'manager',    section: 'People',      label: 'Red Flags',      icon: I.chart,    title: 'Red Flags',            sub: 'Auto-detected this period · monthly trends below' },
+    { id: 'ln',         section: 'People',      label: 'LN Stats',       icon: I.target,   title: 'LN Leaderboard',       sub: 'Per-LN efficiency, leads per 100 touches, compliance · from end-of-day reports' },
     { id: 'daily',      section: 'Time',        label: 'Daily Stats',    icon: I.cal2,     title: 'Daily Stats',          sub: 'Per-caller performance for a single day' },
     { id: 'monthly',    section: 'Time',        label: 'Monthly',        icon: I.cal2,     title: 'Monthly Breakdown',    sub: 'Month-by-month roll-up across every week of data' },
     { id: 'compare',    section: 'Time',        label: 'Compare',        icon: I.scale,    title: 'Period Comparison',    sub: 'Week vs week · month vs month' },
@@ -418,6 +419,7 @@
     else if (tab === 'daily')    { host.innerHTML = V.daily(period, dailyPicked); dailyWire(); }
     else if (tab === 'monthly')  { host.innerHTML = V.monthly(); monthlyWire(); }
     else if (tab === 'manager')  { host.innerHTML = V.manager(period); managerWire(); }
+    else if (tab === 'ln')       { host.innerHTML = renderLnLeaderboard(); wireLnLeaderboard(); }
     else if (tab === 'sources')  host.innerHTML = V.leadSources(period);
     else if (tab === 'payroll')  { host.innerHTML = V.payroll(payrollState); payrollWire(); }
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
@@ -1835,6 +1837,7 @@
 
     return `
     <div class="tab-view">
+      ${lnDailyRecapCard()}
       <!-- KPIs -->
       <div class="row kpis">
         ${kpi(I.phone, 'Total Calls', fmt(t.calls), d.calls, 'vs previous ' + Q.PERIODS[period].label.toLowerCase())}
@@ -2398,6 +2401,370 @@
   // The Live Floor view: one card per agent currently clocked in (or out
   // today), driven by schedule.byStaff (loaded from Supabase events) and
   // enriched with today's Dialfire call/lead counts when available.
+  // ─── LN Leaderboard ───────────────────────────────────────────────
+  // A dedicated tab for Lead Nurturer + Assistant performance based on
+  // end-of-day clock_out_reports submissions. Period filter scopes the
+  // active range; per-LN derived metrics make it a triage tool, not
+  // just a submissions log.
+  let _lnSortBy  = 'leadsPerHr';
+  let _lnSortDir = 'desc';
+
+  function _lnPeriodRange() {
+    // Map the global `period` to a [from, to] SAST date range.
+    const now = new Date();
+    const todaySast = sastDateStr(now);
+    const startOfDay = (s) => new Date(s + 'T00:00:00+02:00');
+    const endOfDay   = (s) => new Date(s + 'T23:59:59+02:00');
+    const sastMonday = (d) => {
+      const x = new Date(d.toLocaleString('en-US', { timeZone: 'Africa/Johannesburg' }));
+      const dow = (x.getDay() + 6) % 7;
+      x.setDate(x.getDate() - dow);
+      return sastDateStr(x);
+    };
+    let fromKey, toKey;
+    if (period === 'this-week')      { fromKey = sastMonday(now);                                                 toKey = todaySast; }
+    else if (period === 'last-week') { const d = new Date(now); d.setDate(d.getDate() - 7); fromKey = sastMonday(d); const e = new Date(fromKey + 'T00:00:00+02:00'); e.setDate(e.getDate() + 6); toKey = sastDateStr(e); }
+    else if (period === 'this-month'){ const d = new Date(now); fromKey = sastDateStr(new Date(d.getFullYear(), d.getMonth(), 1));  toKey = todaySast; }
+    else if (period === 'last-month'){ const d = new Date(now); d.setMonth(d.getMonth() - 1); fromKey = sastDateStr(new Date(d.getFullYear(), d.getMonth(), 1)); toKey = sastDateStr(new Date(d.getFullYear(), d.getMonth() + 1, 0)); }
+    else                              { fromKey = sastDateStr(new Date(Date.now() - 30 * 86400e3)); toKey = todaySast; }
+    return { from: startOfDay(fromKey), to: endOfDay(toKey), fromKey, toKey };
+  }
+
+  function _lnAggregate(reports, range) {
+    // Group by staff_id over `range`; return [{staffId, name, designation, ...derived}].
+    const inRange = (reports || []).filter(r => {
+      const t = r.clocked_out_at ? new Date(r.clocked_out_at) : null;
+      return t && t >= range.from && t <= range.to;
+    });
+    const by = new Map();
+    inRange.forEach(r => {
+      const k = r.staff_id;
+      if (!by.has(k)) by.set(k, {
+        staffId: k,
+        name: (r.staff && r.staff.name) || _staffNamesById.get(k) || k,
+        designation: r.designation || '',
+        divisions: new Set(),
+        reports: 0, hsCalls: 0, hsEmails: 0, hsWas: 0, hsTasks: 0, hsLeads: 0,
+        dfCalls: 0, dfEmails: 0, dfLeads: 0, dfHours: 0,
+        waSent: 0, waLeads: 0,
+        byDay: new Map(),  // dayKey -> total touches that day (for sparkline)
+        lastSubmit: null,
+      });
+      const t = by.get(k);
+      if (r.division) t.divisions.add(r.division);
+      t.reports  += 1;
+      t.hsTasks  += r.hs_tasks_completed   || 0;
+      t.hsCalls  += r.hs_calls_made        || 0;
+      t.hsEmails += r.hs_emails_sent       || 0;
+      t.hsWas    += r.hs_whatsapps_sent    || 0;
+      t.hsLeads  += r.hs_leads_vals        || 0;
+      t.dfCalls  += r.df_calls             || 0;
+      t.dfEmails += r.df_email_successes   || 0;
+      t.dfLeads  += r.df_leads_vals        || 0;
+      t.dfHours  += Number(r.df_hours      || 0);
+      t.waSent   += r.wa_sent              || 0;
+      t.waLeads  += r.wa_leads_vals        || 0;
+      const ts = r.clocked_out_at ? new Date(r.clocked_out_at) : null;
+      if (ts) {
+        const day = sastDateStr(ts);
+        const touches = (r.hs_calls_made || 0) + (r.df_calls || 0) + (r.hs_emails_sent || 0) + (r.df_email_successes || 0) + (r.hs_whatsapps_sent || 0) + (r.wa_sent || 0);
+        t.byDay.set(day, (t.byDay.get(day) || 0) + touches);
+        if (!t.lastSubmit || ts > t.lastSubmit) t.lastSubmit = ts;
+      }
+    });
+    // Derived metrics
+    return Array.from(by.values()).map(t => {
+      const calls   = t.hsCalls + t.dfCalls;
+      const emails  = t.hsEmails + t.dfEmails;
+      const was     = t.hsWas + t.waSent;
+      const leads   = t.hsLeads + t.dfLeads + t.waLeads;
+      const touches = calls + emails + was;
+      const hrs     = t.dfHours;
+      return {
+        ...t,
+        calls, emails, was, leads, touches,
+        callsPerHr:    hrs > 0 ? calls / hrs : null,
+        emailsPerHr:   hrs > 0 ? emails / hrs : null,
+        touchesPerHr:  hrs > 0 ? touches / hrs : null,
+        leadsPerHr:    hrs > 0 ? leads / hrs : null,
+        leadsPer100:   touches > 0 ? (leads / touches) * 100 : null,
+        compliance:    null,  // filled in when we have expected-days count
+      };
+    });
+  }
+
+  function _lnSparkSvg(byDay, range) {
+    // Build a 14-day series ending at range.to; one bar per day.
+    const days = [];
+    const cur = new Date(range.to);
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(cur); d.setDate(d.getDate() - i);
+      const key = sastDateStr(d);
+      days.push({ key, v: byDay.get(key) || 0 });
+    }
+    const max = Math.max(1, ...days.map(d => d.v));
+    const W = 84, H = 22, bw = (W / days.length) - 1;
+    const bars = days.map((d, i) => {
+      const h = Math.max(1, (d.v / max) * H);
+      const x = i * (bw + 1);
+      const y = H - h;
+      const isToday = d.key === sastDateStr(new Date());
+      const fill = d.v === 0 ? '#E0E7F1' : (isToday ? 'var(--yellow)' : 'var(--blue-800)');
+      return `<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="${fill}" rx="1"/>`;
+    }).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-label="14-day touches">${bars}</svg>`;
+  }
+
+  function _lnDayKeysInRange(range) {
+    const days = [];
+    let d = new Date(range.from);
+    while (d <= range.to) {
+      const dow = new Date(d.toLocaleString('en-US', { timeZone: 'Africa/Johannesburg' })).getDay();
+      // Working days only: Mon-Fri SAST.
+      if (dow !== 0 && dow !== 6) days.push(sastDateStr(d));
+      d.setDate(d.getDate() + 1);
+    }
+    return days;
+  }
+
+  function renderLnLeaderboard() {
+    if (_reports == null && !_reportsLoading) {
+      loadReports().then(() => { if (tab === 'ln') shell(); });
+    }
+    if (_reports == null) {
+      return `<div class="tab-view"><div class="card card-pad" style="text-align:center;color:var(--muted);padding:60px 20px">Loading end-of-day reports…</div></div>`;
+    }
+    const range = _lnPeriodRange();
+    const lns = _lnAggregate(_reports, range)
+      .filter(r => {
+        const d = (r.designation || '').toLowerCase();
+        return d === 'ln' || d === 'assistant';
+      });
+
+    // Compliance — submissions / expected working days in range.
+    const expectedDays = _lnDayKeysInRange(range).length || 1;
+    lns.forEach(r => {
+      const submittedDays = new Set();
+      (_reports || []).forEach(rep => {
+        if (rep.staff_id !== r.staffId) return;
+        const ts = rep.clocked_out_at ? new Date(rep.clocked_out_at) : null;
+        if (ts && ts >= range.from && ts <= range.to) submittedDays.add(sastDateStr(ts));
+      });
+      r.compliance = submittedDays.size / expectedDays;
+    });
+
+    // Team averages (denominators across all qualifying LNs).
+    const _avg = (key) => {
+      const vals = lns.map(r => r[key]).filter(v => v != null && isFinite(v));
+      return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : 0;
+    };
+    const avgCallsHr = _avg('callsPerHr');
+    const avgLeadsHr = _avg('leadsPerHr');
+    const avgLeads100 = _avg('leadsPer100');
+
+    // Sort
+    const sortDir = _lnSortDir === 'asc' ? 1 : -1;
+    lns.sort((a, b) => {
+      const av = a[_lnSortBy], bv = b[_lnSortBy];
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      if (typeof av === 'string') return sortDir * av.localeCompare(bv);
+      return sortDir * (av - bv);
+    });
+
+    // KPI band
+    const totalReports = lns.reduce((s, r) => s + r.reports, 0);
+    const totalLeads   = lns.reduce((s, r) => s + r.leads, 0);
+    const totalHrs     = lns.reduce((s, r) => s + r.dfHours, 0);
+    const topByLeads   = lns.slice().sort((a, b) => b.leads - a.leads)[0] || null;
+
+    const kpi = (icon, label, val, foot) => `<div class="card kpi">
+      <div class="kpi-top"><div class="kpi-ic">${icon}</div></div>
+      <div class="kpi-label">${escapeHtml(label)}</div>
+      <div class="kpi-val tnum">${val}</div>
+      <div class="kpi-foot">${escapeHtml(foot)}</div>
+    </div>`;
+
+    // Top-3 "Most efficient" by leads per 100 touches (≥30 touches to qualify)
+    const top3 = lns.filter(r => r.touches >= 30 && r.leadsPer100 != null)
+                    .sort((a, b) => b.leadsPer100 - a.leadsPer100).slice(0, 3);
+
+    // Coloured "vs avg" pill helper
+    const vsAvgPill = (val, avg, unit) => {
+      if (val == null || avg <= 0) return '';
+      const pct = ((val - avg) / avg) * 100;
+      if (Math.abs(pct) < 5) return `<span class="muted" style="font-size:10.5px">≈ team avg</span>`;
+      const up = pct > 0;
+      const cls = up ? 'ok' : 'bad';
+      return `<span class="pill ${cls}" style="font-size:10px;padding:1px 6px">${up ? '+' : ''}${pct.toFixed(0)}%</span>`;
+    };
+
+    const fmtNum = (v, dp) => v == null ? '—' : Number(v).toFixed(dp ?? 1);
+    const fmtPct = (v) => v == null ? '—' : (Number(v) * 100).toFixed(0) + '%';
+
+    const sortIndic = (k) => {
+      if (k !== _lnSortBy) return '<span class="muted" style="font-size:11px"> ⇅</span>';
+      return _lnSortDir === 'asc'
+        ? '<span style="color:var(--blue-800);font-size:11px"> ▲</span>'
+        : '<span style="color:var(--blue-800);font-size:11px"> ▼</span>';
+    };
+    const sortHdr = (k, label, opts) => {
+      const align = (opts && opts.align) || 'right';
+      const cls = align === 'right' ? 'num' : '';
+      const tip = (opts && opts.tip) || '';
+      return `<th class="${cls}" style="cursor:pointer" data-ln-sort="${k}" ${tip ? `title="${escapeHtml(tip)}"` : ''}>${escapeHtml(label)}${sortIndic(k)}</th>`;
+    };
+
+    return `<div class="tab-view">
+      <div class="card card-pad">
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between">
+          <div>
+            <h3 style="margin:0;font-family:var(--serif);font-size:17px">LN &amp; Assistants Leaderboard</h3>
+            <div class="sub" style="margin-top:4px">${lns.length} ${lns.length === 1 ? 'person' : 'people'} reporting · ${range.fromKey} → ${range.toKey} SAST · derived from end-of-day submissions</div>
+          </div>
+          <div class="muted" style="font-size:12.5px">Team avgs · ${avgCallsHr.toFixed(1)} calls/hr · ${avgLeadsHr.toFixed(1)} leads/hr · ${avgLeads100.toFixed(1)} leads/100</div>
+        </div>
+      </div>
+
+      <div class="row kpis mt">
+        ${kpi(I.target, 'Total Leads',         fmt(totalLeads),                'all channels combined')}
+        ${kpi(I.phone,  'EOD Submissions',     fmt(totalReports),              'across ' + lns.length + ' staff this period')}
+        ${kpi(I.clock,  'Dialler Hours',       totalHrs.toFixed(1) + 'h',      'logged on EOD forms')}
+        ${kpi(I.trophy, 'Top by Leads',        topByLeads ? escapeHtml(topByLeads.name) : '—', topByLeads ? fmt(topByLeads.leads) + ' leads · ' + fmt(topByLeads.touches) + ' touches' : '—')}
+      </div>
+
+      <div class="card mt card-pad">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="font-family:var(--serif);font-size:14px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.04em">Most efficient</div>
+          <div class="sub">Top 3 by leads ÷ 100 touches (≥ 30 touches to qualify)</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          ${top3.length === 0 ? `<div class="muted" style="grid-column:1/-1;font-size:13px">No LN has hit 30 touches yet in this period.</div>`
+            : top3.map((r, i) => `<div class="card card-pad" style="background:var(--paper)">
+                <div style="display:flex;gap:10px;align-items:center">
+                  <div class="medal ${i === 0 ? 'g' : i === 1 ? 's' : 'b'}">${i + 1}</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-weight:700;color:var(--ink)">${escapeHtml(r.name)}</div>
+                    <div class="muted" style="font-size:12px">${fmt(r.leads)} leads · ${fmt(r.touches)} touches · <b style="color:var(--green)">${r.leadsPer100.toFixed(1)} / 100</b></div>
+                  </div>
+                </div>
+              </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="card mt">
+        <div class="tbl-wrap"><table class="tbl tbl-sortable">
+          <thead><tr>
+            ${sortHdr('name', 'Name', { align: 'left' })}
+            <th>Role</th>
+            ${sortHdr('reports', 'Reports', { tip: 'End-of-day form submissions' })}
+            ${sortHdr('dfHours', 'Dialler hrs')}
+            ${sortHdr('callsPerHr',  'Calls/hr', { tip: 'Combined HubSpot + Dialfire calls divided by dialler hours' })}
+            ${sortHdr('emailsPerHr', 'Emails/hr')}
+            ${sortHdr('touches', 'Touches', { tip: 'Calls + emails + WhatsApps' })}
+            ${sortHdr('leads', 'Leads')}
+            ${sortHdr('leadsPer100', 'Leads / 100', { tip: 'Leads per 100 touches — quality of interactions' })}
+            ${sortHdr('compliance', 'Compliance', { tip: 'Submitted EOD reports ÷ expected working days' })}
+            <th>Last 14d</th>
+          </tr></thead>
+          <tbody>
+            ${lns.length === 0
+              ? `<tr><td colspan="11" class="muted" style="text-align:center;padding:30px">No LN / Assistant submissions in this period.</td></tr>`
+              : lns.map(r => {
+                const role = (r.designation || '').toLowerCase() === 'ln' ? 'LN' : 'Assistant';
+                const cls = (r.designation || '').toLowerCase() === 'ln' ? 'rm' : 'fancy';
+                return `<tr>
+                  <td><b>${escapeHtml(r.name)}</b><div class="muted" style="font-size:11.5px">${escapeHtml(Array.from(r.divisions).join(', ') || '—')}</div></td>
+                  <td><span class="pill ${cls}" style="font-size:10.5px;padding:2px 8px">${role}</span></td>
+                  <td class="num tnum">${fmt(r.reports)}</td>
+                  <td class="num tnum">${r.dfHours > 0 ? r.dfHours.toFixed(1) + 'h' : '—'}</td>
+                  <td class="num tnum">${fmtNum(r.callsPerHr)} ${vsAvgPill(r.callsPerHr, avgCallsHr)}</td>
+                  <td class="num tnum">${fmtNum(r.emailsPerHr)}</td>
+                  <td class="num tnum">${fmt(r.touches)}</td>
+                  <td class="num tnum">${fmt(r.leads)} ${vsAvgPill(r.leadsPerHr, avgLeadsHr)}</td>
+                  <td class="num tnum">${fmtNum(r.leadsPer100)} ${vsAvgPill(r.leadsPer100, avgLeads100)}</td>
+                  <td class="num"><span class="pill ${r.compliance >= 0.9 ? 'ok' : r.compliance >= 0.6 ? 'warn' : 'bad'}" style="font-size:11px;padding:2px 8px">${fmtPct(r.compliance)}</span></td>
+                  <td>${_lnSparkSvg(r.byDay, range)}</td>
+                </tr>`;
+              }).join('')}
+          </tbody>
+        </table></div>
+      </div>
+    </div>`;
+  }
+
+  function wireLnLeaderboard() {
+    document.querySelectorAll('th[data-ln-sort]').forEach(th => {
+      th.addEventListener('click', () => {
+        const k = th.dataset.lnSort;
+        if (_lnSortBy === k) {
+          _lnSortDir = _lnSortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+          _lnSortBy = k;
+          _lnSortDir = (k === 'name') ? 'asc' : 'desc';
+        }
+        shell();
+      });
+    });
+  }
+
+  // ─── LN Daily Recap (used on Overview tab — top-of-page card) ────
+  // Three at-a-glance signals: today's top LN, watch-list candidate,
+  // submission compliance count.
+  function lnDailyRecapCard() {
+    if (_reports == null && !_reportsLoading) {
+      loadReports().then(() => { if (tab === 'overview' || tab === 'leadership') shell(); });
+    }
+    if (_reports == null) return '';
+    const todayKey = sastDateStr(new Date());
+    const startOfToday = new Date(todayKey + 'T00:00:00+02:00');
+    const todays = (_reports || []).filter(r => {
+      const ts = r.clocked_out_at ? new Date(r.clocked_out_at) : null;
+      return ts && ts >= startOfToday;
+    }).filter(r => {
+      const d = (r.designation || '').toLowerCase();
+      return d === 'ln' || d === 'assistant';
+    });
+    if (todays.length === 0) return ''; // no submissions yet today, hide card to avoid noise
+    const range = { from: startOfToday, to: new Date(), fromKey: todayKey, toKey: todayKey };
+    const lns = _lnAggregate(_reports, range)
+      .filter(r => { const d = (r.designation || '').toLowerCase(); return d === 'ln' || d === 'assistant'; });
+    if (lns.length === 0) return '';
+    const top = lns.slice().sort((a, b) => b.leads - a.leads)[0];
+    // Watch list: lowest calls/hr among those who clocked >2hrs
+    const watch = lns.filter(r => r.dfHours >= 2 && r.callsPerHr != null)
+                     .sort((a, b) => a.callsPerHr - b.callsPerHr)[0];
+    // Compliance: submissions today / known LN+Assistant active roster
+    const submitted = todays.length;
+    return `<div class="card card-pad mt" style="background:linear-gradient(135deg, var(--paper) 0%, #fff 100%);border-left:3px solid var(--blue-800)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="font-family:var(--serif);font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink)">LN Daily Recap · today</div>
+        <div class="sub">end-of-day submissions so far</div>
+        <button class="btn" data-goto="ln" style="margin-left:auto;font-size:12px;padding:6px 12px">Open LN Stats →</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <div>
+          <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">🏆 Top LN</div>
+          <div style="font-weight:700;color:var(--ink);font-size:15px;margin-top:2px">${escapeHtml(top.name)}</div>
+          <div class="muted" style="font-size:12px">${fmt(top.leads)} leads · ${fmt(top.calls)} calls · ${top.dfHours.toFixed(1)}h</div>
+        </div>
+        <div>
+          <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">⚠️ Watch list</div>
+          ${watch
+            ? `<div style="font-weight:700;color:var(--ink);font-size:15px;margin-top:2px">${escapeHtml(watch.name)}</div>
+               <div class="muted" style="font-size:12px">${watch.callsPerHr.toFixed(1)} calls/hr over ${watch.dfHours.toFixed(1)}h</div>`
+            : `<div class="muted" style="font-size:13px;margin-top:2px">Nobody flagged — all LNs above the floor.</div>`}
+        </div>
+        <div>
+          <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">📋 Compliance</div>
+          <div style="font-weight:700;color:var(--ink);font-size:15px;margin-top:2px">${submitted} submission${submitted === 1 ? '' : 's'}</div>
+          <div class="muted" style="font-size:12px">${lns.length} LN${lns.length === 1 ? '' : 's'} reporting</div>
+        </div>
+      </div>
+    </div>`;
+  }
+
   function renderLiveFloor() {
     const todayKey = sastDateStr(new Date());
     // Sort hierarchy (top -> bottom):
