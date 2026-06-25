@@ -3403,12 +3403,22 @@
   // ─── Mark-absent modal ──────────────────────────────────────────────
   const ABSENCE_REASONS = ['Sick', 'Personal', 'Family', 'Approved leave', 'Other'];
 
+  function _dayCount(startStr, endStr) {
+    if (!startStr || !endStr) return 0;
+    const a = new Date(startStr + 'T00:00:00');
+    const b = new Date(endStr   + 'T00:00:00');
+    if (isNaN(a) || isNaN(b) || b < a) return 0;
+    return Math.round((b - a) / 86400000) + 1;
+  }
+
   function renderAbsenceModal() {
     const f = _absenceModal;
     const busy = f.busy;
     const opts = ABSENCE_REASONS.map(r =>
       `<option value="${escapeHtml(r)}" ${f.reason === r ? 'selected' : ''}>${escapeHtml(r)}</option>`
     ).join('');
+    const days = _dayCount(f.startDate, f.endDate);
+    const cta = busy ? 'Saving…' : (days === 1 ? 'Confirm absent' : `Confirm absent · ${days} days`);
     return `<div class="modal-back" id="absenceModalBack"></div>
       <div class="modal" role="dialog" style="width:min(440px, calc(100vw - 32px))">
         <div class="modal-head">
@@ -3422,10 +3432,21 @@
           <label class="field"><span>Note (optional)</span>
             <input id="absNote" type="text" value="${escapeHtml(f.note || '')}" placeholder="e.g. flu, dr's note coming">
           </label>
+          <div style="display:flex;gap:10px">
+            <label class="field" style="flex:1"><span>Start date</span>
+              <input id="absStart" type="date" value="${escapeHtml(f.startDate)}">
+            </label>
+            <label class="field" style="flex:1"><span>End date</span>
+              <input id="absEnd" type="date" value="${escapeHtml(f.endDate)}">
+            </label>
+          </div>
+          <div class="muted" style="font-size:12px;margin-top:-4px">
+            ${days > 1 ? `Writes one absence row per day (${days} rows total). Each day can be unmarked individually if they come in early.` : 'Single-day absence. Pick a later End date for sick-leave / approved-leave spans.'}
+          </div>
           ${f.error ? `<div class="banner" style="background:#FFE0E0;color:#8B1A1A;padding:8px 10px;border-radius:6px;font-size:12.5px">${escapeHtml(f.error)}</div>` : ''}
           <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px">
             <button class="btn" id="absCancel" ${busy ? 'disabled' : ''}>Cancel</button>
-            <button class="btn btn-primary" id="absConfirm" ${busy ? 'disabled' : ''}>${busy ? 'Saving…' : 'Confirm absent'}</button>
+            <button class="btn btn-primary" id="absConfirm" ${busy ? 'disabled' : ''}>${cta}</button>
           </div>
         </div>
       </div>`;
@@ -3436,18 +3457,37 @@
     if (!f || f.busy) return;
     const reason = (document.getElementById('absReason') || {}).value || 'Other';
     const note   = ((document.getElementById('absNote') || {}).value || '').trim();
+    const startStr = (document.getElementById('absStart') || {}).value || f.startDate;
+    const endStr   = (document.getElementById('absEnd')   || {}).value || f.endDate;
     const me = session && session.id ? session.id : null;
     if (!me) { f.error = 'No active session — cannot stamp marked_by.'; shell(); return; }
+    const start = new Date(startStr + 'T00:00:00');
+    const end   = new Date(endStr   + 'T00:00:00');
+    if (isNaN(start) || isNaN(end)) { f.error = 'Pick valid Start and End dates.'; shell(); return; }
+    if (end < start) { f.error = 'End date must be on or after Start date.'; shell(); return; }
+    if (_dayCount(startStr, endStr) > 60) {
+      f.error = 'Range is over 60 days — split into shorter spans if intentional.';
+      shell(); return;
+    }
+    // One row per day in [start, end]. Upsert so re-saving with a new
+    // reason cleanly overwrites an existing same-day row instead of
+    // throwing the 23505 unique violation.
+    const rows = [];
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      rows.push({
+        staff_id: staffId,
+        date:     d.toISOString().slice(0, 10),
+        reason,
+        reason_note: note || null,
+        marked_by:   me,
+      });
+    }
     f.busy = true; f.error = ''; shell();
     try {
-      const todaySastStr = sastDateStr(new Date());
-      const { error } = await window.sb.from('absences').upsert({
-        staff_id: staffId, date: todaySastStr,
-        reason, reason_note: note || null, marked_by: me,
-      }, { onConflict: 'staff_id,date' });
+      const { error } = await window.sb.from('absences').upsert(rows, { onConflict: 'staff_id,date' });
       if (error) throw error;
       _absenceModal = null;
-      _team = null; // force reload to pick up the new absence + status
+      _team = null; // force reload to pick up the new absence(s)
       shell();
       loadTeam().then(() => { if (tab === 'team') shell(); });
     } catch (e) {
@@ -3581,11 +3621,14 @@
     });
     document.querySelectorAll('button[data-mark-absent-id]').forEach(b => {
       b.addEventListener('click', () => {
+        const today = sastDateStr(new Date());
         _absenceModal = {
           staffId: b.dataset.markAbsentId,
           name:    b.dataset.markAbsentName,
           reason:  'Sick',
           note:    '',
+          startDate: today,
+          endDate:   today,
           busy: false, error: '',
         };
         shell();
@@ -3612,6 +3655,20 @@
     if (x)    x.addEventListener('click', close);
     if (cnl)  cnl.addEventListener('click', close);
     if (ok)   ok.addEventListener('click', () => saveAbsence(_absenceModal.staffId));
+    // Keep modal state in sync with date inputs so the day-count CTA
+    // updates as the manager picks dates. If End < Start, auto-bump
+    // End to match Start (most common intent).
+    const sd = document.getElementById('absStart');
+    const ed = document.getElementById('absEnd');
+    if (sd) sd.addEventListener('change', () => {
+      _absenceModal.startDate = sd.value;
+      if (_absenceModal.endDate && _absenceModal.endDate < sd.value) _absenceModal.endDate = sd.value;
+      shell();
+    });
+    if (ed) ed.addEventListener('change', () => {
+      _absenceModal.endDate = ed.value;
+      shell();
+    });
   }
 
   function wireTeamModal() {
