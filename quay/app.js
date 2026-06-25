@@ -3170,6 +3170,8 @@
   let _teamFilter = '';
   let _teamModal = null;        // form state when modal is open
   let _forgotThisWeek = [];     // forgot-to-clock-out events since Monday SAST
+  let _absencesToday = new Map(); // staff_id -> {reason, reason_note, marked_by, marked_at}
+  let _absenceModal = null;     // { staffId, name, reason, note, busy, error } when open
 
   // Admin / Manager / Super Admin are exempt from clock-in expectations —
   // they're not callers, so we don't count them in 'on the clock' stats,
@@ -3187,12 +3189,14 @@
     if (!window.sb) return;
     _teamLoading = true;
     try {
-      const { data: staff, error } = await window.sb
-        .from('staff')
-        .select('*')
-        .eq('active', true)
-        .order('name', { ascending: true });
+      const todaySastStr = sastDateStr(new Date());
+      const [{ data: staff, error }, { data: absences }] = await Promise.all([
+        window.sb.from('staff').select('*').eq('active', true).order('name', { ascending: true }),
+        window.sb.from('absences').select('staff_id,reason,reason_note,marked_by,marked_at').eq('date', todaySastStr),
+      ]);
       if (error) throw error;
+      _absencesToday = new Map();
+      (absences || []).forEach(a => _absencesToday.set(a.staff_id, a));
       // One batched query for forgot-to-clock-out incidents in the last
       // 30 days — both admin-fixed ("Auto-corrected: forgot to clock out")
       // and self-corrected ("Auto clock-out after long shift…") rows.
@@ -3337,12 +3341,46 @@
                   ? `<span class="muted" style="font-size:11px">—</span>`
                   : (fc === 0 ? `<span class="muted tnum" style="font-size:12px">0</span>`
                               : `<span class="pill ${fc >= 3 ? 'bad' : 'warn'}" style="font-size:11px;padding:3px 9px" title="${fc} forgot-to-clock-out incident${fc === 1 ? '' : 's'} in the last 30 days">⚠️ ${fc}</span>`);
-                const statusPill = exempt
-                  ? `<span class="pill" style="font-size:11px;padding:3px 9px;background:#EEF0F6;color:#7A8499" title="Admins and managers are exempt from clock-in tracking">Exempt</span>`
-                  : `<span class="pill ${s.status === 'in' ? 'ok' : ''}" style="font-size:11px;padding:3px 9px">${s.status === 'in' ? '● On the clock' : 'Clocked out'}</span>`;
+                // Today's status logic:
+                //  - exempt rows: 'Exempt'
+                //  - clocked in: 'On the clock'
+                //  - absence marker today: 'Absent · <reason>'
+                //  - no event today AND past 17:00 SAST AND not marked: 'Never showed'
+                //  - clocked out at some point today / yesterday: 'Clocked out'
+                const ab = _absencesToday.get(s.id);
+                const cobDone = (() => {
+                  const now = new Date();
+                  const cob = new Date(sastDateStr(now) + 'T17:00:00+02:00');
+                  return now >= cob;
+                })();
+                const startOfTodaySAST = new Date(sastDateStr(new Date()) + 'T00:00:00+02:00');
+                const hasTodayEvent = s.lastIn && new Date(s.lastIn) >= startOfTodaySAST;
+                let statusPill;
+                if (exempt) {
+                  statusPill = `<span class="pill" style="font-size:11px;padding:3px 9px;background:#EEF0F6;color:#7A8499" title="Admins and managers are exempt from clock-in tracking">Exempt</span>`;
+                } else if (ab) {
+                  const noteSfx = ab.reason_note ? ' — ' + escapeHtml(ab.reason_note) : '';
+                  statusPill = `<span class="pill" style="font-size:11px;padding:3px 9px;background:#FFE9CB;color:#6B3F00" title="Marked absent today · ${escapeHtml(ab.reason)}${noteSfx}">Absent · ${escapeHtml(ab.reason)}</span>`;
+                } else if (s.status === 'in') {
+                  statusPill = `<span class="pill ok" style="font-size:11px;padding:3px 9px">● On the clock</span>`;
+                } else if (!hasTodayEvent && cobDone) {
+                  statusPill = `<span class="pill bad" style="font-size:11px;padding:3px 9px" title="No clock-in event today and no absence marker">⚠️ Never showed</span>`;
+                } else {
+                  statusPill = `<span class="pill" style="font-size:11px;padding:3px 9px">Clocked out</span>`;
+                }
                 const lastCell = exempt
                   ? `<span class="muted" style="font-size:12.5px">—</span>`
-                  : (s.status === 'in' ? 'in ' + rel(s.lastIn) : (s.lastOut ? 'out ' + rel(s.lastOut) : '—'));
+                  : (ab ? '<span class="muted" style="font-size:12.5px">—</span>'
+                        : (s.status === 'in' ? 'in ' + rel(s.lastIn) : (s.lastOut ? 'out ' + rel(s.lastOut) : '—')));
+                const actionBtn = exempt
+                  ? `<button class="btn small" data-edit-staff-id="${escapeHtml(s.id)}">Edit</button>`
+                  : (ab
+                      ? `<button class="btn small" data-unmark-absent-id="${escapeHtml(s.id)}" title="Unmark absent">Unmark</button>
+                         <button class="btn small" data-edit-staff-id="${escapeHtml(s.id)}">Edit</button>`
+                      : (s.status === 'in'
+                          ? `<button class="btn small" data-edit-staff-id="${escapeHtml(s.id)}">Edit</button>`
+                          : `<button class="btn small" data-mark-absent-id="${escapeHtml(s.id)}" data-mark-absent-name="${escapeHtml(s.name)}" title="Mark absent today">Mark absent</button>
+                             <button class="btn small" data-edit-staff-id="${escapeHtml(s.id)}">Edit</button>`));
                 return `<tr>
                 <td><div class="agent-cell"><div class="avatar">${escapeHtml(initialsOf(s.name))}</div>
                   <div class="agent-name">${escapeHtml(s.name)}</div></div></td>
@@ -3350,13 +3388,86 @@
                 <td>${escapeHtml(desigLabel(s.designation))}</td>
                 <td class="muted tnum" style="font-size:12.5px">${lastCell}</td>
                 <td class="num">${fpill}</td>
-                <td class="r"><button class="btn small" data-edit-staff-id="${escapeHtml(s.id)}">Edit</button></td>
+                <td class="r" style="display:flex;gap:6px;justify-content:flex-end">${actionBtn}</td>
               </tr>`;}).join('')}
           </tbody>
         </table></div>
       </div>
       ${_teamModal ? renderTeamModal() : ''}
+      ${_absenceModal ? renderAbsenceModal() : ''}
     </div>`;
+  }
+
+  // ─── Mark-absent modal ──────────────────────────────────────────────
+  const ABSENCE_REASONS = ['Sick', 'Personal', 'Family', 'Approved leave', 'Other'];
+
+  function renderAbsenceModal() {
+    const f = _absenceModal;
+    const busy = f.busy;
+    const opts = ABSENCE_REASONS.map(r =>
+      `<option value="${escapeHtml(r)}" ${f.reason === r ? 'selected' : ''}>${escapeHtml(r)}</option>`
+    ).join('');
+    return `<div class="modal-back" id="absenceModalBack"></div>
+      <div class="modal" role="dialog" style="width:min(440px, calc(100vw - 32px))">
+        <div class="modal-head">
+          <h3 style="margin:0">Mark absent · ${escapeHtml(f.name)}</h3>
+          <button class="modal-close" id="absenceModalClose">×</button>
+        </div>
+        <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+          <label class="field"><span>Reason</span>
+            <select id="absReason">${opts}</select>
+          </label>
+          <label class="field"><span>Note (optional)</span>
+            <input id="absNote" type="text" value="${escapeHtml(f.note || '')}" placeholder="e.g. flu, dr's note coming">
+          </label>
+          ${f.error ? `<div class="banner" style="background:#FFE0E0;color:#8B1A1A;padding:8px 10px;border-radius:6px;font-size:12.5px">${escapeHtml(f.error)}</div>` : ''}
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px">
+            <button class="btn" id="absCancel" ${busy ? 'disabled' : ''}>Cancel</button>
+            <button class="btn btn-primary" id="absConfirm" ${busy ? 'disabled' : ''}>${busy ? 'Saving…' : 'Confirm absent'}</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  async function saveAbsence(staffId) {
+    const f = _absenceModal;
+    if (!f || f.busy) return;
+    const reason = (document.getElementById('absReason') || {}).value || 'Other';
+    const note   = ((document.getElementById('absNote') || {}).value || '').trim();
+    const me = session && session.id ? session.id : null;
+    if (!me) { f.error = 'No active session — cannot stamp marked_by.'; shell(); return; }
+    f.busy = true; f.error = ''; shell();
+    try {
+      const todaySastStr = sastDateStr(new Date());
+      const { error } = await window.sb.from('absences').upsert({
+        staff_id: staffId, date: todaySastStr,
+        reason, reason_note: note || null, marked_by: me,
+      }, { onConflict: 'staff_id,date' });
+      if (error) throw error;
+      _absenceModal = null;
+      _team = null; // force reload to pick up the new absence + status
+      shell();
+      loadTeam().then(() => { if (tab === 'team') shell(); });
+    } catch (e) {
+      f.busy = false;
+      f.error = String(e.message || e);
+      shell();
+    }
+  }
+
+  async function unmarkAbsence(staffId) {
+    try {
+      const todaySastStr = sastDateStr(new Date());
+      const { error } = await window.sb.from('absences')
+        .delete().eq('staff_id', staffId).eq('date', todaySastStr);
+      if (error) throw error;
+      _team = null;
+      shell();
+      loadTeam().then(() => { if (tab === 'team') shell(); });
+    } catch (e) {
+      console.warn('[absence] unmark failed', e);
+      alert('Could not unmark: ' + (e.message || e));
+    }
   }
 
   function initialsOf(name) {
@@ -3466,7 +3577,39 @@
         shell();
       });
     });
+    document.querySelectorAll('button[data-mark-absent-id]').forEach(b => {
+      b.addEventListener('click', () => {
+        _absenceModal = {
+          staffId: b.dataset.markAbsentId,
+          name:    b.dataset.markAbsentName,
+          reason:  'Sick',
+          note:    '',
+          busy: false, error: '',
+        };
+        shell();
+      });
+    });
+    document.querySelectorAll('button[data-unmark-absent-id]').forEach(b => {
+      b.addEventListener('click', () => {
+        if (confirm('Unmark this person as absent today?')) {
+          unmarkAbsence(b.dataset.unmarkAbsentId);
+        }
+      });
+    });
     if (_teamModal) wireTeamModal();
+    if (_absenceModal) wireAbsenceModal();
+  }
+
+  function wireAbsenceModal() {
+    const close = () => { _absenceModal = null; shell(); };
+    const back = document.getElementById('absenceModalBack');
+    const x    = document.getElementById('absenceModalClose');
+    const cnl  = document.getElementById('absCancel');
+    const ok   = document.getElementById('absConfirm');
+    if (back) back.addEventListener('click', close);
+    if (x)    x.addEventListener('click', close);
+    if (cnl)  cnl.addEventListener('click', close);
+    if (ok)   ok.addEventListener('click', () => saveAbsence(_absenceModal.staffId));
   }
 
   function wireTeamModal() {
