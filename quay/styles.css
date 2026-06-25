@@ -769,6 +769,68 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 
   /* shorten the "Live · synced 4 min ago" footer so it stays on one line */
   .foot-text { white-space: nowrap; }
+
+  /* Per Caller cards: allow shrinking below 300px on narrow phones so
+     they don't overflow the viewport. */
+  .staff-cards { grid-template-columns: 1fr; gap: 12px; }
+
+  /* Touch-friendly tap targets — primary CTAs need 44px to feel
+     comfortable on a phone (Apple HIG / WCAG 2.5.5). */
+  .btn { min-height: 40px; }
+  .btn-primary { min-height: 44px; }
+}
+
+/* phone-tight — iPhone-class viewports (390px and below) ───────────── */
+@media (max-width: 450px) {
+  /* Overall topbar density */
+  .topbar { padding: 12px 14px; gap: 10px; }
+  .topbar-titles h1 { font-size: 19px; }
+  .topbar-titles p { font-size: 12.5px; }
+
+  /* KPI cards even tighter */
+  .kpi { padding: 14px 16px; }
+  .kpi-val { font-size: 26px; }
+  .kpi-label { font-size: 12.5px; }
+
+  /* Period buttons: smaller + still horizontal-scrollable, with a soft
+     fade on the right so users can see there's more to scroll. */
+  .topbar-right .period button { padding: 7px 12px; font-size: 12.5px; min-height: 36px; }
+  .topbar-right .period { position: relative; }
+  .topbar-right .period::after {
+    content: ''; position: absolute; top: 0; right: 0; bottom: 0;
+    width: 24px; pointer-events: none;
+    background: linear-gradient(to right, transparent, var(--paper, #F7F8FC));
+  }
+
+  /* Tighter card padding everywhere */
+  .card-pad, .card-pad-lg, .card-pad-sm { padding: 14px !important; }
+  .card h3 { font-size: 15.5px !important; }
+  .sub { font-size: 11.5px !important; }
+
+  /* Tables: smaller font + tighter cells. Horizontal scroll already on
+     from the 520px rule, this just makes more columns visible per
+     scroll-tap. */
+  table th, table td { font-size: 12.5px !important; padding: 9px 11px !important; }
+
+  /* Live Floor: force the 6-stat card-meta into a 3-column 2-row grid
+     instead of auto-fit so labels don't ellipsis-truncate. */
+  .live-card-meta {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px 12px;
+  }
+  .live-stat-val { font-size: 17px; }
+
+  /* Live summary header */
+  .live-summary { gap: 10px; }
+  .live-summary-val { font-size: 22px; }
+  .live-summary-label { font-size: 10.5px; }
+
+  /* Modal: tighter padding so content gets more horizontal room */
+  .modal-head, .modal-body { padding: 14px 16px !important; }
+  .modal-head h3 { font-size: 16px !important; }
+
+  /* Mobile nav dropdown — bigger tap target */
+  .nav-mobile select { min-height: 44px; font-size: 14px; }
 }
 
 /* Clocks tab — sensible mobile height + safe-area aware.
@@ -795,8 +857,10 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 /* All Staff → Per Caller card grid */
 .staff-cards {
   display: grid;
-  /* min(300px, 100%) prevents overflow on very narrow phones (iPhone SE) */
-  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  /* min(260px, 100%) lets cards shrink below the historical 300px
+     minimum on iPhone-class viewports (which can be 320–390px wide
+     after sidebar padding) so they fit one-up without overflow. */
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
   gap: 16px;
 }
 .pc-card { min-height: 0; transition: transform .15s, box-shadow .15s; }
