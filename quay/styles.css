@@ -1369,6 +1369,93 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
   max-width: 90ch;
 }
 
+/* Mobile — stack each row as a card with the column header (data-label)
+   prefixing each value, so the 20-column table stays usable below 640px
+   without horizontal scrolling. */
+@media (max-width: 640px) {
+  /* Drop sticky positioning + section tints in card mode. */
+  .ln-leaderboard thead { display: none; }
+  .ln-leaderboard tbody td.ln-col-name { position: static; background: transparent; }
+  .ln-leaderboard tbody td.ln-col-hs,
+  .ln-leaderboard tbody td.ln-col-df,
+  .ln-leaderboard tbody td.ln-col-wa { background: transparent; }
+  .ln-leaderboard tbody td.ln-col-first { border-left: 0; }
+
+  /* Stack the table into per-staff cards. */
+  .ln-leaderboard,
+  .ln-leaderboard tbody,
+  .ln-leaderboard tbody tr {
+    display: block;
+    width: 100%;
+  }
+  .ln-leaderboard tbody tr {
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    background: var(--card);
+    padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+  .ln-leaderboard tbody tr.expanded > td { background: transparent; }
+  .ln-leaderboard tbody tr:hover { background: var(--card); }
+  .ln-leaderboard tbody tr:hover .ln-col-hs,
+  .ln-leaderboard tbody tr:hover .ln-col-df,
+  .ln-leaderboard tbody tr:hover .ln-col-wa { background: transparent; }
+
+  .ln-leaderboard tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line-2);
+    text-align: right;
+    max-width: none !important;
+  }
+  .ln-leaderboard tbody td:last-child { border-bottom: 0; }
+  .ln-leaderboard tbody td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 10.5px;
+    letter-spacing: .06em;
+    text-align: left;
+    flex: 0 0 auto;
+  }
+  /* Section identity moves from background tint to label colour. */
+  .ln-leaderboard tbody td.ln-col-hs::before { color: var(--blue-800); }
+  .ln-leaderboard tbody td.ln-col-df::before { color: var(--yellow-deep); }
+  .ln-leaderboard tbody td.ln-col-wa::before { color: var(--sky-deep); }
+
+  /* Name cell becomes the card title — no prefix, larger type. */
+  .ln-leaderboard tbody td.ln-col-name {
+    border-bottom: 1px solid var(--line);
+    padding: 0 0 10px;
+    margin-bottom: 4px;
+    justify-content: flex-start;
+    text-align: left;
+    font-size: 15px;
+  }
+  .ln-leaderboard tbody td.ln-col-name::before { display: none; }
+
+  /* Drawer becomes its own card directly under the staff card. */
+  .ln-leaderboard tbody tr.ln-drawer {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--blue-800);
+    border-radius: var(--r-sm);
+    background: var(--paper);
+    padding: 12px 14px;
+    margin: -8px 0 14px;
+  }
+  .ln-leaderboard tbody tr.ln-drawer td {
+    display: block;
+    text-align: left;
+    border: 0;
+    padding: 0;
+  }
+  .ln-leaderboard tbody tr.ln-drawer td::before { display: none; }
+}
+
 /* ─── LN Daily Recap (Overview) ────────────────────────────────────
    Secondary context strip above the headline KPI row. Quieter surface
    (--paper-2) + smaller serif so the eye treats it as yesterday's

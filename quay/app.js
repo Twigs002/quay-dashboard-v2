@@ -2601,9 +2601,11 @@
       return Math.floor(tot / 60) + ':' + String(tot % 60).padStart(2, '0');
     };
     // Numeric cell with a muted '—' when zero (so the eye lands on real values).
-    // Optional `extra` class lets the renderer tag each cell with its section
+    // Optional `extra` class tags the cell with its section
     // (.ln-col-hs / -df / -wa, plus -first on the leftmost of each section).
-    const numCell = (v, extra) => `<td class="num tnum${extra ? ' ' + extra : ''}">${v ? fmt(v) : '<span class="muted">—</span>'}</td>`;
+    // Optional `label` populates data-label, used by the mobile stacked layout
+    // (≤640px) to render the cell as "Label · value".
+    const numCell = (v, extra, label) => `<td class="num tnum${extra ? ' ' + extra : ''}"${label ? ` data-label="${escapeHtml(label)}"` : ''}>${v ? fmt(v) : '<span class="muted">—</span>'}</td>`;
 
     const sortIndic = (k) => {
       if (k !== _lnSortBy) return '<span class="muted" style="font-size:11px"> ⇅</span>';
@@ -2708,25 +2710,25 @@
                   : '';
                 return `<tr${rowAttrs}>
                   <td class="ln-col-name"><b>${escapeHtml(r.name)}</b></td>
-                  <td><span class="pill ${cls}" style="font-size:10.5px;padding:2px 8px">${role}</span></td>
-                  <td class="muted" style="font-size:12px">${escapeHtml(Array.from(r.divisions).join(' / ') || '—')}</td>
-                  ${numCell(r.hsTasks,      'ln-col-hs ln-col-first')}
-                  ${numCell(r.hsCalls,      'ln-col-hs')}
-                  ${numCell(r.hsEmails,     'ln-col-hs')}
-                  ${numCell(r.hsWas,        'ln-col-hs')}
-                  ${numCell(r.hsAnswered || 0, 'ln-col-hs')}
-                  ${numCell(r.hsLeads,      'ln-col-hs')}
-                  ${numCell(r.hsRecon || 0, 'ln-col-hs')}
-                  ${numCell(r.dfCalls,      'ln-col-df ln-col-first')}
-                  ${numCell(r.dfEmails,     'ln-col-df')}
-                  ${numCell(r.dfLeads,      'ln-col-df')}
-                  <td class="num tnum ln-col-df">${fmtHrs(r.dfHours)}</td>
-                  ${numCell(r.waSent,       'ln-col-wa ln-col-first')}
-                  ${numCell(r.waResp || 0,  'ln-col-wa')}
-                  ${numCell(r.waLeads,      'ln-col-wa')}
-                  <td class="num"><span class="pill ${r.compliance >= 0.9 ? 'ok' : r.compliance >= 0.6 ? 'warn' : 'bad'}" style="font-size:11px;padding:2px 8px">${fmtPct(r.compliance)}</span></td>
-                  <td>${_lnSparkSvg(r.byDay, range)}</td>
-                  <td class="muted" style="font-size:12px;max-width:240px">${escapeHtml(noteShort) || '<span class="muted">—</span>'}${chev}</td>
+                  <td data-label="Role"><span class="pill ${cls}" style="font-size:10.5px;padding:2px 8px">${role}</span></td>
+                  <td class="muted" style="font-size:12px" data-label="Division">${escapeHtml(Array.from(r.divisions).join(' / ') || '—')}</td>
+                  ${numCell(r.hsTasks,         'ln-col-hs ln-col-first', 'HS · Tasks')}
+                  ${numCell(r.hsCalls,         'ln-col-hs',              'HS · Calls')}
+                  ${numCell(r.hsEmails,        'ln-col-hs',              'HS · Emails')}
+                  ${numCell(r.hsWas,           'ln-col-hs',              'HS · WAs')}
+                  ${numCell(r.hsAnswered || 0, 'ln-col-hs',              'HS · Answered')}
+                  ${numCell(r.hsLeads,         'ln-col-hs',              'HS · Leads')}
+                  ${numCell(r.hsRecon || 0,    'ln-col-hs',              'HS · Reconv.')}
+                  ${numCell(r.dfCalls,         'ln-col-df ln-col-first', 'DF · Calls')}
+                  ${numCell(r.dfEmails,        'ln-col-df',              'DF · Email Suc.')}
+                  ${numCell(r.dfLeads,         'ln-col-df',              'DF · Leads')}
+                  <td class="num tnum ln-col-df" data-label="DF · Hours">${fmtHrs(r.dfHours)}</td>
+                  ${numCell(r.waSent,          'ln-col-wa ln-col-first', 'WA · Sent')}
+                  ${numCell(r.waResp || 0,     'ln-col-wa',              'WA · Resp.')}
+                  ${numCell(r.waLeads,         'ln-col-wa',              'WA · Leads')}
+                  <td class="num" data-label="Compliance"><span class="pill ${r.compliance >= 0.9 ? 'ok' : r.compliance >= 0.6 ? 'warn' : 'bad'}" style="font-size:11px;padding:2px 8px">${fmtPct(r.compliance)}</span></td>
+                  <td data-label="Last 14d">${_lnSparkSvg(r.byDay, range)}</td>
+                  <td class="muted" style="font-size:12px;max-width:240px" data-label="Notes">${escapeHtml(noteShort) || '<span class="muted">—</span>'}${chev}</td>
                 </tr>${drawer}`;
               }).join('')}
           </tbody>
