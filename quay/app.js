@@ -2332,9 +2332,18 @@
   async function loadLiveStats() {
     if (!window.sb) return;
     try {
+      // Only pull rows updated since 00:00 SAST today. The daemon
+      // doesn't push rows for agents who haven't called yet on a
+      // given day, so a row last updated yesterday at 17:00 SAST
+      // (their final shift event) carries that staffer's full
+      // yesterday total into today until they call again. Filtering
+      // here guarantees the Live Floor only reflects calls placed
+      // since the start of today SAST.
+      const startOfTodaySAST = new Date(sastDateStr(new Date()) + 'T00:00:00+02:00').toISOString();
       const { data, error } = await window.sb
         .from('live_stats')
         .select('staff_id,name,calls,leads,seller_leads,rental_leads,email_leads,work_hours,success_rate,updated_at')
+        .gte('updated_at', startOfTodaySAST)
         .order('calls', { ascending: false });
       if (error) throw error;
       liveStats = data || [];

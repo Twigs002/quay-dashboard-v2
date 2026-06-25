@@ -211,9 +211,55 @@ def upsert_live_stats(rows, supabase_url, service_key):
 
 
 # ---------------------------------------------------------------------------
+# Day-rollover cleanup
+# ---------------------------------------------------------------------------
+SAST_TZ = ZoneInfo("Africa/Johannesburg")
+_last_sast_day = None
+
+def _clear_live_stats(supabase_url, service_key):
+    """DELETE FROM live_stats so stale rows from yesterday don't carry over.
+
+    The daemon doesn't push a row for agents who haven't called yet today,
+    so without this their previous-day totals would linger on the Live
+    Floor until they made their first call.
+    """
+    url = f"{supabase_url.rstrip('/')}/rest/v1/live_stats?staff_id=neq.__never__"
+    headers = {
+        "apikey":        service_key,
+        "Authorization": f"Bearer {service_key}",
+        "Prefer":        "return=minimal",
+    }
+    try:
+        r = requests.delete(url, headers=headers, timeout=15)
+        if r.status_code >= 300:
+            log(f"  [supabase] clear-live_stats HTTP {r.status_code}: {r.text[:200]}")
+        else:
+            log("[live] day rollover — cleared live_stats so today starts clean")
+    except Exception as e:
+        log(f"  [supabase] clear-live_stats error: {e}")
+
+
+def _maybe_clear_on_rollover(supabase_url, service_key):
+    """Detect SAST day change since last poll and clear live_stats if so."""
+    global _last_sast_day
+    today_sast = datetime.datetime.now(SAST_TZ).date()
+    if _last_sast_day is None:
+        # First poll of the process — also clear, in case the daemon
+        # crashed/restarted during the day and stale rows are sitting
+        # in live_stats from a previous SAST day.
+        _clear_live_stats(supabase_url, service_key)
+        _last_sast_day = today_sast
+        return
+    if today_sast != _last_sast_day:
+        _clear_live_stats(supabase_url, service_key)
+        _last_sast_day = today_sast
+
+
+# ---------------------------------------------------------------------------
 # One poll iteration
 # ---------------------------------------------------------------------------
 def run_once(campaigns, supabase_url, service_key):
+    _maybe_clear_on_rollover(supabase_url, service_key)
     t0 = time.time()
     agents = {}
 
