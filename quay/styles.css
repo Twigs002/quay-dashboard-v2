@@ -1252,8 +1252,3 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
   .modal { top: 60px; width: 95vw; max-height: calc(100vh - 80px); }
 }
 
-
-/* HubSpot tab — sticky team column polish */
-.tbl thead th[style*="sticky"] { z-index: 3; }
-.tbl tbody tr:hover td[style*="sticky"] { background: var(--card-2); }
-.tbl .pill { display: inline-block; min-width: 54px; text-align: center; }
