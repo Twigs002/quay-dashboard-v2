@@ -1264,3 +1264,79 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
   font-weight: 700;
   border-bottom: 1px solid var(--line);
 }
+
+/* ─── LN Daily Recap (Overview) ────────────────────────────────────
+   Secondary context strip above the headline KPI row. Quieter surface
+   (--paper-2) + smaller serif so the eye treats it as yesterday's
+   frame, not today's lead story.                                   */
+.ln-recap {
+  background: var(--paper-2);
+  display: grid;
+  grid-template-columns: minmax(220px, 1.2fr) 2.6fr;
+  column-gap: 28px;
+  row-gap: 14px;
+  align-items: stretch;
+}
+.ln-recap-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 24px;
+  border-right: 1px solid var(--line);
+}
+.ln-recap-eyebrow {
+  font-family: var(--serif);
+  font-weight: 800;
+  font-size: 13.5px;
+  color: var(--ink);
+  letter-spacing: .02em;
+}
+.ln-recap-sub {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.ln-recap-btn {
+  margin-top: auto;
+  align-self: flex-start;
+  font-size: 12.5px;
+  padding: 7px 14px;
+}
+.ln-recap-cells {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+.ln-recap-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.ln-recap-name {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--ink);
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ln-recap-empty {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+  margin-top: 2px;
+}
+@media (max-width: 760px) {
+  .ln-recap { grid-template-columns: 1fr; row-gap: 14px; }
+  .ln-recap-meta {
+    border-right: 0; border-bottom: 1px solid var(--line);
+    padding-right: 0; padding-bottom: 12px;
+  }
+  .ln-recap-btn { margin-top: 4px; }
+  .ln-recap-cells { grid-template-columns: 1fr; gap: 12px; }
+  .ln-recap-cell { padding-bottom: 12px; border-bottom: 1px dashed var(--line); }
+  .ln-recap-cell:last-child { padding-bottom: 0; border-bottom: 0; }
+}

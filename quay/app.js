@@ -2408,6 +2408,9 @@
   // just a submissions log.
   let _lnSortBy  = 'totalLeads';
   let _lnSortDir = 'desc';
+  let _lnRoleFilter = 'all';        // all | ln | assistant
+  let _lnDivisionFilter = 'all';    // 'all' or a division string
+  let _lnExpandedRow = null;        // staff_id of the row whose notes drawer is open
 
   function _lnPeriodRange() {
     // Map the global `period` to a [from, to] SAST date range.
@@ -2701,67 +2704,72 @@
   }
 
   // ─── LN Daily Recap (used on Overview tab — top-of-page card) ────
-  // Three at-a-glance signals: today's top LN, watch-list candidate,
-  // submission compliance count.
+  // Shows YESTERDAY's EOD submissions — the dashboard is reviewed the
+  // next morning so the previous day's reports are all in.
   function lnDailyRecapCard() {
     if (_reports == null && !_reportsLoading) {
       loadReports().then(() => { if (tab === 'overview' || tab === 'leadership') shell(); });
     }
     if (_reports == null) return '';
-    const todayKey = sastDateStr(new Date());
-    const startOfToday = new Date(todayKey + 'T00:00:00+02:00');
-    const todays = (_reports || []).filter(r => {
+    const y = new Date(); y.setDate(y.getDate() - 1);
+    const yKey = sastDateStr(y);
+    const fromDate = new Date(yKey + 'T00:00:00+02:00');
+    const toDate   = new Date(yKey + 'T23:59:59+02:00');
+    const inRange = (_reports || []).filter(r => {
       const ts = r.clocked_out_at ? new Date(r.clocked_out_at) : null;
-      return ts && ts >= startOfToday;
+      return ts && ts >= fromDate && ts <= toDate;
     }).filter(r => {
       const d = (r.designation || '').toLowerCase();
       return d === 'ln' || d === 'assistant';
     });
-    if (todays.length === 0) return ''; // no submissions yet today, hide card to avoid noise
-    const range = { from: startOfToday, to: new Date(), fromKey: todayKey, toKey: todayKey };
+    if (inRange.length === 0) return '';
+    const range = { from: fromDate, to: toDate, fromKey: yKey, toKey: yKey };
     const lns = _lnAggregate(_reports, range)
       .filter(r => { const d = (r.designation || '').toLowerCase(); return d === 'ln' || d === 'assistant'; });
     if (lns.length === 0) return '';
-    // Derive only what the recap needs — no derived metrics in the table.
     lns.forEach(r => {
       r._totalLeads = r.hsLeads + r.dfLeads + r.waLeads;
       r._totalCalls = r.hsCalls + r.dfCalls;
     });
     const top = lns.slice().sort((a, b) => b._totalLeads - a._totalLeads)[0];
-    // Watch list: lowest total leads among LNs who've clocked >=2 hrs.
     const watch = lns.filter(r => r.dfHours >= 2)
                      .sort((a, b) => a._totalLeads - b._totalLeads)[0];
-    const submitted = todays.length;
+    const submitted = inRange.length;
+    const lnsCount = lns.length;
     const fmtH = (h) => {
       const tot = Math.round((h || 0) * 60);
       return Math.floor(tot / 60) + ':' + String(tot % 60).padStart(2, '0');
     };
-    return `<div class="card card-pad mt" style="background:linear-gradient(135deg, var(--paper) 0%, #fff 100%);border-left:3px solid var(--blue-800)">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <div style="font-family:var(--serif);font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink)">LN Daily Recap · today</div>
-        <div class="sub">end-of-day submissions so far</div>
-        <button class="btn" data-goto="ln" style="margin-left:auto;font-size:12px;padding:6px 12px">Open LN Stats →</button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-        <div>
-          <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Top LN</div>
-          <div style="font-weight:700;color:var(--ink);font-size:15px;margin-top:2px">${escapeHtml(top.name)}</div>
-          <div class="muted" style="font-size:12px">${fmt(top._totalLeads)} leads · ${fmt(top._totalCalls)} calls · ${fmtH(top.dfHours)}</div>
+    const dayLabel = fromDate.toLocaleDateString('en-GB', {
+      weekday: 'long', day: 'numeric', month: 'short',
+      timeZone: 'Africa/Johannesburg',
+    });
+    return `<section class="card card-pad ln-recap mt" aria-label="LN daily recap">
+      <header class="ln-recap-meta">
+        <div class="ln-recap-eyebrow">LN Recap · ${escapeHtml(dayLabel)}</div>
+        <div class="ln-recap-sub">${submitted} EOD submission${submitted === 1 ? '' : 's'} from ${lnsCount} LN${lnsCount === 1 ? '' : 's'}</div>
+        <button class="btn ln-recap-btn" data-goto="ln" type="button">Open LN Stats <span aria-hidden="true">→</span></button>
+      </header>
+      <div class="ln-recap-cells">
+        <div class="ln-recap-cell">
+          <div class="kpi-label">Top LN</div>
+          <div class="ln-recap-name" title="${escapeHtml(top.name)}">${escapeHtml(top.name)}</div>
+          <div class="kpi-foot tnum">${fmt(top._totalLeads)} leads · ${fmt(top._totalCalls)} calls · ${fmtH(top.dfHours)}</div>
         </div>
-        <div>
-          <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Watch list</div>
+        <div class="ln-recap-cell">
+          <div class="kpi-label">Watch list</div>
           ${watch
-            ? `<div style="font-weight:700;color:var(--ink);font-size:15px;margin-top:2px">${escapeHtml(watch.name)}</div>
-               <div class="muted" style="font-size:12px">${fmt(watch._totalLeads)} leads over ${fmtH(watch.dfHours)}</div>`
-            : `<div class="muted" style="font-size:13px;margin-top:2px">Nobody flagged.</div>`}
+            ? `<div class="ln-recap-name" title="${escapeHtml(watch.name)}">${escapeHtml(watch.name)}</div>
+               <div class="kpi-foot tnum">${fmt(watch._totalLeads)} leads over ${fmtH(watch.dfHours)}</div>`
+            : `<div class="ln-recap-empty">Nobody flagged ✓</div>`}
         </div>
-        <div>
-          <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Compliance</div>
-          <div style="font-weight:700;color:var(--ink);font-size:15px;margin-top:2px">${submitted} submission${submitted === 1 ? '' : 's'}</div>
-          <div class="muted" style="font-size:12px">${lns.length} LN${lns.length === 1 ? '' : 's'} reporting</div>
+        <div class="ln-recap-cell">
+          <div class="kpi-label">Compliance</div>
+          <div class="ln-recap-name tnum">${submitted}/${lnsCount}</div>
+          <div class="kpi-foot">submissions ÷ LNs reporting</div>
         </div>
       </div>
-    </div>`;
+    </section>`;
   }
 
   function renderLiveFloor() {
