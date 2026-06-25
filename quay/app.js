@@ -2421,6 +2421,7 @@
     });
 
     let onlineCount = 0, offlineCount = 0, totalRoster = 0;
+    let absentCount = 0;
     let totalCallsToday = 0, totalLeadsToday = 0;
     let activeCallerCount = 0;
 
@@ -2440,9 +2441,15 @@
 
         const initials = (rec.name || '?').split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
         const avColor = avatarColor(rec.name);
+        const isAbsent = !!rec.absenceToday;
+        if (isAbsent && !isIn) absentCount++;
         const cardClass = isIn ? 'live-card live-card--in' : 'live-card live-card--out';
-        const pillClass = isIn ? 'live-pill live-pill--in' : 'live-pill live-pill--out';
-        const pillText  = isIn ? 'On the clock' : (outAt ? 'Clocked out' : 'Not in yet');
+        const pillClass = isIn ? 'live-pill live-pill--in'
+                       : (isAbsent ? 'live-pill live-pill--break'
+                                   : 'live-pill live-pill--out');
+        const pillText  = isIn ? 'On the clock'
+                       : (isAbsent ? 'Absent · ' + (rec.absenceToday.reason || 'Absent')
+                                   : (outAt ? 'Clocked out' : 'Not in yet'));
 
         // Prefer live_stats; fall back to the daily snapshot.
         const fullKey = (rec.name || '').toLowerCase().trim();
@@ -2509,15 +2516,15 @@
           </div>
         </div>`;
         // Bucket: 0=actively calling today, 1=on clock no calls,
-        // 2=clocked out, 3=not in yet. Sort within bucket by calls desc
-        // then name asc. The Map iteration order is staff-table order so
-        // names tie-break alphabetically anyway when stable-sorted.
+        // 2=clocked out, 3=absent (accounted for, not a no-show),
+        // 4=not in yet. Sort within bucket by calls desc then name asc.
         const callsForSort = todayCalls || 0;
         let bucket;
         if (callsForSort > 0) bucket = 0;
         else if (isIn) bucket = 1;
         else if (outAt) bucket = 2;
-        else bucket = 3;
+        else if (isAbsent) bucket = 3;
+        else bucket = 4;
         cards.push({ bucket, calls: callsForSort, name: rec.name || '', html });
       });
     }
@@ -2539,13 +2546,19 @@
     const liveBadge = liveTs
       ? '<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#DCF3E5;color:#0E6B3A;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-left:6px">● Live</span>'
       : '<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#FFE9CB;color:#6B3F00;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-left:6px">Snapshot</span>';
+    const notInYet = Math.max(0, totalRoster - onlineCount - absentCount);
     const summary = `<div class="live-summary">
       <div class="live-summary-stat">
         <div class="live-summary-val tnum">${onlineCount}</div>
         <div class="live-summary-label">On the clock</div>
       </div>
+      ${absentCount > 0 ? `
       <div class="live-summary-stat">
-        <div class="live-summary-val tnum">${totalRoster - onlineCount}</div>
+        <div class="live-summary-val tnum" style="color:#6B3F00">${absentCount}</div>
+        <div class="live-summary-label">Absent</div>
+      </div>` : ''}
+      <div class="live-summary-stat">
+        <div class="live-summary-val tnum">${notInYet}</div>
         <div class="live-summary-label">Not in yet</div>
       </div>
       <div class="live-summary-stat">
@@ -2795,7 +2808,8 @@
       // don't need to clock in, so we drop them from schedule adherence
       // entirely (no late/missed flags, not counted in % punctual).
       const since48 = new Date(Date.now() - 48 * 3600e3).toISOString();
-      const [{ data: staff }, { data: events }, { data: forgotEvents }] = await Promise.all([
+      const todaySastStr = sastDateStr(new Date());
+      const [{ data: staff }, { data: events }, { data: forgotEvents }, { data: absencesToday }] = await Promise.all([
         // Pull is_admin/is_super/designation so we can drop admins,
         // super admins, and managers — they're exempt from clock-in
         // tracking and shouldn't appear on the live floor or in
@@ -2813,7 +2827,10 @@
           .or('note.ilike.%forgot%,note.ilike.%Auto clock-out%')
           .gte('ts', since48)
           .order('ts', { ascending: false }),
+        window.sb.from('absences').select('staff_id,reason,reason_note').eq('date', todaySastStr),
       ]);
+      const absencesTodayByStaff = new Map();
+      (absencesToday || []).forEach(a => absencesTodayByStaff.set(a.staff_id, a));
       const forgotRecentByStaff = new Map();
       (forgotEvents || []).forEach(e => {
         if (!forgotRecentByStaff.has(e.staff_id)) forgotRecentByStaff.set(e.staff_id, e.ts);
@@ -2823,6 +2840,7 @@
         id: s.id, name: s.name, days: {},
         late: 0, early: 0, missed: 0, avgStartMin: null, avgEndMin: null,
         forgotRecentTs: forgotRecentByStaff.get(s.id) || null,
+        absenceToday: absencesTodayByStaff.get(s.id) || null,
       }));
       (events || []).forEach(e => {
         const rec = byStaff.get(e.staff_id);
@@ -3271,8 +3289,11 @@
     // Only count staff who are subject to clock-in (excludes admins,
     // super admins, and managers — they don't need to clock in).
     const trackable = (_team || []).filter(s => !isExemptStaff(s));
-    const onCount = trackable.filter(s => s.status === 'in').length;
-    const totalCount = trackable.length;
+    const onCount      = trackable.filter(s => s.status === 'in').length;
+    const absentCount  = trackable.filter(s => _absencesToday.has(s.id)).length;
+    const accountedFor = onCount + absentCount;
+    const totalCount   = trackable.length;
+    const missingCount = Math.max(0, totalCount - accountedFor);
 
     const rel = (iso) => {
       if (!iso) return '—';
@@ -3319,7 +3340,12 @@
           <input id="teamSearch" type="search" placeholder="Search name or designation..."
                  value="${escapeHtml(_teamFilter)}"
                  style="flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-family:Montserrat">
-          <div class="muted" style="font-size:13px"><b style="color:var(--green)">${onCount}</b> on the clock · <b>${totalCount}</b> active staff</div>
+          <div class="muted" style="font-size:13px">
+            <b style="color:var(--green)">${onCount}</b> on the clock
+            ${absentCount > 0 ? ` · <b style="color:#6B3F00">${absentCount}</b> absent` : ''}
+            ${missingCount > 0 ? ` · <b style="color:#8B1A1A">${missingCount}</b> not in yet` : ''}
+            · <b>${totalCount}</b> active staff
+          </div>
           <button class="btn btn-primary" id="teamAddBtn">${I.plus || '+'} Add staff</button>
         </div>
       </div>
