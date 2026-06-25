@@ -2406,7 +2406,7 @@
   // end-of-day clock_out_reports submissions. Period filter scopes the
   // active range; per-LN derived metrics make it a triage tool, not
   // just a submissions log.
-  let _lnSortBy  = 'leadsPerHr';
+  let _lnSortBy  = 'totalLeads';
   let _lnSortDir = 'desc';
 
   function _lnPeriodRange() {
@@ -2444,26 +2444,30 @@
         name: (r.staff && r.staff.name) || _staffNamesById.get(k) || k,
         designation: r.designation || '',
         divisions: new Set(),
-        reports: 0, hsCalls: 0, hsEmails: 0, hsWas: 0, hsTasks: 0, hsLeads: 0,
+        reports: 0,
+        hsTasks: 0, hsCalls: 0, hsEmails: 0, hsWas: 0, hsAnswered: 0, hsLeads: 0, hsRecon: 0,
         dfCalls: 0, dfEmails: 0, dfLeads: 0, dfHours: 0,
-        waSent: 0, waLeads: 0,
-        byDay: new Map(),  // dayKey -> total touches that day (for sparkline)
+        waSent: 0, waResp: 0, waLeads: 0,
+        byDay: new Map(),  // dayKey -> daily touch count (for sparkline)
         lastSubmit: null,
       });
       const t = by.get(k);
       if (r.division) t.divisions.add(r.division);
-      t.reports  += 1;
-      t.hsTasks  += r.hs_tasks_completed   || 0;
-      t.hsCalls  += r.hs_calls_made        || 0;
-      t.hsEmails += r.hs_emails_sent       || 0;
-      t.hsWas    += r.hs_whatsapps_sent    || 0;
-      t.hsLeads  += r.hs_leads_vals        || 0;
-      t.dfCalls  += r.df_calls             || 0;
-      t.dfEmails += r.df_email_successes   || 0;
-      t.dfLeads  += r.df_leads_vals        || 0;
-      t.dfHours  += Number(r.df_hours      || 0);
-      t.waSent   += r.wa_sent              || 0;
-      t.waLeads  += r.wa_leads_vals        || 0;
+      t.reports    += 1;
+      t.hsTasks    += r.hs_tasks_completed   || 0;
+      t.hsCalls    += r.hs_calls_made        || 0;
+      t.hsEmails   += r.hs_emails_sent       || 0;
+      t.hsWas      += r.hs_whatsapps_sent    || 0;
+      t.hsAnswered += r.hs_answered_contacts || 0;
+      t.hsLeads    += r.hs_leads_vals        || 0;
+      t.hsRecon    += r.hs_reconverted_leads || 0;
+      t.dfCalls    += r.df_calls             || 0;
+      t.dfEmails   += r.df_email_successes   || 0;
+      t.dfLeads    += r.df_leads_vals        || 0;
+      t.dfHours    += Number(r.df_hours      || 0);
+      t.waSent     += r.wa_sent              || 0;
+      t.waResp     += r.wa_responses         || 0;
+      t.waLeads    += r.wa_leads_vals        || 0;
       const ts = r.clocked_out_at ? new Date(r.clocked_out_at) : null;
       if (ts) {
         const day = sastDateStr(ts);
@@ -2472,25 +2476,7 @@
         if (!t.lastSubmit || ts > t.lastSubmit) t.lastSubmit = ts;
       }
     });
-    // Derived metrics
-    return Array.from(by.values()).map(t => {
-      const calls   = t.hsCalls + t.dfCalls;
-      const emails  = t.hsEmails + t.dfEmails;
-      const was     = t.hsWas + t.waSent;
-      const leads   = t.hsLeads + t.dfLeads + t.waLeads;
-      const touches = calls + emails + was;
-      const hrs     = t.dfHours;
-      return {
-        ...t,
-        calls, emails, was, leads, touches,
-        callsPerHr:    hrs > 0 ? calls / hrs : null,
-        emailsPerHr:   hrs > 0 ? emails / hrs : null,
-        touchesPerHr:  hrs > 0 ? touches / hrs : null,
-        leadsPerHr:    hrs > 0 ? leads / hrs : null,
-        leadsPer100:   touches > 0 ? (leads / touches) * 100 : null,
-        compliance:    null,  // filled in when we have expected-days count
-      };
-    });
+    return Array.from(by.values());
   }
 
   function _lnSparkSvg(byDay, range) {
@@ -2541,7 +2527,18 @@
         return d === 'ln' || d === 'assistant';
       });
 
-    // Compliance — submissions / expected working days in range.
+    // Notes per staff (most recent in range — shown truncated in table).
+    const notesByStaff = new Map();
+    (_reports || []).forEach(r => {
+      const ts = r.clocked_out_at ? new Date(r.clocked_out_at) : null;
+      if (!ts || ts < range.from || ts > range.to) return;
+      const txt = (r.notes || '').trim();
+      if (!txt) return;
+      const prev = notesByStaff.get(r.staff_id);
+      if (!prev || ts > prev.ts) notesByStaff.set(r.staff_id, { ts, txt });
+    });
+
+    // Compliance — submissions / expected Mon-Fri days in range.
     const expectedDays = _lnDayKeysInRange(range).length || 1;
     lns.forEach(r => {
       const submittedDays = new Set();
@@ -2551,16 +2548,10 @@
         if (ts && ts >= range.from && ts <= range.to) submittedDays.add(sastDateStr(ts));
       });
       r.compliance = submittedDays.size / expectedDays;
+      r.totalLeads = r.hsLeads + r.dfLeads + r.waLeads;
+      r.totalCalls = r.hsCalls + r.dfCalls;
+      r.note = (notesByStaff.get(r.staffId) || {}).txt || '';
     });
-
-    // Team averages (denominators across all qualifying LNs).
-    const _avg = (key) => {
-      const vals = lns.map(r => r[key]).filter(v => v != null && isFinite(v));
-      return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : 0;
-    };
-    const avgCallsHr = _avg('callsPerHr');
-    const avgLeadsHr = _avg('leadsPerHr');
-    const avgLeads100 = _avg('leadsPer100');
 
     // Sort
     const sortDir = _lnSortDir === 'asc' ? 1 : -1;
@@ -2575,9 +2566,9 @@
 
     // KPI band
     const totalReports = lns.reduce((s, r) => s + r.reports, 0);
-    const totalLeads   = lns.reduce((s, r) => s + r.leads, 0);
+    const totalLeads   = lns.reduce((s, r) => s + r.totalLeads, 0);
     const totalHrs     = lns.reduce((s, r) => s + r.dfHours, 0);
-    const topByLeads   = lns.slice().sort((a, b) => b.leads - a.leads)[0] || null;
+    const topByLeads   = lns.slice().sort((a, b) => b.totalLeads - a.totalLeads)[0] || null;
 
     const kpi = (icon, label, val, foot) => `<div class="card kpi">
       <div class="kpi-top"><div class="kpi-ic">${icon}</div></div>
@@ -2586,22 +2577,15 @@
       <div class="kpi-foot">${escapeHtml(foot)}</div>
     </div>`;
 
-    // Top-3 "Most efficient" by leads per 100 touches (≥30 touches to qualify)
-    const top3 = lns.filter(r => r.touches >= 30 && r.leadsPer100 != null)
-                    .sort((a, b) => b.leadsPer100 - a.leadsPer100).slice(0, 3);
-
-    // Coloured "vs avg" pill helper
-    const vsAvgPill = (val, avg, unit) => {
-      if (val == null || avg <= 0) return '';
-      const pct = ((val - avg) / avg) * 100;
-      if (Math.abs(pct) < 5) return `<span class="muted" style="font-size:10.5px">≈ team avg</span>`;
-      const up = pct > 0;
-      const cls = up ? 'ok' : 'bad';
-      return `<span class="pill ${cls}" style="font-size:10px;padding:1px 6px">${up ? '+' : ''}${pct.toFixed(0)}%</span>`;
-    };
-
-    const fmtNum = (v, dp) => v == null ? '—' : Number(v).toFixed(dp ?? 1);
     const fmtPct = (v) => v == null ? '—' : (Number(v) * 100).toFixed(0) + '%';
+    // Format Dialfire hours as H:MM (matches the EOD form's "3:22" style).
+    const fmtHrs = (h) => {
+      if (!h || h <= 0) return '—';
+      const tot = Math.round(h * 60);
+      return Math.floor(tot / 60) + ':' + String(tot % 60).padStart(2, '0');
+    };
+    // Numeric cell with a muted '—' when zero (so the eye lands on real values).
+    const numCell = (v) => `<td class="num tnum">${v ? fmt(v) : '<span class="muted">—</span>'}</td>`;
 
     const sortIndic = (k) => {
       if (k !== _lnSortBy) return '<span class="muted" style="font-size:11px"> ⇅</span>';
@@ -2621,71 +2605,78 @@
         <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between">
           <div>
             <h3 style="margin:0;font-family:var(--serif);font-size:17px">LN &amp; Assistants Leaderboard</h3>
-            <div class="sub" style="margin-top:4px">${lns.length} ${lns.length === 1 ? 'person' : 'people'} reporting · ${range.fromKey} → ${range.toKey} SAST · derived from end-of-day submissions</div>
+            <div class="sub" style="margin-top:4px">${lns.length} ${lns.length === 1 ? 'person' : 'people'} reporting · ${range.fromKey} → ${range.toKey} SAST · raw fields from each end-of-day submission</div>
           </div>
-          <div class="muted" style="font-size:12.5px">Team avgs · ${avgCallsHr.toFixed(1)} calls/hr · ${avgLeadsHr.toFixed(1)} leads/hr · ${avgLeads100.toFixed(1)} leads/100</div>
         </div>
       </div>
 
       <div class="row kpis mt">
         ${kpi(I.target, 'Total Leads',         fmt(totalLeads),                'all channels combined')}
         ${kpi(I.phone,  'EOD Submissions',     fmt(totalReports),              'across ' + lns.length + ' staff this period')}
-        ${kpi(I.clock,  'Dialler Hours',       totalHrs.toFixed(1) + 'h',      'logged on EOD forms')}
-        ${kpi(I.trophy, 'Top by Leads',        topByLeads ? escapeHtml(topByLeads.name) : '—', topByLeads ? fmt(topByLeads.leads) + ' leads · ' + fmt(topByLeads.touches) + ' touches' : '—')}
-      </div>
-
-      <div class="card mt card-pad">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-          <div style="font-family:var(--serif);font-size:14px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.04em">Most efficient</div>
-          <div class="sub">Top 3 by leads ÷ 100 touches (≥ 30 touches to qualify)</div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
-          ${top3.length === 0 ? `<div class="muted" style="grid-column:1/-1;font-size:13px">No LN has hit 30 touches yet in this period.</div>`
-            : top3.map((r, i) => `<div class="card card-pad" style="background:var(--paper)">
-                <div style="display:flex;gap:10px;align-items:center">
-                  <div class="medal ${i === 0 ? 'g' : i === 1 ? 's' : 'b'}">${i + 1}</div>
-                  <div style="flex:1;min-width:0">
-                    <div style="font-weight:700;color:var(--ink)">${escapeHtml(r.name)}</div>
-                    <div class="muted" style="font-size:12px">${fmt(r.leads)} leads · ${fmt(r.touches)} touches · <b style="color:var(--green)">${r.leadsPer100.toFixed(1)} / 100</b></div>
-                  </div>
-                </div>
-              </div>`).join('')}
-        </div>
+        ${kpi(I.clock,  'Dialler Hours',       fmtHrs(totalHrs),               'logged on EOD forms')}
+        ${kpi(I.trophy, 'Top by Leads',        topByLeads ? escapeHtml(topByLeads.name) : '—', topByLeads ? fmt(topByLeads.totalLeads) + ' leads' : '—')}
       </div>
 
       <div class="card mt">
         <div class="tbl-wrap"><table class="tbl tbl-sortable">
-          <thead><tr>
-            ${sortHdr('name', 'Name', { align: 'left' })}
-            <th>Role</th>
-            ${sortHdr('reports', 'Reports', { tip: 'End-of-day form submissions' })}
-            ${sortHdr('dfHours', 'Dialler hrs')}
-            ${sortHdr('callsPerHr',  'Calls/hr', { tip: 'Combined HubSpot + Dialfire calls divided by dialler hours' })}
-            ${sortHdr('emailsPerHr', 'Emails/hr')}
-            ${sortHdr('touches', 'Touches', { tip: 'Calls + emails + WhatsApps' })}
-            ${sortHdr('leads', 'Leads')}
-            ${sortHdr('leadsPer100', 'Leads / 100', { tip: 'Leads per 100 touches — quality of interactions' })}
-            ${sortHdr('compliance', 'Compliance', { tip: 'Submitted EOD reports ÷ expected working days' })}
-            <th>Last 14d</th>
-          </tr></thead>
+          <thead>
+            <tr class="ln-grouphdr">
+              <th rowspan="2" style="vertical-align:bottom;text-align:left;cursor:pointer" data-ln-sort="name">Name${sortIndic('name')}</th>
+              <th rowspan="2" style="vertical-align:bottom">Role</th>
+              <th rowspan="2" style="vertical-align:bottom">Division</th>
+              <th colspan="7" class="ln-group">HubSpot Work Summary</th>
+              <th colspan="4" class="ln-group">DialFire Canvassing</th>
+              <th colspan="3" class="ln-group">WhatsApp Campaigns</th>
+              <th rowspan="2" class="num" style="vertical-align:bottom;cursor:pointer" data-ln-sort="compliance" title="Submitted EOD reports ÷ expected Mon-Fri working days">Compliance${sortIndic('compliance')}</th>
+              <th rowspan="2" style="vertical-align:bottom">Last 14d</th>
+              <th rowspan="2" style="vertical-align:bottom">Notes</th>
+            </tr>
+            <tr>
+              ${sortHdr('hsTasks',   'Tasks',      { tip: 'HubSpot tasks completed' })}
+              ${sortHdr('hsCalls',   'Calls',      { tip: 'HubSpot calls made' })}
+              ${sortHdr('hsEmails',  'Emails',     { tip: 'HubSpot emails sent' })}
+              ${sortHdr('hsWas',     'WAs',        { tip: 'HubSpot WhatsApps sent' })}
+              ${sortHdr('hsAnswered','Answered',   { tip: 'HubSpot answered contacts' })}
+              ${sortHdr('hsLeads',   'Leads',      { tip: 'HubSpot leads / vals' })}
+              ${sortHdr('hsRecon',   'Reconv.',    { tip: 'HubSpot reconverted leads' })}
+              ${sortHdr('dfCalls',   'Calls',      { tip: 'Dialfire calls' })}
+              ${sortHdr('dfEmails',  'Email Suc.', { tip: 'Dialfire email successes' })}
+              ${sortHdr('dfLeads',   'Leads',      { tip: 'Dialfire leads / vals' })}
+              ${sortHdr('dfHours',   'Hours',      { tip: 'Dialfire hours' })}
+              ${sortHdr('waSent',    'Sent',       { tip: 'WhatsApp campaign messages sent' })}
+              ${sortHdr('waResp',    'Resp.',      { tip: 'WhatsApp responses' })}
+              ${sortHdr('waLeads',   'Leads',      { tip: 'WhatsApp leads / vals' })}
+            </tr>
+          </thead>
           <tbody>
             ${lns.length === 0
-              ? `<tr><td colspan="11" class="muted" style="text-align:center;padding:30px">No LN / Assistant submissions in this period.</td></tr>`
+              ? `<tr><td colspan="18" class="muted" style="text-align:center;padding:30px">No LN / Assistant submissions in this period.</td></tr>`
               : lns.map(r => {
                 const role = (r.designation || '').toLowerCase() === 'ln' ? 'LN' : 'Assistant';
                 const cls = (r.designation || '').toLowerCase() === 'ln' ? 'rm' : 'fancy';
+                const note = r.note || '';
+                const noteShort = note.length > 60 ? note.slice(0, 60) + '…' : note;
                 return `<tr>
-                  <td><b>${escapeHtml(r.name)}</b><div class="muted" style="font-size:11.5px">${escapeHtml(Array.from(r.divisions).join(', ') || '—')}</div></td>
+                  <td><b>${escapeHtml(r.name)}</b></td>
                   <td><span class="pill ${cls}" style="font-size:10.5px;padding:2px 8px">${role}</span></td>
-                  <td class="num tnum">${fmt(r.reports)}</td>
-                  <td class="num tnum">${r.dfHours > 0 ? r.dfHours.toFixed(1) + 'h' : '—'}</td>
-                  <td class="num tnum">${fmtNum(r.callsPerHr)} ${vsAvgPill(r.callsPerHr, avgCallsHr)}</td>
-                  <td class="num tnum">${fmtNum(r.emailsPerHr)}</td>
-                  <td class="num tnum">${fmt(r.touches)}</td>
-                  <td class="num tnum">${fmt(r.leads)} ${vsAvgPill(r.leadsPerHr, avgLeadsHr)}</td>
-                  <td class="num tnum">${fmtNum(r.leadsPer100)} ${vsAvgPill(r.leadsPer100, avgLeads100)}</td>
+                  <td class="muted" style="font-size:12px">${escapeHtml(Array.from(r.divisions).join(' / ') || '—')}</td>
+                  ${numCell(r.hsTasks)}
+                  ${numCell(r.hsCalls)}
+                  ${numCell(r.hsEmails)}
+                  ${numCell(r.hsWas)}
+                  ${numCell(r.hsAnswered || 0)}
+                  ${numCell(r.hsLeads)}
+                  ${numCell(r.hsRecon || 0)}
+                  ${numCell(r.dfCalls)}
+                  ${numCell(r.dfEmails)}
+                  ${numCell(r.dfLeads)}
+                  <td class="num tnum">${fmtHrs(r.dfHours)}</td>
+                  ${numCell(r.waSent)}
+                  ${numCell(r.waResp || 0)}
+                  ${numCell(r.waLeads)}
                   <td class="num"><span class="pill ${r.compliance >= 0.9 ? 'ok' : r.compliance >= 0.6 ? 'warn' : 'bad'}" style="font-size:11px;padding:2px 8px">${fmtPct(r.compliance)}</span></td>
                   <td>${_lnSparkSvg(r.byDay, range)}</td>
+                  <td class="muted" style="font-size:12px;max-width:240px" title="${escapeHtml(note)}">${escapeHtml(noteShort) || '<span class="muted">—</span>'}</td>
                 </tr>`;
               }).join('')}
           </tbody>
@@ -2731,12 +2722,20 @@
     const lns = _lnAggregate(_reports, range)
       .filter(r => { const d = (r.designation || '').toLowerCase(); return d === 'ln' || d === 'assistant'; });
     if (lns.length === 0) return '';
-    const top = lns.slice().sort((a, b) => b.leads - a.leads)[0];
-    // Watch list: lowest calls/hr among those who clocked >2hrs
-    const watch = lns.filter(r => r.dfHours >= 2 && r.callsPerHr != null)
-                     .sort((a, b) => a.callsPerHr - b.callsPerHr)[0];
-    // Compliance: submissions today / known LN+Assistant active roster
+    // Derive only what the recap needs — no derived metrics in the table.
+    lns.forEach(r => {
+      r._totalLeads = r.hsLeads + r.dfLeads + r.waLeads;
+      r._totalCalls = r.hsCalls + r.dfCalls;
+    });
+    const top = lns.slice().sort((a, b) => b._totalLeads - a._totalLeads)[0];
+    // Watch list: lowest total leads among LNs who've clocked >=2 hrs.
+    const watch = lns.filter(r => r.dfHours >= 2)
+                     .sort((a, b) => a._totalLeads - b._totalLeads)[0];
     const submitted = todays.length;
+    const fmtH = (h) => {
+      const tot = Math.round((h || 0) * 60);
+      return Math.floor(tot / 60) + ':' + String(tot % 60).padStart(2, '0');
+    };
     return `<div class="card card-pad mt" style="background:linear-gradient(135deg, var(--paper) 0%, #fff 100%);border-left:3px solid var(--blue-800)">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
         <div style="font-family:var(--serif);font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink)">LN Daily Recap · today</div>
@@ -2745,19 +2744,19 @@
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
         <div>
-          <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">🏆 Top LN</div>
+          <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Top LN</div>
           <div style="font-weight:700;color:var(--ink);font-size:15px;margin-top:2px">${escapeHtml(top.name)}</div>
-          <div class="muted" style="font-size:12px">${fmt(top.leads)} leads · ${fmt(top.calls)} calls · ${top.dfHours.toFixed(1)}h</div>
+          <div class="muted" style="font-size:12px">${fmt(top._totalLeads)} leads · ${fmt(top._totalCalls)} calls · ${fmtH(top.dfHours)}</div>
         </div>
         <div>
-          <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">⚠️ Watch list</div>
+          <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Watch list</div>
           ${watch
             ? `<div style="font-weight:700;color:var(--ink);font-size:15px;margin-top:2px">${escapeHtml(watch.name)}</div>
-               <div class="muted" style="font-size:12px">${watch.callsPerHr.toFixed(1)} calls/hr over ${watch.dfHours.toFixed(1)}h</div>`
-            : `<div class="muted" style="font-size:13px;margin-top:2px">Nobody flagged — all LNs above the floor.</div>`}
+               <div class="muted" style="font-size:12px">${fmt(watch._totalLeads)} leads over ${fmtH(watch.dfHours)}</div>`
+            : `<div class="muted" style="font-size:13px;margin-top:2px">Nobody flagged.</div>`}
         </div>
         <div>
-          <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">📋 Compliance</div>
+          <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Compliance</div>
           <div style="font-weight:700;color:var(--ink);font-size:15px;margin-top:2px">${submitted} submission${submitted === 1 ? '' : 's'}</div>
           <div class="muted" style="font-size:12px">${lns.length} LN${lns.length === 1 ? '' : 's'} reporting</div>
         </div>
