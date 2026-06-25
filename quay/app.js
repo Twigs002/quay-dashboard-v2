@@ -3636,6 +3636,8 @@
   let _team = null;             // [{id,name,...,status,lastIn,lastOut}]
   let _teamLoading = false;
   let _teamFilter = '';
+  let _teamSortBy = 'name';     // name | status | designation | lastClocked | forgot
+  let _teamSortDir = 'asc';
   let _teamModal = null;        // form state when modal is open
   let _forgotThisWeek = [];     // forgot-to-clock-out events since Monday SAST
   let _absencesToday = new Map(); // staff_id -> {reason, reason_note, marked_by, marked_at}
@@ -3720,7 +3722,7 @@
       loadTeam().then(() => { if (tab === 'team') shell(); });
     }
     const q = _teamFilter.trim().toLowerCase();
-    const rows = (_team || []).filter(s =>
+    const filtered = (_team || []).filter(s =>
       !q || s.name.toLowerCase().includes(q)
          || (s.designation || '').toLowerCase().includes(q)
     );
@@ -3734,6 +3736,51 @@
       broker:         'Broker',
       rental_support: 'Rental Support',
     }[d] || (d || '—'));
+    // Status sort weight — on-the-clock first, then absent, then clocked
+    // out, then never-showed, then exempt. Matches the natural triage
+    // order an admin would scan.
+    const statusWeight = (s) => {
+      if (isExemptStaff(s)) return 5;
+      if (s.status === 'in') return 1;
+      if (_absencesToday.has(s.id)) return 2;
+      const now = new Date();
+      const cob = new Date(sastDateStr(now) + 'T17:00:00+02:00');
+      const startOfTodaySAST = new Date(sastDateStr(now) + 'T00:00:00+02:00');
+      const hasTodayEvent = s.lastIn && new Date(s.lastIn) >= startOfTodaySAST;
+      if (!hasTodayEvent && now >= cob) return 4; // never showed
+      return 3; // clocked out
+    };
+    const lastClockedTs = (s) => {
+      const ti = s.lastIn  ? new Date(s.lastIn).getTime()  : 0;
+      const to = s.lastOut ? new Date(s.lastOut).getTime() : 0;
+      return Math.max(ti, to);
+    };
+    const sortKey = (s) => {
+      switch (_teamSortBy) {
+        case 'status':       return statusWeight(s);
+        case 'designation':  return desigLabel(s.designation).toLowerCase();
+        case 'lastClocked':  return lastClockedTs(s);
+        case 'forgot':       return isExemptStaff(s) ? -1 : (s.forgotCount30d || 0);
+        case 'name':
+        default:             return s.name.toLowerCase();
+      }
+    };
+    const dir = _teamSortDir === 'asc' ? 1 : -1;
+    const rows = filtered.slice().sort((a, b) => {
+      const av = sortKey(a), bv = sortKey(b);
+      if (av < bv) return -1 * dir;
+      if (av > bv) return  1 * dir;
+      // Stable secondary sort by name so equal-key rows have a deterministic order.
+      return a.name.localeCompare(b.name);
+    });
+    const sortIndic = (k) => {
+      if (k !== _teamSortBy) return '<span class="muted" style="font-size:11px"> ⇅</span>';
+      return _teamSortDir === 'asc'
+        ? '<span style="color:var(--blue-800);font-size:11px"> ▲</span>'
+        : '<span style="color:var(--blue-800);font-size:11px"> ▼</span>';
+    };
+    const sortTh = (k, label, cls) =>
+      `<th class="${cls || ''}" style="cursor:pointer" data-team-sort="${k}">${escapeHtml(label)}${sortIndic(k)}</th>`;
     // Only count staff who are subject to clock-in (excludes admins,
     // super admins, and managers — they don't need to clock in).
     const trackable = (_team || []).filter(s => !isExemptStaff(s));
@@ -3798,13 +3845,13 @@
         </div>
       </div>
       <div class="card mt">
-        <div class="tbl-wrap"><table class="tbl">
+        <div class="tbl-wrap"><table class="tbl tbl-sortable">
           <thead><tr>
-            <th>Name</th>
-            <th>Status</th>
-            <th>Designation</th>
-            <th>Last clocked</th>
-            <th class="num" title="Times this staffer forgot to clock out in the last 30 days (admin-corrected or self-corrected events).">Forgot 30d</th>
+            ${sortTh('name',        'Name')}
+            ${sortTh('status',      'Status')}
+            ${sortTh('designation', 'Designation')}
+            ${sortTh('lastClocked', 'Last clocked')}
+            <th class="num" style="cursor:pointer" data-team-sort="forgot" title="Times this staffer forgot to clock out in the last 30 days (admin-corrected or self-corrected events).">Forgot 30d${sortIndic('forgot')}</th>
             <th class="r"></th>
           </tr></thead>
           <tbody>
@@ -4071,6 +4118,20 @@
       // Re-render rows only, keep search-input focus.
       const tbody = document.querySelector('#content .tbl tbody');
       if (tbody) shell(); else shell();
+    });
+    document.querySelectorAll('th[data-team-sort]').forEach(th => {
+      th.addEventListener('click', () => {
+        const k = th.dataset.teamSort;
+        if (_teamSortBy === k) {
+          _teamSortDir = _teamSortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+          _teamSortBy = k;
+          // Numeric / time columns default to desc (highest first);
+          // alpha columns default to asc.
+          _teamSortDir = (k === 'lastClocked' || k === 'forgot' || k === 'status') ? 'desc' : 'asc';
+        }
+        shell();
+      });
     });
     const addBtn = document.getElementById('teamAddBtn');
     if (addBtn) addBtn.addEventListener('click', () => {
