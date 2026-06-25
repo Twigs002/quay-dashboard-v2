@@ -2588,7 +2588,9 @@
       return Math.floor(tot / 60) + ':' + String(tot % 60).padStart(2, '0');
     };
     // Numeric cell with a muted '—' when zero (so the eye lands on real values).
-    const numCell = (v) => `<td class="num tnum">${v ? fmt(v) : '<span class="muted">—</span>'}</td>`;
+    // Optional `extra` class lets the renderer tag each cell with its section
+    // (.ln-col-hs / -df / -wa, plus -first on the leftmost of each section).
+    const numCell = (v, extra) => `<td class="num tnum${extra ? ' ' + extra : ''}">${v ? fmt(v) : '<span class="muted">—</span>'}</td>`;
 
     const sortIndic = (k) => {
       if (k !== _lnSortBy) return '<span class="muted" style="font-size:11px"> ⇅</span>';
@@ -2599,8 +2601,9 @@
     const sortHdr = (k, label, opts) => {
       const align = (opts && opts.align) || 'right';
       const cls = align === 'right' ? 'num' : '';
+      const extra = (opts && opts.cls) || '';
       const tip = (opts && opts.tip) || '';
-      return `<th class="${cls}" style="cursor:pointer" data-ln-sort="${k}" ${tip ? `title="${escapeHtml(tip)}"` : ''}>${escapeHtml(label)}${sortIndic(k)}</th>`;
+      return `<th class="${cls}${extra ? ' ' + extra : ''}" style="cursor:pointer" data-ln-sort="${k}" ${tip ? `title="${escapeHtml(tip)}"` : ''}>${escapeHtml(label)}${sortIndic(k)}</th>`;
     };
 
     return `<div class="tab-view">
@@ -2617,66 +2620,66 @@
         ${kpi(I.target, 'Total Leads',         fmt(totalLeads),                'all channels combined')}
         ${kpi(I.phone,  'EOD Submissions',     fmt(totalReports),              'across ' + lns.length + ' staff this period')}
         ${kpi(I.clock,  'Dialler Hours',       fmtHrs(totalHrs),               'logged on EOD forms')}
-        ${kpi(I.trophy, 'Top by Leads',        topByLeads ? escapeHtml(topByLeads.name) : '—', topByLeads ? fmt(topByLeads.totalLeads) + ' leads' : '—')}
+        ${kpi(I.trophy, 'Top by Leads',        topByLeads ? fmt(topByLeads.totalLeads) : '—', topByLeads ? topByLeads.name : '—')}
       </div>
 
       <div class="card mt">
-        <div class="tbl-wrap"><table class="tbl tbl-sortable">
+        <div class="tbl-wrap"><table class="tbl tbl-sortable ln-leaderboard">
           <thead>
             <tr class="ln-grouphdr">
-              <th rowspan="2" style="vertical-align:bottom;text-align:left;cursor:pointer" data-ln-sort="name">Name${sortIndic('name')}</th>
+              <th rowspan="2" class="ln-col-name" style="vertical-align:bottom;text-align:left;cursor:pointer" data-ln-sort="name">Name${sortIndic('name')}</th>
               <th rowspan="2" style="vertical-align:bottom">Role</th>
               <th rowspan="2" style="vertical-align:bottom">Division</th>
-              <th colspan="7" class="ln-group">HubSpot Work Summary</th>
-              <th colspan="4" class="ln-group">DialFire Canvassing</th>
-              <th colspan="3" class="ln-group">WhatsApp Campaigns</th>
+              <th colspan="7" class="ln-group ln-col-hs ln-col-first">HubSpot Work Summary</th>
+              <th colspan="4" class="ln-group ln-col-df ln-col-first">DialFire Canvassing</th>
+              <th colspan="3" class="ln-group ln-col-wa ln-col-first">WhatsApp Campaigns</th>
               <th rowspan="2" class="num" style="vertical-align:bottom;cursor:pointer" data-ln-sort="compliance" title="Submitted EOD reports ÷ expected Mon-Fri working days">Compliance${sortIndic('compliance')}</th>
               <th rowspan="2" style="vertical-align:bottom">Last 14d</th>
               <th rowspan="2" style="vertical-align:bottom">Notes</th>
             </tr>
-            <tr>
-              ${sortHdr('hsTasks',   'Tasks',      { tip: 'HubSpot tasks completed' })}
-              ${sortHdr('hsCalls',   'Calls',      { tip: 'HubSpot calls made' })}
-              ${sortHdr('hsEmails',  'Emails',     { tip: 'HubSpot emails sent' })}
-              ${sortHdr('hsWas',     'WAs',        { tip: 'HubSpot WhatsApps sent' })}
-              ${sortHdr('hsAnswered','Answered',   { tip: 'HubSpot answered contacts' })}
-              ${sortHdr('hsLeads',   'Leads',      { tip: 'HubSpot leads / vals' })}
-              ${sortHdr('hsRecon',   'Reconv.',    { tip: 'HubSpot reconverted leads' })}
-              ${sortHdr('dfCalls',   'Calls',      { tip: 'Dialfire calls' })}
-              ${sortHdr('dfEmails',  'Email Suc.', { tip: 'Dialfire email successes' })}
-              ${sortHdr('dfLeads',   'Leads',      { tip: 'Dialfire leads / vals' })}
-              ${sortHdr('dfHours',   'Hours',      { tip: 'Dialfire hours' })}
-              ${sortHdr('waSent',    'Sent',       { tip: 'WhatsApp campaign messages sent' })}
-              ${sortHdr('waResp',    'Resp.',      { tip: 'WhatsApp responses' })}
-              ${sortHdr('waLeads',   'Leads',      { tip: 'WhatsApp leads / vals' })}
+            <tr class="ln-subhdr">
+              ${sortHdr('hsTasks',   'Tasks',      { tip: 'HubSpot tasks completed',       cls: 'ln-col-hs ln-col-first' })}
+              ${sortHdr('hsCalls',   'Calls',      { tip: 'HubSpot calls made',            cls: 'ln-col-hs' })}
+              ${sortHdr('hsEmails',  'Emails',     { tip: 'HubSpot emails sent',           cls: 'ln-col-hs' })}
+              ${sortHdr('hsWas',     'WAs',        { tip: 'HubSpot WhatsApps sent',        cls: 'ln-col-hs' })}
+              ${sortHdr('hsAnswered','Answered',   { tip: 'HubSpot answered contacts',     cls: 'ln-col-hs' })}
+              ${sortHdr('hsLeads',   'Leads',      { tip: 'HubSpot leads / vals',          cls: 'ln-col-hs' })}
+              ${sortHdr('hsRecon',   'Reconv.',    { tip: 'HubSpot reconverted leads',     cls: 'ln-col-hs' })}
+              ${sortHdr('dfCalls',   'Calls',      { tip: 'Dialfire calls',                cls: 'ln-col-df ln-col-first' })}
+              ${sortHdr('dfEmails',  'Email Suc.', { tip: 'Dialfire email successes',      cls: 'ln-col-df' })}
+              ${sortHdr('dfLeads',   'Leads',      { tip: 'Dialfire leads / vals',         cls: 'ln-col-df' })}
+              ${sortHdr('dfHours',   'Hours',      { tip: 'Dialfire hours',                cls: 'ln-col-df' })}
+              ${sortHdr('waSent',    'Sent',       { tip: 'WhatsApp campaign messages sent', cls: 'ln-col-wa ln-col-first' })}
+              ${sortHdr('waResp',    'Resp.',      { tip: 'WhatsApp responses',            cls: 'ln-col-wa' })}
+              ${sortHdr('waLeads',   'Leads',      { tip: 'WhatsApp leads / vals',         cls: 'ln-col-wa' })}
             </tr>
           </thead>
           <tbody>
             ${lns.length === 0
-              ? `<tr><td colspan="18" class="muted" style="text-align:center;padding:30px">No LN / Assistant submissions in this period.</td></tr>`
+              ? `<tr><td colspan="20" class="muted" style="text-align:center;padding:30px">No LN / Assistant submissions in this period.</td></tr>`
               : lns.map(r => {
                 const role = (r.designation || '').toLowerCase() === 'ln' ? 'LN' : 'Assistant';
                 const cls = (r.designation || '').toLowerCase() === 'ln' ? 'rm' : 'fancy';
                 const note = r.note || '';
                 const noteShort = note.length > 60 ? note.slice(0, 60) + '…' : note;
                 return `<tr>
-                  <td><b>${escapeHtml(r.name)}</b></td>
+                  <td class="ln-col-name"><b>${escapeHtml(r.name)}</b></td>
                   <td><span class="pill ${cls}" style="font-size:10.5px;padding:2px 8px">${role}</span></td>
                   <td class="muted" style="font-size:12px">${escapeHtml(Array.from(r.divisions).join(' / ') || '—')}</td>
-                  ${numCell(r.hsTasks)}
-                  ${numCell(r.hsCalls)}
-                  ${numCell(r.hsEmails)}
-                  ${numCell(r.hsWas)}
-                  ${numCell(r.hsAnswered || 0)}
-                  ${numCell(r.hsLeads)}
-                  ${numCell(r.hsRecon || 0)}
-                  ${numCell(r.dfCalls)}
-                  ${numCell(r.dfEmails)}
-                  ${numCell(r.dfLeads)}
-                  <td class="num tnum">${fmtHrs(r.dfHours)}</td>
-                  ${numCell(r.waSent)}
-                  ${numCell(r.waResp || 0)}
-                  ${numCell(r.waLeads)}
+                  ${numCell(r.hsTasks,      'ln-col-hs ln-col-first')}
+                  ${numCell(r.hsCalls,      'ln-col-hs')}
+                  ${numCell(r.hsEmails,     'ln-col-hs')}
+                  ${numCell(r.hsWas,        'ln-col-hs')}
+                  ${numCell(r.hsAnswered || 0, 'ln-col-hs')}
+                  ${numCell(r.hsLeads,      'ln-col-hs')}
+                  ${numCell(r.hsRecon || 0, 'ln-col-hs')}
+                  ${numCell(r.dfCalls,      'ln-col-df ln-col-first')}
+                  ${numCell(r.dfEmails,     'ln-col-df')}
+                  ${numCell(r.dfLeads,      'ln-col-df')}
+                  <td class="num tnum ln-col-df">${fmtHrs(r.dfHours)}</td>
+                  ${numCell(r.waSent,       'ln-col-wa ln-col-first')}
+                  ${numCell(r.waResp || 0,  'ln-col-wa')}
+                  ${numCell(r.waLeads,      'ln-col-wa')}
                   <td class="num"><span class="pill ${r.compliance >= 0.9 ? 'ok' : r.compliance >= 0.6 ? 'warn' : 'bad'}" style="font-size:11px;padding:2px 8px">${fmtPct(r.compliance)}</span></td>
                   <td>${_lnSparkSvg(r.byDay, range)}</td>
                   <td class="muted" style="font-size:12px;max-width:240px" title="${escapeHtml(note)}">${escapeHtml(noteShort) || '<span class="muted">—</span>'}</td>

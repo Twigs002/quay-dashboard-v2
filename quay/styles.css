@@ -1265,6 +1265,36 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
   border-bottom: 1px solid var(--line);
 }
 
+/* Section column tints — keep each EOD-form section (HubSpot navy /
+   DialFire brass / WhatsApp sky) visually distinct while the table is
+   horizontally scrolled. .ln-col-first adds a 2px accent at the left
+   edge of each section so the boundary is obvious. */
+.ln-leaderboard .ln-col-hs { background: rgba(61, 91, 166, .035); }
+.ln-leaderboard .ln-col-df { background: rgba(253, 197, 3, .055); }
+.ln-leaderboard .ln-col-wa { background: rgba(152, 197, 237, .09); }
+.ln-leaderboard thead th.ln-col-hs { background: rgba(61, 91, 166, .09); }
+.ln-leaderboard thead th.ln-col-df { background: rgba(253, 197, 3, .14); }
+.ln-leaderboard thead th.ln-col-wa { background: rgba(152, 197, 237, .20); }
+.ln-leaderboard tbody tr:hover .ln-col-hs { background: rgba(61, 91, 166, .07); }
+.ln-leaderboard tbody tr:hover .ln-col-df { background: rgba(253, 197, 3, .10); }
+.ln-leaderboard tbody tr:hover .ln-col-wa { background: rgba(152, 197, 237, .15); }
+.ln-leaderboard .ln-col-hs.ln-col-first { border-left: 2px solid var(--blue-800); }
+.ln-leaderboard .ln-col-df.ln-col-first { border-left: 2px solid var(--yellow); }
+.ln-leaderboard .ln-col-wa.ln-col-first { border-left: 2px solid var(--sky-deep); }
+
+/* Sticky sub-header row (group hdr already sticky via .tbl thead th).
+   Sub-headers sit ~38px below the group row so both stay visible while
+   scrolling vertically. */
+.ln-leaderboard thead .ln-subhdr th { position: sticky; top: 38px; z-index: 3; }
+
+/* Sticky Name column — anchor the leftmost cell so the roster stays
+   visible while the wide section table scrolls right. */
+.ln-leaderboard thead th.ln-col-name { left: 0; z-index: 4; }
+.ln-leaderboard tbody td.ln-col-name {
+  position: sticky; left: 0; background: var(--card); z-index: 1;
+}
+.ln-leaderboard tbody tr:hover td.ln-col-name { background: var(--card-2); }
+
 /* ─── LN Daily Recap (Overview) ────────────────────────────────────
    Secondary context strip above the headline KPI row. Quieter surface
    (--paper-2) + smaller serif so the eye treats it as yesterday's
