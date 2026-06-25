@@ -50,7 +50,7 @@
   const SCHEDULE = {
     start_hr: 8,   start_min: 0,
     end_hr: 17,    end_min: 0,
-    late_grace_min: 15,    // clocked in by 08:15 counts as on-time
+    late_grace_min: 9,     // clocked in before 08:10 counts as on-time
     early_grace_min: 15,   // clocked out after 16:45 counts as full day
   };
   // ---- SAST timezone helpers ----
