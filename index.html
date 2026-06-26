@@ -6,12 +6,28 @@
 <title>Quay 1 — Performance Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Permanent+Marker&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Montserrat:wght@400;500;600;700;800&family=Permanent+Marker&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="quay/styles.css">
 </head>
 <body>
 <div class="app" id="app">
-  <div style="padding:48px;font-family:Hanken Grotesk,Arial,sans-serif;color:#566275">Loading live data…</div>
+  <div class="boot-skeleton" aria-busy="true" aria-label="Loading dashboard">
+    <div class="boot-side"></div>
+    <div class="boot-main">
+      <div class="boot-topbar">
+        <div class="boot-title"></div>
+        <div class="boot-period"></div>
+      </div>
+      <div class="boot-kpis">
+        <div class="boot-kpi"></div><div class="boot-kpi"></div><div class="boot-kpi"></div><div class="boot-kpi"></div>
+      </div>
+      <div class="boot-row">
+        <div class="boot-chart"></div>
+        <div class="boot-side-card"></div>
+      </div>
+      <div class="boot-status">Loading live data…</div>
+    </div>
+  </div>
 </div>
 
 <script src="quay/config.js"></script>
