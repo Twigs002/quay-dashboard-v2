@@ -45,18 +45,20 @@
   --line:   #E0E7F1;
   --line-2: #EDF1F8;
 
-  --r-sm: 8px;
-  --r:    12px;
-  --r-lg: 18px;
+  --r-sm:    8px;
+  --r:       12px;
+  --r-kpi:   14px;   /* KPI cards — sit a step tighter than content cards */
+  --r-lg:    18px;   /* default content cards */
+  --r-modal: 20px;   /* dialogs sit one step above content */
 
   --shadow-sm: 0 1px 2px rgba(30,46,89,.06), 0 1px 1px rgba(30,46,89,.04);
   --shadow:    0 2px 6px rgba(30,46,89,.07), 0 8px 24px rgba(30,46,89,.07);
   --shadow-lg: 0 12px 40px rgba(30,46,89,.16);
 
-  --sans: 'Montserrat', system-ui, -apple-system, sans-serif;   /* Gotham substitute */
-  --serif:'Montserrat', system-ui, sans-serif;                  /* titles also Gotham */
+  --sans:  'Montserrat', system-ui, -apple-system, sans-serif;  /* body + UI chrome */
+  --serif: 'Fraunces', 'Source Serif Pro', Georgia, serif;      /* headlines + KPI display */
   --marker:'Permanent Marker', 'Montserrat', cursive;           /* brand accent */
-  --mono: 'Montserrat', ui-monospace, monospace;
+  --mono:  ui-monospace, 'SF Mono', Menlo, Consolas, monospace; /* tabular figures fallback */
 
   /* ---- compatibility aliases (old brass/navy names → brand) ---- */
   --navy-900: #1E2E59;
@@ -154,7 +156,12 @@ button { font-family: inherit; cursor: pointer; }
 .nav-item .ic { width: 18px; height: 18px; flex: none; opacity: .95; }
 .nav-item span { white-space: nowrap; }
 .nav-item:hover { background: rgba(255,255,255,.10); color: #fff; }
-.nav-item.active { background: rgba(255,255,255,.16); color: #fff; box-shadow: inset 3px 0 0 var(--yellow); }
+.nav-item.active {
+  background: transparent;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--yellow);
+}
 .nav-item.active .ic { color: var(--yellow); opacity: 1; }
 .sidebar-foot {
   padding: 16px 22px; border-top: 1px solid rgba(255,255,255,.14);
@@ -186,8 +193,8 @@ button { font-family: inherit; cursor: pointer; }
 .topbar-titles { flex: 1 1 auto; min-width: 0; }
 .topbar-titles h1 {
   font-family: var(--serif);
-  font-size: 21px; font-weight: 800; margin: 0; letter-spacing: .04em;
-  color: var(--ink); white-space: nowrap; text-transform: uppercase;
+  font-size: 23px; font-weight: 600; margin: 0; letter-spacing: -.01em;
+  color: var(--ink); white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis;
 }
 .topbar-right { flex: none; }
@@ -217,7 +224,10 @@ button { font-family: inherit; cursor: pointer; }
 .live-flags-badge.active {
   background: var(--red, #D20A03); color: #fff; border-color: var(--red, #D20A03);
   box-shadow: 0 0 0 0 rgba(210, 10, 3, 0.55);
-  animation: lfb-pulse 2.2s ease-out infinite;
+  /* Pulse 6 times to draw the eye, then settle — perpetual motion becomes
+     wallpaper and erodes urgency. JS bumps the count animation when the
+     flag count changes by toggling the class. */
+  animation: lfb-pulse 2.2s ease-out 6;
 }
 /* "clear" = 0 open flags. Mute slightly but keep readable. */
 .live-flags-badge.clear {
@@ -234,7 +244,7 @@ button { font-family: inherit; cursor: pointer; }
   width: 8px; height: 8px; border-radius: 999px; background: #fff;
   opacity: 0; pointer-events: none;
 }
-.live-flags-badge.active .lfb-pulse { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); animation: lfb-dot 1.2s ease-out infinite; }
+.live-flags-badge.active .lfb-pulse { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); animation: lfb-dot 1.2s ease-out 6; }
 @keyframes lfb-pulse {
   0%   { box-shadow: 0 0 0 0    rgba(210, 10, 3, 0.55); }
   70%  { box-shadow: 0 0 0 14px rgba(210, 10, 3, 0); }
@@ -260,7 +270,10 @@ button { font-family: inherit; cursor: pointer; }
   transition: all .15s; white-space: nowrap;
 }
 .period button:hover { color: var(--ink); }
-.period button.active { background: var(--navy-800); color: #fff; box-shadow: var(--shadow-sm); }
+.period button.active {
+  background: var(--ink); color: #fff;
+  box-shadow: var(--shadow-sm), inset 0 -2px 0 var(--yellow);
+}
 
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
@@ -313,6 +326,7 @@ button { font-family: inherit; cursor: pointer; }
 .kpi {
   position: relative; overflow: hidden;
   padding: 20px 22px;
+  border-radius: var(--r-kpi);
 }
 .kpi-top { display: flex; align-items: center; justify-content: space-between; }
 .kpi-ic {
@@ -322,13 +336,13 @@ button { font-family: inherit; cursor: pointer; }
 }
 .kpi-ic .ic { width: 19px; height: 19px; }
 .kpi-label {
-  font-size: 12.5px; color: var(--slate); font-weight: 600;
-  letter-spacing: .02em; margin-top: 16px;
+  font-size: 13.5px; color: var(--slate); font-weight: 600;
+  letter-spacing: .01em; margin-top: 20px;
 }
 .kpi-val {
-  font-family: var(--serif); font-weight: 700;
-  font-size: 36px; line-height: 1.05; color: var(--ink);
-  margin-top: 4px; letter-spacing: -.5px;
+  font-family: var(--serif); font-weight: 600;
+  font-size: 32px; line-height: 1.05; color: var(--ink);
+  margin-top: 6px; letter-spacing: -.01em;
 }
 .kpi-foot { margin-top: 8px; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
 .delta {
@@ -406,16 +420,17 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .tbl tbody tr:hover { background: var(--card-2); }
 .tbl tbody tr:last-child td { border-bottom: none; }
 
-/* Division Costs + By Division: tighter rows on the canonical pivot
-   so the 67-row table doesn't feel airy. Empty rows (no agents this
-   period) get an even tighter compact treatment + muted division text
-   so the eye reads them as "skip past me". */
+/* Compact density — apply to any table with >20 rows so it doesn't feel airy.
+   Empty rows get an even tighter treatment + muted text so the eye skips them. */
+.tbl--compact tbody td,
 .payroll-divcosts tbody td,
 .payroll-bydiv    tbody td { padding: 8px 14px; line-height: 1.4; }
+.tbl--compact tbody tr.empty-row td,
 .payroll-divcosts tbody tr.empty-row td,
 .payroll-bydiv    tbody tr.empty-row td {
   padding: 5px 14px; color: var(--muted); font-weight: 500;
 }
+.tbl--compact tbody tr.empty-row td b,
 .payroll-divcosts tbody tr.empty-row td b,
 .payroll-bydiv    tbody tr.empty-row td b {
   color: var(--muted); font-weight: 500;
@@ -424,7 +439,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .avatar {
   width: 32px; height: 32px; border-radius: 50%; flex: none;
   display: grid; place-items: center; font-size: 12px; font-weight: 700;
-  color: var(--navy-800); background: var(--brass-tint); border: 1px solid var(--brass-soft);
+  color: var(--ink); background: var(--paper-2); border: 1px solid var(--line);
 }
 .agent-name { font-weight: 600; color: var(--ink); white-space: nowrap; }
 .agent-sub { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
@@ -440,8 +455,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 /* Non-colour glyph so status is readable for colour-blind users (WCAG 1.4.1).
    Skips the team pills (.pill.rm / .pill.fancy) which are identity, not status. */
 .pill.ok::before  { content: '\2714\00a0'; font-weight: 800; }   /* ✔ */
-.pill.warn::before{ content: '\0021\00a0'; font-weight: 800; }   /* ! */
-.pill.bad::before { content: '\2715\00a0'; font-weight: 800; }   /* ✕ */
+.pill.warn::before{ content: '\26A0\00a0'; font-weight: 700; }   /* ⚠ */
+.pill.bad::before { content: '\2716\00a0'; font-weight: 800; }   /* ✖ */
 
 /* Focus-visible rings — keyboard users need to see where they are. */
 .nav-item:focus-visible,
@@ -502,22 +517,23 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   .btn           { min-height: 44px; }
 }
 
-/* "Still under construction" banner for in-progress tabs */
+/* "Still under construction" banner for in-progress tabs — quiet, advisory
+   strip; it shouldn't out-shout the data underneath it. */
 .construction-banner {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 16px; margin-bottom: 18px;
-  background: var(--amber-tint);
-  border: 1px solid var(--yellow-soft);
-  border-left: 4px solid var(--yellow);
-  border-radius: var(--r);
-  color: var(--ink);
-  font-size: 13px; line-height: 1.45;
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px; margin-bottom: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--yellow);
+  border-radius: var(--r-sm);
+  color: var(--slate);
+  font-size: 12.5px; line-height: 1.45;
 }
 .construction-banner .cb-ic {
-  width: 22px; height: 22px; flex: none; color: var(--yellow-deep);
+  width: 16px; height: 16px; flex: none; color: var(--yellow-deep);
 }
-.construction-banner b { color: var(--yellow-deep); font-weight: 700; }
-.construction-banner .cb-sub { color: var(--slate); font-size: 12px; }
+.construction-banner b { color: var(--ink); font-weight: 700; }
+.construction-banner .cb-sub { color: var(--muted); font-size: 11.5px; }
 
 /* mini bar inside table cell */
 .cell-bar { display: flex; align-items: center; gap: 9px; justify-content: flex-end; }
@@ -696,12 +712,16 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   .signed-who .signed-n { font-size: 13.5px; }
   .signed-who .signed-r { font-size: 12px; }
   .sidebar-foot {
-    padding: 0; border-top: 0; flex: 0 0 100%;
+    padding: 4px 6px 0; border-top: 0; flex: 0 0 100%;
     display: flex; align-items: center; justify-content: flex-start; gap: 10px;
     font-size: 12px;
+    color: rgba(255,255,255,.78);
   }
   .sidebar-foot .foot-text { font-size: 12px; }
   .sidebar-foot .foot-tag { display: none; }
+  /* Keep the live-dot visible on mobile — it's the one indicator that says
+     "data is fresh", and dropping it would erode trust on phones. */
+  .sidebar-foot .live-dot { display: inline-block; }
   /* nav-collapsed rail rules are irrelevant on mobile — the strip nav is gone */
   .nav-collapsed .brand-logo { display: block; }
   .nav-collapsed .brand-mini { display: none; }
@@ -908,7 +928,7 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
      visually clip the modal's title bar. ~80px = topbar height + a gap. */
   position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
   width: min(960px, 94vw); max-height: calc(100vh - 100px); overflow: auto;
-  background: var(--bg, #F7F9FC); border-radius: 16px;
+  background: var(--bg, #F7F9FC); border-radius: var(--r-modal);
   box-shadow: 0 24px 70px rgba(15, 30, 60, .25);
   z-index: 1001; animation: popInTop .18s ease-out;
 }
@@ -969,11 +989,13 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
 .dash-login .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .dash-login .key {
   height: 56px; border-radius: 16px;
-  background: rgba(255,255,255,0.12); color: #fff;
-  font-size: 22px; font-weight: 700; border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.18); color: #fff;
+  font-size: 22px; font-weight: 700; border: 1px solid rgba(255,255,255,0.08);
   font-family: 'Montserrat', sans-serif; cursor: pointer;
+  transition: background .12s ease, transform .08s ease;
 }
-.dash-login .key:hover { background: rgba(255,255,255,0.2); }
+.dash-login .key:hover { background: rgba(255,255,255,0.28); }
+.dash-login .key:active { transform: scale(.97); }
 .dash-login .key.alt {
   background: transparent; border-color: transparent;
   font-size: 13px; font-weight: 700;
@@ -1249,7 +1271,12 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
 @media (max-width: 600px) {
   .topbar { padding: 12px 14px; }
   .kpis { grid-template-columns: 1fr 1fr; gap: 8px; }
-  .modal { top: 60px; width: 95vw; max-height: calc(100vh - 80px); }
+  .modal {
+    /* env() keeps the modal title clear of the iOS Safari URL bar / notch. */
+    top: max(env(safe-area-inset-top, 0px), 60px);
+    width: 95vw;
+    max-height: calc(100vh - 80px);
+  }
 }
 
 
@@ -1544,4 +1571,100 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
   .ln-recap-cells { grid-template-columns: 1fr; gap: 12px; }
   .ln-recap-cell { padding-bottom: 12px; border-bottom: 1px dashed var(--line); }
   .ln-recap-cell:last-child { padding-bottom: 0; border-bottom: 0; }
+}
+
+/* ─── Boot skeleton — replaces the bare "Loading live data…" first paint
+   with the actual card chrome so the dashboard reads as already-loaded
+   while data.js fetches Supabase + JSON. Removed once .app gets real
+   markup; the .boot-skeleton wrapper is rebuilt by app.js render(). */
+/* Neutralise the .app 256/1fr grid while only the skeleton is mounted —
+   otherwise the skeleton would be squeezed into the sidebar column. */
+.app:has(> .boot-skeleton) { display: block; }
+.boot-skeleton {
+  display: grid;
+  grid-template-columns: 256px 1fr;
+  min-height: 100vh;
+}
+.boot-side {
+  background: var(--blue-800, #3D5BA6);
+  border-right: 1px solid rgba(255,255,255,.10);
+}
+.boot-main { padding: 28px 36px; max-width: 1480px; }
+.boot-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 28px;
+}
+.boot-title {
+  width: 280px; height: 26px; border-radius: 8px;
+  background: var(--paper-2);
+}
+.boot-period {
+  width: 260px; height: 36px; border-radius: 999px;
+  background: var(--card); border: 1px solid var(--line);
+}
+.boot-kpis {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+  margin-bottom: 20px;
+}
+.boot-kpi {
+  height: 132px; border-radius: var(--r-kpi);
+  background: var(--card); border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+}
+.boot-row {
+  display: grid; grid-template-columns: 2fr 1fr; gap: 20px;
+  margin-bottom: 20px;
+}
+.boot-chart, .boot-side-card {
+  height: 320px; border-radius: var(--r-lg);
+  background: var(--card); border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+}
+.boot-status {
+  font-size: 12px; color: var(--muted);
+  text-align: center; padding: 12px;
+  letter-spacing: .02em;
+}
+/* Shimmer — runs across every placeholder simultaneously. Pure CSS,
+   no JS, so it animates even before data.js finishes loading. */
+.boot-title,
+.boot-period,
+.boot-kpi,
+.boot-chart,
+.boot-side-card {
+  position: relative; overflow: hidden;
+}
+.boot-title::after,
+.boot-period::after,
+.boot-kpi::after,
+.boot-chart::after,
+.boot-side-card::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,.55) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: boot-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes boot-shimmer {
+  to { transform: translateX(100%); }
+}
+@media (max-width: 1180px) {
+  .boot-kpis { grid-template-columns: repeat(2, 1fr); }
+  .boot-row  { grid-template-columns: 1fr; }
+}
+@media (max-width: 860px) {
+  .boot-skeleton { grid-template-columns: 1fr; }
+  .boot-side { display: none; }
+  .boot-main { padding: 16px; }
+  .boot-topbar { flex-direction: column; align-items: stretch; gap: 12px; }
+  .boot-title, .boot-period { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .boot-title::after, .boot-period::after, .boot-kpi::after,
+  .boot-chart::after, .boot-side-card::after { animation: none; }
 }
