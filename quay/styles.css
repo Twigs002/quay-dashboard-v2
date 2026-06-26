@@ -55,10 +55,10 @@
   --shadow:    0 2px 6px rgba(30,46,89,.07), 0 8px 24px rgba(30,46,89,.07);
   --shadow-lg: 0 12px 40px rgba(30,46,89,.16);
 
-  --sans:  'Montserrat', system-ui, -apple-system, sans-serif;  /* body + UI chrome */
-  --serif: 'Fraunces', 'Source Serif Pro', Georgia, serif;      /* headlines + KPI display */
+  --sans: 'Montserrat', system-ui, -apple-system, sans-serif;   /* Gotham substitute */
+  --serif:'Montserrat', system-ui, sans-serif;                  /* titles also Gotham */
   --marker:'Permanent Marker', 'Montserrat', cursive;           /* brand accent */
-  --mono:  ui-monospace, 'SF Mono', Menlo, Consolas, monospace; /* tabular figures fallback */
+  --mono: 'Montserrat', ui-monospace, monospace;
 
   /* ---- compatibility aliases (old brass/navy names → brand) ---- */
   --navy-900: #1E2E59;
@@ -270,10 +270,7 @@ button { font-family: inherit; cursor: pointer; }
   transition: all .15s; white-space: nowrap;
 }
 .period button:hover { color: var(--ink); }
-.period button.active {
-  background: var(--ink); color: #fff;
-  box-shadow: var(--shadow-sm), inset 0 -2px 0 var(--yellow);
-}
+.period button.active { background: var(--navy-800); color: #fff; box-shadow: var(--shadow-sm); }
 
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
