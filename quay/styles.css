@@ -29,7 +29,7 @@
   /* text */
   --ink:    #1A2746;
   --slate:  #4A566D;
-  --muted:  #8893A8;
+  --muted:  #6B7891;   /* WCAG AA on white: 4.61:1 (was #8893A8 at 3.39:1) */
   --on-navy:#E8EDF7;
   --on-navy-dim:#A7B5D2;
 

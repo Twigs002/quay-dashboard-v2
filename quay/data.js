@@ -329,6 +329,14 @@ window.QUAY_READY = (async function () {
     const t = _periodTotals([w]);
     return +t.avgSuccess.toFixed(1);
   });
+  // Per-metric sparkline series so the KPI cards each show their own
+  // history. Previously every KPI re-used WEEK_CALLS with a fake
+  // ascending tilt — the sparklines were decoration, not data.
+  const WEEK_LEADS = trendWeeks.map(w => {
+    const list = agentsForWeek(w);
+    return list.reduce((s, a) => s + (a.leads || 0), 0);
+  });
+  const WEEK_ACTIVE = trendWeeks.map(w => agentsForWeek(w).length);
 
   // Period-aware trend window. The Operational Overview lets the user
   // switch between this-week, last-week, this-month, last-90, all-time —
@@ -688,9 +696,7 @@ window.QUAY_READY = (async function () {
     if (periodKey === 'this-week') {
       // The 'this-week' bucket in weekly_data is whichever week the Dialfire
       // fetcher last wrote. On Mondays the fetcher returns last week's full
-      // Mon-Sun (intentional; otherwise Monday morning shows ~0 calls). In
-      // that case the projection should NOT divide by today's day-of-week —
-      // the data is already a complete week, so we treat elapsed = total.
+      // Mon-Sun until the morning cron runs.
       const sowIso = (() => {
         const d = new Date();
         const day = (d.getDay() + 6) % 7; // 0=Mon..6=Sun
@@ -699,17 +705,23 @@ window.QUAY_READY = (async function () {
       })();
       const dataWeekStart = (weeks[0] && weeks[0].weekStart) || null;
       if (dataWeekStart && dataWeekStart !== sowIso) {
-        return { elapsed: 5, total: 5, fraction: 1 };
+        // Data is for a previous week. Flag as `stale` so the dashboard
+        // hides pace bars + "projected" text — the COO opening on
+        // Monday morning would otherwise see *last* week's numbers
+        // framed as "this week, complete (100%)". The label says it
+        // out loud now.
+        return { elapsed: 5, total: 5, fraction: 1, stale: true,
+                 staleReason: 'Data is for week of ' + dataWeekStart + '; this week not yet ingested' };
       }
       const dow = now.getDay(); // 0=Sun, 1=Mon..6=Sat
       const workedDays = (dow === 0 || dow === 6) ? 5 : Math.min(5, dow);
-      return { elapsed: workedDays, total: 5, fraction: workedDays / 5 };
+      return { elapsed: workedDays, total: 5, fraction: workedDays / 5, stale: false };
     }
     if (periodKey === 'this-month') {
       const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-      return { elapsed: now.getDate(), total: lastDay, fraction: now.getDate() / lastDay };
+      return { elapsed: now.getDate(), total: lastDay, fraction: now.getDate() / lastDay, stale: false };
     }
-    return { elapsed: 1, total: 1, fraction: 1 };
+    return { elapsed: 1, total: 1, fraction: 1, stale: false };
   }
 
   // Projected end-of-period value given current actuals.
@@ -809,7 +821,7 @@ window.QUAY_READY = (async function () {
 
   window.QUAY = {
     AGENTS: agentsForWeek(weeks[0]),  // current week, sorted natural
-    WEEKS, WEEK_CALLS, WEEK_SUCCESS, trendSeriesFor,
+    WEEKS, WEEK_CALLS, WEEK_SUCCESS, WEEK_LEADS, WEEK_ACTIVE, trendSeriesFor,
     SOURCES, sourcesFor, campaignsFor,
     monthlyBreakdown, weeksBreakdown,
     dailyDates, dailyFor, latestDailyDate,
