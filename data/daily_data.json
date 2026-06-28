@@ -1,21 +1,21 @@
 [
   {
     "date": "2026-06-28",
-    "generated": "2026-06-28T08:15:36.400392+00:00",
+    "generated": "2026-06-28T18:09:32.506881+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-06-27",
-    "generated": "2026-06-28T08:15:36.400392+00:00",
+    "generated": "2026-06-28T18:09:32.506881+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-06-26",
-    "generated": "2026-06-28T08:15:36.400392+00:00",
+    "generated": "2026-06-28T18:09:32.506881+00:00",
     "rm": [
       {
         "name": "Test",
@@ -314,28 +314,27 @@
       },
       {
         "name": "AnneeqaWilliams",
-        "calls": 38,
-        "success": 11,
+        "calls": 33,
+        "success": 10,
         "seller": 2,
         "rental": 0,
-        "email": 9,
-        "cph": 33.5,
-        "successRate": 28.9,
-        "workTime": 1.1353,
-        "talkTime": 0.5216,
-        "wrapTime": 0.1986,
-        "pauseTime": 0.0228,
-        "waitTime": 0.3922,
+        "email": 8,
+        "cph": 32.3,
+        "successRate": 30.3,
+        "workTime": 1.0222,
+        "talkTime": 0.4744,
+        "wrapTime": 0.1967,
+        "pauseTime": 0.0178,
+        "waitTime": 0.3333,
         "is_rm": false,
         "meetsTarget": false,
         "campaigns": [
-          "DRAGONS",
-          "GUNSLINGERS"
+          "DRAGONS"
         ],
-        "talkPct": 45.9,
-        "wrapPct": 17.5,
-        "waitPct": 34.5,
-        "workPct": 98.0
+        "talkPct": 46.4,
+        "wrapPct": 19.2,
+        "waitPct": 32.6,
+        "workPct": 98.3
       },
       {
         "name": "KayleighDucroq",
@@ -416,15 +415,6 @@
           "email": 8,
           "workTime": 1.0222,
           "talkTime": 0.4744
-        },
-        "GUNSLINGERS_CM": {
-          "calls": 5,
-          "success": 1,
-          "seller": 0,
-          "rental": 0,
-          "email": 1,
-          "workTime": 0.1131,
-          "talkTime": 0.0472
         }
       },
       "BronwynBotha": {
@@ -619,7 +609,7 @@
   },
   {
     "date": "2026-06-25",
-    "generated": "2026-06-28T08:15:36.400392+00:00",
+    "generated": "2026-06-28T18:09:32.506881+00:00",
     "rm": [
       {
         "name": "Test",
@@ -1317,7 +1307,7 @@
   },
   {
     "date": "2026-06-24",
-    "generated": "2026-06-28T08:15:36.400392+00:00",
+    "generated": "2026-06-28T18:09:32.506881+00:00",
     "rm": [
       {
         "name": "Test",
@@ -2146,7 +2136,7 @@
   },
   {
     "date": "2026-06-23",
-    "generated": "2026-06-28T08:15:36.400392+00:00",
+    "generated": "2026-06-28T18:09:32.506881+00:00",
     "rm": [
       {
         "name": "Test",
@@ -2862,7 +2852,7 @@
   },
   {
     "date": "2026-06-22",
-    "generated": "2026-06-28T08:15:36.400392+00:00",
+    "generated": "2026-06-28T18:09:32.506881+00:00",
     "rm": [
       {
         "name": "Test",
@@ -3454,7 +3444,7 @@
   },
   {
     "date": "2026-06-21",
-    "generated": "2026-06-28T08:15:36.400392+00:00",
+    "generated": "2026-06-28T18:09:32.506881+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
