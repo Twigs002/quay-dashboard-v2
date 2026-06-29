@@ -4109,22 +4109,38 @@
     const endStr   = (document.getElementById('absEnd')   || {}).value || f.endDate;
     const me = session && session.id ? session.id : null;
     if (!me) { f.error = 'No active session — cannot stamp marked_by.'; shell(); return; }
-    const start = new Date(startStr + 'T00:00:00');
-    const end   = new Date(endStr   + 'T00:00:00');
-    if (isNaN(start) || isNaN(end)) { f.error = 'Pick valid Start and End dates.'; shell(); return; }
-    if (end < start) { f.error = 'End date must be on or after Start date.'; shell(); return; }
+    // Parse the picked YYYY-MM-DD as a pure date — no time component, no
+    // timezone conversion. Building rows via `new Date(s + 'T00:00:00')`
+    // anchored each day to *local SAST midnight*, then
+    // `d.toISOString().slice(0,10)` re-rendered it as the UTC date —
+    // silently shifting every absence back by one day (the SAST 29th
+    // landed in the DB as 2026-06-28). Now we increment a [y,m,d] tuple
+    // directly so the string the user picked is the string we write.
+    const splitYmd = (s) => s.split('-').map(Number);
+    const [sy, sm, sd] = splitYmd(startStr);
+    const [ey, em, ed] = splitYmd(endStr);
+    if (!sy || !sm || !sd || !ey || !em || !ed) {
+      f.error = 'Pick valid Start and End dates.'; shell(); return;
+    }
+    // Build comparable Date objects in UTC just for the < check, since
+    // we never use them to format the row dates.
+    const startUtc = Date.UTC(sy, sm - 1, sd);
+    const endUtc   = Date.UTC(ey, em - 1, ed);
+    if (endUtc < startUtc) { f.error = 'End date must be on or after Start date.'; shell(); return; }
     if (_dayCount(startStr, endStr) > 60) {
       f.error = 'Range is over 60 days — split into shorter spans if intentional.';
       shell(); return;
     }
-    // One row per day in [start, end]. Upsert so re-saving with a new
-    // reason cleanly overwrites an existing same-day row instead of
-    // throwing the 23505 unique violation.
+    const _pad = (n) => String(n).padStart(2, '0');
     const rows = [];
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    // Walk the [y,m,d] tuple day-by-day. Constructing a Date in UTC and
+    // bumping its UTCDate keeps month-boundary rollovers correct without
+    // tripping over local timezone offsets.
+    for (let t = startUtc; t <= endUtc; t += 24 * 3600 * 1000) {
+      const d = new Date(t);
       rows.push({
         staff_id: staffId,
-        date:     d.toISOString().slice(0, 10),
+        date:     `${d.getUTCFullYear()}-${_pad(d.getUTCMonth()+1)}-${_pad(d.getUTCDate())}`,
         reason,
         reason_note: note || null,
         marked_by:   me,
