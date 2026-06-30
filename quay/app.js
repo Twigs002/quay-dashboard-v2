@@ -1,6 +1,9 @@
 /* Quay 1 — app shell, Overview, navigation + period state */
 
 (function () {
+  // Page-load timestamp — fallback for the live-sync label when data.js
+  // doesn't expose a snapshot time.
+  if (!window.QUAY_LOADED_AT) window.QUAY_LOADED_AT = Date.now();
   const Q = window.QUAY, I = window.ICON, C = window.CHART, V = window.VIEWS;
   const CFG = window.QUAY_CONFIG || {};
   // Shared green/amber/red helpers (single source of truth — see views.js).
@@ -217,6 +220,24 @@
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
       .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
+  // Single shared util — was duplicated in app.js, views.js, payroll.js.
+  // Re-exposed on window so the other modules can drop their copies.
+  window.QUAY_ESC = escapeHtml;
+  // Relative-time label for the sidebar live-sync indicator. Pulls the
+  // freshest signal we've got — Q.snapshot timestamp if data.js exposed
+  // one, otherwise the page load time. Previously hard-coded "4 min ago".
+  function liveSyncedLabel() {
+    const Q = window.QUAY;
+    const ts = (Q && (Q.dataAsOf || Q.snapshot || Q.generated))
+      || (window.QUAY_LOADED_AT || Date.now());
+    const mins = Math.max(0, Math.round((Date.now() - Number(ts)) / 60000));
+    let rel;
+    if (mins < 1)      rel = 'just now';
+    else if (mins < 60) rel = mins + ' min ago';
+    else if (mins < 24 * 60) rel = Math.round(mins / 60) + 'h ago';
+    else                rel = Math.round(mins / (24 * 60)) + 'd ago';
+    return 'Live · synced ' + rel;
+  }
   // Stable slug for use in red-flag keys, route data attrs, etc.
   // Lowercase + ascii word chars only so the result is safe in URLs + selectors.
   function slug(s) {
@@ -309,7 +330,7 @@
             </div>
             <button class="signed-out" id="signOut" title="Sign out">${I.arrow}</button>
           </div>
-          <span class="live-dot"></span><span class="foot-text">Live · synced 4 min ago</span>
+          <span class="live-dot"></span><span class="foot-text">${liveSyncedLabel()}</span>
           <div class="foot-tag">Navigating Success</div>
         </div>
       </aside>
@@ -326,9 +347,9 @@
               <span class="lfb-count" id="lfbCount">0</span>
               <span class="lfb-label">red flag<span id="lfbS"></span></span>
             </button>
-            <div class="period" id="period">
+            <div class="period" id="period" role="tablist" aria-label="Time period">
               ${Object.entries(Q.PERIODS).map(([k, p]) =>
-                `<button data-period="${k}" class="${k === period ? 'active' : ''}">${p.label}</button>`).join('')}
+                `<button data-period="${k}" class="${k === period ? 'active' : ''}" role="tab" aria-selected="${k === period ? 'true' : 'false'}">${p.label}</button>`).join('')}
             </div>
             <button class="btn" id="btnPrint" title="Print / save as PDF">${I.print} Print</button>
             <button class="btn btn-primary" id="btnExport" title="Download current tab as CSV">${I.download} Export CSV</button>
@@ -1051,7 +1072,13 @@
     root.querySelectorAll('th[data-sort]').forEach(th => {
       th.style.cursor = 'pointer';
       th.title = 'Click to sort';
-      th.addEventListener('click', () => {
+      // AT cues: button semantics + sort state + keyboard activation.
+      // Without these, assistive tech announces the header as a static
+      // table cell with no hint that it's interactive.
+      th.setAttribute('role', 'button');
+      th.setAttribute('tabindex', '0');
+      if (!th.hasAttribute('aria-sort')) th.setAttribute('aria-sort', 'none');
+      const doSort = () => {
         const [key, type] = th.dataset.sort.split('|');
         const dir = th.dataset.dir === 'asc' ? 'desc' : 'asc';
         const tbody = root.querySelector('tbody');
@@ -1073,11 +1100,19 @@
           }
         });
         rows.forEach(r => tbody.appendChild(r));
-        root.querySelectorAll('th[data-sort]').forEach(x => x.dataset.dir = '');
+        root.querySelectorAll('th[data-sort]').forEach(x => {
+          x.dataset.dir = '';
+          x.setAttribute('aria-sort', 'none');
+        });
         root.querySelectorAll('th[data-sort] .sort-ind').forEach(s => s.textContent = '');
         th.dataset.dir = dir;
+        th.setAttribute('aria-sort', dir === 'asc' ? 'ascending' : 'descending');
         const ind = th.querySelector('.sort-ind');
         if (ind) ind.textContent = dir === 'asc' ? ' ▲' : ' ▼';
+      };
+      th.addEventListener('click', doSort);
+      th.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); doSort(); }
       });
     });
   }
@@ -1122,12 +1157,12 @@
 
     const html = `
       <div class="modal-backdrop" id="agentModalBackdrop"></div>
-      <div class="modal" id="agentModal">
+      <div class="modal" id="agentModal" role="dialog" aria-modal="true" aria-labelledby="agentModalTitle">
         <div class="modal-head">
           <div style="display:flex;align-items:center;gap:14px">
             <div class="avatar" style="width:46px;height:46px;font-size:15px">${initials(a.name)}</div>
             <div>
-              <div style="font-family:var(--serif);font-size:22px;font-weight:700;color:var(--ink)">${a.name}</div>
+              <div id="agentModalTitle" style="font-family:var(--serif);font-size:22px;font-weight:700;color:var(--ink)">${a.name}</div>
               <div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap">
                 <span class="pill ${a.team === 'RM' ? 'rm' : 'fancy'}" style="font-size:10.5px">${a.team}</span>
                 <span class="pill ${sc}" style="font-size:10.5px">${a.success}% success</span>
@@ -1309,7 +1344,7 @@
     const anyFallback = rows.some(r => r.source === 'fallback');
     const html = `
       <div class="modal-backdrop" id="campaignModalBackdrop"></div>
-      <div class="modal" id="campaignModal">
+      <div class="modal" id="campaignModal" role="dialog" aria-modal="true" aria-label="Campaign details">
         <div class="modal-head">
           <div style="display:flex;align-items:center;gap:6px">
             <div>
@@ -1799,17 +1834,37 @@
     const bestSrc = src[0];
     const risk = agents.slice().sort((a, b) => a.success - b.success)[0];
 
-    const kpi = (icon, label, val, deltaVal, foot) => {
+    // Delta units explicit — was inferring from the label string, which
+    // misclassified "Active Callers" (a raw head count) as a percent.
+    // `kind`: 'pct' (rate/share → "pts"), 'count' (head count → bare number),
+    // 'pct-of-base' (count change shown as % vs prior, default for rates).
+    const kpi = (icon, label, val, deltaVal, foot, kind, sparkSeries) => {
       const cls = deltaVal > 0 ? 'up' : deltaVal < 0 ? 'down' : 'flat';
       const ic = deltaVal > 0 ? I.up : deltaVal < 0 ? I.down : '';
-      const dtxt = deltaVal === 0 ? 'no change' : Math.abs(deltaVal) + (label.includes('Rate') ? ' pts' : '%');
+      let dtxt;
+      if (deltaVal === 0 || deltaVal == null) {
+        dtxt = 'no change';
+      } else if (kind === 'pct') {
+        dtxt = Math.abs(deltaVal) + ' pts';
+      } else if (kind === 'count') {
+        dtxt = (deltaVal > 0 ? '+' : '−') + Math.abs(deltaVal);
+      } else {
+        dtxt = Math.abs(deltaVal) + '%';
+      }
+      // Sparkline: take the actual metric's recent history when the
+      // caller provides it. Falls back to nothing (no sparkline) instead
+      // of the previous fake-tilted call-volume series that every KPI
+      // was showing regardless of its own metric.
+      const spark = (sparkSeries && sparkSeries.length >= 2)
+        ? `<div class="spark">${C.spark(sparkSeries.slice(-8))}</div>`
+        : '';
       return `<div class="card kpi">
         <div class="kpi-top"><div class="kpi-ic">${icon}</div>
           <span class="delta ${cls}">${ic}${dtxt}</span></div>
         <div class="kpi-label">${label}</div>
         <div class="kpi-val tnum">${val}</div>
         <div class="kpi-foot">${foot}</div>
-        <div class="spark">${C.spark(Q.WEEK_CALLS.slice(-8).map((v,i)=>v*(1+i*0.002)))}</div>
+        ${spark}
       </div>`;
     };
 
@@ -1839,10 +1894,10 @@
     <div class="tab-view">
       <!-- KPIs -->
       <div class="row kpis">
-        ${kpi(I.phone, 'Total Calls', fmt(t.calls), d.calls, 'vs previous ' + Q.PERIODS[period].label.toLowerCase())}
-        ${kpi(I.trophy, 'Avg Success Rate', t.avgSuccess + '%', d.success, 'successes ÷ calls')}
-        ${kpi(I.target, 'Total Leads', fmt(t.leads), d.leads, 'seller · rental · email')}
-        ${kpi(I.users, 'Active Callers', t.active + '', d.active, 'RM + Fancy desks combined')}
+        ${kpi(I.phone,  'Total Calls',       fmt(t.calls),    d.calls,   'vs previous ' + Q.PERIODS[period].label.toLowerCase(), 'pct-of-base', Q.WEEK_CALLS)}
+        ${kpi(I.trophy, 'Avg Success Rate',  t.avgSuccess + '%', d.success, 'successes ÷ calls', 'pct', Q.WEEK_SUCCESS)}
+        ${kpi(I.target, 'Total Leads',       fmt(t.leads),    d.leads,   'seller · rental · email', 'pct-of-base', Q.WEEK_LEADS)}
+        ${kpi(I.users,  'Active Callers',    t.active + '',   d.active,  'RM + Fancy desks combined', 'count', Q.WEEK_ACTIVE)}
       </div>
 
       <!-- trend + sources -->
@@ -2079,11 +2134,19 @@
 
     const top5 = agents.slice().sort((a, b) => (b.success * b.calls) - (a.success * a.calls)).slice(0, 5);
 
-    const kpi = (icon, label, val, delta, foot) => {
+    const kpi = (icon, label, val, delta, foot, kind, sparkSeries) => {
       const cls = delta == null ? 'flat' : delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
       const ic = delta == null ? '' : delta > 0 ? I.up : delta < 0 ? I.down : '';
-      const dtxt = delta == null ? '' : (delta === 0 ? 'no change' :
-        Math.abs(delta) + (label.includes('Rate') ? ' pts' : '%'));
+      let dtxt = '';
+      if (delta != null) {
+        if (delta === 0) dtxt = 'no change';
+        else if (kind === 'pct')   dtxt = Math.abs(delta) + ' pts';
+        else if (kind === 'count') dtxt = (delta > 0 ? '+' : '−') + Math.abs(delta);
+        else                       dtxt = Math.abs(delta) + '%';
+      }
+      const spark = (sparkSeries && sparkSeries.length >= 2)
+        ? `<div class="spark">${C.spark(sparkSeries.slice(-8))}</div>`
+        : '';
       return `<div class="card kpi">
         <div class="kpi-top"><div class="kpi-ic">${icon}</div>
           ${delta != null ? `<span class="delta ${cls}">${ic}${dtxt}</span>` : ''}
@@ -2091,7 +2154,7 @@
         <div class="kpi-label">${label}</div>
         <div class="kpi-val tnum">${val}</div>
         <div class="kpi-foot">${foot}</div>
-        <div class="spark">${C.spark(Q.WEEK_CALLS.slice(-8).map((v,i)=>v*(1+i*0.002)))}</div>
+        ${spark}
       </div>`;
     };
 
@@ -2132,9 +2195,26 @@
     const flagsCard = flagsCardHtml(flags, { sub: 'Auto-detected from this period' });
 
     const elapsed = Q.periodElapsed(period);
-    const showPace = elapsed.fraction > 0 && elapsed.fraction < 1;
+    // Stale = the underlying data isn't for this period yet (e.g. Monday
+    // morning before the daily cron has imported this week's snapshot).
+    // Hide pace bars in that case — projecting from last week's numbers
+    // framed as "this week" misleads the COO into thinking targets are
+    // already hit / missed.
+    const showPace = elapsed.fraction > 0 && elapsed.fraction < 1 && !elapsed.stale;
     const tgtBar = (label, cur, tgt) => {
       if (!tgt) return '';
+      if (elapsed.stale) {
+        return `<div style="margin-top:14px">
+          <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px">
+            <span style="color:var(--ink);font-weight:600">${label}</span>
+            <span class="tnum" style="color:var(--muted)">target ${fmt(tgt)}</span>
+          </div>
+          <div class="eff-track" style="position:relative;opacity:.4">
+            <span style="width:0%;background:var(--muted)"></span>
+          </div>
+          <div style="font-size:11.5px;margin-top:5px;color:var(--muted);font-style:italic">Waiting for today's data import</div>
+        </div>`;
+      }
       const pct = progress(cur, tgt);
       const projected = Q.project(period, cur);
       const projPct = progress(projected, tgt);
@@ -2155,22 +2235,26 @@
         </div>` : ''}
       </div>`;
     };
+    // Stale-data banner on this tab so the user knows what they're looking at.
+    const staleBanner = elapsed.stale ? `
+      <div class="construction-banner" role="status" aria-live="polite" style="background:var(--amber-tint);border-left-color:var(--amber)">
+        <svg class="cb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <div>
+          <b>Waiting for this week's data</b> — the daily import hasn't run yet.
+          You're currently seeing the most recent complete week (${escapeHtml(elapsed.staleReason || '')}).
+          <div class="cb-sub">Pace bars and projections are hidden until the import lands.</div>
+        </div>
+      </div>` : '';
 
     return `
     <div class="tab-view">
-      <div class="construction-banner" role="note">
-        <svg class="cb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
-        <div>
-          <b>Still under construction</b> — this view is a work in progress.
-          <div class="cb-sub">Numbers, layout, and metrics may change while we finalise the leadership snapshot.</div>
-        </div>
-      </div>
+      ${staleBanner}
       <!-- Hero KPIs -->
       <div class="row kpis">
-        ${kpi(I.phone,   'Total Calls',    fmt(t.calls), d.calls,   'vs previous ' + Q.PERIODS[period].label.toLowerCase())}
-        ${kpi(I.trophy,  'Success Rate',       t.avgSuccess + '%', d.success, 'successes ÷ calls')}
-        ${kpi(I.bolt,    'Team Efficiency',    eff + '%', null, 'dialler ÷ clocked-in time')}
-        ${kpi(I.medal,   'Estimated revenue',  'R ' + fmt(Math.round(revenue)), null,
+        ${kpi(I.phone,  'Total Calls',       fmt(t.calls),        d.calls,   'vs previous ' + Q.PERIODS[period].label.toLowerCase(), 'pct-of-base', Q.WEEK_CALLS)}
+        ${kpi(I.trophy, 'Success Rate',      t.avgSuccess + '%',  d.success, 'successes ÷ calls', 'pct', Q.WEEK_SUCCESS)}
+        ${kpi(I.bolt,   'Team Efficiency',   eff + '%',           null,      'dialler ÷ clocked-in time')}
+        ${kpi(I.medal,  'Estimated revenue', 'R ' + fmt(Math.round(revenue)), null,
               fmt(sellerLeads) + ' seller · ' + fmt(rentalLeads) + ' rental — see model below')}
       </div>
 
@@ -2256,8 +2340,12 @@
   function historicalComparison(t) {
     const avgCalls4   = Q.trailingAvg('calls',   4);
     const avgCalls12  = Q.trailingAvg('calls',  12);
-    const avgLeads4   = Q.trailingAvg('success', 4);
-    const avgLeads12  = Q.trailingAvg('success', 12);
+    // Comparing seller-leads (t.leads) against the trailing average of
+    // the same field — was using 'success' (any positive outcome — seller
+    // + rental + email + others), which understated the trend when most
+    // successes were non-seller leads.
+    const avgLeads4   = Q.trailingAvg('leads', 4);
+    const avgLeads12  = Q.trailingAvg('leads', 12);
 
     if (!avgCalls4 && !avgCalls12) return '';
 
@@ -3714,22 +3802,28 @@
         forgotByStaff.set(e.staff_id, (forgotByStaff.get(e.staff_id) || 0) + 1);
         if (new Date(e.ts) >= weekStart) _forgotThisWeek.push(e);
       });
-      // One small query per staff to grab their last two events — same
-      // pattern the clock admin uses. Cheap for an office-sized roster.
-      const decorated = await Promise.all((staff || []).map(async (s) => {
-        const { data: ev } = await window.sb
-          .from('events').select('ts, dir')
-          .eq('staff_id', s.id)
-          .order('ts', { ascending: false })
-          .limit(2);
-        let status = 'out', lastIn = '', lastOut = '';
-        (ev || []).forEach(e => {
-          if (e.dir === 'in'  && !lastIn)  lastIn  = e.ts;
-          if (e.dir === 'out' && !lastOut) lastOut = e.ts;
-        });
-        if (lastIn && (!lastOut || lastIn > lastOut)) status = 'in';
+      // Single grouped query for the last 48h of events across the whole
+      // roster, then derive each staffer's status client-side. Replaces
+      // the previous N+1 pattern (one query per staff row) — ~50 round
+      // trips collapse to 1. 48h is enough to catch any "still clocked
+      // in from yesterday" case without pulling weeks of history.
+      const since48 = new Date(Date.now() - 48 * 3600e3).toISOString();
+      const { data: recentEvents } = await window.sb
+        .from('events').select('staff_id, ts, dir')
+        .gte('ts', since48)
+        .order('ts', { ascending: false });
+      const lastInByStaff  = new Map();
+      const lastOutByStaff = new Map();
+      (recentEvents || []).forEach(e => {
+        if (e.dir === 'in'  && !lastInByStaff.has(e.staff_id))  lastInByStaff.set(e.staff_id, e.ts);
+        if (e.dir === 'out' && !lastOutByStaff.has(e.staff_id)) lastOutByStaff.set(e.staff_id, e.ts);
+      });
+      const decorated = (staff || []).map((s) => {
+        const lastIn  = lastInByStaff.get(s.id)  || '';
+        const lastOut = lastOutByStaff.get(s.id) || '';
+        const status = (lastIn && (!lastOut || lastIn > lastOut)) ? 'in' : 'out';
         return { ...s, status, lastIn, lastOut, forgotCount30d: forgotByStaff.get(s.id) || 0 };
-      }));
+      });
       decorated.sort((a, b) => {
         if (a.status !== b.status) return a.status === 'in' ? -1 : 1;
         return a.name.localeCompare(b.name);
@@ -3974,7 +4068,7 @@
     const cta = busy ? 'Saving…' : (days === 1 ? 'Confirm absent' : `Confirm absent · ${days} days`);
     const title = f.mode === 'edit' ? 'Edit absence' : 'Mark absent';
     return `<div class="modal-back" id="absenceModalBack"></div>
-      <div class="modal" role="dialog" style="width:min(440px, calc(100vw - 32px))">
+      <div class="modal" role="dialog" aria-modal="true" style="width:min(440px, calc(100vw - 32px))">
         <div class="modal-head">
           <h3 style="margin:0">${title} · ${escapeHtml(f.name)}</h3>
           <button class="modal-close" id="absenceModalClose">×</button>
@@ -4015,22 +4109,38 @@
     const endStr   = (document.getElementById('absEnd')   || {}).value || f.endDate;
     const me = session && session.id ? session.id : null;
     if (!me) { f.error = 'No active session — cannot stamp marked_by.'; shell(); return; }
-    const start = new Date(startStr + 'T00:00:00');
-    const end   = new Date(endStr   + 'T00:00:00');
-    if (isNaN(start) || isNaN(end)) { f.error = 'Pick valid Start and End dates.'; shell(); return; }
-    if (end < start) { f.error = 'End date must be on or after Start date.'; shell(); return; }
+    // Parse the picked YYYY-MM-DD as a pure date — no time component, no
+    // timezone conversion. Building rows via `new Date(s + 'T00:00:00')`
+    // anchored each day to *local SAST midnight*, then
+    // `d.toISOString().slice(0,10)` re-rendered it as the UTC date —
+    // silently shifting every absence back by one day (the SAST 29th
+    // landed in the DB as 2026-06-28). Now we increment a [y,m,d] tuple
+    // directly so the string the user picked is the string we write.
+    const splitYmd = (s) => s.split('-').map(Number);
+    const [sy, sm, sd] = splitYmd(startStr);
+    const [ey, em, ed] = splitYmd(endStr);
+    if (!sy || !sm || !sd || !ey || !em || !ed) {
+      f.error = 'Pick valid Start and End dates.'; shell(); return;
+    }
+    // Build comparable Date objects in UTC just for the < check, since
+    // we never use them to format the row dates.
+    const startUtc = Date.UTC(sy, sm - 1, sd);
+    const endUtc   = Date.UTC(ey, em - 1, ed);
+    if (endUtc < startUtc) { f.error = 'End date must be on or after Start date.'; shell(); return; }
     if (_dayCount(startStr, endStr) > 60) {
       f.error = 'Range is over 60 days — split into shorter spans if intentional.';
       shell(); return;
     }
-    // One row per day in [start, end]. Upsert so re-saving with a new
-    // reason cleanly overwrites an existing same-day row instead of
-    // throwing the 23505 unique violation.
+    const _pad = (n) => String(n).padStart(2, '0');
     const rows = [];
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    // Walk the [y,m,d] tuple day-by-day. Constructing a Date in UTC and
+    // bumping its UTCDate keeps month-boundary rollovers correct without
+    // tripping over local timezone offsets.
+    for (let t = startUtc; t <= endUtc; t += 24 * 3600 * 1000) {
+      const d = new Date(t);
       rows.push({
         staff_id: staffId,
-        date:     d.toISOString().slice(0, 10),
+        date:     `${d.getUTCFullYear()}-${_pad(d.getUTCMonth()+1)}-${_pad(d.getUTCDate())}`,
         reason,
         reason_note: note || null,
         marked_by:   me,
@@ -4085,7 +4195,7 @@
       ['rental_support',  'Rental Support'],
     ];
     return `<div class="modal-back" id="teamModalBack"></div>
-      <div class="modal" role="dialog" style="width:min(560px, calc(100vw - 32px))">
+      <div class="modal" role="dialog" aria-modal="true" style="width:min(560px, calc(100vw - 32px))">
         <div class="modal-head">
           <h3 style="margin:0">${isEdit ? 'Edit ' + escapeHtml(f.name) : 'Add a staff member'}</h3>
           <button class="modal-close" id="teamModalClose">×</button>

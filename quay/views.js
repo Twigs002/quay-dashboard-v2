@@ -565,12 +565,14 @@ window.VIEWS = (function () {
     </div>`;
   }
 
-  // Tiny local helper used by the daily empty-state msg.
-  function escapeHtml(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  }
+  // Shared escapeHtml — owned by app.js, exposed as window.QUAY_ESC.
+  // Fallback wraps it locally in case views.js loads before app.js
+  // (shouldn't happen with the current order, but defensive).
+  const escapeHtml = (s) => (window.QUAY_ESC
+    ? window.QUAY_ESC(s)
+    : String(s == null ? '' : s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
 
   // ---------------------------------------------------- MANAGER
   function manager(period) {
@@ -632,18 +634,26 @@ window.VIEWS = (function () {
       const conv = c.conv;
       const pill = conv >= 12 ? 'ok' : conv >= 7 ? 'warn' : 'bad';
       const bar = (c.calls / maxCalls) * 100;
-      return `<tr>
+      // Per-row overlap marker for historical weeks where per-campaign
+      // attribution wasn't yet stored. Previously the warning lived only
+      // in the per-campaign drill-down modal, so users glanced at this
+      // table and trusted numbers that could over-count.
+      const overlap = c.exact === false;
+      const nameSuffix = overlap
+        ? '<span title="Over-counted: this agent worked multiple campaigns and this row sums their total across all of them" style="margin-left:6px;color:var(--amber);font-weight:700;cursor:help" aria-label="Over-counted row">⚠</span>'
+        : '';
+      return `<tr${overlap ? ' style="background:rgba(185,138,2,.04)"' : ''}>
         <td class="num" style="font-weight:700;color:var(--muted);width:40px">${i + 1}</td>
         <td><div class="agent-cell">
           <span style="width:11px;height:11px;border-radius:3px;background:${c.color};display:inline-block"></span>
-          <span class="agent-name">${c.name}</span></div></td>
+          <span class="agent-name">${c.name}${nameSuffix}</span></div></td>
         <td class="num tnum">${c.agentsCount}</td>
         <td class="num tnum">${fmt(c.calls)}</td>
         <td class="num tnum">${fmt(c.leads)}</td>
         <td class="num tnum">${fmt(c.seller)}</td>
         <td class="num tnum">${fmt(c.rental)}</td>
         <td class="num tnum">${fmt(c.email)}</td>
-        <td class="num"><span class="pill ${pill}">${conv}%</span></td>
+        <td class="num"><span class="pill ${pill}${overlap ? '" style="opacity:.65' : ''}" title="${overlap ? 'Approximate — overlap-based aggregation' : ''}">${conv}%</span></td>
         <td class="num"><div class="cell-bar"><div class="track"><span style="width:${bar}%;background:${c.color}"></span></div></div></td>
       </tr>`;
     }).join('');
