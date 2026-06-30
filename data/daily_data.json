@@ -1,7 +1,227 @@
 [
   {
+    "date": "2026-06-30",
+    "generated": "2026-06-30T08:23:39.471202+00:00",
+    "rm": [
+      {
+        "name": "Test",
+        "calls": 114,
+        "success": 13,
+        "seller": 1,
+        "rental": 0,
+        "email": 12,
+        "cph": 51.8,
+        "successRate": 11.4,
+        "workTime": 2.2008,
+        "talkTime": 0.7747,
+        "wrapTime": 1.3158,
+        "pauseTime": 0.0092,
+        "waitTime": 0.1011,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB"
+        ],
+        "talkPct": 35.2,
+        "wrapPct": 59.8,
+        "waitPct": 4.6,
+        "workPct": 99.6
+      },
+      {
+        "name": "TrialDay1",
+        "calls": 80,
+        "success": 5,
+        "seller": 1,
+        "rental": 0,
+        "email": 2,
+        "cph": 47.3,
+        "successRate": 6.2,
+        "workTime": 1.6917,
+        "talkTime": 0.4556,
+        "wrapTime": 1.1853,
+        "pauseTime": 0.0136,
+        "waitTime": 0.0372,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB_NO_ANSWER"
+        ],
+        "talkPct": 26.9,
+        "wrapPct": 70.1,
+        "waitPct": 2.2,
+        "workPct": 99.2
+      },
+      {
+        "name": "Gio",
+        "calls": 50,
+        "success": 7,
+        "seller": 0,
+        "rental": 1,
+        "email": 6,
+        "cph": 23.6,
+        "successRate": 14.0,
+        "workTime": 2.1142,
+        "talkTime": 0.5261,
+        "wrapTime": 1.5367,
+        "pauseTime": 0.0069,
+        "waitTime": 0.0444,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB"
+        ],
+        "talkPct": 24.9,
+        "wrapPct": 72.7,
+        "waitPct": 2.1,
+        "workPct": 99.7
+      }
+    ],
+    "fancy": [
+      {
+        "name": "quinn",
+        "calls": 26,
+        "success": 11,
+        "seller": 1,
+        "rental": 0,
+        "email": 10,
+        "cph": 41.4,
+        "successRate": 42.3,
+        "workTime": 0.6281,
+        "talkTime": 0.1878,
+        "wrapTime": 0.0422,
+        "pauseTime": 0.0,
+        "waitTime": 0.3981,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "WIZARDS"
+        ],
+        "talkPct": 29.9,
+        "wrapPct": 6.7,
+        "waitPct": 63.4,
+        "workPct": 100.0
+      },
+      {
+        "name": "QhayiyaDayimani",
+        "calls": 12,
+        "success": 0,
+        "seller": 0,
+        "rental": 0,
+        "email": 0,
+        "cph": 9.5,
+        "successRate": 0.0,
+        "workTime": 1.2631,
+        "talkTime": 0.0361,
+        "wrapTime": 1.1094,
+        "pauseTime": 0.0019,
+        "waitTime": 0.1156,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "HOUT_BAES"
+        ],
+        "talkPct": 2.9,
+        "wrapPct": 87.8,
+        "waitPct": 9.2,
+        "workPct": 99.8
+      },
+      {
+        "name": "BronwynBotha",
+        "calls": 7,
+        "success": 0,
+        "seller": 0,
+        "rental": 0,
+        "email": 0,
+        "cph": 49.3,
+        "successRate": 0.0,
+        "workTime": 0.1419,
+        "talkTime": 0.0903,
+        "wrapTime": 0.0006,
+        "pauseTime": 0.0,
+        "waitTime": 0.0511,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "DUTCHMEN"
+        ],
+        "talkPct": 63.6,
+        "wrapPct": 0.4,
+        "waitPct": 36.0,
+        "workPct": 100.0
+      }
+    ],
+    "by_agent_campaign": {
+      "BronwynBotha": {
+        "DUTCHMEN_CM": {
+          "calls": 7,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "workTime": 0.1419,
+          "talkTime": 0.0903
+        }
+      },
+      "QhayiyaDayimani": {
+        "HOUT_BAES_CM": {
+          "calls": 12,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "workTime": 1.2631,
+          "talkTime": 0.0361
+        }
+      },
+      "quinn": {
+        "WIZARDS_CM": {
+          "calls": 26,
+          "success": 11,
+          "seller": 1,
+          "rental": 0,
+          "email": 10,
+          "workTime": 0.6281,
+          "talkTime": 0.1878
+        }
+      },
+      "Gio": {
+        "CLIENTHUB": {
+          "calls": 50,
+          "success": 7,
+          "seller": 0,
+          "rental": 1,
+          "email": 6,
+          "workTime": 2.1142,
+          "talkTime": 0.5261
+        }
+      },
+      "Test": {
+        "CLIENTHUB": {
+          "calls": 114,
+          "success": 13,
+          "seller": 1,
+          "rental": 0,
+          "email": 12,
+          "workTime": 2.2008,
+          "talkTime": 0.7747
+        }
+      },
+      "TrialDay1": {
+        "CLIENTHUB_NO_ANSWER": {
+          "calls": 80,
+          "success": 5,
+          "seller": 1,
+          "rental": 0,
+          "email": 2,
+          "workTime": 1.6917,
+          "talkTime": 0.4556
+        }
+      }
+    }
+  },
+  {
     "date": "2026-06-29",
-    "generated": "2026-06-29T19:10:41.847977+00:00",
+    "generated": "2026-06-30T08:23:39.471202+00:00",
     "rm": [
       {
         "name": "Test",
@@ -620,21 +840,21 @@
   },
   {
     "date": "2026-06-28",
-    "generated": "2026-06-29T19:10:41.847977+00:00",
+    "generated": "2026-06-30T08:23:39.471202+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-06-27",
-    "generated": "2026-06-29T19:10:41.847977+00:00",
+    "generated": "2026-06-30T08:23:39.471202+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-06-26",
-    "generated": "2026-06-29T19:10:41.847977+00:00",
+    "generated": "2026-06-30T08:23:39.471202+00:00",
     "rm": [
       {
         "name": "Test",
@@ -1238,7 +1458,7 @@
   },
   {
     "date": "2026-06-25",
-    "generated": "2026-06-29T19:10:41.847977+00:00",
+    "generated": "2026-06-30T08:23:39.471202+00:00",
     "rm": [
       {
         "name": "Test",
@@ -1936,7 +2156,7 @@
   },
   {
     "date": "2026-06-24",
-    "generated": "2026-06-29T19:10:41.847977+00:00",
+    "generated": "2026-06-30T08:23:39.471202+00:00",
     "rm": [
       {
         "name": "Test",
@@ -2181,30 +2401,6 @@
         "wrapPct": 86.5,
         "waitPct": 4.8,
         "workPct": 100.0
-      },
-      {
-        "name": "quinn",
-        "calls": 76,
-        "success": 25,
-        "seller": 1,
-        "rental": 0,
-        "email": 23,
-        "cph": 43.0,
-        "successRate": 32.9,
-        "workTime": 1.7689,
-        "talkTime": 0.5831,
-        "wrapTime": 0.2728,
-        "pauseTime": 0.0197,
-        "waitTime": 0.8933,
-        "is_rm": false,
-        "meetsTarget": false,
-        "campaigns": [
-          "WIZARDS"
-        ],
-        "talkPct": 33.0,
-        "wrapPct": 15.4,
-        "waitPct": 50.5,
-        "workPct": 98.9
       },
       {
         "name": "StaddyMalonga",
@@ -2706,17 +2902,6 @@
           "talkTime": 0.7733
         }
       },
-      "quinn": {
-        "WIZARDS_CM": {
-          "calls": 76,
-          "success": 25,
-          "seller": 1,
-          "rental": 0,
-          "email": 23,
-          "workTime": 1.7689,
-          "talkTime": 0.5831
-        }
-      },
       "Gio": {
         "CLIENTHUB": {
           "calls": 229,
@@ -2765,7 +2950,7 @@
   },
   {
     "date": "2026-06-23",
-    "generated": "2026-06-29T19:10:41.847977+00:00",
+    "generated": "2026-06-30T08:23:39.471202+00:00",
     "rm": [
       {
         "name": "Test",
