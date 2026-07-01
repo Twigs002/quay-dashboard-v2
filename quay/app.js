@@ -828,10 +828,14 @@
 
   function dailyWire() {
     const available = (Q.dailyDates || []).slice();      // newest first
-    const currentISO = () => new Date().toISOString().slice(0, 10);
+    // SAST-aware "today" / "yesterday" — never trust the browser's UTC
+    // slice, which shifts the day for viewers past 22:00 SAST.
+    const currentISO = () => sastDateStr(new Date());
     const yesterdayISO = () => {
-      const d = new Date(); d.setDate(d.getDate() - 1);
-      return d.toISOString().slice(0, 10);
+      const now = new Date();
+      const sastMidnight = new Date(sastDateStr(now) + 'T00:00:00+02:00');
+      sastMidnight.setDate(sastMidnight.getDate() - 1);
+      return sastDateStr(sastMidnight);
     };
     const pick = (newDate) => {
       if (!newDate) return;
@@ -2972,11 +2976,6 @@
       setTimeout(() => document.addEventListener('click', onDocClick), 0);
     }
 
-    const divSel = document.getElementById('lnDivFilter');
-    if (divSel) divSel.addEventListener('change', (e) => {
-      _lnDivisionFilter = e.target.value || 'all';
-      shell();
-    });
     const toggleRow = (id) => {
       _lnExpandedRow = (_lnExpandedRow === id) ? null : id;
       shell();
