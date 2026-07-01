@@ -1356,6 +1356,42 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
 }
 .ln-filters .ln-div-select:hover { border-color: var(--blue-800); color: var(--blue-800); }
 
+/* ── Multi-select team picker (LN Stats) ─────────────────────────────
+   Mirrors the clock-in EOD form's chip picker so admins pick the same
+   team names the same way. Dropdown panel opens under the trigger. */
+.ln-team-picker {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 20;
+  width: min(360px, 92vw);
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 12px; box-shadow: 0 10px 32px rgba(20, 34, 60, 0.16);
+  padding: 10px; display: flex; flex-direction: column; gap: 8px;
+}
+.ln-team-picker-head {
+  display: flex; gap: 8px; align-items: center;
+}
+.ln-team-picker-head input[type="search"] {
+  flex: 1; padding: 6px 10px; border: 1px solid var(--line);
+  border-radius: 8px; font-family: inherit; font-size: 12.5px;
+}
+.ln-team-picker-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;
+  max-height: 260px; overflow-y: auto; padding: 2px;
+}
+.ln-team-chip {
+  border: 1px solid var(--line); background: var(--card);
+  color: var(--slate); padding: 5px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; font-family: inherit;
+  cursor: pointer; text-align: center;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.ln-team-chip:hover { border-color: var(--blue-800); color: var(--blue-800); }
+.ln-team-chip.on {
+  background: var(--blue-800); color: #FFFFFF; border-color: var(--blue-800);
+}
+.ln-team-selected .ln-team-chip.on:hover {
+  background: #C9302C; border-color: #C9302C;
+}
+
 /* Custom date-range picker on the LN tab header — sits to the right of
    the title block and overrides the global period when both ends set. */
 .ln-date-picker {

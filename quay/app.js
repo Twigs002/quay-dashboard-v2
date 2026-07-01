@@ -2497,10 +2497,32 @@
   let _lnSortBy  = 'totalLeads';
   let _lnSortDir = 'desc';
   let _lnRoleFilter = 'all';        // all | ln | assistant
-  let _lnDivisionFilter = 'all';    // 'all' or a division string
+  let _lnDivisionsPicked = new Set(); // multi-select — empty = all teams
+  let _lnDivisionFilterQ = '';        // search box inside the team picker
+  let _lnDivisionPickerOpen = false;  // dropdown state
   let _lnExpandedRow = null;        // staff_id of the row whose notes drawer is open
   let _lnDateFrom = null;           // 'YYYY-MM-DD' SAST when admin overrides the global period
   let _lnDateTo   = null;           // 'YYYY-MM-DD' SAST
+
+  // Canonical team roster — mirrors CLOCK_CAMPAIGNS in quay-clock/app.js.
+  // Kept in sync manually; source of truth is the clock-in EOD form so
+  // the LN Stats team filter offers the exact same picks as clock-in.
+  // TODO: extract to a shared Supabase table once we have >1 downstream.
+  const LN_TEAMS_ALL = [
+    'ASB Calling', 'Amigos', 'Assassins', 'Avengers', 'Babes', 'Ballers',
+    'Bergscape', 'Betties', 'Blitz', 'Boets', 'Bulls', 'Cavaliers',
+    'Chargers', 'City Sunsets', 'Clienthub', 'Conquerors', 'Dealers',
+    'Dealmakers', 'Dixies', 'Dolphins', 'Donkeys', 'Dragons', 'Dutchmen',
+    'Engine Room', 'Falcons', 'Farmers', 'Furys', 'Gladiators',
+    'Goal Diggers', 'Gunslingers', 'Hawks', 'Headbangers', 'Hoekers',
+    'Hooligans', 'Hout Baes', 'Huntsmen', 'Hustlers', 'Invincibles',
+    'Jaguars', 'Knights', 'Koeksisters', 'Komorants', 'Lions', 'Llamas',
+    'Musketeers', 'Panthers', 'Pirates', 'Power Rangers', 'Prom Queens',
+    'Proteas', 'Raccoons', 'Rentals', 'Rockets', 'Samurais', 'Slayers',
+    'Soccer Moms', 'Spartans', 'Surfers', 'Swesties', 'Targaryens',
+    'Tigers', 'TNT', 'Tornadoes', 'Vikings', 'Vipers', 'Warriors',
+    'Weasels', 'Wizards', 'Wolves', 'Wombats',
+  ];
 
   function _lnPeriodRange() {
     // Map the global `period` to a [from, to] SAST date range — unless
@@ -2632,9 +2654,11 @@
     const lns = allLns.filter(r => {
       if (_lnRoleFilter === 'ln' && roleOf(r) !== 'ln') return false;
       if (_lnRoleFilter === 'assistant' && roleOf(r) !== 'assistant') return false;
-      if (_lnDivisionFilter !== 'all') {
+      if (_lnDivisionsPicked.size > 0) {
+        // Multi-select: keep the row if ANY of its divisions is picked
+        // (union). Empty pick = no filter.
         const divs = Array.from(r.divisions || []);
-        if (!divs.includes(_lnDivisionFilter)) return false;
+        if (!divs.some(d => _lnDivisionsPicked.has(d))) return false;
       }
       return true;
     });
@@ -2720,13 +2744,44 @@
     // Filter row counts + division options use the unfiltered baseline.
     const lnCount     = allLns.filter(r => roleOf(r) === 'ln').length;
     const assistCount = allLns.filter(r => roleOf(r) === 'assistant').length;
-    const divisionSet = new Set();
+    // Team list = canonical clock-in roster PLUS any historical divisions
+    // seen in reports (in case a team was renamed or archived after data
+    // landed). Union, then sort.
+    const divisionSet = new Set(LN_TEAMS_ALL);
     allLns.forEach(r => (r.divisions || new Set()).forEach(d => d && divisionSet.add(d)));
     const divisionList = Array.from(divisionSet).sort((a, b) => a.localeCompare(b));
     const roleChip = (k, label, count) =>
       `<button class="chip${_lnRoleFilter === k ? ' active' : ''}" data-ln-role="${k}" type="button">${escapeHtml(label)}<span class="chip-count tnum">${count}</span></button>`;
-    const divOpts = `<option value="all">All divisions</option>` +
-      divisionList.map(d => `<option value="${escapeHtml(d)}"${d === _lnDivisionFilter ? ' selected' : ''}>${escapeHtml(d)}</option>`).join('');
+
+    // Multi-select team picker — mirrors the clock-in EOD form's chip style.
+    const q = (_lnDivisionFilterQ || '').trim().toLowerCase();
+    const filteredTeams = q
+      ? divisionList.filter(t => t.toLowerCase().includes(q))
+      : divisionList;
+    const pickedCount = _lnDivisionsPicked.size;
+    const pickerSummary = pickedCount === 0
+      ? 'All teams'
+      : pickedCount === 1
+        ? Array.from(_lnDivisionsPicked)[0]
+        : `${pickedCount} teams`;
+    const selectedChips = pickedCount
+      ? Array.from(_lnDivisionsPicked).sort().map(t =>
+          `<button type="button" class="ln-team-chip on" data-ln-team-remove="${escapeHtml(t)}" title="Remove ${escapeHtml(t)}">${escapeHtml(t)}<span aria-hidden="true"> ×</span></button>`).join('')
+      : '';
+    const pickerPanel = _lnDivisionPickerOpen ? `
+      <div class="ln-team-picker" role="dialog" aria-label="Pick teams">
+        <div class="ln-team-picker-head">
+          <input id="lnTeamSearch" type="search" placeholder="Search teams…"
+                 value="${escapeHtml(_lnDivisionFilterQ || '')}" autocomplete="off">
+          <button type="button" id="lnTeamClear" class="btn" style="padding:5px 10px;font-size:12px"${pickedCount ? '' : ' disabled'}>Clear</button>
+        </div>
+        <div class="ln-team-picker-grid">
+          ${filteredTeams.length === 0
+            ? '<div class="muted" style="grid-column:1/-1;padding:8px;font-size:12.5px">No teams match</div>'
+            : filteredTeams.map(t =>
+                `<button type="button" class="ln-team-chip ${_lnDivisionsPicked.has(t) ? 'on' : ''}" data-ln-team-toggle="${escapeHtml(t)}">${escapeHtml(t)}${_lnDivisionsPicked.has(t) ? ' ✓' : ''}</button>`).join('')}
+        </div>
+      </div>` : '';
 
     return `<div class="tab-view">
       <div class="card card-pad">
@@ -2760,11 +2815,18 @@
             ${roleChip('ln', 'LNs', lnCount)}
             ${roleChip('assistant', 'Assistants', assistCount)}
           </div>
-          <div class="ln-div-wrap">
-            <label class="muted" style="font-size:12px" for="lnDivFilter">Division</label>
-            <select id="lnDivFilter" class="ln-div-select" aria-label="Filter by division">${divOpts}</select>
+          <div class="ln-div-wrap" style="position:relative">
+            <label class="muted" style="font-size:12px">Teams</label>
+            <button type="button" id="lnDivToggle" class="ln-div-select"
+                    aria-haspopup="listbox" aria-expanded="${_lnDivisionPickerOpen}"
+                    style="text-align:left;cursor:pointer;padding-right:26px;position:relative">
+              ${escapeHtml(pickerSummary)}
+              <span aria-hidden="true" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--muted)">${_lnDivisionPickerOpen ? '▴' : '▾'}</span>
+            </button>
+            ${pickerPanel}
           </div>
         </div>
+        ${pickedCount ? `<div class="ln-team-selected" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${selectedChips}</div>` : ''}
         <div class="tbl-wrap"><table class="tbl tbl-sortable ln-leaderboard">
           <thead>
             <tr class="ln-grouphdr">
@@ -2860,6 +2922,56 @@
         shell();
       });
     });
+    // Multi-select team picker
+    const divToggle = document.getElementById('lnDivToggle');
+    if (divToggle) divToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      _lnDivisionPickerOpen = !_lnDivisionPickerOpen;
+      shell();
+    });
+    const divSearch = document.getElementById('lnTeamSearch');
+    if (divSearch) {
+      divSearch.addEventListener('input', (e) => {
+        const caret = e.target.selectionStart;
+        _lnDivisionFilterQ = e.target.value;
+        shell();
+        // Restore focus + caret on the fresh input (shell wipes DOM).
+        const s2 = document.getElementById('lnTeamSearch');
+        if (s2) { s2.focus(); try { s2.setSelectionRange(caret, caret); } catch (_) {} }
+      });
+      // Keep the picker open when interacting with the search.
+      divSearch.addEventListener('click', (e) => e.stopPropagation());
+    }
+    document.querySelectorAll('[data-ln-team-toggle]').forEach(b => b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const t = b.dataset.lnTeamToggle;
+      if (_lnDivisionsPicked.has(t)) _lnDivisionsPicked.delete(t);
+      else _lnDivisionsPicked.add(t);
+      shell();
+    }));
+    document.querySelectorAll('[data-ln-team-remove]').forEach(b => b.addEventListener('click', () => {
+      _lnDivisionsPicked.delete(b.dataset.lnTeamRemove);
+      shell();
+    }));
+    const teamClear = document.getElementById('lnTeamClear');
+    if (teamClear) teamClear.addEventListener('click', (e) => {
+      e.stopPropagation();
+      _lnDivisionsPicked.clear();
+      _lnDivisionFilterQ = '';
+      shell();
+    });
+    // Click outside the picker closes it.
+    if (_lnDivisionPickerOpen) {
+      const onDocClick = (ev) => {
+        if (ev.target.closest('.ln-div-wrap')) return;
+        _lnDivisionPickerOpen = false;
+        document.removeEventListener('click', onDocClick);
+        shell();
+      };
+      // Attach on next tick so this same click doesn't fire it immediately.
+      setTimeout(() => document.addEventListener('click', onDocClick), 0);
+    }
+
     const divSel = document.getElementById('lnDivFilter');
     if (divSel) divSel.addEventListener('change', (e) => {
       _lnDivisionFilter = e.target.value || 'all';
