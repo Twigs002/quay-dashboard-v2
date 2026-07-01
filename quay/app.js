@@ -2906,7 +2906,7 @@
                   ? `<tr class="ln-drawer"><td colspan="20"><div class="ln-drawer-inner"><div class="ln-drawer-label">${escapeHtml(r.name)} — notes</div><div class="ln-drawer-note">${escapeHtml(note)}</div></div></td></tr>`
                   : '';
                 return `<tr${rowAttrs}>
-                  <td class="ln-col-name"><b>${escapeHtml(r.name)}</b></td>
+                  <td class="ln-col-name" data-label="Name"><b>${escapeHtml(r.name)}</b></td>
                   <td data-label="Role"><span class="pill ${cls}" style="font-size:10.5px;padding:2px 8px">${role}</span></td>
                   <td class="muted" style="font-size:12px" data-label="Division">${escapeHtml(Array.from(r.divisions).join(' / ') || '—')}</td>
                   ${numCell(r.hsTasks,         'ln-col-hs ln-col-first', 'HS · Tasks')}
