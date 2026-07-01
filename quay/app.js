@@ -4253,9 +4253,15 @@
     const search = document.getElementById('teamSearch');
     if (search) search.addEventListener('input', (e) => {
       _teamFilter = e.target.value;
-      // Re-render rows only, keep search-input focus.
-      const tbody = document.querySelector('#content .tbl tbody');
-      if (tbody) shell(); else shell();
+      const caret = e.target.selectionStart;
+      // shell() wipes the DOM — restore focus + caret on the fresh input
+      // so the user can keep typing without reclicking.
+      shell();
+      const s2 = document.getElementById('teamSearch');
+      if (s2) {
+        s2.focus();
+        try { s2.setSelectionRange(caret, caret); } catch (_) {}
+      }
     });
     document.querySelectorAll('th[data-team-sort]').forEach(th => {
       th.addEventListener('click', () => {
