@@ -1090,7 +1090,7 @@
           if (type === 'num') {
             return (dir === 'asc' ? 1 : -1) * (parseFloat(av) - parseFloat(bv));
           }
-          return (dir === 'asc' ? 1 : -1) * String(av).localeCompare(String(bv));
+          return (dir === 'asc' ? 1 : -1) * String(av).localeCompare(String(bv, undefined, { sensitivity: 'base' }));
         });
         // Re-rank the leftmost cell if it contains a rank number
         rows.forEach((r, i) => {
@@ -1596,7 +1596,7 @@
         const ETH = s.allocations.empTeamHours;
         const ETOT = s.allocations.empTotalHours;
         const EMETA = s.allocations.empMeta || new Map();
-        const agents = Array.from(ETH.keys()).sort((a, b) => a.localeCompare(b));
+        const agents = Array.from(ETH.keys()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
         agents.forEach(agent => {
           const teams = Array.from(ETH.get(agent).entries()).sort((a, b) => b[1] - a[1]);
           const total = ETOT.get(agent) || 0;
@@ -1624,7 +1624,7 @@
       if (s.allocations) {
         const ETOT = s.allocations.empTotalHours;
         const EMETA = s.allocations.empMeta || new Map();
-        const agents = Array.from(ETOT.keys()).sort((a, b) => a.localeCompare(b));
+        const agents = Array.from(ETOT.keys()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
         let gHrs = 0, gPay = 0;
         agents.forEach(agent => {
           const total = ETOT.get(agent) || 0;
@@ -1685,7 +1685,7 @@
       teamEmp.forEach((_m, t) => {
         if (!window.PAYROLL.CANONICAL_SET.has(t) && t !== '(No team noted)') nonCanon.push(t);
       });
-      nonCanon.sort((a, b) => a.localeCompare(b));
+      nonCanon.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
       if (nonCanon.length || teamEmp.has('(No team noted)')) {
         out.push(['--- Not in master list — review ---']);
         nonCanon.forEach(t => out.push(rowFor(t, 'Not in master list')));
@@ -1773,7 +1773,7 @@
       teamEmp.forEach((_m, t) => {
         if (!window.PAYROLL.CANONICAL_SET.has(t) && t !== '(No team noted)') nonCanon.push(t);
       });
-      nonCanon.sort((a, b) => a.localeCompare(b));
+      nonCanon.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
       if (nonCanon.length || teamEmp.has('(No team noted)')) {
         out.push(['--- Not in master list — review ---']);
         nonCanon.forEach(t => out.push(rowFor(t, 'Not in master list')));
@@ -1796,9 +1796,9 @@
     if (view === 'dataQuality') {
       const rv = (s.allocations || {}).rawVariantsPerTeam || new Map();
       const out = [['Pay period', periodLbl], [], ['Canonical Team', 'Original notes / variants seen', '# variants']];
-      const teams = Array.from(rv.keys()).sort((a, b) => a.localeCompare(b));
+      const teams = Array.from(rv.keys()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
       teams.forEach(t => {
-        const variants = Array.from(rv.get(t)).sort((a, b) => a.localeCompare(b));
+        const variants = Array.from(rv.get(t)).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
         out.push([t, variants.join(' | '), variants.length]);
       });
       return out;
@@ -2696,7 +2696,7 @@
       if (av == null && bv == null) return 0;
       if (av == null) return 1;
       if (bv == null) return -1;
-      if (typeof av === 'string') return sortDir * av.localeCompare(bv);
+      if (typeof av === 'string') return sortDir * av.localeCompare(bv, undefined, { sensitivity: 'base' });
       return sortDir * (av - bv);
     });
 
@@ -2749,7 +2749,7 @@
     // landed). Union, then sort.
     const divisionSet = new Set(LN_TEAMS_ALL);
     allLns.forEach(r => (r.divisions || new Set()).forEach(d => d && divisionSet.add(d)));
-    const divisionList = Array.from(divisionSet).sort((a, b) => a.localeCompare(b));
+    const divisionList = Array.from(divisionSet).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
     const roleChip = (k, label, count) =>
       `<button class="chip${_lnRoleFilter === k ? ' active' : ''}" data-ln-role="${k}" type="button">${escapeHtml(label)}<span class="chip-count tnum">${count}</span></button>`;
 
@@ -3208,7 +3208,7 @@
     cards.sort((a, b) => {
       if (a.bucket !== b.bucket) return a.bucket - b.bucket;
       if (a.calls !== b.calls) return b.calls - a.calls;
-      return a.name.localeCompare(b.name);
+      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
     });
 
     // Live-stats freshness wins as the headline "last update" when we have
@@ -3730,7 +3730,8 @@
       // can resolve acked_by (a staff.id) into a readable name.
       if (_staffNamesById.size === 0 && window.sb) {
         try {
-          const { data: staff } = await window.sb.from('staff').select('id, name');
+          // staff_public: safe projection — flag-ack name lookup never needs rates.
+          const { data: staff } = await window.sb.from('staff_public').select('id, name');
           (staff || []).forEach(s => _staffNamesById.set(s.id, s.name));
         } catch {}
       }
@@ -3842,9 +3843,9 @@
         .limit(500);
       if (error) throw error;
       _reports = rows || [];
-      // Best-effort lookup of staff names (single query, RLS allows reads).
+      // Best-effort lookup of staff names via safe projection.
       if (_staffNamesById.size === 0) {
-        const { data: staff } = await window.sb.from('staff').select('id, name');
+        const { data: staff } = await window.sb.from('staff_public').select('id, name');
         (staff || []).forEach(s => _staffNamesById.set(s.id, s.name));
       }
     } catch (e) {
@@ -3938,7 +3939,7 @@
       });
       decorated.sort((a, b) => {
         if (a.status !== b.status) return a.status === 'in' ? -1 : 1;
-        return a.name.localeCompare(b.name);
+        return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
       });
       _team = decorated;
     } catch (e) {
@@ -4004,7 +4005,7 @@
       if (av < bv) return -1 * dir;
       if (av > bv) return  1 * dir;
       // Stable secondary sort by name so equal-key rows have a deterministic order.
-      return a.name.localeCompare(b.name);
+      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
     });
     const sortIndic = (k) => {
       if (k !== _teamSortBy) return '<span class="muted" style="font-size:11px"> ⇅</span>';
@@ -4043,7 +4044,7 @@
     });
     const weekRows = Array.from(weekByStaff.entries())
       .map(([id, tsList]) => ({ id, name: nameById.get(id) || id, count: tsList.length, dates: tsList }))
-      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
     const fmtShort = (iso) => new Date(iso).toLocaleDateString('en-GB',
       { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Africa/Johannesburg' });
     const weekHtml = weekRows.length === 0

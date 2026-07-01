@@ -603,7 +603,7 @@
     })
 
     shifts.sort((a, b) => {
-      const n = (a.agentName || '').localeCompare(b.agentName || '')
+      const n = (a.agentName || '').localeCompare(b.agentName || '', undefined, { sensitivity: 'base' })
       if (n !== 0) return n
       return a.clockInAt < b.clockInAt ? -1 : a.clockInAt > b.clockInAt ? 1 : 0
     })
@@ -960,7 +960,7 @@
     if (!empTeamHours || empTeamHours.size === 0) {
       return `<div class="card card-pad" style="color:var(--muted)">No allocations to show for this pay period.</div>`
     }
-    const agents = Array.from(empTeamHours.keys()).sort((a, b) => a.localeCompare(b))
+    const agents = Array.from(empTeamHours.keys()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
     let html = `
       <div class="card">
         <div class="card-head">
@@ -1023,7 +1023,7 @@
     if (!empTotalHours || empTotalHours.size === 0) {
       return `<div class="card card-pad" style="color:var(--muted)">No closed shifts in this pay period.</div>`
     }
-    const agents = Array.from(empTotalHours.keys()).sort((a, b) => a.localeCompare(b))
+    const agents = Array.from(empTotalHours.keys()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
     let grandHours = 0, grandPay = 0, missingRate = 0
     const rows = agents.map(agent => {
       const total = empTotalHours.get(agent) || 0
@@ -1109,7 +1109,7 @@
     teamEmp.forEach((_m, t) => {
       if (!CONFIG.CANONICAL_SET.has(t) && t !== '(No team noted)') nonCanonical.push(t)
     })
-    nonCanonical.sort((a, b) => a.localeCompare(b))
+    nonCanonical.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
     const hasNoTeam = teamEmp.has('(No team noted)')
 
     // Header
@@ -1213,7 +1213,7 @@
     teamEmp.forEach((_m, t) => {
       if (!CONFIG.CANONICAL_SET.has(t) && t !== '(No team noted)') nonCanonical.push(t)
     })
-    nonCanonical.sort((a, b) => a.localeCompare(b))
+    nonCanonical.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
     const hasNoTeam = teamEmp.has('(No team noted)')
 
     // Header — 1 (division) + 5N (agent blocks) + 1 (total) + 1 (notes)
@@ -1345,9 +1345,9 @@
     if (!rawVariantsPerTeam || rawVariantsPerTeam.size === 0) {
       return `<div class="card card-pad" style="color:var(--muted)">No raw-notes variants to review — every shift either had a clean canonical match or no notes at all.</div>`
     }
-    const teams = Array.from(rawVariantsPerTeam.keys()).sort((a, b) => a.localeCompare(b))
+    const teams = Array.from(rawVariantsPerTeam.keys()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
     const rows = teams.map(t => {
-      const variants = Array.from(rawVariantsPerTeam.get(t)).sort((a, b) => a.localeCompare(b))
+      const variants = Array.from(rawVariantsPerTeam.get(t)).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
       const canonical = CONFIG.CANONICAL_SET.has(t)
       return `<tr>
         <td><b>${esc(t)}</b> ${canonical ? '' : '<span class="pill warn" style="font-size:10.5px;padding:2px 7px;margin-left:6px">non-canonical</span>'}</td>
@@ -1396,10 +1396,10 @@
   }
   function _rowsTypo() {
     if (CONFIG._typoRows && CONFIG._typoRows.length) {
-      return CONFIG._typoRows.slice().sort((a, b) => a.key.localeCompare(b.key))
+      return CONFIG._typoRows.slice().sort((a, b) => a.key.localeCompare(b.key, undefined, { sensitivity: 'base' }))
     }
     return Object.entries(CONFIG.TYPO_MAP)
-      .sort((a, b) => a[0].localeCompare(b[0]))
+      .sort((a, b) => a[0].localeCompare(b[0], undefined, { sensitivity: 'base' }))
       .map(([key, canonical]) => ({ id: null, key, canonical }))
   }
   function _rowsAlias() {
@@ -1414,15 +1414,15 @@
   function _rowsDefault() {
     if (CONFIG._defaultRows && CONFIG._defaultRows.length) {
       return CONFIG._defaultRows.slice().sort((a, b) =>
-        a.agent_name.localeCompare(b.agent_name))
+        a.agent_name.localeCompare(b.agent_name, undefined, { sensitivity: 'base' }))
     }
     return Object.entries(CONFIG.EMPLOYEE_DEFAULT_TEAM)
-      .sort((a, b) => a[0].localeCompare(b[0]))
+      .sort((a, b) => a[0].localeCompare(b[0], undefined, { sensitivity: 'base' }))
       .map(([agent_name, default_team]) => ({ id: null, agent_name, default_team }))
   }
   function _rowsDrop() {
     if (CONFIG._dropRows && CONFIG._dropRows.length) {
-      return CONFIG._dropRows.slice().sort((a, b) => a.code.localeCompare(b.code))
+      return CONFIG._dropRows.slice().sort((a, b) => a.code.localeCompare(b.code, undefined, { sensitivity: 'base' }))
     }
     return Array.from(CONFIG.DROP_STANDALONE).sort()
       .map(code => ({ id: null, code }))
