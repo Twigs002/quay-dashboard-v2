@@ -464,9 +464,15 @@
   }
 
   function wireClocks() {
-    // When the embedded admin says it's ready, hand off the current
-    // Supabase session (access + refresh token) so the iframe doesn't
-    // ask for a second login. Listener is idempotent; origin gated.
+    // When the embedded admin says it's ready, hand off ONLY the current
+    // short-lived Supabase access_token — never the refresh_token.
+    //
+    // Audit finding C2 (P1): passing the refresh token lets the iframe
+    // origin hold a durable session on its own — a future XSS on
+    // twigs002.github.io/quay-clock/ could exfiltrate it for long-term
+    // impersonation. The access token expires in ~1h; the iframe can
+    // re-request via postMessage on expiry (implemented on quay-clock
+    // side — expiry triggers a fresh 'quay-admin-ready' message).
     if (!window.__quayClocksWired) {
       window.__quayClocksWired = true;
       const ALLOWED_ORIGINS = new Set([
@@ -486,7 +492,8 @@
             type: 'quay-supabase-session',
             session: {
               access_token: data.session.access_token,
-              refresh_token: data.session.refresh_token,
+              // refresh_token intentionally omitted — see C2 comment above.
+              expires_at: data.session.expires_at,
             },
           }, ev.origin);
         } catch {}
@@ -2531,6 +2538,7 @@
   let _lnDivisionsPicked = new Set(); // multi-select — empty = all teams
   let _lnDivisionFilterQ = '';        // search box inside the team picker
   let _lnDivisionPickerOpen = false;  // dropdown state
+  let _lnDocClickHandler = null;      // module-scoped so re-wires can detach
   let _lnExpandedRow = null;        // staff_id of the row whose notes drawer is open
   let _lnDateFrom = null;           // 'YYYY-MM-DD' SAST when admin overrides the global period
   let _lnDateTo   = null;           // 'YYYY-MM-DD' SAST
@@ -2991,16 +2999,28 @@
       _lnDivisionFilterQ = '';
       shell();
     });
-    // Click outside the picker closes it.
+    // Click outside the picker closes it. Audit finding E2 (P1):
+    // wireLnLeaderboard runs on every shell() re-render, so if the picker
+    // stays open while the user toggles chips the previous handler
+    // never got removed — listeners stacked, each re-triggering shell()
+    // when the user finally clicked outside. Use a module-scoped ref so
+    // we can remove the OLD handler at the top of every wire pass.
+    if (_lnDocClickHandler) {
+      document.removeEventListener('click', _lnDocClickHandler);
+      _lnDocClickHandler = null;
+    }
     if (_lnDivisionPickerOpen) {
-      const onDocClick = (ev) => {
+      _lnDocClickHandler = (ev) => {
         if (ev.target.closest('.ln-div-wrap')) return;
         _lnDivisionPickerOpen = false;
-        document.removeEventListener('click', onDocClick);
+        document.removeEventListener('click', _lnDocClickHandler);
+        _lnDocClickHandler = null;
         shell();
       };
       // Attach on next tick so this same click doesn't fire it immediately.
-      setTimeout(() => document.addEventListener('click', onDocClick), 0);
+      setTimeout(() => {
+        if (_lnDocClickHandler) document.addEventListener('click', _lnDocClickHandler);
+      }, 0);
     }
 
     const toggleRow = (id) => {
@@ -3018,10 +3038,20 @@
     });
     // Custom date-range picker. Both ends required before the override
     // kicks in — partial input keeps the global period in effect.
+    // Audit E3 (P1): preserve focus on the picker that was just changed
+    // so the user can tab to the second field without reclicking.
     const dFrom = document.getElementById('lnDateFrom');
     const dTo   = document.getElementById('lnDateTo');
-    if (dFrom) dFrom.addEventListener('change', (e) => { _lnDateFrom = e.target.value || null; shell(); });
-    if (dTo)   dTo.addEventListener('change',   (e) => { _lnDateTo   = e.target.value || null; shell(); });
+    const _reFocus = (id) => {
+      const el = document.getElementById(id);
+      if (el) el.focus();
+    };
+    if (dFrom) dFrom.addEventListener('change', (e) => {
+      _lnDateFrom = e.target.value || null; shell(); _reFocus('lnDateFrom');
+    });
+    if (dTo) dTo.addEventListener('change', (e) => {
+      _lnDateTo = e.target.value || null; shell(); _reFocus('lnDateTo');
+    });
     const dClear = document.getElementById('lnDateClear');
     if (dClear) dClear.addEventListener('click', () => {
       _lnDateFrom = null; _lnDateTo = null; shell();
