@@ -2458,17 +2458,44 @@
       console.warn('[live] loadLiveStats failed', e.message || e);
     }
   }
+  // Staff-name → known Dialfire-side spellings. Bridges cases where a
+  // staffer's Supabase name doesn't match Dialfire's prettified name
+  // (spelling variants like Gomes vs Gomez, nicknames like Gio,
+  // short-form last-names, or a test account tied to a real staffer).
+  // Keys are lowercase; values are lowercase strings the Dialfire pipeline
+  // may emit for that person. Mirror of quay/data.js
+  // CLOCK_ALIAS_DIALFIRE_TO_CANONICAL — keep both in sync.
+  const DIALFIRE_ALIASES = {
+    'geneva gomez':               ['geneva gomes'],
+    'geneva maggie-nela gomez':   ['geneva gomes'],
+    'giovon van wyk':             ['gio'],
+    'declan ryder tyler':         ['declan t'],
+    'lauren stacey carolus':      ['lauren carolus'],
+    'nicolette van der berg':     ['nicolette'],
+    'jason hendricks':            ['test'],
+  };
+
+  // Return every lowercase key we should try when hunting for a Dialfire
+  // row for this staff member: exact full name, first+last, and any
+  // registered alias spellings.
+  function dfKeysFor(name) {
+    const raw = (name || '').trim();
+    if (!raw) return [];
+    const out = [];
+    const push = (k) => { const v = (k || '').trim().toLowerCase(); if (v && !out.includes(v)) out.push(v); };
+    push(raw);
+    const parts = raw.split(/\s+/);
+    if (parts.length >= 2) push(parts[0] + ' ' + parts[parts.length - 1]);
+    (DIALFIRE_ALIASES[raw.toLowerCase()] || []).forEach(push);
+    return out;
+  }
+
   function liveStatsFor(name) {
-    const n = (name || '').trim().toLowerCase();
-    if (!n) return null;
-    let row = liveStatsByName.get(n);
-    if (!row) {
-      const parts = name.trim().split(/\s+/);
-      if (parts.length >= 2) {
-        row = liveStatsByName.get((parts[0] + ' ' + parts[parts.length - 1]).toLowerCase());
-      }
+    for (const k of dfKeysFor(name)) {
+      const row = liveStatsByName.get(k);
+      if (row) return row;
     }
-    return row || null;
+    return null;
   }
   function liveStatsFreshness() {
     if (!liveStats.length) return null;
@@ -3125,12 +3152,15 @@
                        : (isAbsent ? 'Absent · ' + (rec.absenceToday.reason || 'Absent')
                                    : (outAt ? 'Clocked out' : 'Not in yet'));
 
-        // Prefer live_stats; fall back to the daily snapshot.
-        const fullKey = (rec.name || '').toLowerCase().trim();
-        const parts = (rec.name || '').trim().split(/\s+/);
-        const flKey = parts.length >= 2 ? (parts[0] + ' ' + parts[parts.length - 1]).toLowerCase() : null;
+        // Prefer live_stats; fall back to the daily snapshot. Both use
+        // dfKeysFor() so a name mismatch (Gomes/Gomez, nickname, short
+        // last-name) still resolves to the right Dialfire row.
         const liveRow = liveStatsFor(rec.name);
-        const dailyAgent = callsByName.get(fullKey) || (flKey && callsByName.get(flKey)) || null;
+        let dailyAgent = null;
+        for (const k of dfKeysFor(rec.name)) {
+          dailyAgent = callsByName.get(k);
+          if (dailyAgent) break;
+        }
         const todayCalls    = liveRow ? liveRow.calls         : (dailyAgent ? dailyAgent.calls  : null);
         const todayAnswered = liveRow ? liveRow.leads         : (dailyAgent ? dailyAgent.success : null);
         // "Leads" = seller leads only. Rental + email stay as their own columns.
