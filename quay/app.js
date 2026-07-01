@@ -3759,7 +3759,8 @@
       // can resolve acked_by (a staff.id) into a readable name.
       if (_staffNamesById.size === 0 && window.sb) {
         try {
-          const { data: staff } = await window.sb.from('staff').select('id, name');
+          // staff_public: safe projection — LN name lookup never needs rates.
+          const { data: staff } = await window.sb.from('staff_public').select('id, name');
           (staff || []).forEach(s => _staffNamesById.set(s.id, s.name));
         } catch {}
       }
@@ -3871,9 +3872,9 @@
         .limit(500);
       if (error) throw error;
       _reports = rows || [];
-      // Best-effort lookup of staff names (single query, RLS allows reads).
+      // Best-effort lookup of staff names via safe projection.
       if (_staffNamesById.size === 0) {
-        const { data: staff } = await window.sb.from('staff').select('id, name');
+        const { data: staff } = await window.sb.from('staff_public').select('id, name');
         (staff || []).forEach(s => _staffNamesById.set(s.id, s.name));
       }
     } catch (e) {
