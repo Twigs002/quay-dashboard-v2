@@ -32,6 +32,9 @@
 
 <script src="quay/config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<!-- html2canvas: powers "Export PNG" on the Teams Reporting tab.
+     Lazy for other tabs; the tab handler degrades gracefully if this fails to load. -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
 <script>
   window.sb = window.supabase.createClient(window.QUAY_CONFIG.SUPABASE_URL, window.QUAY_CONFIG.SUPABASE_ANON_KEY);
 </script>

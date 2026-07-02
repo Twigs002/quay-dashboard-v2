@@ -1701,3 +1701,43 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
   .boot-title::after, .boot-period::after, .boot-kpi::after,
   .boot-chart::after, .boot-side-card::after { animation: none; }
 }
+
+/* ── Teams Reporting (superuser-only tab) ─────────────────────────────
+   Mirrors the LN Stats multi-select team picker so both tabs feel like
+   one product. Kept as a separate .tr-* namespace so future LN changes
+   don't leak here (and vice versa). */
+.tr-filters {
+  display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap;
+}
+.tr-team-picker {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 20;
+  width: min(420px, 92vw);
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 12px; box-shadow: 0 10px 32px rgba(20, 34, 60, 0.16);
+  padding: 10px; display: flex; flex-direction: column; gap: 8px;
+}
+.tr-team-picker-head {
+  display: flex; gap: 8px; align-items: center;
+}
+.tr-team-picker-head input[type="search"] {
+  flex: 1; padding: 6px 10px; border: 1px solid var(--line);
+  border-radius: 8px; font-family: inherit; font-size: 12.5px;
+}
+.tr-team-picker-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;
+  max-height: 260px; overflow-y: auto; padding: 2px;
+}
+.tr-team-chip {
+  border: 1px solid var(--line); background: var(--card);
+  color: var(--slate); padding: 5px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; font-family: inherit;
+  cursor: pointer; text-align: center;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.tr-team-chip:hover { border-color: var(--blue-800); color: var(--blue-800); }
+.tr-team-chip.on {
+  background: var(--blue-800); color: #FFFFFF; border-color: var(--blue-800);
+}
+.tr-team-selected .tr-team-chip.on:hover {
+  background: #C9302C; border-color: #C9302C;
+}

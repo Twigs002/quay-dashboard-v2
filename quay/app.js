@@ -120,6 +120,7 @@
     { id: 'clocks',     section: 'Admin',       label: 'Clocks',         icon: I.clock,    title: 'Clocks',               sub: 'Staff hours, requests & team — manage everything in one place' },
     { id: 'team',       section: 'Admin',       label: 'Staff',          icon: I.users,    title: 'Staff Directory',      sub: 'Roster · clock-in status · forgot-to-clock-out · mark absent' },
     { id: 'payroll',    section: 'Admin',       label: 'Payroll',        icon: I.cal2,     title: 'Payroll · Divisions Allocations', sub: 'Pay-period hours by division — 21st → 20th' },
+    { id: 'teams-report', section: 'Admin',     label: 'Teams Reporting', icon: I.medal,   title: 'Teams Reporting',      sub: 'Pick teams · see who called for them (incl. cross-team) · export PDF/PNG for sharing' },
   ];
 
   // ---- Payroll tab state (super-only) ----
@@ -285,10 +286,11 @@
     // We're authenticated when supabase has an active session AND we know
     // the staff row. setSession({...staff}) is set by submitLogin/setSession.
     if (!session || !session.id) { renderLogin(); return; }
-    // Filter tabs by role: only superusers see Leadership + Payroll.
+    // Filter tabs by role: only superusers see Leadership + Payroll + Teams Reporting.
     const visibleTabs = TABS.filter(t =>
-      (t.id !== 'leadership' || session.super) &&
-      (t.id !== 'payroll'    || session.super)
+      (t.id !== 'leadership'   || session.super) &&
+      (t.id !== 'payroll'      || session.super) &&
+      (t.id !== 'teams-report' || session.super)
     );
     // If a non-super lands on a hidden tab (e.g. via deep link), bounce to overview.
     if (!visibleTabs.find(t => t.id === tab)) tab = 'overview';
@@ -431,8 +433,9 @@
   // ---------------------------------------------------- ROUTER
   function render() {
     const host = document.getElementById('content');
-    if (tab === 'leadership' && !session?.super) { tab = 'overview'; }
-    if (tab === 'payroll'    && !session?.super) { tab = 'overview'; }
+    if (tab === 'leadership'   && !session?.super) { tab = 'overview'; }
+    if (tab === 'payroll'      && !session?.super) { tab = 'overview'; }
+    if (tab === 'teams-report' && !session?.super) { tab = 'overview'; }
     if (tab === 'leadership')    { host.innerHTML = leadership(); afterLeadership(); }
     else if (tab === 'overview') { host.innerHTML = overview(); afterOverview(); }
     else if (tab === 'staff')    { host.innerHTML = V.allStaff(period, staffTeamFilter); staffWire(); }
@@ -446,6 +449,7 @@
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
     else if (tab === 'team')     { host.innerHTML = renderTeamView(); wireTeamView(); }
     else if (tab === 'live')     { host.innerHTML = renderLiveFloor(); liveFloorWire(); }
+    else if (tab === 'teams-report') { host.innerHTML = renderTeamsReporting(); wireTeamsReporting(); }
     // Any per-card "Export CSV" button shares the topbar export handler.
     document.querySelectorAll('#content .js-export').forEach(b => {
       if (b.__exportWired) return; b.__exportWired = true;
@@ -3056,6 +3060,387 @@
     if (dClear) dClear.addEventListener('click', () => {
       _lnDateFrom = null; _lnDateTo = null; shell();
     });
+  }
+
+  // ─── Teams Reporting (superuser-only) ────────────────────────────
+  // Multi-team picker → per-caller breakdown for anyone (regardless of home
+  // team) who logged a call on any of the picked teams' campaigns during the
+  // active period. Exportable as PDF (browser print) or PNG (html2canvas).
+  //
+  // Data source: window.QUAY.perAgentPerTeam(period) — uses week.by_agent_campaign
+  // so agents on multi-team campaigns like BABES_CM/NA/NEW get correctly
+  // attributed (this is how Staddy shows up when picking Babes).
+  let _trTeamsPicked = new Set();     // Title-Case team names ('Babes', 'Amigos')
+  let _trTeamFilterQ = '';
+  let _trPickerOpen  = false;
+  let _trDocClickHandler = null;
+  let _trSortBy  = 'calls';
+  let _trSortDir = 'desc';
+  let _trDateFrom = null;             // 'YYYY-MM-DD' SAST — custom range overrides global period when both set
+  let _trDateTo   = null;             // 'YYYY-MM-DD' SAST
+
+  // Map canonical team key → pretty Title-Case name. Seeded from LN_TEAMS_ALL
+  // so 'BABES' / 'BAB_ES' / 'babes' all render as "Babes" instead of the
+  // Dialfire-side upper-case raw name. Falls back to titleCase(underscores→spaces).
+  function _trPrettifyTeam(raw, canonToPretty) {
+    const key = Q.teamCanonical(raw);
+    if (canonToPretty.has(key)) return canonToPretty.get(key);
+    return String(raw || '').toLowerCase().replace(/_/g, ' ')
+      .replace(/\b([a-z])/g, m => m.toUpperCase());
+  }
+
+  function _trHomeTeamForAgent(entry, pickedCanonSet, canonToPretty) {
+    // Pick the team (among selected teams) where this agent made the most
+    // calls in the active period. If pickedCanonSet is empty (== all teams),
+    // pick the team with the most calls overall.
+    let best = null;
+    entry.byTeam.forEach((s, key) => {
+      if (pickedCanonSet.size && !pickedCanonSet.has(key)) return;
+      if (!best || s.calls > best.calls) best = s;
+    });
+    return best ? _trPrettifyTeam(best.team, canonToPretty) : '—';
+  }
+
+  function renderTeamsReporting() {
+    if (!session?.super) return `<div class="tab-view"><div class="card card-pad"><p class="muted">This tab is available to superusers only.</p></div></div>`;
+    // Data source: custom range wins if both dates are set; otherwise the
+    // global period button up in the topbar drives it.
+    const usingCustomRange = !!(_trDateFrom && _trDateTo);
+    let rangeLabel, rangeSuffix, rows;
+    if (usingCustomRange) {
+      const [a, b] = _trDateFrom <= _trDateTo ? [_trDateFrom, _trDateTo] : [_trDateTo, _trDateFrom];
+      rangeLabel = 'Custom range';
+      rangeSuffix = ' · ' + a + ' → ' + b;
+      rows = Q.perAgentPerTeamRange(a, b);
+    } else {
+      rangeLabel = (Q.PERIODS[period] || {}).label || period;
+      rangeSuffix = periodRangeSuffix();
+      rows = Q.perAgentPerTeam(period);
+    }
+    // Universe of teams: canonical LN_TEAMS_ALL (Title Case), plus any
+    // observed team from the data that isn't already covered by canonical
+    // form. Dedupe by teamCanonical so 'Babes' and 'BABES' don't both
+    // appear in the picker.
+    const canonToPretty = new Map();
+    LN_TEAMS_ALL.forEach(t => canonToPretty.set(Q.teamCanonical(t), t));
+    const observedByCanon = new Map();
+    rows.forEach(r => r.byTeam.forEach(s => {
+      const k = Q.teamCanonical(s.team);
+      if (!observedByCanon.has(k)) observedByCanon.set(k, s.team);
+    }));
+    observedByCanon.forEach((rawName, key) => {
+      if (!canonToPretty.has(key)) canonToPretty.set(key, _trPrettifyTeam(rawName, canonToPretty));
+    });
+    const teamList = Array.from(canonToPretty.values())
+      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
+    const pickedCanon = new Set(Array.from(_trTeamsPicked).map(Q.teamCanonical));
+    const pickedCount = _trTeamsPicked.size;
+
+    // Filter agents: if teams picked, keep those with any calls in any picked team.
+    // If no teams picked, show empty state — makes the picker feel purposeful.
+    const filtered = pickedCount === 0
+      ? []
+      : rows.filter(r => {
+          let has = false;
+          r.byTeam.forEach((_v, key) => { if (pickedCanon.has(key)) has = true; });
+          return has;
+        }).map(r => {
+          // Recompute the row totals scoped to picked teams so the numbers
+          // shown reflect the callers' work FOR the selected teams — not
+          // their global totals.
+          let calls = 0, seller = 0, rental = 0, email = 0, workTime = 0, talkTime = 0;
+          const perPicked = [];
+          r.byTeam.forEach((s, key) => {
+            if (!pickedCanon.has(key)) return;
+            calls += s.calls; seller += s.seller; rental += s.rental; email += s.email;
+            workTime += s.workTime; talkTime += s.talkTime;
+            perPicked.push(s);
+          });
+          perPicked.sort((a, b) => b.calls - a.calls);
+          const teamsWorked = perPicked.map(s => _trPrettifyTeam(s.team, canonToPretty)).join(', ');
+          return {
+            name: r.name,
+            homeTeam: _trHomeTeamForAgent(r, pickedCanon, canonToPretty),
+            teamsWorked,
+            teamsCount: perPicked.length,
+            calls, seller, rental, email, workTime, talkTime,
+            leads: seller,  // seller-only definition, matches campaignsFor
+            cph: calls > 0 ? +(seller / (calls / 100)).toFixed(1) : 0,  // leads per 100 calls
+          };
+        });
+
+    // Sort
+    const sortDirMul = _trSortDir === 'asc' ? 1 : -1;
+    const key = _trSortBy;
+    filtered.sort((a, b) => {
+      if (key === 'name' || key === 'homeTeam' || key === 'teamsWorked') {
+        return String(a[key] || '').localeCompare(String(b[key] || '')) * sortDirMul;
+      }
+      return ((a[key] || 0) - (b[key] || 0)) * sortDirMul;
+    });
+
+    // KPI totals
+    const totalCalls   = filtered.reduce((s, r) => s + r.calls, 0);
+    const totalSeller  = filtered.reduce((s, r) => s + r.seller, 0);
+    const totalRental  = filtered.reduce((s, r) => s + r.rental, 0);
+    const totalEmail   = filtered.reduce((s, r) => s + r.email, 0);
+    const totalCallers = filtered.length;
+
+    // ── Picker markup (forked from LN Stats)
+    const q = (_trTeamFilterQ || '').trim().toLowerCase();
+    const filteredTeams = q
+      ? teamList.filter(t => t.toLowerCase().includes(q))
+      : teamList;
+    const pickerSummary = pickedCount === 0
+      ? 'Pick teams…'
+      : pickedCount === 1
+        ? Array.from(_trTeamsPicked)[0]
+        : `${pickedCount} teams`;
+    const selectedChips = pickedCount
+      ? Array.from(_trTeamsPicked).sort().map(t =>
+          `<button type="button" class="tr-team-chip on" data-tr-team-remove="${escapeHtml(t)}" title="Remove ${escapeHtml(t)}">${escapeHtml(t)}<span aria-hidden="true"> ×</span></button>`).join('')
+      : '';
+    const pickerPanel = _trPickerOpen ? `
+      <div class="tr-team-picker" role="dialog" aria-label="Pick teams">
+        <div class="tr-team-picker-head">
+          <input id="trTeamSearch" type="search" placeholder="Search teams…"
+                 value="${escapeHtml(_trTeamFilterQ || '')}" autocomplete="off">
+          <button type="button" id="trTeamClear" class="btn" style="padding:5px 10px;font-size:12px"${pickedCount ? '' : ' disabled'}>Clear</button>
+        </div>
+        <div class="tr-team-picker-grid">
+          ${filteredTeams.length === 0
+            ? '<div class="muted" style="grid-column:1/-1;padding:8px;font-size:12.5px">No teams match</div>'
+            : filteredTeams.map(t =>
+                `<button type="button" class="tr-team-chip ${_trTeamsPicked.has(t) ? 'on' : ''}" data-tr-team-toggle="${escapeHtml(t)}">${escapeHtml(t)}${_trTeamsPicked.has(t) ? ' ✓' : ''}</button>`).join('')}
+        </div>
+      </div>` : '';
+
+    const fmt2 = n => Number(n || 0).toLocaleString('en-ZA');
+    const fmtHrs = (h) => {
+      if (!h || h <= 0) return '—';
+      const tot = Math.round(h * 60);
+      return Math.floor(tot / 60) + ':' + String(tot % 60).padStart(2, '0');
+    };
+    const sortIndic = (k) => {
+      if (k !== _trSortBy) return '<span class="muted" style="font-size:11px"> ⇅</span>';
+      return _trSortDir === 'asc'
+        ? '<span style="color:var(--blue-800);font-size:11px"> ▲</span>'
+        : '<span style="color:var(--blue-800);font-size:11px"> ▼</span>';
+    };
+    const sortTh = (k, label, extra) => `<th class="${extra || 'num'}" style="cursor:pointer" data-tr-sort="${k}">${escapeHtml(label)}${sortIndic(k)}</th>`;
+    const kpi = (ic, label, val, foot) => `<div class="card kpi">
+      <div class="kpi-top"><span class="kpi-ic">${ic}</span><div class="kpi-label">${escapeHtml(label)}</div></div>
+      <div class="kpi-val tnum">${val}</div>
+      <div class="kpi-foot">${escapeHtml(foot)}</div>
+    </div>`;
+    const nowLabel = new Date().toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' });
+    const periodLabel = rangeLabel;
+
+    const tableRows = pickedCount === 0
+      ? `<tr><td colspan="9" class="muted" style="text-align:center;padding:30px">Pick one or more teams above to see who's calling for them.</td></tr>`
+      : filtered.length === 0
+        ? `<tr><td colspan="9" class="muted" style="text-align:center;padding:30px">No calls logged on the selected team(s) in this period.</td></tr>`
+        : filtered.map(r => `<tr>
+            <td data-label="Caller"><b>${escapeHtml(r.name)}</b></td>
+            <td data-label="Home team"><span class="pill rm" style="font-size:10.5px;padding:2px 8px">${escapeHtml(r.homeTeam)}</span></td>
+            <td class="muted" style="font-size:12px" data-label="Teams worked">${escapeHtml(r.teamsWorked || '—')}</td>
+            <td class="num tnum" data-label="Calls">${fmt2(r.calls)}</td>
+            <td class="num tnum" data-label="Seller leads">${r.seller ? fmt2(r.seller) : '<span class="muted">—</span>'}</td>
+            <td class="num tnum" data-label="Rental leads">${r.rental ? fmt2(r.rental) : '<span class="muted">—</span>'}</td>
+            <td class="num tnum" data-label="Email leads">${r.email ? fmt2(r.email) : '<span class="muted">—</span>'}</td>
+            <td class="num tnum" data-label="Leads / 100 calls">${r.calls ? r.cph.toFixed(1) : '<span class="muted">—</span>'}</td>
+            <td class="num tnum" data-label="Talk time">${fmtHrs(r.talkTime)}</td>
+          </tr>`).join('');
+
+    const todaySast = sastDateStr(new Date());
+    return `<div class="tab-view" id="trPrintable">
+      <div class="card card-pad">
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
+          <div>
+            <h3 style="margin:0;font-family:var(--serif);font-size:17px">Teams Reporting</h3>
+            <div class="sub" style="margin-top:4px">${periodLabel}${rangeSuffix} · exact per-caller × per-team breakdown from Dialfire</div>
+          </div>
+          <div class="ln-date-picker" aria-label="Custom date range">
+            <label class="muted" for="trDateFrom">From</label>
+            <input id="trDateFrom" type="date" value="${_trDateFrom || ''}" max="${todaySast}">
+            <span class="muted" aria-hidden="true">→</span>
+            <label class="muted" for="trDateTo">To</label>
+            <input id="trDateTo" type="date" value="${_trDateTo || ''}" max="${todaySast}">
+            ${usingCustomRange ? `<button class="btn" id="trDateClear" type="button" style="padding:5px 10px;font-size:12px">Clear</button>` : ''}
+            <button class="btn" id="trExportPng" title="Download as PNG image" style="margin-left:6px">${I.download} PNG</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt card-pad">
+        <div class="tr-filters">
+          <div class="tr-div-wrap" style="position:relative;flex:1;min-width:260px;max-width:520px">
+            <label class="muted" style="font-size:12px">Teams (multi-select)</label>
+            <button type="button" id="trDivToggle" class="ln-div-select"
+                    aria-haspopup="listbox" aria-expanded="${_trPickerOpen}"
+                    style="text-align:left;cursor:pointer;padding-right:26px;position:relative;width:100%">
+              ${escapeHtml(pickerSummary)}
+              <span aria-hidden="true" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--muted)">${_trPickerOpen ? '▴' : '▾'}</span>
+            </button>
+            ${pickerPanel}
+          </div>
+        </div>
+        ${pickedCount ? `<div class="tr-team-selected" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${selectedChips}</div>` : ''}
+      </div>
+
+      <div class="row kpis mt">
+        ${kpi(I.users,  'Callers',       fmt2(totalCallers), pickedCount ? 'people who logged calls on the selected team(s)' : 'pick teams to populate')}
+        ${kpi(I.phone,  'Total Calls',   fmt2(totalCalls),   pickedCount ? 'across selected team(s), this period'          : '—')}
+        ${kpi(I.target, 'Seller Leads',  fmt2(totalSeller),  pickedCount ? 'seller lines only'                              : '—')}
+        ${kpi(I.trophy, 'Rental+Email',  fmt2(totalRental + totalEmail), pickedCount ? `${fmt2(totalRental)} rental · ${fmt2(totalEmail)} email` : '—')}
+      </div>
+
+      <div class="card mt">
+        <div class="card-head" style="padding:14px 16px 6px">
+          <h3 style="margin:0;font-family:var(--serif);font-size:15px">Callers on selected team(s)</h3>
+          <div class="sub">${pickedCount ? Array.from(_trTeamsPicked).sort().join(', ') : 'no teams picked'} · ${periodLabel}${rangeSuffix} · captured ${nowLabel}</div>
+        </div>
+        <div class="tbl-wrap"><table class="tbl tbl-sortable">
+          <thead>
+            <tr>
+              <th data-tr-sort="name" style="cursor:pointer;text-align:left">Caller${sortIndic('name')}</th>
+              <th data-tr-sort="homeTeam" style="cursor:pointer;text-align:left">Home team${sortIndic('homeTeam')}</th>
+              <th data-tr-sort="teamsWorked" style="cursor:pointer;text-align:left">Teams worked${sortIndic('teamsWorked')}</th>
+              ${sortTh('calls',  'Calls')}
+              ${sortTh('seller', 'Seller')}
+              ${sortTh('rental', 'Rental')}
+              ${sortTh('email',  'Email')}
+              ${sortTh('cph',    'Leads/100')}
+              ${sortTh('talkTime','Talk time')}
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table></div>
+      </div>
+    </div>`;
+  }
+
+  function wireTeamsReporting() {
+    const divToggle = document.getElementById('trDivToggle');
+    if (divToggle) divToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      _trPickerOpen = !_trPickerOpen;
+      shell();
+    });
+    const divSearch = document.getElementById('trTeamSearch');
+    if (divSearch) {
+      divSearch.addEventListener('input', (e) => {
+        const caret = e.target.selectionStart;
+        _trTeamFilterQ = e.target.value;
+        shell();
+        const s2 = document.getElementById('trTeamSearch');
+        if (s2) { s2.focus(); try { s2.setSelectionRange(caret, caret); } catch (_) {} }
+      });
+      divSearch.addEventListener('click', (e) => e.stopPropagation());
+    }
+    document.querySelectorAll('[data-tr-team-toggle]').forEach(b => b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const t = b.dataset.trTeamToggle;
+      if (_trTeamsPicked.has(t)) _trTeamsPicked.delete(t);
+      else _trTeamsPicked.add(t);
+      shell();
+    }));
+    document.querySelectorAll('[data-tr-team-remove]').forEach(b => b.addEventListener('click', () => {
+      _trTeamsPicked.delete(b.dataset.trTeamRemove);
+      shell();
+    }));
+    const clearBtn = document.getElementById('trTeamClear');
+    if (clearBtn) clearBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      _trTeamsPicked.clear();
+      _trTeamFilterQ = '';
+      shell();
+    });
+    // Same click-outside pattern LN Stats uses — detach the previous
+    // module-scoped handler before attaching a new one so listeners don't
+    // stack across shell() re-renders.
+    if (_trDocClickHandler) {
+      document.removeEventListener('click', _trDocClickHandler);
+      _trDocClickHandler = null;
+    }
+    if (_trPickerOpen) {
+      _trDocClickHandler = (ev) => {
+        if (ev.target.closest('.tr-div-wrap')) return;
+        _trPickerOpen = false;
+        document.removeEventListener('click', _trDocClickHandler);
+        _trDocClickHandler = null;
+        shell();
+      };
+      setTimeout(() => {
+        if (_trDocClickHandler) document.addEventListener('click', _trDocClickHandler);
+      }, 0);
+    }
+    document.querySelectorAll('th[data-tr-sort]').forEach(th => {
+      th.addEventListener('click', () => {
+        const k = th.dataset.trSort;
+        if (_trSortBy === k) _trSortDir = _trSortDir === 'asc' ? 'desc' : 'asc';
+        else { _trSortBy = k; _trSortDir = (k === 'name' || k === 'homeTeam' || k === 'teamsWorked') ? 'asc' : 'desc'; }
+        shell();
+      });
+    });
+    const pngBtn = document.getElementById('trExportPng');
+    if (pngBtn) pngBtn.addEventListener('click', exportTeamsReportingPng);
+    // Custom date-range picker — override the global period once both ends
+    // are filled. Preserve focus on the field that was just changed so the
+    // user can tab straight from From to To.
+    const _reFocus = (id) => { const el = document.getElementById(id); if (el) el.focus(); };
+    const trFrom = document.getElementById('trDateFrom');
+    const trTo   = document.getElementById('trDateTo');
+    if (trFrom) trFrom.addEventListener('change', (e) => {
+      _trDateFrom = e.target.value || null; shell(); _reFocus('trDateFrom');
+    });
+    if (trTo) trTo.addEventListener('change', (e) => {
+      _trDateTo = e.target.value || null; shell(); _reFocus('trDateTo');
+    });
+    const trClear = document.getElementById('trDateClear');
+    if (trClear) trClear.addEventListener('click', () => {
+      _trDateFrom = null; _trDateTo = null; shell();
+    });
+  }
+
+  // Snapshot the Teams Reporting view as a PNG and trigger a download.
+  // Uses html2canvas from the CDN script tag in index.html; degrades to a
+  // friendly nudge if the library failed to load (offline / blocked).
+  async function exportTeamsReportingPng() {
+    const target = document.getElementById('trPrintable');
+    if (!target) return;
+    if (typeof window.html2canvas !== 'function') {
+      alert('PNG export helper failed to load — try the Print button (Save as PDF) instead.');
+      return;
+    }
+    const btn = document.getElementById('trExportPng');
+    const prev = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = 'Rendering…'; }
+    try {
+      const canvas = await window.html2canvas(target, {
+        backgroundColor: '#F6F7FB',
+        scale: 2,                     // retina-quality
+        useCORS: true,
+        logging: false,
+        windowWidth: target.scrollWidth,
+      });
+      const teams = Array.from(_trTeamsPicked).sort().join('_').toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'all';
+      const stamp = (_trDateFrom && _trDateTo)
+        ? `${_trDateFrom}_${_trDateTo}`
+        : new Date().toISOString().slice(0, 10);
+      const link = document.createElement('a');
+      link.download = `teams-report_${teams}_${stamp}.png`;
+      link.href = canvas.toDataURL('image/png');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error('PNG export failed', e);
+      alert('PNG export failed: ' + (e && e.message ? e.message : e));
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = prev; }
+    }
   }
 
   // ─── LN Daily Recap (used on Overview tab — top-of-page card) ────

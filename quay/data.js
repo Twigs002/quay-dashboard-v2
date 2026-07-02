@@ -801,6 +801,90 @@ window.QUAY_READY = (async function () {
     return Object.values(byCamp).sort((a, b) => b.calls - a.calls);
   }
 
+  // Canonical form for team-name matching: uppercased, punctuation stripped.
+  // Bridges `LN_TEAMS_ALL` ("Power Rangers"), raw Dialfire campaign prefixes
+  // ("POWER_RANGERS"), and clock EOD divisions ("Powerrangers") into one key.
+  function teamCanonical(name) {
+    return String(name || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  }
+
+  // Per-agent stats broken down by team (normalized campaign name), across
+  // the selected period. Feeds the Teams Reporting tab and the future
+  // weekly per-team email digest.
+  // Skips legacy weeks that pre-date the `by_agent_campaign` field so the
+  // team breakdown stays exact — the fall-back overlap counting used by
+  // `campaignsFor` would attribute an agent's calls to every campaign they
+  // touch, which is wrong for a per-team-per-agent view.
+  function _aggregatePerAgentPerTeam(weekSlice) {
+    const agents = new Map(); // prettyName -> record
+    weekSlice.forEach(week => {
+      if (!week.by_agent_campaign || typeof week.by_agent_campaign !== 'object') return;
+      Object.entries(week.by_agent_campaign).forEach(([agentName, perCamp]) => {
+        const pretty = prettifyName(agentName);
+        let entry = agents.get(pretty);
+        if (!entry) {
+          entry = {
+            name: pretty,
+            byTeam: new Map(), // canonicalKey -> { team, calls, seller, rental, email, workTime, talkTime }
+            calls: 0, seller: 0, rental: 0, email: 0,
+            workTime: 0, talkTime: 0,
+            weeksSeen: 0,
+          };
+          agents.set(pretty, entry);
+        }
+        entry.weeksSeen += 1;
+        Object.entries(perCamp).forEach(([rawCamp, st]) => {
+          const team = normalizeCampaignName(rawCamp);
+          const key  = teamCanonical(team);
+          let tstat = entry.byTeam.get(key);
+          if (!tstat) {
+            tstat = { team, calls: 0, seller: 0, rental: 0, email: 0, workTime: 0, talkTime: 0 };
+            entry.byTeam.set(key, tstat);
+          }
+          const c = st.calls    || 0;
+          const s = st.seller   || 0;
+          const r = st.rental   || 0;
+          const em = st.email   || 0;
+          const wt = st.workTime || 0;
+          const tt = st.talkTime || 0;
+          tstat.calls += c; tstat.seller += s; tstat.rental += r; tstat.email += em;
+          tstat.workTime += wt; tstat.talkTime += tt;
+          entry.calls += c; entry.seller += s; entry.rental += r; entry.email += em;
+          entry.workTime += wt; entry.talkTime += tt;
+        });
+      });
+    });
+    return Array.from(agents.values());
+  }
+
+  function perAgentPerTeam(periodKey) {
+    return _aggregatePerAgentPerTeam(_sliceFor(periodKey));
+  }
+
+  // Add N days to a YYYY-MM-DD string, returning a new YYYY-MM-DD.
+  // Timezone-agnostic — we treat the string as a calendar date, not an instant.
+  function _addDaysYmd(ymd, n) {
+    const [y, m, d] = ymd.split('-').map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d + n));
+    return dt.toISOString().slice(0, 10);
+  }
+
+  // Custom-range version: include every week whose 7-day span [weekStart,
+  // weekStart+6] overlaps [fromYmd, toYmd]. This keeps the aggregation exact
+  // at week granularity — anything finer would need per-day roll-ups from
+  // `daily_data.json`, which isn't yet in the by_agent_campaign shape.
+  function perAgentPerTeamRange(fromYmd, toYmd) {
+    if (!fromYmd || !toYmd) return [];
+    const [a, b] = fromYmd <= toYmd ? [fromYmd, toYmd] : [toYmd, fromYmd];
+    const slice = weeks.filter(w => {
+      if (!w.weekStart) return false;
+      const wStart = w.weekStart;
+      const wEnd = _addDaysYmd(w.weekStart, 6);
+      return wStart <= b && wEnd >= a;
+    });
+    return _aggregatePerAgentPerTeam(slice);
+  }
+
   // Map a period key onto a {fromISO, toISO} range, used by Supabase
   // queries that need a date filter (e.g. clock_out_reports lookups for
   // the All Staff "LN & Assistants" sub-tab). Earliest day in the period's
@@ -829,6 +913,7 @@ window.QUAY_READY = (async function () {
     PERIODS, DELTAS, agentsFor, totalsFor, prevTotalsFor, weeksInMonth,
     periodElapsed, project, trailingAvg,
     agentHistory, agentCampaigns,
+    perAgentPerTeam, perAgentPerTeamRange, teamCanonical, normalizeCampaignName,
     periodDateRange,
   };
   return window.QUAY;
