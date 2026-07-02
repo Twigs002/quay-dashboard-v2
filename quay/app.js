@@ -3078,6 +3078,16 @@
   let _trSortDir = 'desc';
   let _trDateFrom = null;             // 'YYYY-MM-DD' SAST — custom range overrides global period when both set
   let _trDateTo   = null;             // 'YYYY-MM-DD' SAST
+  // Subscribers panel (Monday-morning email config). Rows come from
+  // team_report_recipients — RLS gates read/write to supers only.
+  let _trSubsOpen  = false;           // collapsible section toggle
+  let _trSubs      = null;            // null = not loaded, [] = loaded
+  let _trSubsLoading = false;
+  let _trSubsError = '';
+  let _trSubsEditing = null;          // id of the row being edited, or 'new' for the add-row
+  let _trSubsDraft = null;            // { email, name, teams: Set, active, send_last_week, send_month_to_date }
+  let _trSubsTeamPickerOpen = false;
+  let _trSubsTeamFilterQ = '';
 
   // Map canonical team key → pretty Title-Case name. Seeded from LN_TEAMS_ALL
   // so 'BABES' / 'BAB_ES' / 'babes' all render as "Babes" instead of the
@@ -3099,6 +3109,237 @@
       if (!best || s.calls > best.calls) best = s;
     });
     return best ? _trPrettifyTeam(best.team, canonToPretty) : '—';
+  }
+
+  async function _trLoadSubs() {
+    if (_trSubsLoading) return;
+    _trSubsLoading = true; _trSubsError = '';
+    try {
+      const { data, error } = await window.sb.from('team_report_recipients')
+        .select('id, email, name, teams, active, send_last_week, send_month_to_date, notes, updated_at')
+        .order('email', { ascending: true });
+      if (error) throw error;
+      _trSubs = data || [];
+    } catch (e) {
+      _trSubsError = String(e.message || e);
+      _trSubs = _trSubs || [];
+    } finally {
+      _trSubsLoading = false;
+      if (tab === 'teams-report') shell();
+    }
+  }
+
+  function _trSubsStartEdit(row) {
+    _trSubsEditing = row ? row.id : 'new';
+    _trSubsDraft = {
+      email: row ? row.email : '',
+      name: row ? (row.name || '') : '',
+      teams: new Set(row ? (row.teams || []) : []),
+      active: row ? !!row.active : true,
+      send_last_week: row ? !!row.send_last_week : true,
+      send_month_to_date: row ? !!row.send_month_to_date : false,
+      notes: row ? (row.notes || '') : '',
+    };
+    _trSubsTeamPickerOpen = false;
+    _trSubsTeamFilterQ = '';
+  }
+
+  function _trSubsCancelEdit() {
+    _trSubsEditing = null; _trSubsDraft = null;
+    _trSubsTeamPickerOpen = false; _trSubsTeamFilterQ = '';
+  }
+
+  async function _trSubsSave() {
+    if (!_trSubsDraft) return;
+    const payload = {
+      email: String(_trSubsDraft.email || '').trim().toLowerCase(),
+      name: (_trSubsDraft.name || '').trim() || null,
+      teams: Array.from(_trSubsDraft.teams).sort(),
+      active: !!_trSubsDraft.active,
+      send_last_week: !!_trSubsDraft.send_last_week,
+      send_month_to_date: !!_trSubsDraft.send_month_to_date,
+      notes: (_trSubsDraft.notes || '').trim() || null,
+    };
+    if (!payload.email || !/.+@.+\..+/.test(payload.email)) {
+      _trSubsError = 'Enter a valid email address before saving.';
+      shell();
+      return;
+    }
+    if (payload.teams.length === 0) {
+      _trSubsError = 'Pick at least one team before saving.';
+      shell();
+      return;
+    }
+    _trSubsError = '';
+    try {
+      if (_trSubsEditing === 'new') {
+        const { error } = await window.sb.from('team_report_recipients').insert(payload);
+        if (error) throw error;
+      } else {
+        const { error } = await window.sb.from('team_report_recipients')
+          .update(payload).eq('id', _trSubsEditing);
+        if (error) throw error;
+      }
+      _trSubsCancelEdit();
+      await _trLoadSubs();
+    } catch (e) {
+      _trSubsError = String(e.message || e);
+      shell();
+    }
+  }
+
+  async function _trSubsRemove(id) {
+    // Row delete — irreversible, so confirm through the browser dialog.
+    // Kept as native confirm() to match the pattern used elsewhere for
+    // admin-level destructive actions.
+    if (!confirm('Remove this subscriber? They will no longer receive the Monday email.')) return;
+    try {
+      const { error } = await window.sb.from('team_report_recipients').delete().eq('id', id);
+      if (error) throw error;
+      await _trLoadSubs();
+    } catch (e) {
+      _trSubsError = String(e.message || e);
+      shell();
+    }
+  }
+
+  function _trSubsEditRowHtml(draft, isNew) {
+    // Reuses the LN_TEAMS_ALL roster for the team multi-select.
+    const q = (_trSubsTeamFilterQ || '').trim().toLowerCase();
+    const teamRoster = q
+      ? LN_TEAMS_ALL.filter(t => t.toLowerCase().includes(q))
+      : LN_TEAMS_ALL;
+    const pickedCount = draft.teams.size;
+    const summary = pickedCount === 0 ? 'Pick teams…'
+      : pickedCount === 1 ? Array.from(draft.teams)[0]
+      : `${pickedCount} teams`;
+    const picker = _trSubsTeamPickerOpen ? `
+      <div class="tr-team-picker" role="dialog" aria-label="Pick teams">
+        <div class="tr-team-picker-head">
+          <input id="trSubsTeamSearch" type="search" placeholder="Search teams…"
+                 value="${escapeHtml(_trSubsTeamFilterQ)}" autocomplete="off">
+        </div>
+        <div class="tr-team-picker-grid">
+          ${teamRoster.map(t =>
+            `<button type="button" class="tr-team-chip ${draft.teams.has(t) ? 'on' : ''}" data-trsubs-team-toggle="${escapeHtml(t)}">${escapeHtml(t)}${draft.teams.has(t) ? ' ✓' : ''}</button>`).join('')}
+        </div>
+      </div>` : '';
+    const chips = Array.from(draft.teams).sort().map(t =>
+      `<span class="pill" style="font-size:11px;padding:2px 8px;background:var(--blue-800);color:#fff;">${escapeHtml(t)}</span>`).join(' ');
+    return `<tr class="tr-subs-edit">
+      <td colspan="5" style="padding:14px 16px;background:#F6F7FB;border-top:1px solid var(--line)">
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:10px">
+          <div style="flex:1;min-width:200px">
+            <label class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">Email</label>
+            <input id="trSubsEmail" type="email" value="${escapeHtml(draft.email)}" ${isNew ? '' : 'readonly'} placeholder="name@quay1.co.za"
+              style="width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px;${isNew ? '' : 'background:#EDEFF4'}">
+          </div>
+          <div style="flex:1;min-width:160px">
+            <label class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">Name (optional)</label>
+            <input id="trSubsName" type="text" value="${escapeHtml(draft.name)}" placeholder="Sheldon"
+              style="width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px">
+          </div>
+          <div class="tr-div-wrap" style="position:relative;flex:1;min-width:200px">
+            <label class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">Teams</label>
+            <button type="button" id="trSubsTeamToggle" class="ln-div-select"
+              style="text-align:left;cursor:pointer;padding-right:26px;position:relative;width:100%">
+              ${escapeHtml(summary)}
+              <span aria-hidden="true" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--muted)">${_trSubsTeamPickerOpen ? '▴' : '▾'}</span>
+            </button>
+            ${picker}
+          </div>
+        </div>
+        ${chips ? `<div style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px">${chips}</div>` : ''}
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:12.5px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input id="trSubsActive" type="checkbox" ${draft.active ? 'checked' : ''}> Active
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input id="trSubsLastWeek" type="checkbox" ${draft.send_last_week ? 'checked' : ''}> Include last week
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input id="trSubsMtd" type="checkbox" ${draft.send_month_to_date ? 'checked' : ''}> Include month-to-date
+          </label>
+          <div style="margin-left:auto;display:flex;gap:8px">
+            <button type="button" class="btn" id="trSubsCancel">Cancel</button>
+            <button type="button" class="btn btn-primary" id="trSubsSave">${isNew ? 'Add subscriber' : 'Save changes'}</button>
+          </div>
+        </div>
+        ${_trSubsError ? `<div style="margin-top:8px;color:#D20A03;font-size:12.5px">${escapeHtml(_trSubsError)}</div>` : ''}
+      </td>
+    </tr>`;
+  }
+
+  function _trSubscribersCard() {
+    // Kick off the initial load once the tab opens (super-only, RLS gates
+    // the query — non-supers wouldn't get here anyway).
+    if (_trSubsOpen && _trSubs == null && !_trSubsLoading) {
+      _trLoadSubs();
+    }
+    const chevron = _trSubsOpen ? '▴' : '▾';
+    if (!_trSubsOpen) {
+      return `<div class="card mt card-pad" style="cursor:pointer" id="trSubsToggle" role="button" tabindex="0" aria-expanded="false">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <h3 style="margin:0;font-family:var(--serif);font-size:15px">Email subscribers · weekly Monday-morning report</h3>
+            <div class="sub" style="margin-top:2px">Who gets the auto-emailed team stats every Monday 08:00 SAST. Draft-only until you flip the send switch.</div>
+          </div>
+          <div class="muted" style="font-size:16px">${chevron}</div>
+        </div>
+      </div>`;
+    }
+    const rows = _trSubs || [];
+    const editingNew = _trSubsEditing === 'new';
+    const editingRow = _trSubsEditing && _trSubsEditing !== 'new' ? _trSubsEditing : null;
+    const tableBody = rows.length === 0 && !editingNew
+      ? `<tr><td colspan="5" class="muted" style="text-align:center;padding:22px">No subscribers yet — click <b>+ Add subscriber</b> to add one.</td></tr>`
+      : rows.map(r => {
+          if (editingRow === r.id && _trSubsDraft) {
+            return _trSubsEditRowHtml(_trSubsDraft, false);
+          }
+          const chips = (r.teams || []).map(t =>
+            `<span class="pill rm" style="font-size:10.5px;padding:2px 8px">${escapeHtml(t)}</span>`).join(' ');
+          const cadence = [
+            r.send_last_week ? 'last week' : null,
+            r.send_month_to_date ? 'MTD' : null,
+          ].filter(Boolean).join(' + ') || '—';
+          return `<tr>
+            <td data-label="Email"><b>${escapeHtml(r.email)}</b></td>
+            <td data-label="Name">${escapeHtml(r.name || '—')}</td>
+            <td data-label="Teams"><div style="display:flex;flex-wrap:wrap;gap:4px">${chips || '<span class="muted">—</span>'}</div></td>
+            <td data-label="Cadence">${escapeHtml(cadence)}${r.active ? '' : ' <span class="pill bad" style="font-size:10.5px;padding:2px 8px">paused</span>'}</td>
+            <td data-label="Actions" style="text-align:right;white-space:nowrap">
+              <button class="btn" data-trsubs-edit="${r.id}" style="padding:4px 10px;font-size:12px">Edit</button>
+              <button class="btn" data-trsubs-remove="${r.id}" style="padding:4px 10px;font-size:12px;color:#D20A03">Remove</button>
+            </td>
+          </tr>`;
+        }).join('');
+    const newRow = editingNew && _trSubsDraft ? _trSubsEditRowHtml(_trSubsDraft, true) : '';
+    return `<div class="card mt">
+      <div class="card-pad" style="cursor:pointer;padding-bottom:12px" id="trSubsToggle" role="button" tabindex="0" aria-expanded="true">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <h3 style="margin:0;font-family:var(--serif);font-size:15px">Email subscribers · weekly Monday-morning report</h3>
+            <div class="sub" style="margin-top:2px">Who gets the auto-emailed team stats every Monday 08:00 SAST. Draft-only until you flip the send switch.</div>
+          </div>
+          <div class="muted" style="font-size:16px">${chevron}</div>
+        </div>
+      </div>
+      <div style="padding:0 16px 6px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div class="muted" style="font-size:12.5px">${_trSubsLoading ? 'Loading…' : (rows.length + ' subscriber' + (rows.length === 1 ? '' : 's'))}</div>
+        <button class="btn btn-primary" id="trSubsAdd" ${editingNew ? 'disabled' : ''} style="padding:6px 14px;font-size:12.5px">+ Add subscriber</button>
+      </div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr>
+          <th style="text-align:left">Email</th>
+          <th style="text-align:left">Name</th>
+          <th style="text-align:left">Teams</th>
+          <th style="text-align:left">Cadence</th>
+          <th style="text-align:right">Actions</th>
+        </tr></thead>
+        <tbody>${newRow}${tableBody}</tbody>
+      </table></div>
+    </div>`;
   }
 
   function renderTeamsReporting() {
@@ -3318,6 +3559,8 @@
           <tbody>${tableRows}</tbody>
         </table></div>
       </div>
+
+      ${_trSubscribersCard()}
     </div>`;
   }
 
@@ -3402,6 +3645,74 @@
     if (trClear) trClear.addEventListener('click', () => {
       _trDateFrom = null; _trDateTo = null; shell();
     });
+    // ── Subscribers card wiring
+    const subsToggle = document.getElementById('trSubsToggle');
+    if (subsToggle) subsToggle.addEventListener('click', () => {
+      _trSubsOpen = !_trSubsOpen;
+      if (!_trSubsOpen) { _trSubsCancelEdit(); _trSubsError = ''; }
+      shell();
+    });
+    const subsAdd = document.getElementById('trSubsAdd');
+    if (subsAdd) subsAdd.addEventListener('click', () => {
+      _trSubsStartEdit(null);
+      shell();
+    });
+    document.querySelectorAll('[data-trsubs-edit]').forEach(b =>
+      b.addEventListener('click', () => {
+        const row = (_trSubs || []).find(r => r.id === b.dataset.trsubsEdit);
+        if (row) { _trSubsStartEdit(row); shell(); }
+      })
+    );
+    document.querySelectorAll('[data-trsubs-remove]').forEach(b =>
+      b.addEventListener('click', () => _trSubsRemove(b.dataset.trsubsRemove))
+    );
+    // Edit-row form fields — bind to draft on input so save gets fresh values.
+    const bindField = (id, key) => {
+      const el = document.getElementById(id);
+      if (!el || !_trSubsDraft) return;
+      const handler = () => {
+        _trSubsDraft[key] = (el.type === 'checkbox') ? el.checked : el.value;
+      };
+      el.addEventListener('input', handler);
+      el.addEventListener('change', handler);
+    };
+    bindField('trSubsEmail', 'email');
+    bindField('trSubsName', 'name');
+    bindField('trSubsActive', 'active');
+    bindField('trSubsLastWeek', 'send_last_week');
+    bindField('trSubsMtd', 'send_month_to_date');
+    const subsSave = document.getElementById('trSubsSave');
+    if (subsSave) subsSave.addEventListener('click', _trSubsSave);
+    const subsCancel = document.getElementById('trSubsCancel');
+    if (subsCancel) subsCancel.addEventListener('click', () => {
+      _trSubsCancelEdit(); _trSubsError = ''; shell();
+    });
+    // Team picker inside the edit row
+    const subsTeamToggle = document.getElementById('trSubsTeamToggle');
+    if (subsTeamToggle) subsTeamToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      _trSubsTeamPickerOpen = !_trSubsTeamPickerOpen;
+      shell();
+    });
+    const subsTeamSearch = document.getElementById('trSubsTeamSearch');
+    if (subsTeamSearch) {
+      subsTeamSearch.addEventListener('input', (e) => {
+        const caret = e.target.selectionStart;
+        _trSubsTeamFilterQ = e.target.value;
+        shell();
+        const s2 = document.getElementById('trSubsTeamSearch');
+        if (s2) { s2.focus(); try { s2.setSelectionRange(caret, caret); } catch (_) {} }
+      });
+    }
+    document.querySelectorAll('[data-trsubs-team-toggle]').forEach(b =>
+      b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const t = b.dataset.trsubsTeamToggle;
+        if (_trSubsDraft.teams.has(t)) _trSubsDraft.teams.delete(t);
+        else _trSubsDraft.teams.add(t);
+        shell();
+      })
+    );
   }
 
   // Snapshot the Teams Reporting view as a PNG and trigger a download.
