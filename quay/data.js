@@ -869,20 +869,42 @@ window.QUAY_READY = (async function () {
     return dt.toISOString().slice(0, 10);
   }
 
-  // Custom-range version: include every week whose 7-day span [weekStart,
-  // weekStart+6] overlaps [fromYmd, toYmd]. This keeps the aggregation exact
-  // at week granularity — anything finer would need per-day roll-ups from
-  // `daily_data.json`, which isn't yet in the by_agent_campaign shape.
+  // Custom-range version: include only weeks whose entire 7-day span
+  // [weekStart, weekStart+6] is fully inside [fromYmd, toYmd] (STRICT mode).
+  // Using overlap-mode would contaminate the totals with days outside the
+  // requested range — e.g. picking 1–30 June with the week starting 29 Jun
+  // included would drag in 5 days of July stats.
+  //
+  // Callers get an `_range` sidecar on the returned array describing which
+  // whole weeks got picked up so the UI can show "covers 1 Jun → 28 Jun · 4
+  // complete weeks".
   function perAgentPerTeamRange(fromYmd, toYmd) {
-    if (!fromYmd || !toYmd) return [];
+    if (!fromYmd || !toYmd) return _perAgentPerTeamRangeResult([], fromYmd, toYmd);
     const [a, b] = fromYmd <= toYmd ? [fromYmd, toYmd] : [toYmd, fromYmd];
     const slice = weeks.filter(w => {
       if (!w.weekStart) return false;
       const wStart = w.weekStart;
       const wEnd = _addDaysYmd(w.weekStart, 6);
-      return wStart <= b && wEnd >= a;
+      return wStart >= a && wEnd <= b;   // strict — fully inside
     });
-    return _aggregatePerAgentPerTeam(slice);
+    return _perAgentPerTeamRangeResult(slice, a, b);
+  }
+
+  function _perAgentPerTeamRangeResult(slice, fromYmd, toYmd) {
+    const rows = _aggregatePerAgentPerTeam(slice);
+    // Effective range = earliest weekStart to latest weekStart+6 covered.
+    // Empty slice → null so the UI can show "no complete weeks in range".
+    let effFrom = null, effTo = null;
+    slice.forEach(w => {
+      const ws = w.weekStart;
+      const we = _addDaysYmd(ws, 6);
+      if (!effFrom || ws < effFrom) effFrom = ws;
+      if (!effTo   || we > effTo)   effTo   = we;
+    });
+    rows._range = { requestedFrom: fromYmd, requestedTo: toYmd,
+                    effectiveFrom: effFrom, effectiveTo: effTo,
+                    weeksIncluded: slice.length };
+    return rows;
   }
 
   // Map a period key onto a {fromISO, toISO} range, used by Supabase

@@ -3347,12 +3347,21 @@
     // Data source: custom range wins if both dates are set; otherwise the
     // global period button up in the topbar drives it.
     const usingCustomRange = !!(_trDateFrom && _trDateTo);
-    let rangeLabel, rangeSuffix, rows;
+    let rangeLabel, rangeSuffix, rows, rangeMeta = null;
     if (usingCustomRange) {
       const [a, b] = _trDateFrom <= _trDateTo ? [_trDateFrom, _trDateTo] : [_trDateTo, _trDateFrom];
       rangeLabel = 'Custom range';
-      rangeSuffix = ' · ' + a + ' → ' + b;
       rows = Q.perAgentPerTeamRange(a, b);
+      rangeMeta = rows._range || null;
+      // Suffix reflects the EFFECTIVE range (complete Mon-Sun weeks fully
+      // inside what the user asked for). If nothing was included, be
+      // explicit so the user doesn't think "0 callers" means "no work".
+      if (rangeMeta && rangeMeta.weeksIncluded > 0) {
+        rangeSuffix = ` · covers ${rangeMeta.effectiveFrom} → ${rangeMeta.effectiveTo}`
+                    + ` · ${rangeMeta.weeksIncluded} complete week${rangeMeta.weeksIncluded === 1 ? '' : 's'}`;
+      } else {
+        rangeSuffix = ` · ${a} → ${b} · no complete Mon–Sun weeks in this range`;
+      }
     } else {
       rangeLabel = (Q.PERIODS[period] || {}).label || period;
       rangeSuffix = periodRangeSuffix();
