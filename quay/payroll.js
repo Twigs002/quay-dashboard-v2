@@ -74,20 +74,28 @@
   // ---------------------------------------------------------------------
 
   const CONFIG = {
-    // Spec §3.1 — 67 canonical divisions in display order. Order matters
-    // for the By Division pivot.
+    // Spec §3.1 — canonical divisions in display order. Order matters for
+    // the By Division pivot. Audit finding D2 (P1): reconciled against
+    // quay-clock/app.js CLOCK_CAMPAIGNS_ALL (the true source of truth
+    // for team names). Added: ASB Calling, Clienthub, Engine Room, Rentals
+    // (were silently dropping their hours from By-Division). Removed:
+    // Rebels (archived in clock roster — real payroll rows never land
+    // against it). TODO: move roster to a shared Supabase `divisions`
+    // table so this drift can't happen a fourth time.
     CANONICAL_TEAMS: [
-      'Amigos', 'Assassins', 'Avengers', 'Babes', 'Ballers', 'Boets', 'Bulls',
-      'Cavaliers', 'Chargers', 'City Sunsets', 'Conquerors', 'Dealers',
+      'Amigos', 'ASB Calling', 'Assassins', 'Avengers', 'Babes', 'Ballers',
+      'Bergscape', 'Betties', 'Blitz', 'Boets', 'Bulls', 'Cavaliers',
+      'Chargers', 'City Sunsets', 'Clienthub', 'Conquerors', 'Dealers',
       'Dealmakers', 'Dixies', 'Dolphins', 'Donkeys', 'Dragons', 'Dutchmen',
-      'Falcons', 'Farmers', 'Furys', 'Gladiators', 'Goal Diggers', 'Gunslingers',
-      'Hawks', 'Headbangers', 'Hoekers', 'Hooligans', 'Hustlers', 'Invincibles',
-      'Knights', 'Koeksisters', 'Lions', 'Llamas', 'Musketeers', 'Panthers',
-      'Pirates', 'Power Rangers', 'Prom Queens', 'Proteas', 'Raccoons', 'Samurais',
-      'Slayers', 'Soccer Moms', 'Spartans', 'Surfers', 'Swesties', 'Targaryens',
-      'Tigers', 'TNT', 'Tornadoes', 'Warriors', 'Weasels', 'Wizards', 'Wolves',
-      'Wombats', 'Hout Baes', 'Rockets', 'Jaguars', 'Huntsmen', 'Vikings',
-      'Blitz', 'Komorants', 'Betties', 'Rebels', 'Vipers', 'Bergscape',
+      'Engine Room', 'Falcons', 'Farmers', 'Furys', 'Gladiators',
+      'Goal Diggers', 'Gunslingers', 'Hawks', 'Headbangers', 'Hoekers',
+      'Hooligans', 'Hout Baes', 'Huntsmen', 'Hustlers', 'Invincibles',
+      'Jaguars', 'Knights', 'Koeksisters', 'Komorants', 'Lions', 'Llamas',
+      'Musketeers', 'Panthers', 'Pirates', 'Power Rangers', 'Prom Queens',
+      'Proteas', 'Raccoons', 'Rentals', 'Rockets', 'Samurais', 'Slayers',
+      'Soccer Moms', 'Spartans', 'Surfers', 'Swesties', 'Targaryens',
+      'Tigers', 'TNT', 'Tornadoes', 'Vikings', 'Vipers', 'Warriors',
+      'Weasels', 'Wizards', 'Wolves', 'Wombats',
     ],
 
     // Spec §3.2 — typo / variant exact-match merges. Applied AFTER the
