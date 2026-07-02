@@ -230,6 +230,40 @@ window.QUAY_READY = (async function () {
     return weeks.slice(start, start + p.weeks);
   }
 
+  // Custom-range twin of agentsFor: strict week inclusion (only complete
+  // Mon-Sun weeks fully inside [fromYmd, toYmd]). No per-period clock
+  // override — the clockByPeriod map is keyed by preset period names, so
+  // custom ranges fall back to the aggregated per-week clock estimate
+  // baked into aggregateWeeks. Returns the list decorated with an `_range`
+  // sidecar so the caller can render "covers X → Y · N complete weeks".
+  function agentsForRange(fromYmd, toYmd) {
+    if (!fromYmd || !toYmd) {
+      const empty = [];
+      empty._range = { requestedFrom: fromYmd, requestedTo: toYmd,
+                       effectiveFrom: null, effectiveTo: null, weeksIncluded: 0 };
+      return empty;
+    }
+    const [a, b] = fromYmd <= toYmd ? [fromYmd, toYmd] : [toYmd, fromYmd];
+    const slice = weeks.filter(w => {
+      if (!w.weekStart) return false;
+      const wStart = w.weekStart;
+      const wEnd = _addDaysYmd(w.weekStart, 6);
+      return wStart >= a && wEnd <= b;   // strict — fully inside
+    });
+    const list = aggregateWeeks(slice).sort((x, y) => y.calls - x.calls);
+    let effFrom = null, effTo = null;
+    slice.forEach(w => {
+      const ws = w.weekStart;
+      const we = _addDaysYmd(ws, 6);
+      if (!effFrom || ws < effFrom) effFrom = ws;
+      if (!effTo   || we > effTo)   effTo   = we;
+    });
+    list._range = { requestedFrom: a, requestedTo: b,
+                    effectiveFrom: effFrom, effectiveTo: effTo,
+                    weeksIncluded: slice.length };
+    return list;
+  }
+
   function agentsFor(periodKey) {
     const slice = _sliceFor(periodKey);
     const list = aggregateWeeks(slice);
@@ -932,7 +966,7 @@ window.QUAY_READY = (async function () {
     monthlyBreakdown, weeksBreakdown,
     dailyDates, dailyFor, latestDailyDate,
     MONTHS, MONTH_CALLS, MONTH_LEADS, MONTH_EMAILS, MONTH_RENTALS, MONTH_DFHOURS,
-    PERIODS, DELTAS, agentsFor, totalsFor, prevTotalsFor, weeksInMonth,
+    PERIODS, DELTAS, agentsFor, agentsForRange, totalsFor, prevTotalsFor, weeksInMonth,
     periodElapsed, project, trailingAvg,
     agentHistory, agentCampaigns,
     perAgentPerTeam, perAgentPerTeamRange, teamCanonical, normalizeCampaignName,

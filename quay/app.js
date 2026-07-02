@@ -35,6 +35,8 @@
   let tab = 'overview'; // default landing; switched to 'leadership' for superusers below
   let dailyPicked = null; // selected date on the Daily Stats tab (yyyy-mm-dd)
   let staffTeamFilter = 'all'; // 'all' | 'RM' | 'Fancy' — All Staff tab team dropdown
+  let staffDateFrom = null;    // 'YYYY-MM-DD' SAST — custom range overrides topbar period when both set
+  let staffDateTo   = null;    // 'YYYY-MM-DD' SAST
   // Active segment on the All Staff tab: 'overall' | 'per' | 'ln'. Persisted
   // across re-renders (e.g. period change) so users don't get bounced back
   // to Callers · Overall every time the page rebuilds.
@@ -438,7 +440,11 @@
     if (tab === 'teams-report' && !session?.super) { tab = 'overview'; }
     if (tab === 'leadership')    { host.innerHTML = leadership(); afterLeadership(); }
     else if (tab === 'overview') { host.innerHTML = overview(); afterOverview(); }
-    else if (tab === 'staff')    { host.innerHTML = V.allStaff(period, staffTeamFilter); staffWire(); }
+    else if (tab === 'staff')    {
+      const asRange = (staffDateFrom && staffDateTo) ? { from: staffDateFrom, to: staffDateTo } : null;
+      host.innerHTML = V.allStaff(period, staffTeamFilter, asRange);
+      staffWire();
+    }
     else if (tab === 'compare')  { host.innerHTML = V.compare(); segWire(); }
     else if (tab === 'daily')    { host.innerHTML = V.daily(period, dailyPicked); dailyWire(); }
     else if (tab === 'monthly')  { host.innerHTML = V.monthly(); monthlyWire(); }
@@ -1021,6 +1027,22 @@
     if (teamSel) teamSel.addEventListener('change', () => {
       staffTeamFilter = teamSel.value;
       shell();
+    });
+    // Custom date-range picker — same UX as Teams Reporting / LN Stats.
+    // Overrides the topbar period once both ends are filled. Preserve focus
+    // on the field that was just changed so the user can tab to the next.
+    const _reFocusSt = (id) => { const el = document.getElementById(id); if (el) el.focus(); };
+    const sdFrom = document.getElementById('staffDateFrom');
+    const sdTo   = document.getElementById('staffDateTo');
+    if (sdFrom) sdFrom.addEventListener('change', (e) => {
+      staffDateFrom = e.target.value || null; shell(); _reFocusSt('staffDateFrom');
+    });
+    if (sdTo) sdTo.addEventListener('change', (e) => {
+      staffDateTo = e.target.value || null; shell(); _reFocusSt('staffDateTo');
+    });
+    const sdClear = document.getElementById('staffDateClear');
+    if (sdClear) sdClear.addEventListener('click', () => {
+      staffDateFrom = null; staffDateTo = null; shell();
     });
     sortableWire(document.getElementById('staffOverall'));
     wireAgentClicks();

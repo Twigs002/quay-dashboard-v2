@@ -56,9 +56,20 @@ window.VIEWS = (function () {
   }
 
   // ---------------------------------------------------- ALL STAFF
-  function allStaff(period, teamFilter) {
+  //   `range` (optional) = { from: 'YYYY-MM-DD', to: 'YYYY-MM-DD' }.
+  // When both from/to are set, the tab pulls from Q.agentsForRange instead
+  // of Q.agentsFor and shows a "covers X → Y · N complete weeks" caption.
+  function allStaff(period, teamFilter, range) {
     teamFilter = teamFilter || 'all';
-    let agents = Q.agentsFor(period).slice().sort((a, b) => b.calls - a.calls);
+    const usingRange = !!(range && range.from && range.to);
+    let source;
+    if (usingRange) {
+      source = Q.agentsForRange(range.from, range.to);
+    } else {
+      source = Q.agentsFor(period);
+    }
+    let agents = source.slice().sort((a, b) => b.calls - a.calls);
+    const rangeMeta = usingRange ? source._range : null;
     if (teamFilter === 'RM' || teamFilter === 'Fancy') {
       agents = agents.filter(a => a.team === teamFilter);
     }
@@ -76,6 +87,25 @@ window.VIEWS = (function () {
       : teamFilter + ' only';
     const selOpt = (v, label) =>
       `<option value="${v}" ${teamFilter === v ? 'selected' : ''}>${label}</option>`;
+    // Effective-range caption when custom From/To is active. Same phrasing
+    // as the Teams Reporting tab so directors read one consistent label.
+    let rangeCaption = '';
+    if (usingRange) {
+      if (rangeMeta && rangeMeta.weeksIncluded > 0) {
+        rangeCaption = `<div class="sub" style="margin-top:6px">
+          Custom range · covers <b>${rangeMeta.effectiveFrom}</b> → <b>${rangeMeta.effectiveTo}</b>
+          · ${rangeMeta.weeksIncluded} complete week${rangeMeta.weeksIncluded === 1 ? '' : 's'}
+          <span class="muted">(topbar period ignored while this is set)</span>
+        </div>`;
+      } else {
+        rangeCaption = `<div class="sub" style="margin-top:6px;color:#D20A03">
+          Custom range · ${range.from} → ${range.to}
+          · no complete Mon–Sun weeks in this range
+        </div>`;
+      }
+    }
+    const todaySast = (new Date()).toISOString().slice(0, 10);
+
     return `
     <div class="tab-view">
       <div class="card">
@@ -86,6 +116,14 @@ window.VIEWS = (function () {
               ${selOpt('RM', 'RM')}
               ${selOpt('Fancy', 'Fancy')}
             </select></div>
+            <div class="ln-date-picker" aria-label="Custom date range" style="margin-left:6px">
+              <label class="muted" for="staffDateFrom">From</label>
+              <input id="staffDateFrom" type="date" value="${(range && range.from) || ''}" max="${todaySast}">
+              <span class="muted" aria-hidden="true">→</span>
+              <label class="muted" for="staffDateTo">To</label>
+              <input id="staffDateTo" type="date" value="${(range && range.to) || ''}" max="${todaySast}">
+              ${usingRange ? `<button class="btn" id="staffDateClear" type="button" style="padding:5px 10px;font-size:12px">Clear</button>` : ''}
+            </div>
           </div>
           <div class="seg" id="staffSeg">
             <button class="active" data-view="overall">Callers · Overall</button>
@@ -93,6 +131,7 @@ window.VIEWS = (function () {
             <button data-view="ln">LN &amp; Assistants</button>
           </div>
         </div>
+        ${rangeCaption}
       </div>
 
       <div class="row mt" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
