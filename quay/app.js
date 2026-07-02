@@ -3166,7 +3166,7 @@
             teamsCount: perPicked.length,
             calls, seller, rental, email, workTime, talkTime,
             leads: seller,  // seller-only definition, matches campaignsFor
-            cph: calls > 0 ? +(seller / (calls / 100)).toFixed(1) : 0,  // leads per 100 calls
+            cph: workTime > 0 ? +(calls / workTime).toFixed(1) : 0,  // calls per hour of dialer work time
           };
         });
 
@@ -3249,7 +3249,7 @@
             <td class="num tnum" data-label="Seller leads">${r.seller ? fmt2(r.seller) : '<span class="muted">—</span>'}</td>
             <td class="num tnum" data-label="Rental leads">${r.rental ? fmt2(r.rental) : '<span class="muted">—</span>'}</td>
             <td class="num tnum" data-label="Email leads">${r.email ? fmt2(r.email) : '<span class="muted">—</span>'}</td>
-            <td class="num tnum" data-label="Leads / 100 calls">${r.calls ? r.cph.toFixed(1) : '<span class="muted">—</span>'}</td>
+            <td class="num tnum" data-label="Calls / hr">${r.workTime > 0 ? r.cph.toFixed(1) : '<span class="muted">—</span>'}</td>
             <td class="num tnum" data-label="Talk time">${fmtHrs(r.talkTime)}</td>
           </tr>`).join('');
 
@@ -3311,7 +3311,7 @@
               ${sortTh('seller', 'Seller')}
               ${sortTh('rental', 'Rental')}
               ${sortTh('email',  'Email')}
-              ${sortTh('cph',    'Leads/100')}
+              ${sortTh('cph',    'Calls/hr')}
               ${sortTh('talkTime','Talk time')}
             </tr>
           </thead>
