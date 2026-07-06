@@ -105,8 +105,21 @@ def single_day_timespan(d):
 # ---------------------------------------------------------------------------
 # HTTP helper with 202-polling
 # ---------------------------------------------------------------------------
-def fetch_json(url, params, label, tag, max_poll=10):
-    """GET url with params; handle DialFire's 202-then-poll async pattern."""
+def fetch_json(url, params, label, tag, max_poll=20):
+    """GET url with params; handle DialFire's 202-then-poll async pattern.
+
+    Return contract (so callers can distinguish silent data loss from real
+    empty results):
+      * dict / list  — Dialfire returned parseable JSON (may be structurally
+        empty, e.g. {"groups": []}). This is a GENUINE response.
+      * None         — fetch FAILED: 4xx, 5xx, poll timeout, JSON parse
+        error, or a network exception. Caller MUST treat this differently
+        from "no activity" — dropping to zero silently is how a busy week
+        with a Dialfire quirk turns into permanent data loss in
+        history.json (the Jun 29 - Jul 5 SPARTANS/VIPERS drop).
+    Previously every failure returned {} which was indistinguishable from
+    an empty-but-successful response.
+    """
     try:
         r = requests.get(url, params=params, timeout=30)
         if r.status_code == 202:
@@ -118,34 +131,48 @@ def fetch_json(url, params, label, tag, max_poll=10):
                 except Exception:
                     pass
             if loc:
-                for _ in range(max_poll):
-                    time.sleep(3)
+                # Exponential-ish backoff up to ~30s per iter; 20 polls → ~5min
+                # ceiling. Weekly full-history reports over 100+ agents can
+                # exceed the old 30s budget on busy Dialfire tenants.
+                delay = 2
+                for i in range(max_poll):
+                    time.sleep(delay)
                     r2 = requests.get(loc, timeout=30)
                     if r2.status_code == 200:
                         try:    return r2.json()
                         except Exception as e:
                             print(f"  [{label}] {tag} -> poll JSON parse error: {e}")
-                            return {}
+                            return None
                     if r2.status_code in (401, 403):
                         print(f"  [{label}] {tag} -> poll {r2.status_code}")
                         return None
-                print(f"  [{label}] {tag} -> polling timed out")
-                return {}
+                    if r2.status_code >= 500 or r2.status_code == 429:
+                        print(f"  [{label}] {tag} -> poll HTTP {r2.status_code} (transient)")
+                    delay = min(30, int(delay * 1.5))
+                print(f"  [{label}] {tag} -> polling timed out after {max_poll} attempts — FETCH FAILED")
+                return None
             else:
+                # No Location header — retry the same URL. Note this likely
+                # spawns a NEW async job each time (Dialfire doesn't dedupe
+                # on param hash), so the effective budget is fewer real polls.
                 print(f"  [{label}] {tag} -> 202 no poll URL, retrying same URL")
-                for _ in range(max_poll):
-                    time.sleep(5)
+                delay = 3
+                for i in range(max_poll):
+                    time.sleep(delay)
                     r2 = requests.get(url, params=params, timeout=30)
                     if r2.status_code == 200:
                         try:    return r2.json()
                         except Exception as e:
                             print(f"  [{label}] {tag} -> retry JSON parse error: {e}")
-                            return {}
+                            return None
                     if r2.status_code in (401, 403):
                         return None
                     if r2.status_code != 202:
-                        break
-                return {}
+                        print(f"  [{label}] {tag} -> retry HTTP {r2.status_code} — FETCH FAILED")
+                        return None
+                    delay = min(30, int(delay * 1.5))
+                print(f"  [{label}] {tag} -> no-Location retry exhausted — FETCH FAILED")
+                return None
         if r.status_code in (401, 403):
             print(f"  [{label}] {tag} -> HTTP {r.status_code} (token issue)")
             return None
@@ -153,12 +180,12 @@ def fetch_json(url, params, label, tag, max_poll=10):
             try:    return r.json()
             except Exception as e:
                 print(f"  [{label}] {tag} -> JSON parse error: {e}")
-                return {}
-        print(f"  [{label}] {tag} -> HTTP {r.status_code}")
-        return {}
+                return None
+        print(f"  [{label}] {tag} -> HTTP {r.status_code} — FETCH FAILED")
+        return None
     except Exception as e:
-        print(f"  [{label}] {tag} -> error: {e}")
-        return {}
+        print(f"  [{label}] {tag} -> network error: {e} — FETCH FAILED")
+        return None
 
 
 # ---------------------------------------------------------------------------

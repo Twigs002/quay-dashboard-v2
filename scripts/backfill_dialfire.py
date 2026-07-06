@@ -129,9 +129,11 @@ def fetch_campaign_week(campaign, date_from, date_to):
     }
 
     data = fetch_json(f"{base}/reports/editsDef_v2/report/{LOCALE}", params, label, f"editsDef_v2 ts={ts}")
+    # fetch_json contract (post-2026-07-06): None = fetch failed. Propagate
+    # so the backfill loop can skip the campaign (don't record zeros).
     if data is None:
-        print(f"  [{label}] 403 -- token invalid, skipping campaign")
-        return []
+        print(f"  [{label}] FETCH FAILED — skipping campaign")
+        return None
     if not data:
         print(f"  [{label}] No data returned")
         return []
@@ -214,6 +216,11 @@ def main():
             rows = fetch_campaign_week(campaign, date_from, date_to)
             cname    = _norm_camp(campaign.get("name", ""))
             raw_name = campaign.get("name", "") or cname
+            # None = fetch failed. Skip so we don't record a zero and destroy
+            # any prior good value on FORCE_REFETCH.
+            if rows is None:
+                print(f"  [{raw_name}] skipped (fetch failure) — leaving any prior value untouched")
+                continue
             tot = {"calls":0, "success":0, "seller":0, "rental":0, "email":0,
                    "workTime":0.0, "talkTime":0.0, "wrapTime":0.0,
                    "pauseTime":0.0, "waitTime":0.0}

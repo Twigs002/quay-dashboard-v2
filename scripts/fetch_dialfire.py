@@ -93,11 +93,15 @@ def fetch_campaign_week(campaign, ts):
     }
 
     data = fetch_json(f"{base}/reports/editsDef_v2/report/{LOCALE}", params, label, f"editsDef_v2 ts={ts}")
+    # fetch_json contract (post-2026-07-06): None = fetch failed (HTTP error,
+    # poll timeout, JSON parse, network exception). Genuine empty response
+    # comes back as {} or {"groups": []}. Callers MUST propagate None so
+    # main() can flag data_quality.warnings and preserve prior history.
     if data is None:
-        print(f"  [{label}] HTTP 4xx - skipping campaign")
-        return []
+        print(f"  [{label}] FETCH FAILED — propagating (do not treat as empty)")
+        return None
     if not data:
-        print(f"  [{label}] no data")
+        print(f"  [{label}] no data (empty response)")
         return []
 
     grp = data.get("groups", [])
@@ -195,17 +199,26 @@ def main():
     agents = {}
     by_campaign = {}                                      # raw campaign-name -> totals
     by_agent_campaign = {}                                # agent -> {raw campaign -> per-campaign stats}
+    fetch_failures = []                                   # campaigns where fetch_json returned None
+    empty_after_filter = []                               # campaigns where all rows dropped by parse_row
     for campaign in campaigns:
         rows = fetch_campaign_week(campaign, ts)
         cname    = _norm_camp(campaign.get("name", "")) or campaign.get("name", "")
         raw_name = campaign.get("name", "") or cname      # keep the CM/NA suffix here
+        if rows is None:
+            # Fetch failed (poll timeout, 5xx, network error). DO NOT record
+            # a zero row — that would destructively overwrite good prior data.
+            fetch_failures.append(raw_name)
+            continue
         tot = {"calls":0, "success":0, "seller":0, "rental":0, "email":0,
                "workTime":0.0, "talkTime":0.0, "wrapTime":0.0,
                "pauseTime":0.0, "waitTime":0.0}
         seen_agents = set()
+        dropped_rows = 0                                  # empty-name rows filtered by parse_row
         for row in rows:
             parsed = parse_row(row)
             if parsed is None:
+                dropped_rows += 1
                 continue
             merge_agent_row(agents, parsed, cname)
             # Preserve per-agent-per-campaign breakdown (Dialfire returns this
@@ -238,6 +251,13 @@ def main():
             tot[k] = round(tot[k], 4)
         tot["agent_count"] = len(seen_agents)
         by_campaign[raw_name] = tot
+        # A campaign that returned rows but ALL got filtered as empty-name
+        # totals-only pseudo-rows is the exact Dialfire quirk that produced
+        # the Jun 29 - Jul 5 SPARTANS/VIPERS zero-out. Flag it so the write
+        # guard can refuse to overwrite prior good history.
+        if rows and dropped_rows == len(rows):
+            empty_after_filter.append(raw_name)
+            print(f"  [{raw_name}] WARNING: {dropped_rows} row(s) all filtered as empty-name — Dialfire returned totals-only")
 
     finalize(agents)
 
@@ -252,6 +272,25 @@ def main():
 
     # ---- weekly_data.json (current snapshot for the dashboard) ----
     week_str = str(monday)
+    # Data-quality warnings become part of the payload so downstream
+    # consumers (dashboard, weekly emailer, monthly reports) can gate on
+    # them and refuse to draft on suspect data.
+    warnings = []
+    if fetch_failures:
+        warnings.append({
+            "kind": "fetch_failed",
+            "campaigns": fetch_failures,
+            "detail": "Dialfire fetch failed (poll timeout / 5xx / network). "
+                      "These campaigns were skipped, NOT recorded as zero.",
+        })
+    if empty_after_filter:
+        warnings.append({
+            "kind": "totals_only_response",
+            "campaigns": empty_after_filter,
+            "detail": "Dialfire returned rows with no per-agent breakdown "
+                      "(name is '' or '-'). Totals recorded but per-agent "
+                      "attribution is lost for these campaigns.",
+        })
     output = {
         "generated":   now_utc.isoformat(),
         "week":        week_str,
@@ -264,11 +303,10 @@ def main():
         "by_campaign": by_campaign,
         "by_agent_campaign": by_agent_campaign,
     }
+    if warnings:
+        output["data_quality"] = {"warnings": warnings}
 
     os.makedirs("data", exist_ok=True)
-    with open("data/weekly_data.json", "w") as f:
-        json.dump(output, f, indent=2)
-    print(f"\nWrote data/weekly_data.json")
 
     # ---- history.json (week-by-week archive) ----
     hist_path = "data/history.json"
@@ -282,13 +320,59 @@ def main():
     except (FileNotFoundError, json.JSONDecodeError):
         history = []
 
-    # Replace any existing entry for this week, then insert fresh at the top.
-    history = [e for e in history if e.get("week") != week_str and e.get("weekStart") != week_str]
-    history.insert(0, output)
+    # Non-destructive write guard: if we already have an entry for this week
+    # and the new fetch is materially WORSE (fewer nonzero campaigns, or a
+    # >15% drop in total calls), keep the existing entry. Attach the
+    # rejected payload as `_shadow` and the warnings so a human can see why.
+    # This is the durable fix for the Jun 29 - Jul 5 SPARTANS/VIPERS drop:
+    # a Dialfire quirk that returned totals-only rows silently overwrote a
+    # good prior fetch with zeros. Never overwrite good data with worse.
+    existing = next((e for e in history
+                     if e.get("week") == week_str or e.get("weekStart") == week_str),
+                    None)
+    keep_existing = False
+    if existing:
+        new_total = sum((c or {}).get("calls", 0) for c in by_campaign.values())
+        old_total = sum((c or {}).get("calls", 0) for c in (existing.get("by_campaign") or {}).values())
+        new_nonzero = sum(1 for c in by_campaign.values() if (c or {}).get("calls", 0) > 0)
+        old_nonzero = sum(1 for c in (existing.get("by_campaign") or {}).values() if (c or {}).get("calls", 0) > 0)
+        if warnings or (old_total > 0 and new_total < old_total * 0.85) or \
+           (old_nonzero > 0 and new_nonzero < old_nonzero * 0.85):
+            keep_existing = True
+            print(f"\n!! REFUSING to overwrite history.json entry for {week_str}:")
+            print(f"   old: {old_total} calls across {old_nonzero} campaigns")
+            print(f"   new: {new_total} calls across {new_nonzero} campaigns")
+            if warnings:
+                print(f"   warnings: {[w['kind'] for w in warnings]}")
+            print(f"   Existing entry preserved. Investigate Dialfire response before re-running.")
+
+    if keep_existing:
+        # Attach the rejected payload under _shadow for post-mortem, plus warnings.
+        for e in history:
+            if e.get("week") == week_str or e.get("weekStart") == week_str:
+                e["_shadow_rejected"] = {"generated": output["generated"],
+                                          "warnings": warnings,
+                                          "by_campaign_totals":
+                                              {k: v.get("calls", 0) for k, v in by_campaign.items()}}
+                break
+    else:
+        history = [e for e in history if e.get("week") != week_str and e.get("weekStart") != week_str]
+        history.insert(0, output)
 
     with open(hist_path, "w") as f:
         json.dump(history, f, indent=2)
-    print(f"Updated data/history.json -- {len(history)} weeks total")
+    print(f"Updated data/history.json -- {len(history)} weeks total"
+          + (" (KEPT existing entry, new fetch rejected)" if keep_existing else ""))
+
+    # Write weekly_data.json to MATCH whatever history[0] now is — so the
+    # dashboard's "current snapshot" reads the same data the archive holds.
+    # If we rejected the new fetch, the OLD entry stays canonical.
+    weekly_out = existing if keep_existing else output
+    with open("data/weekly_data.json", "w") as f:
+        json.dump(weekly_out, f, indent=2)
+    print(f"Wrote data/weekly_data.json ("
+          + ("preserved existing" if keep_existing else "new fetch")
+          + ")")
 
 
 if __name__ == "__main__":
