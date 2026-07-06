@@ -61,11 +61,21 @@ jobs:
           START_DATE: ${{ github.event.inputs.start_date }}
           END_DATE: ${{ github.event.inputs.end_date }}
         run: python scripts/fetch_dialfire_daily.py
+      - name: Fetch quay-clock clocked hours
+        # update-data.yml only runs weekdays ~07:00 SAST, BEFORE anyone has
+        # clocked out — so its clock_data.json is always ~24h stale (and
+        # "this-week" reads 0 until the next morning). Re-run here at the
+        # 19:00 SAST evening slot to capture today's clock-outs, and again
+        # at the 07:00 morning safety-net slot to cover weekends.
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/fetch_clock.py
       - name: Commit daily data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/daily_data.json
+          git add data/daily_data.json data/clock_data.json
           git diff --staged --quiet || git commit -m "Update daily data"
           git pull --rebase origin main
           git push
