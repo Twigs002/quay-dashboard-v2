@@ -13,9 +13,23 @@
       "name": "Tamzin Jacobs",
       "name_normalised": "Tamzin Jacobs",
       "sessions": 1
+    },
+    {
+      "hours": 3.042,
+      "id": "aqeefah-arendse",
+      "name": "Aqeefah Arendse",
+      "name_normalised": "Aqeefah Arendse",
+      "sessions": 1
+    },
+    {
+      "hours": 3.658,
+      "id": "neelam-jameel",
+      "name": "Neelam Jameel",
+      "name_normalised": "Neelam Jameel",
+      "sessions": 1
     }
   ],
-  "generated_at": "2026-07-06T09:08:58.171983+00:00",
+  "generated_at": "2026-07-06T10:02:32.086221+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -83,11 +97,11 @@
           "sessions": 45
         },
         {
-          "hours": 389.952,
+          "hours": 393.61,
           "id": "neelam-jameel",
           "name": "Neelam Jameel",
           "name_normalised": "Neelam Jameel",
-          "sessions": 45
+          "sessions": 46
         },
         {
           "hours": 419.67,
@@ -132,11 +146,11 @@
           "sessions": 37
         },
         {
-          "hours": 357.97,
+          "hours": 361.012,
           "id": "aqeefah-arendse",
           "name": "Aqeefah Arendse",
           "name_normalised": "Aqeefah Arendse",
-          "sessions": 41
+          "sessions": 42
         },
         {
           "hours": 429.075,
@@ -509,11 +523,11 @@
           "sessions": 45
         },
         {
-          "hours": 389.952,
+          "hours": 393.61,
           "id": "neelam-jameel",
           "name": "Neelam Jameel",
           "name_normalised": "Neelam Jameel",
-          "sessions": 45
+          "sessions": 46
         },
         {
           "hours": 419.67,
@@ -558,11 +572,11 @@
           "sessions": 37
         },
         {
-          "hours": 357.97,
+          "hours": 361.012,
           "id": "aqeefah-arendse",
           "name": "Aqeefah Arendse",
           "name_normalised": "Aqeefah Arendse",
-          "sessions": 41
+          "sessions": 42
         },
         {
           "hours": 429.075,
@@ -1228,11 +1242,11 @@
           "sessions": 3
         },
         {
-          "hours": 105.202,
+          "hours": 108.86,
           "id": "neelam-jameel",
           "name": "Neelam Jameel",
           "name_normalised": "Neelam Jameel",
-          "sessions": 13
+          "sessions": 14
         },
         {
           "hours": 126.24,
@@ -1326,11 +1340,11 @@
           "sessions": 8
         },
         {
-          "hours": 103.802,
+          "hours": 106.844,
           "id": "aqeefah-arendse",
           "name": "Aqeefah Arendse",
           "name_normalised": "Aqeefah Arendse",
-          "sessions": 12
+          "sessions": 13
         },
         {
           "hours": 111.056,
@@ -1560,6 +1574,20 @@
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
+          "sessions": 1
+        },
+        {
+          "hours": 3.042,
+          "id": "aqeefah-arendse",
+          "name": "Aqeefah Arendse",
+          "name_normalised": "Aqeefah Arendse",
+          "sessions": 1
+        },
+        {
+          "hours": 3.658,
+          "id": "neelam-jameel",
+          "name": "Neelam Jameel",
+          "name_normalised": "Neelam Jameel",
           "sessions": 1
         }
       ],
