@@ -217,8 +217,16 @@ window.QUAY_READY = (async function () {
 
   // ---- Period selectors ----------------------------------------------------
   const PERIODS = {
-    'this-week':  { label: 'This Week',    weeks: 1  },
-    'last-week':  { label: 'Last Week',    weeks: 1, offset: 1 },
+    // NOTE (2026-07-06 relabel): weekly_data.json is a snapshot of the
+    // last COMPLETED calendar week, not the in-progress current week — so
+    // weeks[0] is Mon-Sun of the just-finished week. The pill labels here
+    // are the human-facing names, chosen so "Last Week" (what everyone
+    // means) points at weeks[0] and matches the weekly team emailer's
+    // "Week of ..." payload. The KEY strings (this-week / last-week) stay
+    // frozen because they're used across app.js, views.js and the
+    // Overview / Compare / Daily tabs — renaming them would ripple.
+    'this-week':  { label: 'Last Week',    weeks: 1  },
+    'last-week':  { label: 'Prior Week',   weeks: 1, offset: 1 },
     'this-month': { label: 'This Month',   weeks: 4  },
     'last-90':    { label: 'Last 90 Days', weeks: 13 },
     'all-time':   { label: 'All Time',     weeks: weeks.length },
