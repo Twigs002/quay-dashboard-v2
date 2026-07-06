@@ -461,7 +461,14 @@
       if (b.__exportWired) return; b.__exportWired = true;
       b.addEventListener('click', exportCurrentTab);
     });
-    host.scrollTop = 0;
+    // Reset scroll to top only when the tab has actually CHANGED. Live Floor
+    // is re-rendered every ~90s from realtime pushes; scrolling to the top
+    // mid-read was the "roster jumps every 90 seconds" bug. On same-tab
+    // re-renders keep the user's scroll position.
+    if (render._lastTab !== tab) {
+      host.scrollTop = 0;
+      render._lastTab = tab;
+    }
   }
 
   // ---- Clocks tab — iframe the quay-clock admin and hand off the session
@@ -3855,22 +3862,32 @@
   }
 
   function renderLiveFloor() {
-    const todayKey = sastDateStr(new Date());
+    // Anchor "now" once per render so every card's elapsed calculation
+    // agrees. Also drives the stale-daily-snapshot banner check.
+    const nowRender = new Date();
+    const todayKey = sastDateStr(nowRender);
     // Sort hierarchy (top -> bottom):
-    //   1. Active callers — calls > 0, ordered by calls desc (matches the
+    //   0. Active callers — calls > 0, ordered by calls desc (matches the
     //      quay-clock admin vibe of "people doing things first").
-    //   2. On-the-clock but no calls yet.
-    //   3. Already clocked out for the day.
+    //   1. On-the-clock but no calls yet.
+    //   2. Already clocked out for the day.
+    //   3. Absent (accounted for, not a no-show).
     //   4. Not in yet / no schedule entry.
-    // Each card is collected with a sort key so we can flatten at the end.
-    const cards = [];  // [{key: [bucket, -calls, name], html}]
+    // Each card carries {bucket, calls, name, html} and is flattened at the end.
+    const cards = [];
 
     // Per-agent today's calls/leads. PRIMARY source is the live_stats table
     // (Mac daemon polls Dialfire every ~90s, pushes via Supabase realtime).
     // If no live row for an agent we fall back to the most-recent daily
-    // snapshot so newly-clocked-in agents aren't blank between daemon polls.
+    // snapshot — but ONLY when it's actually for today, otherwise we'd
+    // silently render yesterday's numbers as if they were today's (the
+    // pre-07:00 SAST window when update-daily.yml hasn't refreshed the
+    // snapshot yet — supervisors would see phantom activity).
     const latestDate = (Q.latestDailyDate && Q.latestDailyDate()) || null;
-    const todayList = latestDate ? (Q.dailyFor && Q.dailyFor(latestDate)) || [] : [];
+    const dailyIsForToday = latestDate === todayKey;
+    const todayList = (dailyIsForToday && Q.dailyFor)
+      ? (Q.dailyFor(latestDate) || [])
+      : [];
     const callsByName = new Map();
     todayList.forEach(a => {
       const k = (a.name || '').trim().toLowerCase();
@@ -3879,7 +3896,9 @@
 
     let onlineCount = 0, offlineCount = 0, totalRoster = 0;
     let absentCount = 0;
-    let totalCallsToday = 0, totalLeadsToday = 0;
+    let clockedOutCount = 0;
+    let notInYetCount = 0;
+    let totalCallsToday = 0, totalSellerLeads = 0;
     let activeCallerCount = 0;
 
     if (schedule && schedule.byStaff && schedule.byStaff.size) {
@@ -3890,7 +3909,10 @@
         const outAt = today && today.last ? today.last : null;
         // Currently clocked in if the most-recent event today was an 'in'.
         // Falls back to the first/last comparison for older days that
-        // pre-date the latestDir tracking.
+        // pre-date the latestDir tracking. NOTE: quay-clock's admin panel
+        // has its own "who's on the clock now" derivation — future work
+        // should collapse to a single shared helper to prevent drift
+        // between the two surfaces.
         const isIn = today && today.latestDir
           ? today.latestDir === 'in'
           : !!(inAt && (!outAt || outAt < inAt));
@@ -3900,7 +3922,13 @@
         const avColor = avatarColor(rec.name);
         const isAbsent = !!rec.absenceToday;
         if (isAbsent && !isIn) absentCount++;
-        const cardClass = isIn ? 'live-card live-card--in' : 'live-card live-card--out';
+        // Card class differentiates absent (opacity + amber accent) from
+        // clocked-out (grey). `.live-card--break` was defined in styles.css
+        // but never applied — this line restores the visual distinction so
+        // a supervisor scanning 40 cards can spot absences at a glance.
+        const cardClass = isIn
+          ? 'live-card live-card--in'
+          : (isAbsent ? 'live-card live-card--break' : 'live-card live-card--out');
         const pillClass = isIn ? 'live-pill live-pill--in'
                        : (isAbsent ? 'live-pill live-pill--break'
                                    : 'live-pill live-pill--out');
@@ -3925,11 +3953,13 @@
         const todayEmail    = liveRow ? liveRow.email_leads   : (dailyAgent ? dailyAgent.email  : null);
         const todaySuccess  = liveRow ? liveRow.success_rate  : (dailyAgent ? dailyAgent.successRate : null);
         if (todayCalls != null) totalCallsToday += todayCalls;
-        if (todayLeads != null) totalLeadsToday += todayLeads;  // seller leads only
-        if (todayCalls && todayCalls > 0) activeCallerCount++;
+        if (todayLeads != null) totalSellerLeads += todayLeads;
+        if (todayCalls > 0) activeCallerCount++;
 
         const fmtT = (d) => d ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Johannesburg' }) : '—';
-        const elapsedMs = inAt ? (Math.max(outAt || new Date(), inAt) - inAt) : 0;
+        // Anchor "now" at the render-scope value so cards computed 200ms
+        // apart still agree on elapsed time.
+        const elapsedMs = inAt ? (Math.max(outAt || nowRender, inAt) - inAt) : 0;
         const elapsedH = elapsedMs > 0 ? (elapsedMs / 3.6e6) : 0;
         const elapsedTxt = elapsedH > 0 ? `${Math.floor(elapsedH)}h ${Math.round((elapsedH % 1) * 60)}m` : '—';
 
@@ -3982,9 +4012,9 @@
         let bucket;
         if (callsForSort > 0) bucket = 0;
         else if (isIn) bucket = 1;
-        else if (outAt) bucket = 2;
+        else if (outAt) { bucket = 2; clockedOutCount++; }
         else if (isAbsent) bucket = 3;
-        else bucket = 4;
+        else { bucket = 4; notInYetCount++; }
         cards.push({ bucket, calls: callsForSort, name: rec.name || '', html });
       });
     }
@@ -3997,17 +4027,30 @@
       return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
     });
 
-    // Live-stats freshness wins as the headline "last update" when we have
-    // it — it's what makes the dashboard actually live.
+    // Freshness: use the max updated_at across live_stats rows, but only
+    // trust it as "live" if that timestamp is within the last 5 minutes.
+    // Older than that = the daemon or the socket is dead and the badge
+    // should degrade to "Snapshot" so viewers stop trusting the numbers.
+    const LIVE_STALE_MS = 5 * 60 * 1000;
     const liveTs = liveStatsFreshness();
-    const refreshedAt = (liveTs || (schedule && schedule.asOf))
-      ? (liveTs || schedule.asOf).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Africa/Johannesburg' })
+    const isLiveFresh = liveTs && (nowRender.getTime() - liveTs.getTime()) < LIVE_STALE_MS;
+    const refreshedTs = liveTs || (schedule && schedule.asOf) || null;
+    const refreshedAt = refreshedTs
+      ? refreshedTs.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Africa/Johannesburg' })
       : '—';
-    const liveBadge = liveTs
+    const liveBadge = isLiveFresh
       ? '<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#DCF3E5;color:#0E6B3A;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-left:6px">● Live</span>'
       : '<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#FFE9CB;color:#6B3F00;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-left:6px">Snapshot</span>';
-    const notInYet = Math.max(0, totalRoster - onlineCount - absentCount);
-    const summary = `<div class="live-summary">
+    // notInYet is now the actual not-in-yet count from the bucket loop,
+    // not (roster - online - absent) which double-counted anyone who
+    // clocked in and back out again as still "not in yet".
+    const notInYet = notInYetCount;
+    // Guard against rendering a fully-zeroed summary on first paint
+    // before schedule has loaded. The grid below already handles the
+    // "loading" empty state — matching it here prevents the pre-data
+    // flash of "0 on the clock, 0 calls" that misleads supervisors.
+    const scheduleReady = !!(schedule && schedule.byStaff && schedule.byStaff.size);
+    const summary = scheduleReady ? `<div class="live-summary">
       <div class="live-summary-stat">
         <div class="live-summary-val tnum">${onlineCount}</div>
         <div class="live-summary-label">On the clock</div>
@@ -4016,6 +4059,11 @@
       <div class="live-summary-stat">
         <div class="live-summary-val tnum" style="color:#6B3F00">${absentCount}</div>
         <div class="live-summary-label">Absent</div>
+      </div>` : ''}
+      ${clockedOutCount > 0 ? `
+      <div class="live-summary-stat">
+        <div class="live-summary-val tnum">${clockedOutCount}</div>
+        <div class="live-summary-label">Clocked out</div>
       </div>` : ''}
       <div class="live-summary-stat">
         <div class="live-summary-val tnum">${notInYet}</div>
@@ -4026,13 +4074,21 @@
         <div class="live-summary-label">Calls today</div>
       </div>
       <div class="live-summary-stat">
-        <div class="live-summary-val tnum">${fmt(totalLeadsToday)}</div>
-        <div class="live-summary-label">Leads today</div>
+        <div class="live-summary-val tnum">${fmt(totalSellerLeads)}</div>
+        <div class="live-summary-label">Seller leads today</div>
       </div>
       <div class="live-refresh-meta">
         <span style="display:inline-block">Refreshed ${escapeHtml(refreshedAt)} SAST${liveBadge}</span>
       </div>
-    </div>`;
+    </div>` : '';
+
+    // Show a warning band when the daily snapshot doesn't cover today —
+    // typically the pre-07:00 SAST window before update-daily.yml has run
+    // (or a daemon outage). Without this the fallback path silently shows
+    // yesterday's numbers under today's header.
+    const staleDailyBanner = (!dailyIsForToday && latestDate) ? `<div class="card card-pad" style="background:#FFF7E6;border-left:4px solid #C97900;margin-bottom:12px;padding:12px 16px;color:#6B3F00;font-size:13px">
+      <b>Daily snapshot is from ${escapeHtml(latestDate)}</b> — today's Dialfire numbers haven't landed yet. Cards show <b>live_stats only</b> until update-daily.yml runs (~07:00 SAST) or the Mac daemon pushes a live row.
+    </div>` : '';
 
     const grid = cards.length
       ? `<div class="live-grid">${cards.map(c => c.html).join('')}</div>`
@@ -4040,19 +4096,20 @@
           ${schedule ? 'No clock-in events recorded yet for the active roster.' : 'Loading live floor data — clock events are streaming from quay-clock.'}
         </div>`;
 
-    return `<div class="tab-view">${summary}${grid}</div>`;
+    return `<div class="tab-view">${staleDailyBanner}${summary}${grid}</div>`;
   }
 
   function liveFloorWire() {
-    // Re-render the Live Floor on any new clock event. We piggy-back on the
-    // existing realtime channel — wireRealtimeChannel() is already invoked
-    // elsewhere; here we just refresh schedule + live_stats and re-render.
-    if (window.sb) {
-      if (!schedule) loadScheduleData().then(() => { if (tab === 'live') render(); });
-      // Always do an initial pull of live_stats so the tab isn't empty
-      // while we wait for the next daemon push.
-      loadLiveStats().then(() => { if (tab === 'live') render(); });
-    }
+    // Warm up schedule + live_stats. Coalesce into ONE re-render at the end
+    // — previously each load called render() independently, so on tab open
+    // the view repainted twice in ~500ms and the second one snapped scroll
+    // back to top mid-read. Promise.allSettled ensures we still render even
+    // if one of the two loads fails.
+    if (!window.sb) return;
+    const jobs = [];
+    if (!schedule) jobs.push(loadScheduleData());
+    jobs.push(loadLiveStats());
+    Promise.allSettled(jobs).then(() => { if (tab === 'live') render(); });
   }
 
   // Build a deterministic avatar background for a name. Same Quay-blue palette
@@ -4375,9 +4432,23 @@
       schedule = null;
     }
   }
+  // SAST-anchored Monday 00:00 for the week containing `d`. Returns a Date
+  // whose UTC instant is that SAST-midnight boundary (SAST is UTC+2 no DST,
+  // so SAST 00:00 = UTC 22:00 the previous day). Using browser-local `getDay`
+  // / `setHours` here — the naive prior implementation — produced the wrong
+  // week bounds for admins outside SAST (a Perth admin at Monday 03:00 local
+  // = Sunday 21:00 SAST would query the SUNDAY-anchored week and see
+  // everyone as "Not in yet").
   function startOfThisWeek(d) {
-    const x = new Date(d); const dow = (x.getDay() + 6) % 7;
-    x.setHours(0,0,0,0); x.setDate(x.getDate() - dow); return x;
+    const sw = sastHourAndWeekday(d || new Date());
+    // sastHourAndWeekday returns weekday with Sun=0..Sat=6. Convert to
+    // Mon=0..Sun=6 to compute days-since-Monday.
+    const daysSinceMon = (sw.weekday + 6) % 7;
+    const todaySast = sastDateStr(d || new Date());
+    // Roll back `daysSinceMon` days from SAST today.
+    const [y, m, day] = todaySast.split('-').map(s => parseInt(s, 10));
+    const monUtc = new Date(Date.UTC(y, m - 1, day) - (daysSinceMon * 86400e3) - 2 * 3600e3);
+    return monUtc;
   }
   function fmtHHMM(min) {
     if (min == null) return '—';
@@ -5416,9 +5487,27 @@
   let _rtChannel = null;
   let _rtReloadTimer = null;
   let _rtPending = false;       // tab was hidden when a reload tried to fire
+  // Realtime health tracking — needed because .subscribe() by itself gives
+  // no visibility into channel death. When the websocket drops (WiFi flake,
+  // laptop sleep, Supabase restart) the channel silently stops delivering.
+  // _rtStatus captures the last SUBSCRIBED / CHANNEL_ERROR / TIMED_OUT /
+  // CLOSED so both the fallback poller and a small UI dot can react.
+  let _rtStatus = 'INIT';
+  let _rtLastStatusAt = 0;
   function dashIsBusy() {
     // Don't blow away an open drill-down modal or the gate.
     return !!document.querySelector('.modal-back, .modal');
+  }
+  // Debounce helper — used for the burst-prone tables (live_stats,
+  // flag_acks, clock_out_reports, staff). The Mac daemon can upsert many
+  // live_stats rows within a few seconds at shift boundaries; without
+  // debouncing every row triggers a full shell() re-render.
+  function _rtDebounce(fn, ms) {
+    let t = null;
+    return function debounced() {
+      clearTimeout(t);
+      t = setTimeout(fn, ms);
+    };
   }
   function rtScheduleReload() {
     clearTimeout(_rtReloadTimer);
@@ -5437,54 +5526,110 @@
       rtScheduleReload();
     }
   });
+  const _reloadReports = _rtDebounce(() => {
+    loadReports().then(() => {
+      if (tab === 'daily' && !dashIsBusy()) populateDailyReports();
+    });
+  }, 1500);
+  const _reloadStaff = _rtDebounce(() => {
+    _team = null;
+    if (tab === 'team' && !dashIsBusy()) shell();
+  }, 1500);
+  const _reloadFlagAcks = _rtDebounce(() => {
+    loadFlagAcks().then(() => {
+      updateLiveFlagsBadge();
+      if (dashIsBusy()) return;
+      if (tab === 'overview' || tab === 'leadership' || tab === 'manager') shell();
+    });
+  }, 1500);
+  const _reloadLiveStats = _rtDebounce(() => {
+    if (typeof loadLiveStats !== 'function') return;
+    loadLiveStats().then(() => {
+      if (!dashIsBusy() && tab === 'live') shell();
+    });
+  }, 1500);
+  // Absences aren't watched by realtime today — admin marks someone
+  // absent from another device, the current session's Live Floor keeps
+  // showing them under "Not in yet" until the 5-min slow poll fires.
+  // Piggy-back on the schedule reload since absencesToday is loaded
+  // alongside the events window in loadScheduleData.
+  const _reloadAbsences = _rtDebounce(() => {
+    loadScheduleData().then(() => {
+      updateLiveFlagsBadge();
+      if (!dashIsBusy() && (tab === 'live' || tab === 'overview' || tab === 'team')) shell();
+    });
+  }, 1500);
   function subscribeRealtime() {
     if (_rtChannel || !window.sb) return;
     try {
-      _rtChannel = window.sb
+      // Push the current session's JWT into the realtime socket so RLS-
+      // gated postgres_changes messages are delivered. Without this the
+      // socket keeps its bootstrap JWT and stops receiving events once
+      // that token expires (~1h default).
+      const sb = window.sb;
+      sb.auth.getSession().then(({ data }) => {
+        if (data && data.session && sb.realtime && sb.realtime.setAuth) {
+          try { sb.realtime.setAuth(data.session.access_token); } catch {}
+        }
+      });
+      // Refresh realtime auth every time Supabase auto-refreshes the JWT.
+      // Idempotent: if a listener is already registered from a prior
+      // subscribeRealtime we just add another (harmless).
+      if (sb.auth && sb.auth.onAuthStateChange && !window._rtAuthWired) {
+        window._rtAuthWired = true;
+        sb.auth.onAuthStateChange((event, sess) => {
+          if (event === 'TOKEN_REFRESHED' && sess && sb.realtime && sb.realtime.setAuth) {
+            try { sb.realtime.setAuth(sess.access_token); } catch {}
+          }
+        });
+      }
+      _rtChannel = sb
         .channel('dash-feed')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, rtScheduleReload)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'clock_out_reports' }, () => {
-          loadReports().then(() => {
-            // Daily Stats embeds the EOD report list for the picked date.
-            if (tab === 'daily' && !dashIsBusy()) populateDailyReports();
-          });
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'staff' }, () => {
-          // Invalidate so next Team tab visit pulls fresh roster.
-          _team = null;
-          if (tab === 'team' && !dashIsBusy()) shell();
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'flag_acks' }, () => {
-          // Full re-render — an un-ack from another device or admin needs
-          // the hidden flag to reappear, which a DOM-only update can't do.
-          loadFlagAcks().then(() => {
-            updateLiveFlagsBadge();
-            if (dashIsBusy()) return;
-            if (tab === 'overview' || tab === 'leadership' || tab === 'manager') shell();
-          });
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'live_stats' }, () => {
-          // Mac daemon just upserted fresh Dialfire numbers. Reload + repaint
-          // the Live Floor if it's the active tab. Other tabs read from the
-          // weekly snapshot so they don't need this realtime nudge.
-          if (typeof loadLiveStats === 'function') {
-            loadLiveStats().then(() => {
-              if (!dashIsBusy() && tab === 'live') shell();
-            });
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'clock_out_reports' }, _reloadReports)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'staff' }, _reloadStaff)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'flag_acks' }, _reloadFlagAcks)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'live_stats' }, _reloadLiveStats)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'absences' }, _reloadAbsences)
+        .subscribe((status) => {
+          _rtStatus = status || 'UNKNOWN';
+          _rtLastStatusAt = Date.now();
+          // On a hard drop, tear the channel down so the next slow-poll
+          // tick can rebuild it fresh — .subscribe() itself doesn't
+          // recover from CHANNEL_ERROR / TIMED_OUT / CLOSED.
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            try { sb.removeChannel(_rtChannel); } catch {}
+            _rtChannel = null;
           }
-        })
-        .subscribe();
+        });
     } catch (e) { console.warn('[rt] subscribe failed', e); }
+  }
+  // Rebuild the channel if it silently died. Called from the slow poller.
+  function ensureRealtimeAlive() {
+    if (!window.sb || !session) return;
+    if (_rtChannel && (_rtStatus === 'SUBSCRIBED' || _rtStatus === 'INIT')) return;
+    // No live channel — try to rebuild.
+    _rtChannel = null;
+    subscribeRealtime();
   }
   // Fallback slow poll in case the websocket drops silently. Skips the
   // full re-render if a modal is open or the user is mid-interaction —
   // updateLiveFlagsBadge() still runs so the topbar count stays accurate.
+  // Also probes the realtime channel and refreshes live_stats so the Live
+  // Floor stays honest even when postgres_changes messages are dropping
+  // silently (JWT expiry, socket closed, transient CHANNEL_ERROR).
   setInterval(() => {
     if (!session || document.visibilityState !== 'visible') return;
+    ensureRealtimeAlive();
     loadScheduleData().then(() => {
       updateLiveFlagsBadge();
       if (dashIsBusy()) return;
-      if (tab === 'overview' || tab === 'leadership') shell();
+      if (tab === 'overview' || tab === 'leadership' || tab === 'live') shell();
     });
+    if (tab === 'live' && typeof loadLiveStats === 'function') {
+      loadLiveStats().then(() => {
+        if (!dashIsBusy() && tab === 'live') shell();
+      });
+    }
   }, 5 * 60 * 1000);
 })();

@@ -1134,7 +1134,15 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
 }
 .live-card--in { border-left: 4px solid var(--green, #1FA463); }
 .live-card--out { border-left: 4px solid #D8E0EC; opacity: 0.65; }
-.live-card--break { border-left: 4px solid #F4A93C; }
+/* Absent staff — amber accent + tinted background so a supervisor can
+   spot them at a glance among 40 clocked-out cards. Was previously
+   defined but the render code never applied the class; the row was
+   visually indistinguishable from a normal clocked-out card. */
+.live-card--break {
+  border-left: 4px solid #F4A93C;
+  background: #FFF8EC;
+  opacity: 0.9;
+}
 
 .live-card-head {
   display: flex;
