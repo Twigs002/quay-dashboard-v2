@@ -336,8 +336,14 @@ def main():
         old_total = sum((c or {}).get("calls", 0) for c in (existing.get("by_campaign") or {}).values())
         new_nonzero = sum(1 for c in by_campaign.values() if (c or {}).get("calls", 0) > 0)
         old_nonzero = sum(1 for c in (existing.get("by_campaign") or {}).values() if (c or {}).get("calls", 0) > 0)
-        if warnings or (old_total > 0 and new_total < old_total * 0.85) or \
-           (old_nonzero > 0 and new_nonzero < old_nonzero * 0.85):
+        # Refuse only on quantitative regression, not on the mere presence
+        # of warnings. Warnings are informational and MUST be recorded
+        # alongside real data — otherwise a partial improvement (e.g.
+        # SPARTANS_CM going 0 → 268 while OTHER campaigns still quirk)
+        # gets blocked by the same guard it's supposed to be trying to help.
+        regressed_calls    = old_total   > 0 and new_total   < old_total   * 0.85
+        regressed_campaigns = old_nonzero > 0 and new_nonzero < old_nonzero * 0.85
+        if regressed_calls or regressed_campaigns:
             keep_existing = True
             print(f"\n!! REFUSING to overwrite history.json entry for {week_str}:")
             print(f"   old: {old_total} calls across {old_nonzero} campaigns")
@@ -345,6 +351,10 @@ def main():
             if warnings:
                 print(f"   warnings: {[w['kind'] for w in warnings]}")
             print(f"   Existing entry preserved. Investigate Dialfire response before re-running.")
+        elif warnings:
+            print(f"\n   Data-quality warnings present ({[w['kind'] for w in warnings]})"
+                  f" but new totals ({new_total}/{new_nonzero}) not materially worse than"
+                  f" existing ({old_total}/{old_nonzero}) — writing new entry with warnings attached.")
 
     if keep_existing:
         # Attach the rejected payload under _shadow for post-mortem, plus warnings.
