@@ -397,9 +397,19 @@ window.VIEWS = (function () {
   // weeksBreakdown() / monthlyBreakdown(). The pickers default to
   // (latest, latest-1); on change the inner body re-renders in place
   // (no full route shell rebuild — handled in app.js segWire).
-  function compare() {
+  function compare(period) {
     const months = (Q.monthlyBreakdown && Q.monthlyBreakdown()) || [];
     const weeksB = (Q.weeksBreakdown && Q.weeksBreakdown()) || [];
+    // Agent-vs-Agent uses the topbar period (Last Week by default) so the
+    // dropdown roster and their numbers come from the same window a user
+    // is already reasoning about elsewhere on the dashboard.
+    const activePeriod = period || 'this-week';
+    const agentsList = (Q.agentsFor && Q.agentsFor(activePeriod)) || [];
+    const sortedAgents = agentsList.slice().sort((a, b) => b.calls - a.calls);
+    const defAgA = sortedAgents[0] ? sortedAgents[0].name : '';
+    const defAgB = sortedAgents[1] ? sortedAgents[1].name : (sortedAgents[0] ? sortedAgents[0].name : '');
+    const agentOpts = (selected) => sortedAgents.map(a =>
+      `<option value="${escapeHtml(a.name)}" ${a.name === selected ? 'selected' : ''}>${escapeHtml(a.name)}</option>`).join('');
 
     // Default selection: most recent vs the one before.
     const defMA = months[0] ? months[0].key : '';
@@ -419,6 +429,7 @@ window.VIEWS = (function () {
           <div class="seg" id="cmpSeg">
             <button data-cmp-mode="week" class="active">${I.calendar} Week vs Week</button>
             <button data-cmp-mode="month">${I.cal2} Month vs Month</button>
+            <button data-cmp-mode="agent">${I.users} Agent vs Agent</button>
           </div>
         </div>
       </div>
@@ -452,7 +463,53 @@ window.VIEWS = (function () {
           <div id="cmpMonthBody">${renderMonthCompare(months, defMA, defMB)}</div>
         </div>
       </div>
+
+      <!-- AGENT vs AGENT panel -->
+      <div id="cmpAgentPanel" style="display:none">
+        <div class="card mt">
+          <div class="panel" style="gap:18px;flex-wrap:wrap;align-items:flex-end">
+            <div class="field"><label>Agent A</label>
+              <select id="cmpAgentA">${agentOpts(defAgA)}</select>
+            </div>
+            <div class="field"><label>Agent B</label>
+              <select id="cmpAgentB">${agentOpts(defAgB)}</select>
+            </div>
+            <div class="muted" style="font-size:12px;padding-bottom:8px">
+              Roster and numbers reflect the currently-active topbar period. Change the pill above to shift the comparison window.
+            </div>
+          </div>
+          <div id="cmpAgentBody">${renderAgentCompare(sortedAgents, defAgA, defAgB)}</div>
+        </div>
+      </div>
     </div>`;
+  }
+
+  // Agent-vs-agent comparison body. Reuses cmpTable so the delta / winner
+  // rendering is identical to Week and Month modes. Numbers come from
+  // Q.agentsFor() which already applies the current period's clock
+  // override, so eff and ct honour the same rules as All Staff.
+  function renderAgentCompare(agents, nameA, nameB) {
+    const lookup = new Map(agents.map(a => [a.name, a]));
+    const a = lookup.get(nameA);
+    const b = lookup.get(nameB);
+    if (!a || !b) {
+      return `<div class="muted" style="padding:24px;text-align:center;font-size:13.5px">
+        Pick two agents to compare.
+      </div>`;
+    }
+    return cmpTable([
+      ['Total calls',      a.calls,       b.calls,       { kind: 'count' }],
+      ['Answered',         a.rawSuccess,  b.rawSuccess,  { kind: 'count' }],
+      ['Success rate',     a.success,     b.success,     { kind: 'pct', suffix: '%' }],
+      ['Calls per hour',   a.cph,         b.cph,         { kind: 'rate', decimals: 1 }],
+      ['Seller leads',     a.seller,      b.seller,      { kind: 'count' }],
+      ['Rental leads',     a.rental,      b.rental,      { kind: 'count' }],
+      ['Emails collected', a.email,       b.email,       { kind: 'count' }],
+      ['Dialler hours',    a.df,          b.df,          { kind: 'hours' }],
+      ['Clocked hours',    a.ct,          b.ct,          { kind: 'hours' }],
+      ['Efficiency',       a.eff,         b.eff,         { kind: 'pct', suffix: '%' }],
+      ['Talk %',           a.talkPct,     b.talkPct,     { kind: 'pct', suffix: '%' }],
+    ], a.name, b.name);
   }
 
   // Renders just the inner week-comparison body — used both on initial
@@ -854,5 +911,5 @@ window.VIEWS = (function () {
   // ad-hoc thresholds. Single source of truth = sucClass/effClass/cphClass.
   window.QUAY_PILLS = { sucClass, effClass, cphClass };
 
-  return { allStaff, lnReports, compare, daily, manager, leadSources, monthly, renderMonthCompare, renderWeekCompare, monthWeeksTable };
+  return { allStaff, lnReports, compare, daily, manager, leadSources, monthly, renderMonthCompare, renderWeekCompare, renderAgentCompare, monthWeeksTable };
 })();

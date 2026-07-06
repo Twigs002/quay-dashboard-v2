@@ -175,11 +175,15 @@ def main() -> int:
     this_week_start, this_week_end = week_window(now)
     four_weeks_start = this_week_start - datetime.timedelta(days=21)
     windows = {
-        "this-week":  (this_week_start, this_week_end),
-        "last-week":  last_week_window(now),
-        "this-month": (four_weeks_start, this_week_end),  # rolling 4 weeks
-        "last-90":    last_n_days_window(now, 90),
-        "all-time":   last_n_days_window(now, 365),
+        "this-week":      (this_week_start, this_week_end),
+        "last-week":      last_week_window(now),
+        "this-month":     (four_weeks_start, this_week_end),  # rolling 4 weeks
+        # Quay 1's payroll cycle: 21st of month M-1 through 20th of month M.
+        # Emitted as a distinct bucket so the dashboard's Billing Period
+        # pill reads real clocked hours over the exact SAST pay window.
+        "billing-period": pay_cycle_window(now),
+        "last-90":        last_n_days_window(now, 90),
+        "all-time":       last_n_days_window(now, 365),
     }
 
     periods: dict[str, dict] = {}

@@ -459,7 +459,7 @@
       host.innerHTML = V.allStaff(period, staffTeamFilter, asRange);
       staffWire();
     }
-    else if (tab === 'compare')  { host.innerHTML = V.compare(); segWire(); }
+    else if (tab === 'compare')  { host.innerHTML = V.compare(period); segWire(); }
     else if (tab === 'daily')    { host.innerHTML = V.daily(period, dailyPicked); dailyWire(); }
     else if (tab === 'monthly')  { host.innerHTML = V.monthly(); monthlyWire(); }
     else if (tab === 'manager')  { host.innerHTML = V.manager(period); managerWire(); }
@@ -808,8 +808,10 @@
         if (mode) {
           const wk = document.getElementById('cmpWeekPanel');
           const mo = document.getElementById('cmpMonthPanel');
+          const ag = document.getElementById('cmpAgentPanel');
           if (wk) wk.style.display = mode === 'week'  ? '' : 'none';
           if (mo) mo.style.display = mode === 'month' ? '' : 'none';
+          if (ag) ag.style.display = mode === 'agent' ? '' : 'none';
         }
       })));
     // Month vs Month dropdowns — re-render just the inner table body.
@@ -835,6 +837,19 @@
       };
       wa.addEventListener('change', redrawW);
       wb.addEventListener('change', redrawW);
+    }
+    // Agent vs Agent dropdowns — snapshot the current period's roster
+    // and swap in the inner body when either picker changes.
+    const aga = document.getElementById('cmpAgentA');
+    const agb = document.getElementById('cmpAgentB');
+    const agbody = document.getElementById('cmpAgentBody');
+    if (aga && agb && agbody) {
+      const roster = ((Q.agentsFor && Q.agentsFor(period)) || []).slice().sort((a, b) => b.calls - a.calls);
+      const redrawAg = () => {
+        agbody.innerHTML = V.renderAgentCompare(roster, aga.value, agb.value);
+      };
+      aga.addEventListener('change', redrawAg);
+      agb.addEventListener('change', redrawAg);
     }
   }
   // Click a month label to inline-expand its per-week breakdown.
@@ -2633,6 +2648,7 @@
     else if (period === 'last-week') { const d = new Date(now); d.setDate(d.getDate() - 7); fromKey = sastMonday(d); const e = new Date(fromKey + 'T00:00:00+02:00'); e.setDate(e.getDate() + 6); toKey = sastDateStr(e); }
     else if (period === 'this-month'){ const d = new Date(now); fromKey = sastDateStr(new Date(d.getFullYear(), d.getMonth(), 1));  toKey = todaySast; }
     else if (period === 'last-month'){ const d = new Date(now); d.setMonth(d.getMonth() - 1); fromKey = sastDateStr(new Date(d.getFullYear(), d.getMonth(), 1)); toKey = sastDateStr(new Date(d.getFullYear(), d.getMonth() + 1, 0)); }
+    else if (period === 'billing-period') { const w = Q.billingPeriodWindow(); fromKey = w.fromYmd; toKey = w.toYmd; }
     else                              { fromKey = sastDateStr(new Date(Date.now() - 30 * 86400e3)); toKey = todaySast; }
     return { from: startOfDay(fromKey), to: endOfDay(toKey), fromKey, toKey, custom: false };
   }

@@ -227,12 +227,44 @@ window.QUAY_READY = (async function () {
     // "Week of ..." payload. The KEY strings (this-week / last-week) stay
     // frozen because they're used across app.js, views.js and the
     // Overview / Compare / Daily tabs — renaming them would ripple.
-    'this-week':  { label: 'Last Week',    weeks: 1  },
-    'last-week':  { label: 'Prior Week',   weeks: 1, offset: 1 },
-    'this-month': { label: 'This Month',   weeks: 4  },
-    'last-90':    { label: 'Last 90 Days', weeks: 13 },
-    'all-time':   { label: 'All Time',     weeks: weeks.length },
+    'this-week':     { label: 'Last Week',       weeks: 1  },
+    'last-week':     { label: 'Prior Week',      weeks: 1, offset: 1 },
+    'this-month':    { label: 'This Month',      weeks: 4  },
+    // Billing Period follows Quay 1's payroll cycle: 21st of month M-1
+    // through 20th of month M inclusive. Aggregation reuses agentsForRange
+    // so only complete Mon-Sun weeks fully inside the window are included;
+    // the trailing day (20th if it falls mid-week) is picked up by the
+    // clockByPeriod override which reads clock_data.json's billing-period
+    // bucket. `dayBased: true` is a sentinel _sliceFor uses to return []
+    // rather than misleading weekly data if someone forgets to route
+    // through the delegation branch in agentsFor.
+    'billing-period':{ label: 'Billing Period',  weeks: 0, dayBased: true },
+    'last-90':       { label: 'Last 90 Days',    weeks: 13 },
+    'all-time':      { label: 'All Time',        weeks: weeks.length },
   };
+
+  // SAST-anchored current billing period. If today's date is >= 21, the
+  // cycle started on the 21st of THIS month and ends on the 20th of NEXT
+  // month. If today <= 20, the cycle started on the 21st of LAST month
+  // and ends on the 20th of THIS month. Returns { fromYmd, toYmd } as
+  // 'YYYY-MM-DD' strings so it drops straight into agentsForRange.
+  function billingPeriodWindow(now = new Date()) {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Africa/Johannesburg',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(now);
+    const g = (t) => parseInt(parts.find(p => p.type === t).value, 10);
+    const y = g('year'), m = g('month'), d = g('day');
+    const startY = d >= 21 ? y : (m === 1 ? y - 1 : y);
+    const startM = d >= 21 ? m : (m === 1 ? 12   : m - 1);
+    const endY   = startM === 12 ? startY + 1 : startY;
+    const endM   = startM === 12 ? 1         : startM + 1;
+    const pad2 = (n) => String(n).padStart(2, '0');
+    return {
+      fromYmd: `${startY}-${pad2(startM)}-21`,
+      toYmd:   `${endY}-${pad2(endM)}-20`,
+    };
+  }
 
   function _sliceFor(periodKey) {
     const p = PERIODS[periodKey] || PERIODS['this-week'];
@@ -301,6 +333,34 @@ window.QUAY_READY = (async function () {
   }
 
   function agentsFor(periodKey) {
+    // Billing Period is a day-based window (21st to 20th), so it does not
+    // fit the weekly-slice model _sliceFor uses. Delegate to agentsForRange
+    // which already knows how to aggregate Mon-Sun weeks fully inside an
+    // arbitrary date range; then apply the billing-period clock override
+    // below so hours come from clock_data.json's billing-period bucket.
+    if (periodKey === 'billing-period') {
+      const w = billingPeriodWindow();
+      const list = agentsForRange(w.fromYmd, w.toYmd);
+      const periodMap = clockByPeriod.get('billing-period');
+      if (periodMap && periodMap.size > 0) {
+        list.forEach(a => {
+          const name = (a.name || '').trim();
+          let real = periodMap.get(name.toLowerCase());
+          if (real == null) {
+            const parts = name.split(/\s+/);
+            if (parts.length >= 2) {
+              real = periodMap.get((parts[0] + ' ' + parts[parts.length - 1]).toLowerCase());
+            }
+          }
+          if (real != null && real > 0) {
+            a.ct = +real.toFixed(1);
+            a.ctSource = 'clock';
+            a.eff = a.df > 0 ? Math.round((a.df / a.ct) * 100) : a.eff;
+          }
+        });
+      }
+      return list.sort((a, b) => b.calls - a.calls);
+    }
     const slice = _sliceFor(periodKey);
     const list = aggregateWeeks(slice);
     // If the fetcher produced per-period clock data, override each agent's
@@ -1027,6 +1087,7 @@ window.QUAY_READY = (async function () {
     agentHistory, agentCampaigns,
     perAgentPerTeam, perAgentPerTeamRange, teamCanonical, normalizeCampaignName,
     periodDateRange,
+    billingPeriodWindow,
   };
   return window.QUAY;
 })();
