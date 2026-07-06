@@ -6,9 +6,16 @@
       "name": "Bronwyn Botha",
       "name_normalised": "Bronwyn Botha",
       "sessions": 1
+    },
+    {
+      "hours": 2.913,
+      "id": "tamzin-jacobs",
+      "name": "Tamzin Jacobs",
+      "name_normalised": "Tamzin Jacobs",
+      "sessions": 1
     }
   ],
-  "generated_at": "2026-07-06T08:03:31.060566+00:00",
+  "generated_at": "2026-07-06T09:08:58.171983+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -83,11 +90,11 @@
           "sessions": 45
         },
         {
-          "hours": 416.757,
+          "hours": 419.67,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
-          "sessions": 48
+          "sessions": 49
         },
         {
           "hours": 406.629,
@@ -509,11 +516,11 @@
           "sessions": 45
         },
         {
-          "hours": 416.757,
+          "hours": 419.67,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
-          "sessions": 48
+          "sessions": 49
         },
         {
           "hours": 406.629,
@@ -1263,11 +1270,11 @@
           "sessions": 4
         },
         {
-          "hours": 103.791,
+          "hours": 106.704,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
-          "sessions": 12
+          "sessions": 13
         },
         {
           "hours": 36.283,
@@ -1546,6 +1553,13 @@
           "id": "bronwyn-botha",
           "name": "Bronwyn Botha",
           "name_normalised": "Bronwyn Botha",
+          "sessions": 1
+        },
+        {
+          "hours": 2.913,
+          "id": "tamzin-jacobs",
+          "name": "Tamzin Jacobs",
+          "name_normalised": "Tamzin Jacobs",
           "sessions": 1
         }
       ],
