@@ -5527,8 +5527,17 @@
     }
   });
   const _reloadReports = _rtDebounce(() => {
+    // A new clock_out_reports row lands as soon as an LN or assistant
+    // submits their EOD form. Refresh the in-memory _reports cache, then
+    // re-render whichever consumer is currently active: Daily Stats has
+    // its own inline updater, LN Stats needs a shell() to redraw the
+    // leaderboard, and Overview shows a "recent submissions" recap.
+    // Previously only Daily Stats was refreshed, so LN Stats stayed
+    // stuck on stale data until the user changed tabs or reloaded.
     loadReports().then(() => {
-      if (tab === 'daily' && !dashIsBusy()) populateDailyReports();
+      if (dashIsBusy()) return;
+      if (tab === 'daily') populateDailyReports();
+      else if (tab === 'ln' || tab === 'overview' || tab === 'leadership') shell();
     });
   }, 1500);
   const _reloadStaff = _rtDebounce(() => {
