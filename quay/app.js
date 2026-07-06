@@ -351,10 +351,10 @@
               <span class="lfb-count" id="lfbCount">0</span>
               <span class="lfb-label">red flag<span id="lfbS"></span></span>
             </button>
-            <div class="period" id="period" role="tablist" aria-label="Time period">
+            ${pillsHiddenForActivePicker(tab) ? '' : `<div class="period" id="period" role="tablist" aria-label="Time period">
               ${Object.entries(Q.PERIODS).map(([k, p]) =>
                 `<button data-period="${k}" class="${k === period ? 'active' : ''}" role="tab" aria-selected="${k === period ? 'true' : 'false'}">${p.label}</button>`).join('')}
-            </div>
+            </div>`}
             <button class="btn" id="btnPrint" title="Print / save as PDF">${I.print} Print</button>
             <button class="btn btn-primary" id="btnExport" title="Download current tab as CSV">${I.download} Export CSV</button>
           </div>
@@ -430,6 +430,20 @@
     document.body.dataset.printDate   = new Date().toLocaleDateString('en-ZA',
       { day: '2-digit', month: 'short', year: 'numeric' });
     render();
+  }
+
+  // Any tab that owns a From/To range picker: when both ends are set,
+  // hide the topbar This Week / Prior Week / etc pills. Otherwise the
+  // active pill looks live but silently loses to the custom-range logic
+  // in agentsForRange / _lnPeriodRange / _trPeriodRange, which was the
+  // user-reported bug ("the pill and the picker are showing different
+  // things at the same time"). Rendered from shell() so clearing the
+  // picker naturally brings pills back.
+  function pillsHiddenForActivePicker(tab) {
+    if (tab === 'staff')        return !!(staffDateFrom && staffDateTo);
+    if (tab === 'ln')           return !!(_lnDateFrom && _lnDateTo);
+    if (tab === 'teams-report') return !!(_trDateFrom && _trDateTo);
+    return false;
   }
 
   // ---------------------------------------------------- ROUTER
