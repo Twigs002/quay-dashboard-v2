@@ -1,6 +1,14 @@
 {
-  "agents": [],
-  "generated_at": "2026-07-06T05:09:56.159226+00:00",
+  "agents": [
+    {
+      "hours": 0.005,
+      "id": "bronwyn-botha",
+      "name": "Bronwyn Botha",
+      "name_normalised": "Bronwyn Botha",
+      "sessions": 1
+    }
+  ],
+  "generated_at": "2026-07-06T08:03:31.060566+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -250,11 +258,11 @@
           "sessions": 35
         },
         {
-          "hours": 382.608,
+          "hours": 382.613,
           "id": "bronwyn-botha",
           "name": "Bronwyn Botha",
           "name_normalised": "Bronwyn Botha",
-          "sessions": 46
+          "sessions": 47
         },
         {
           "hours": 375.557,
@@ -306,11 +314,11 @@
           "sessions": 31
         },
         {
-          "hours": 229.756,
+          "hours": 238.274,
           "id": "giovon-van-wyk",
           "name": "Giovon Van Wyk",
           "name_normalised": "Giovon Van Wyk",
-          "sessions": 26
+          "sessions": 27
         },
         {
           "hours": 34.15,
@@ -676,11 +684,11 @@
           "sessions": 35
         },
         {
-          "hours": 382.608,
+          "hours": 382.613,
           "id": "bronwyn-botha",
           "name": "Bronwyn Botha",
           "name_normalised": "Bronwyn Botha",
-          "sessions": 46
+          "sessions": 47
         },
         {
           "hours": 375.557,
@@ -732,11 +740,11 @@
           "sessions": 31
         },
         {
-          "hours": 229.756,
+          "hours": 238.274,
           "id": "giovon-van-wyk",
           "name": "Giovon Van Wyk",
           "name_normalised": "Giovon Van Wyk",
-          "sessions": 26
+          "sessions": 27
         },
         {
           "hours": 34.15,
@@ -913,6 +921,13 @@
           "sessions": 4
         },
         {
+          "hours": 43.832,
+          "id": "giovon-van-wyk",
+          "name": "Giovon Van Wyk",
+          "name_normalised": "Giovon Van Wyk",
+          "sessions": 5
+        },
+        {
           "hours": 34.8,
           "id": "warrick-solomons",
           "name": "Warrick Solomons",
@@ -1078,13 +1093,6 @@
           "id": "anne-mary-marias",
           "name": "Anne-Mary Marais",
           "name_normalised": "Anne-Mary Marais",
-          "sessions": 4
-        },
-        {
-          "hours": 35.3,
-          "id": "giovon-van-wyk",
-          "name": "Giovon Van Wyk",
-          "name_normalised": "Giovon Van Wyk",
           "sessions": 4
         },
         {
@@ -1276,11 +1284,11 @@
           "sessions": 15
         },
         {
-          "hours": 107.106,
+          "hours": 115.624,
           "id": "giovon-van-wyk",
           "name": "Giovon Van Wyk",
           "name_normalised": "Giovon Van Wyk",
-          "sessions": 12
+          "sessions": 13
         },
         {
           "hours": 54.033,
@@ -1395,11 +1403,11 @@
           "sessions": 12
         },
         {
-          "hours": 96.407,
+          "hours": 96.412,
           "id": "bronwyn-botha",
           "name": "Bronwyn Botha",
           "name_normalised": "Bronwyn Botha",
-          "sessions": 14
+          "sessions": 15
         },
         {
           "hours": 27.0,
@@ -1532,7 +1540,15 @@
       "to": "2026-07-12T23:59:59+00:00"
     },
     "this-week": {
-      "agents": [],
+      "agents": [
+        {
+          "hours": 0.005,
+          "id": "bronwyn-botha",
+          "name": "Bronwyn Botha",
+          "name_normalised": "Bronwyn Botha",
+          "sessions": 1
+        }
+      ],
       "from": "2026-07-06T00:00:00+00:00",
       "to": "2026-07-12T23:59:59+00:00"
     }
