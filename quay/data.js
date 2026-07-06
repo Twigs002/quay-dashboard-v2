@@ -128,15 +128,17 @@ window.QUAY_READY = (async function () {
     const talkHrs = a.talkTime || 0;
     const workHrs = a.workTime || 0;
     const pauseHrs = a.pauseTime || 0;
-    // Prefer real clocked hours from quay-clock when present; otherwise
-    // fall back to the historical 0.85 estimate so older weeks keep rendering.
+    // Default to the df/0.85 estimate here; `agentsFor(periodKey)` overrides
+    // ct with the CORRECT-period clocked hours from clockByPeriod once we
+    // know which pill's window we're rendering. The old clockByName
+    // shortcut always fed THIS-WEEK's clock bucket into every row it
+    // touched — so a "Last Week" or "Prior Week" pill was rendering last
+    // week's Dialfire numbers next to this-week's clock hours (Declan
+    // showing 829 calls + 2.8h clocked in the same row). Cleaner to just
+    // estimate here and let the period override do the real work.
     const prettyName = prettifyName(a.name);
-    const clockHrs = clockByName.get((a.name || '').toLowerCase())
-                   ?? clockByName.get(prettyName.toLowerCase());
-    const ctSource = (clockHrs != null) ? 'clock' : 'estimate';
-    const ctHrs = (clockHrs != null && clockHrs > 0)
-      ? clockHrs
-      : (workHrs > 0 ? workHrs / 0.85 : 0);
+    const ctSource = 'estimate';
+    const ctHrs = workHrs > 0 ? workHrs / 0.85 : 0;
     const eff = ctHrs > 0 ? Math.round((workHrs / ctHrs) * 100) : 85;
     // talkPct = talk time as % of work time (Dialfire field, fallback compute)
     const talkPct = a.talkPct != null ? a.talkPct
@@ -304,7 +306,27 @@ window.QUAY_READY = (async function () {
     // If the fetcher produced per-period clock data, override each agent's
     // clocked hours with the real total for THIS period (rather than
     // summing per-week this-week estimates across the slice).
-    const periodMap = clockByPeriod.get(periodKey);
+    //
+    // Semantic mismatch (2026-07-06): Dialfire's weekly_data.json treats
+    // weeks[0] as "last completed calendar week" (the pill labeled Last
+    // Week under the current rename), while clock_data.json's `this-week`
+    // bucket is the calendar week in progress. Without translation the
+    // pill labelled "Last Week" would show its Dialfire data for the
+    // completed week but its clock data for the in-progress week — which
+    // is exactly what produced Declan's "829 calls + 2.8h clocked" bogus
+    // row. Translate here so the clock lookup lands the same span as the
+    // Dialfire slice.
+    const CLOCK_KEY_MAP = {
+      'this-week':  'last-week',   // pill "Last Week"  = weeks[0] = clock's last-week bucket
+      'last-week':  null,          // pill "Prior Week" = weeks[1] — no clock bucket for the week before last; fall back to df/0.85 estimate
+      'this-month': 'this-month',
+      'last-90':    'last-90',
+      'all-time':   'all-time',
+    };
+    const clockKey = CLOCK_KEY_MAP.hasOwnProperty(periodKey)
+      ? CLOCK_KEY_MAP[periodKey]
+      : periodKey;
+    const periodMap = clockKey ? clockByPeriod.get(clockKey) : null;
     if (periodMap && periodMap.size > 0) {
       list.forEach(a => {
         const name = (a.name || '').trim();
