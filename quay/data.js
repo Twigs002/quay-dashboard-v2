@@ -244,12 +244,37 @@ window.QUAY_READY = (async function () {
       return empty;
     }
     const [a, b] = fromYmd <= toYmd ? [fromYmd, toYmd] : [toYmd, fromYmd];
-    const slice = weeks.filter(w => {
+    const enclose = (lo, hi) => weeks.filter(w => {
       if (!w.weekStart) return false;
-      const wStart = w.weekStart;
       const wEnd = _addDaysYmd(w.weekStart, 6);
-      return wStart >= a && wEnd <= b;   // strict — fully inside
+      return w.weekStart >= lo && wEnd <= hi;
     });
+    let slice = enclose(a, b);
+    // Auto-snap: if the strict enclose returns 0 weeks AND the user's TO is
+    // mid-week (Mon-Sat), extend TO forward to the nearest following Sunday
+    // so the user's obvious intent — "show me last week" typed as Jun 29 to
+    // Jul 4 — actually lands the Jun 29 - Jul 5 block instead of a red
+    // "no complete Mon-Sun weeks" error. Report the snap in _range so the
+    // view can render a small "auto-adjusted to X" caption.
+    let snappedTo = null;
+    if (slice.length === 0) {
+      // Days until next Sunday (Sun=0 in JS Date). If b is already Sunday
+      // there's nothing to extend, so leave it — the strict-empty case will
+      // still surface a red message for that.
+      const bDate = new Date(b + 'T00:00:00+02:00');
+      const dow = bDate.getDay();
+      if (dow !== 0) {
+        const daysToSun = (7 - dow) % 7;   // Mon=6, Sat=1
+        const ext = new Date(bDate);
+        ext.setDate(ext.getDate() + daysToSun);
+        const yyyy = ext.getFullYear();
+        const mm = String(ext.getMonth() + 1).padStart(2, '0');
+        const dd = String(ext.getDate()).padStart(2, '0');
+        snappedTo = `${yyyy}-${mm}-${dd}`;
+        const snapped = enclose(a, snappedTo);
+        if (snapped.length > 0) slice = snapped;
+      }
+    }
     const list = aggregateWeeks(slice).sort((x, y) => y.calls - x.calls);
     let effFrom = null, effTo = null;
     slice.forEach(w => {
@@ -260,7 +285,8 @@ window.QUAY_READY = (async function () {
     });
     list._range = { requestedFrom: a, requestedTo: b,
                     effectiveFrom: effFrom, effectiveTo: effTo,
-                    weeksIncluded: slice.length };
+                    weeksIncluded: slice.length,
+                    autoSnappedTo: snappedTo && slice.length > 0 ? snappedTo : null };
     return list;
   }
 

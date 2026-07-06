@@ -92,9 +92,12 @@ window.VIEWS = (function () {
     let rangeCaption = '';
     if (usingRange) {
       if (rangeMeta && rangeMeta.weeksIncluded > 0) {
+        const snapNote = rangeMeta.autoSnappedTo
+          ? ` <span class="muted">· auto-extended to ${rangeMeta.autoSnappedTo} so the last Mon–Sun week is included</span>`
+          : '';
         rangeCaption = `<div class="sub" style="margin-top:6px">
           Custom range · covers <b>${rangeMeta.effectiveFrom}</b> → <b>${rangeMeta.effectiveTo}</b>
-          · ${rangeMeta.weeksIncluded} complete week${rangeMeta.weeksIncluded === 1 ? '' : 's'}
+          · ${rangeMeta.weeksIncluded} complete week${rangeMeta.weeksIncluded === 1 ? '' : 's'}${snapNote}
           <span class="muted">(topbar period ignored while this is set)</span>
         </div>`;
       } else {
