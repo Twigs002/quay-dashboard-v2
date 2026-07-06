@@ -352,6 +352,114 @@ button { font-family: inherit; cursor: pointer; }
 .delta .ic { width: 12px; height: 12px; }
 .spark { margin-top: 14px; }
 
+/* ============================================================ COMPARE
+   Compare tab (Agent vs Agent redesign, 2026-07-06). Real brass gold is
+   defined here rather than overloading --brass (the codebase remaps
+   --brass to blue-800 for the older KPI theme, so introducing a distinct
+   --brass-gold avoids a global cascade change). */
+:root {
+  --brass-gold:       #C89B3C;
+  --brass-gold-soft:  #F1E1BE;
+  --brass-gold-tint:  #FBF3DF;
+}
+.cmp-warn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; margin-bottom: 12px;
+  background: var(--brass-gold-tint);
+  border: 1px solid var(--brass-gold-soft);
+  border-left: 3px solid var(--brass-gold);
+  border-radius: var(--r-sm);
+  color: var(--ink); font-size: 12.5px; font-weight: 600;
+}
+.cmp-score {
+  padding: 8px 12px; margin: 0 0 12px;
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--r-sm); color: var(--slate); font-size: 12.5px;
+  text-align: center;
+}
+.cmp-score b { color: var(--ink); }
+
+.cmp-hero { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 8px; }
+.cmp-hero-card {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--r-kpi); padding: 16px 18px;
+  box-shadow: var(--shadow-sm);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.cmp-hero-label {
+  font-family: var(--serif); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--brass-gold);
+}
+.cmp-hero-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cmp-hero-side {
+  padding: 10px 12px; border-radius: var(--r-sm);
+  display: flex; flex-direction: column; gap: 6px;
+  transition: background 0.18s ease;
+}
+.cmp-hero-name {
+  font-size: 11px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.04em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cmp-hero-metric { font-size: 24px; font-weight: 800; color: var(--ink); line-height: 1; }
+.cmp-hero-bar { height: 5px; border-radius: 3px; background: var(--paper-2); overflow: hidden; }
+.cmp-hero-bar span { display: block; height: 100%; background: var(--brass-gold); border-radius: 3px; transition: width 0.3s ease; }
+.cmp-hero-winner {
+  font-size: 12px; color: var(--slate); text-align: center;
+  padding-top: 8px; border-top: 1px dashed var(--line);
+}
+.cmp-hero-winner b { color: var(--ink); }
+
+.cmp-cell--win  { background: var(--green-tint); }
+.cmp-cell--win  .cmp-hero-metric { color: var(--green); }
+.cmp-cell--loss { background: var(--red-tint); }
+.cmp-cell--loss .cmp-hero-metric { color: var(--red); opacity: 0.92; }
+.cmp-cell--same { background: var(--paper-2); }
+.cmp-cell--same .cmp-hero-metric { color: var(--slate); }
+
+.cmp-delta {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 999px;
+  font-size: 12px; font-weight: 700;
+  background: var(--brass-gold-tint); color: var(--brass-gold);
+  border: 1px solid var(--brass-gold-soft);
+}
+.cmp-delta.flat { background: var(--paper-2); color: var(--muted); border-color: var(--line); }
+
+.cmp-table td.cmp-metric { font-weight: 600; color: var(--ink); }
+.cmp-table td.cmp-cell--win,
+.cmp-table td.cmp-cell--loss { font-weight: 700; }
+
+.cmp-empty { padding: 40px 24px; text-align: center; color: var(--muted); }
+.cmp-empty-t { font-family: var(--serif); font-size: 15px; color: var(--ink); font-weight: 700; margin-bottom: 4px; }
+.cmp-empty-s { font-size: 12.5px; }
+
+@media (max-width: 720px) {
+  .cmp-hero { grid-template-columns: 1fr; }
+  .cmp-hero-pair { grid-template-columns: 1fr; }
+  .cmp-table thead { display: none; }
+  .cmp-table, .cmp-table tbody, .cmp-table tr, .cmp-table td { display: block; width: 100%; }
+  .cmp-table tr {
+    border: 1px solid var(--line); border-radius: var(--r-sm);
+    padding: 10px 12px; margin-bottom: 10px; background: var(--card);
+  }
+  .cmp-table td {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 0; border: 0; text-align: right;
+  }
+  .cmp-table td::before {
+    content: attr(data-label);
+    font-weight: 600; color: var(--muted);
+    text-align: left; padding-right: 12px;
+  }
+  .cmp-table td.cmp-metric {
+    font-family: var(--serif); font-size: 14px; color: var(--ink);
+    border-bottom: 1px solid var(--line); margin-bottom: 6px; padding-bottom: 8px;
+    justify-content: flex-start;
+  }
+  .cmp-table td.cmp-metric::before { content: ''; padding: 0; }
+}
+
 /* ============================================================ CHARTS */
 .chart-wrap { padding: 18px 20px 8px; }
 .legend { display: flex; flex-wrap: wrap; gap: 14px 18px; padding: 4px 24px 18px; }

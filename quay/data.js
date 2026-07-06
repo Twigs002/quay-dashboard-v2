@@ -1057,6 +1057,49 @@ window.QUAY_READY = (async function () {
     return rows;
   }
 
+  // Canonical LN team roster — single source of truth is public.ln_teams
+  // in the quay-clock Supabase project. See supabase/migrations/ln_teams.sql.
+  //
+  // The static fallback below MUST stay in sync with the seed rows in that
+  // migration; it's the safety net when window.sb is missing, when the
+  // fetch errors out, or when RLS blocks an unauthenticated boot. Without
+  // it a network blip would empty the LN Stats team picker.
+  const LN_TEAMS_FALLBACK = [
+    'ASB Calling', 'Amigos', 'Assassins', 'Avengers', 'Babes', 'Ballers',
+    'Bergscape', 'Betties', 'Blitz', 'Boets', 'Bulls', 'Cavaliers',
+    'Chargers', 'City Sunsets', 'Clienthub', 'Conquerors', 'Dealers',
+    'Dealmakers', 'Dixies', 'Dolphins', 'Donkeys', 'Dragons', 'Dutchmen',
+    'Engine Room', 'Falcons', 'Farmers', 'Furys', 'Gladiators',
+    'Goal Diggers', 'Gunslingers', 'Hawks', 'Headbangers', 'Hoekers',
+    'Hooligans', 'Hout Baes', 'Huntsmen', 'Hustlers', 'Invincibles',
+    'Jaguars', 'Knights', 'Koeksisters', 'Komorants', 'Lions', 'Llamas',
+    'Musketeers', 'Panthers', 'Pirates', 'Power Rangers', 'Prom Queens',
+    'Proteas', 'Raccoons', 'Rentals', 'Rockets', 'Samurais', 'Slayers',
+    'Soccer Moms', 'Spartans', 'Surfers', 'Swesties', 'Targaryens',
+    'Tigers', 'TNT', 'Tornadoes', 'Vikings', 'Vipers', 'Warriors',
+    'Weasels', 'Wizards', 'Wolves', 'Wombats',
+  ];
+
+  async function loadLnTeams() {
+    try {
+      if (!window.sb || !window.sb.from) return LN_TEAMS_FALLBACK.slice();
+      const { data, error } = await window.sb
+        .from('ln_teams')
+        .select('name, display_order')
+        .eq('active', true)
+        .order('display_order', { ascending: true });
+      if (error) throw error;
+      const names = (data || []).map(r => r && r.name).filter(Boolean);
+      if (!names.length) return LN_TEAMS_FALLBACK.slice();
+      return names;
+    } catch (e) {
+      console.warn('[data.js] ln_teams fetch failed, using static fallback:', e && e.message || e);
+      return LN_TEAMS_FALLBACK.slice();
+    }
+  }
+
+  const LN_TEAMS_ALL = await loadLnTeams();
+
   // Map a period key onto a {fromISO, toISO} range, used by Supabase
   // queries that need a date filter (e.g. clock_out_reports lookups for
   // the All Staff "LN & Assistants" sub-tab). Earliest day in the period's
@@ -1088,6 +1131,7 @@ window.QUAY_READY = (async function () {
     perAgentPerTeam, perAgentPerTeamRange, teamCanonical, normalizeCampaignName,
     periodDateRange,
     billingPeriodWindow,
+    LN_TEAMS_ALL,
   };
   return window.QUAY;
 })();

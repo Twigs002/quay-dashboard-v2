@@ -484,32 +484,168 @@ window.VIEWS = (function () {
     </div>`;
   }
 
-  // Agent-vs-agent comparison body. Reuses cmpTable so the delta / winner
-  // rendering is identical to Week and Month modes. Numbers come from
-  // Q.agentsFor() which already applies the current period's clock
-  // override, so eff and ct honour the same rules as All Staff.
+  // Agent-vs-agent comparison. Rebuilt 2026-07-06 based on the
+  // compare-audit + compare-redesign swarm findings:
+  //   1. Hero KPI band for the three metrics managers actually look at first
+  //      (Total calls, Success rate, Calls / hour) with paired big numbers
+  //      + a proportional brass bar + winner name pinned underneath.
+  //   2. Winner-tinted cells in the detail table (green-tint for the winner,
+  //      red-tint for the loser, muted for tie / same-agent / no data).
+  //   3. Brass-gold delta chip - drop the previous up/down "delta" chip in
+  //      the compare context.
+  //   4. Per-metric direction map so future higher-is-worse metrics
+  //      (Wait %, Pause %) land the winner shading the right way.
+  //   5. Empty states: same agent selected, agent has no data in period,
+  //      neither picked.
+  //   6. Responsive stack below 720px handled by CSS.
   function renderAgentCompare(agents, nameA, nameB) {
     const lookup = new Map(agents.map(a => [a.name, a]));
     const a = lookup.get(nameA);
     const b = lookup.get(nameB);
     if (!a || !b) {
-      return `<div class="muted" style="padding:24px;text-align:center;font-size:13.5px">
-        Pick two agents to compare.
+      return `<div class="cmp-empty">
+        <div class="cmp-empty-t">Pick two agents to compare.</div>
+        <div class="cmp-empty-s">Change the topbar period pill if the dropdowns look thin.</div>
       </div>`;
     }
-    return cmpTable([
-      ['Total calls',      a.calls,       b.calls,       { kind: 'count' }],
-      ['Answered',         a.rawSuccess,  b.rawSuccess,  { kind: 'count' }],
-      ['Success rate',     a.success,     b.success,     { kind: 'pct', suffix: '%' }],
-      ['Calls per hour',   a.cph,         b.cph,         { kind: 'rate', decimals: 1 }],
-      ['Seller leads',     a.seller,      b.seller,      { kind: 'count' }],
-      ['Rental leads',     a.rental,      b.rental,      { kind: 'count' }],
-      ['Emails collected', a.email,       b.email,       { kind: 'count' }],
-      ['Dialler hours',    a.df,          b.df,          { kind: 'hours' }],
-      ['Clocked hours',    a.ct,          b.ct,          { kind: 'hours' }],
-      ['Efficiency',       a.eff,         b.eff,         { kind: 'pct', suffix: '%' }],
-      ['Talk %',           a.talkPct,     b.talkPct,     { kind: 'pct', suffix: '%' }],
-    ], a.name, b.name);
+    const sameAgent = a.name === b.name;
+    const noDataA = (a.calls || 0) === 0;
+    const noDataB = (b.calls || 0) === 0;
+    const rows = [
+      ['Total calls',      a.calls,       b.calls,       { kind: 'count',                       dir:  1, hero: 1 }],
+      ['Answered',         a.rawSuccess,  b.rawSuccess,  { kind: 'count',                       dir:  1 }],
+      ['Success rate',     a.success,     b.success,     { kind: 'pct',   suffix: '%',          dir:  1, hero: 2 }],
+      ['Calls per hour',   a.cph,         b.cph,         { kind: 'rate',  decimals: 1,          dir:  1, hero: 3 }],
+      ['Seller leads',     a.seller,      b.seller,      { kind: 'count',                       dir:  1 }],
+      ['Rental leads',     a.rental,      b.rental,      { kind: 'count',                       dir:  1 }],
+      ['Emails collected', a.email,       b.email,       { kind: 'count',                       dir:  1 }],
+      ['Dialler hours',    a.df,          b.df,          { kind: 'hours',                       dir:  1 }],
+      ['Clocked hours',    a.ct,          b.ct,          { kind: 'hours',                       dir:  0 }],
+      ['Efficiency',       a.eff,         b.eff,         { kind: 'pct',   suffix: '%',          dir:  1 }],
+      ['Talk %',           a.talkPct,     b.talkPct,     { kind: 'pct',   suffix: '%',          dir:  1 }],
+    ];
+    const heroRows = rows.filter(r => r[3].hero).sort((r1, r2) => r1[3].hero - r2[3].hero);
+    // Score the head-to-head: how many rows each agent wins outright.
+    let aWins = 0, bWins = 0;
+    rows.forEach(([, av, bv, opts]) => {
+      if (sameAgent || noDataA || noDataB || !opts.dir) return;
+      const diff = Number(av) - Number(bv);
+      if (diff === 0) return;
+      const aBetter = opts.dir > 0 ? diff > 0 : diff < 0;
+      if (aBetter) aWins++; else bWins++;
+    });
+    let scoreLine = '';
+    if (!sameAgent && !noDataA && !noDataB) {
+      const leadTxt = aWins > bWins ? `<b>${escapeHtml(a.name)} leads</b> ${aWins} to ${bWins}`
+                    : bWins > aWins ? `<b>${escapeHtml(b.name)} leads</b> ${bWins} to ${aWins}`
+                    : `Tied ${aWins} to ${bWins}`;
+      scoreLine = `<div class="cmp-score">${leadTxt} across ${aWins + bWins} scoring metrics</div>`;
+    }
+    const notices = [];
+    if (sameAgent)  notices.push(`<div class="cmp-warn">Same agent picked on both sides. Pick a different Agent B to see a real comparison.</div>`);
+    if (noDataA && !noDataB) notices.push(`<div class="cmp-warn"><b>${escapeHtml(a.name)}</b> had no dialling activity in this period.</div>`);
+    if (noDataB && !noDataA) notices.push(`<div class="cmp-warn"><b>${escapeHtml(b.name)}</b> had no dialling activity in this period.</div>`);
+    return `${notices.join('')}${scoreLine}${cmpHero(heroRows, a, b, { sameAgent, noDataA, noDataB })}<div class="mt">${cmpTableN(rows, a.name, b.name, { sameAgent, noDataA, noDataB })}</div>`;
+  }
+
+  // Compute which side wins a given row. Returns 1 = A wins, -1 = B wins,
+  // 0 = tie (or the row is directionless / one side has no data / both
+  // sides are the same agent). Isolated helper so the hero band + the
+  // detail table share the exact same rule.
+  function _cmpWinner(av, bv, opts, ctx) {
+    if (!ctx || ctx.sameAgent || ctx.noDataA || ctx.noDataB) return 0;
+    const dir = opts.dir || 0;
+    if (dir === 0) return 0;
+    const diff = Number(av) - Number(bv);
+    if (diff === 0) return 0;
+    return (dir > 0) ? (diff > 0 ? 1 : -1) : (diff > 0 ? -1 : 1);
+  }
+
+  // Hero KPI band: three side-by-side cards, one per hero metric.
+  function cmpHero(rows, a, b, ctx) {
+    const cards = rows.map(([label, av, bv, opts]) => {
+      const winner = _cmpWinner(av, bv, opts, ctx);
+      const cA = winner ===  1 ? 'cmp-cell--win'
+              : winner === -1 ? 'cmp-cell--loss'
+              : 'cmp-cell--same';
+      const cB = winner === -1 ? 'cmp-cell--win'
+              : winner ===  1 ? 'cmp-cell--loss'
+              : 'cmp-cell--same';
+      const max = Math.max(Number(av) || 0, Number(bv) || 0, 0.0001);
+      const wA = Math.round(((Number(av) || 0) / max) * 100);
+      const wB = Math.round(((Number(bv) || 0) / max) * 100);
+      let footer = '';
+      if (ctx.sameAgent) footer = 'Same agent selected';
+      else if (ctx.noDataA) footer = `${escapeHtml(a.name)} has no data`;
+      else if (ctx.noDataB) footer = `${escapeHtml(b.name)} has no data`;
+      else if (winner === 0) footer = 'Tied';
+      else {
+        const winnerName = winner === 1 ? a.name : b.name;
+        footer = `<b>${escapeHtml(winnerName)}</b> wins <span class="cmp-delta">${fmtCmpDelta(av, bv, opts)}</span>`;
+      }
+      return `<div class="cmp-hero-card">
+        <div class="cmp-hero-label">${escapeHtml(label)}</div>
+        <div class="cmp-hero-pair">
+          <div class="cmp-hero-side ${cA}">
+            <div class="cmp-hero-name">${escapeHtml(a.name)}</div>
+            <div class="cmp-hero-metric tnum">${fmtCmpVal(av, opts)}</div>
+            <div class="cmp-hero-bar"><span style="width:${wA}%"></span></div>
+          </div>
+          <div class="cmp-hero-side ${cB}">
+            <div class="cmp-hero-name">${escapeHtml(b.name)}</div>
+            <div class="cmp-hero-metric tnum">${fmtCmpVal(bv, opts)}</div>
+            <div class="cmp-hero-bar"><span style="width:${wB}%"></span></div>
+          </div>
+        </div>
+        <div class="cmp-hero-winner">${footer}</div>
+      </div>`;
+    }).join('');
+    return `<div class="cmp-hero">${cards}</div>`;
+  }
+
+  // N-column comparison table with per-row winner shading. Used by the
+  // agent mode; the older cmpTable is retained for Week / Month callers.
+  function cmpTableN(rows, labelA, labelB, ctx) {
+    const body = rows.map(([label, av, bv, opts]) => {
+      const winner = _cmpWinner(av, bv, opts, ctx);
+      const cA = winner ===  1 ? 'cmp-cell--win'
+              : winner === -1 ? 'cmp-cell--loss'
+              : 'cmp-cell--same';
+      const cB = winner === -1 ? 'cmp-cell--win'
+              : winner ===  1 ? 'cmp-cell--loss'
+              : 'cmp-cell--same';
+      const deltaTxt = ctx.sameAgent ? 'same agent'
+                     : (ctx.noDataA || ctx.noDataB) ? 'no data'
+                     : fmtCmpDelta(av, bv, opts);
+      const deltaCls = winner === 1 ? 'up' : winner === -1 ? 'down' : 'flat';
+      return `<tr>
+        <td data-label="Metric" class="cmp-metric">${escapeHtml(label)}</td>
+        <td data-label="${escapeHtml(labelA)}" class="num tnum ${cA}">${fmtCmpVal(av, opts)}</td>
+        <td data-label="${escapeHtml(labelB)}" class="num tnum ${cB}">${fmtCmpVal(bv, opts)}</td>
+        <td data-label="Delta" class="num"><span class="cmp-delta ${deltaCls}">${deltaTxt}</span></td>
+      </tr>`;
+    }).join('');
+    return `<div class="tbl-wrap"><table class="tbl cmp-table">
+      <thead><tr><th>Metric</th><th class="num">${escapeHtml(labelA)}</th><th class="num">${escapeHtml(labelB)}</th><th class="num">Delta</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table></div>`;
+  }
+
+  // Shared value + delta formatters. Split out from cmpTable so cmpHero
+  // and cmpTableN can call them without going through the older path.
+  function fmtCmpVal(v, opts) {
+    if (opts.kind === 'pct')   return Number(v || 0).toFixed(1) + (opts.suffix || '%');
+    if (opts.kind === 'hours') return Number(v || 0).toFixed(2) + 'h';
+    if (opts.kind === 'rate')  return Number(v || 0).toFixed(opts.decimals != null ? opts.decimals : 1);
+    return fmt(Math.round(Number(v) || 0));
+  }
+  function fmtCmpDelta(av, bv, opts) {
+    const diff = Number(av || 0) - Number(bv || 0);
+    const sign = diff > 0 ? '+' : '';
+    if (opts.kind === 'pct')   return sign + diff.toFixed(1) + ' pts';
+    if (opts.kind === 'hours') return sign + diff.toFixed(2) + 'h';
+    if (opts.kind === 'rate')  return sign + diff.toFixed(opts.decimals != null ? opts.decimals : 1);
+    return sign + fmt(Math.round(diff));
   }
 
   // Renders just the inner week-comparison body — used both on initial

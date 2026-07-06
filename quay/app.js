@@ -42,9 +42,11 @@
   // to Callers · Overall every time the page rebuilds.
   let staffSegView = 'overall';
   // Cache for the LN & Assistants sub-tab so flipping between segs
-  // doesn't re-hit Supabase. Keyed by period so a period change forces
-  // a refetch on next click.
-  let lnReportsState = { period: null, loading: false, error: null, data: null };
+  // doesn't re-hit Supabase. Keyed by cacheKey (period OR the custom
+  // From/To range) so either a period change or a range change forces
+  // a refetch on next click. Custom range wins over period when set,
+  // matching the Callers Overall / Per Agent sub-views.
+  let lnReportsState = { cacheKey: null, loading: false, error: null, data: null };
   // Name of the agent currently shown in the drill-down modal (or null if
   // closed). Top-bar period clicks check this to re-render the modal with
   // the new period's data instead of leaving the user on the underlying tab.
@@ -1087,28 +1089,49 @@
     lnReportsWireDetails();
   }
 
-  // Fetch clock_out_reports for the current period, render into the
+  // Fetch clock_out_reports for the current period (or custom From/To
+  // range if the staff picker has both ends set), render into the
   // staffLnReports container. Safe to call repeatedly — second call for
-  // the same period uses the cached data.
+  // the same cache key uses the cached data. The custom range takes
+  // precedence over the topbar period, matching the Callers Overall /
+  // Per Agent sub-views on this same tab.
   async function lnReportsHydrate() {
     const lnPane = document.getElementById('staffLnReports');
     if (!lnPane) return;
+    const usingRange = !!(staffDateFrom && staffDateTo);
+    const cacheKey = usingRange ? `range:${staffDateFrom}..${staffDateTo}` : `period:${period}`;
     // Cache hit — render from memory.
-    if (lnReportsState.period === period && lnReportsState.data) {
+    if (lnReportsState.cacheKey === cacheKey && lnReportsState.data) {
       lnPane.innerHTML = V.lnReports(lnReportsState.data);
       sortableWire(lnPane);
       lnReportsWireDetails();
       return;
     }
-    if (lnReportsState.loading && lnReportsState.period === period) return;
+    if (lnReportsState.loading && lnReportsState.cacheKey === cacheKey) return;
     if (!window.sb) {
       lnPane.innerHTML = `<div class="card card-pad" style="color:var(--red)">Supabase client not initialised — can't load reports.</div>`;
       return;
     }
-    lnReportsState = { period, loading: true, error: null, data: null };
-    lnPane.innerHTML = `<div class="card card-pad" style="text-align:center;color:var(--muted);padding:40px">Loading end-of-day reports for ${escapeHtml((Q.PERIODS[period]||{}).label || period)}…</div>`;
+    lnReportsState = { cacheKey, loading: true, error: null, data: null };
+    const loadingLabel = usingRange
+      ? `${staffDateFrom} → ${staffDateTo}`
+      : ((Q.PERIODS[period]||{}).label || period);
+    lnPane.innerHTML = `<div class="card card-pad" style="text-align:center;color:var(--muted);padding:40px">Loading end-of-day reports for ${escapeHtml(loadingLabel)}…</div>`;
     try {
-      const { fromISO, toISO } = Q.periodDateRange(period);
+      // When the custom picker is set, build an inclusive SAST day range
+      // (start-of-from-day → end-of-to-day) so clocks logged anywhere on
+      // those local dates are included — same shape as _lnPeriodRange().
+      // Otherwise fall back to the period-derived range.
+      let fromISO, toISO;
+      if (usingRange) {
+        const [a, b] = staffDateFrom <= staffDateTo
+          ? [staffDateFrom, staffDateTo]
+          : [staffDateTo, staffDateFrom];
+        fromISO = new Date(a + 'T00:00:00+02:00').toISOString();
+        toISO   = new Date(b + 'T23:59:59+02:00').toISOString();
+      } else {
+        ({ fromISO, toISO } = Q.periodDateRange(period));
+      }
       // FK embed: PostgREST resolves clock_out_reports.staff_id → public.staff.
       const { data, error } = await window.sb.from('clock_out_reports')
         .select('id, staff_id, designation, division, clocked_out_at, hs_tasks_completed, hs_calls_made, hs_emails_sent, hs_whatsapps_sent, hs_answered_contacts, hs_leads_vals, hs_reconverted_leads, df_calls, df_email_successes, df_leads_vals, df_hours, wa_sent, wa_responses, wa_leads_vals, notes, staff:staff_id(name)')
@@ -1116,12 +1139,12 @@
         .lte('clocked_out_at', toISO)
         .order('clocked_out_at', { ascending: false });
       if (error) throw error;
-      lnReportsState = { period, loading: false, error: null, data: data || [] };
+      lnReportsState = { cacheKey, loading: false, error: null, data: data || [] };
       lnPane.innerHTML = V.lnReports(lnReportsState.data);
       sortableWire(lnPane);
       lnReportsWireDetails();
     } catch (e) {
-      lnReportsState = { period, loading: false, error: e, data: null };
+      lnReportsState = { cacheKey, loading: false, error: e, data: null };
       lnPane.innerHTML = `<div class="card card-pad" style="color:var(--red)">Could not load reports: ${escapeHtml(String(e.message || e))}</div>`;
     }
   }
@@ -2605,25 +2628,12 @@
   let _lnDateFrom = null;           // 'YYYY-MM-DD' SAST when admin overrides the global period
   let _lnDateTo   = null;           // 'YYYY-MM-DD' SAST
 
-  // Canonical team roster — mirrors CLOCK_CAMPAIGNS in quay-clock/app.js.
-  // Kept in sync manually; source of truth is the clock-in EOD form so
-  // the LN Stats team filter offers the exact same picks as clock-in.
-  // TODO: extract to a shared Supabase table once we have >1 downstream.
-  const LN_TEAMS_ALL = [
-    'ASB Calling', 'Amigos', 'Assassins', 'Avengers', 'Babes', 'Ballers',
-    'Bergscape', 'Betties', 'Blitz', 'Boets', 'Bulls', 'Cavaliers',
-    'Chargers', 'City Sunsets', 'Clienthub', 'Conquerors', 'Dealers',
-    'Dealmakers', 'Dixies', 'Dolphins', 'Donkeys', 'Dragons', 'Dutchmen',
-    'Engine Room', 'Falcons', 'Farmers', 'Furys', 'Gladiators',
-    'Goal Diggers', 'Gunslingers', 'Hawks', 'Headbangers', 'Hoekers',
-    'Hooligans', 'Hout Baes', 'Huntsmen', 'Hustlers', 'Invincibles',
-    'Jaguars', 'Knights', 'Koeksisters', 'Komorants', 'Lions', 'Llamas',
-    'Musketeers', 'Panthers', 'Pirates', 'Power Rangers', 'Prom Queens',
-    'Proteas', 'Raccoons', 'Rentals', 'Rockets', 'Samurais', 'Slayers',
-    'Soccer Moms', 'Spartans', 'Surfers', 'Swesties', 'Targaryens',
-    'Tigers', 'TNT', 'Tornadoes', 'Vikings', 'Vipers', 'Warriors',
-    'Weasels', 'Wizards', 'Wolves', 'Wombats',
-  ];
+  // Canonical team roster — loaded from Supabase public.ln_teams by
+  // data.js at boot (see quay/data.js loadLnTeams + the static fallback
+  // there). Source of truth mirrors the clock-in EOD form so the LN Stats
+  // team filter offers the exact same picks as clock-in. Admin-managed
+  // via the ln_teams table; this reference is stable for the tab's life.
+  const LN_TEAMS_ALL = Q.LN_TEAMS_ALL;
 
   function _lnPeriodRange() {
     // Map the global `period` to a [from, to] SAST date range — unless
@@ -3147,6 +3157,15 @@
   let _trSubsDraft = null;            // { email, name, teams: Set, active, send_last_week, send_month_to_date }
   let _trSubsTeamPickerOpen = false;
   let _trSubsTeamFilterQ = '';
+  // Fire-now button state. There is intentionally no auto-send toggle —
+  // per user rule, every Monday-morning batch stays as drafts until Pagan
+  // sends it manually. _trFireStatus is a transient banner
+  // ('firing...' -> 'fired' -> '' via setTimeout) that acknowledges the
+  // button press. _trFireLastAt is the ISO stamp we wrote last, used in
+  // the tooltip.
+  let _trFireStatus     = '';        // '', 'firing', 'fired', 'error'
+  let _trFireError      = '';
+  let _trFireLastAt     = null;      // ISO string, most recent successful fire
 
   // Map canonical team key → pretty Title-Case name. Seeded from LN_TEAMS_ALL
   // so 'BABES' / 'BAB_ES' / 'babes' all render as "Babes" instead of the
@@ -3168,6 +3187,35 @@
       if (!best || s.calls > best.calls) best = s;
     });
     return best ? _trPrettifyTeam(best.team, canonToPretty) : '—';
+  }
+
+
+  async function _trFireNow() {
+    // Write a fresh ISO timestamp to weekly_email_fire_request. The Mac's
+    // launchd fire-watcher polls this row every 2 min and, on a change,
+    // runs the emailer as a draft-mode job. Debounce via _trFireStatus so
+    // impatient double-clicks don't queue two fires.
+    if (_trFireStatus === 'firing') return;
+    _trFireStatus = 'firing'; _trFireError = ''; shell();
+    const stamp = new Date().toISOString();
+    try {
+      const { error } = await window.sb.from('app_settings')
+        .upsert({ key: 'weekly_email_fire_request', value: stamp },
+                { onConflict: 'key' });
+      if (error) throw error;
+      _trFireStatus = 'fired'; _trFireLastAt = stamp;
+    } catch (e) {
+      _trFireStatus = 'error';
+      _trFireError = String(e.message || e);
+    }
+    shell();
+    // Auto-clear the banner after ~6s so the button returns to its resting
+    // state. `firing` never times out on its own — only success/error do.
+    setTimeout(() => {
+      if (_trFireStatus === 'fired' || _trFireStatus === 'error') {
+        _trFireStatus = ''; shell();
+      }
+    }, 6000);
   }
 
   async function _trLoadSubs() {
@@ -3331,7 +3379,9 @@
 
   function _trSubscribersCard() {
     // Kick off the initial load once the tab opens (super-only, RLS gates
-    // the query — non-supers wouldn't get here anyway).
+    // the query — non-supers wouldn't get here anyway). Also fetch the
+    // auto-send flag so the toggle renders in the right position from
+    // first paint.
     if (_trSubsOpen && _trSubs == null && !_trSubsLoading) {
       _trLoadSubs();
     }
@@ -3374,17 +3424,41 @@
           </tr>`;
         }).join('');
     const newRow = editingNew && _trSubsDraft ? _trSubsEditRowHtml(_trSubsDraft, true) : '';
+    // Fire-now button banner text. `firing` shows a spinner-esque label so
+    // the operator knows the click landed; `fired` / `error` are transient
+    // (auto-cleared by setTimeout in _trFireNow).
+    const fireBtnLabel = _trFireStatus === 'firing'
+      ? 'Firing…'
+      : _trFireStatus === 'fired'
+        ? 'Fired ✓ (drafts arrive in ~2 min)'
+        : _trFireStatus === 'error'
+          ? 'Fire failed — retry?'
+          : 'Fire now';
+    const fireBtnDisabled = _trFireStatus === 'firing' ? 'disabled' : '';
+    const fireBtnColor = _trFireStatus === 'error' ? 'color:#D20A03;' : '';
+    // Auto-send toggle — a checkbox rather than a switch to match the rest
+    // Draft-only. No auto-send toggle — Pagan reviews every batch before
+    // sending manually from Gmail. See feedback_never_auto_send_emails.
     return `<div class="card mt">
       <div class="card-pad" style="cursor:pointer;padding-bottom:12px" id="trSubsToggle" role="button" tabindex="0" aria-expanded="true">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
             <h3 style="margin:0;font-family:var(--serif);font-size:15px">Email subscribers · weekly Monday-morning report</h3>
-            <div class="sub" style="margin-top:2px">Who gets the auto-emailed team stats every Monday 08:00 SAST. Draft-only until you flip the send switch.</div>
+            <div class="sub" style="margin-top:2px">Who gets the auto-DRAFTED team stats every Monday 08:00 SAST. Drafts land in Pagan's Gmail; he sends them manually after eyeballing.</div>
           </div>
           <div class="muted" style="font-size:16px">${chevron}</div>
         </div>
       </div>
-      <div style="padding:0 16px 6px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="padding:0 16px 10px;display:flex;justify-content:flex-end;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line)">
+        <button class="btn ${_trFireStatus === 'fired' ? 'btn-primary' : ''}" id="trFireNow"
+          ${fireBtnDisabled}
+          style="padding:6px 14px;font-size:12.5px;${fireBtnColor}"
+          title="Trigger the emailer immediately to create drafts for every subscriber. Drafts appear in Gmail within ~2 minutes. Never sends.">
+          ${escapeHtml(fireBtnLabel)}
+        </button>
+      </div>
+      ${_trFireError ? `<div style="padding:6px 16px 0;color:#D20A03;font-size:12px">Fire-now write failed: ${escapeHtml(_trFireError)}</div>` : ''}
+      <div style="padding:10px 16px 6px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
         <div class="muted" style="font-size:12.5px">${_trSubsLoading ? 'Loading…' : (rows.length + ' subscriber' + (rows.length === 1 ? '' : 's'))}</div>
         <button class="btn btn-primary" id="trSubsAdd" ${editingNew ? 'disabled' : ''} style="padding:6px 14px;font-size:12.5px">+ Add subscriber</button>
       </div>
@@ -3724,6 +3798,19 @@
     if (subsAdd) subsAdd.addEventListener('click', () => {
       _trSubsStartEdit(null);
       shell();
+    });
+    // Fire-now: writes a fresh ISO timestamp to weekly_email_fire_request.
+    // The Mac's launchd fire-watcher polls that row every 2 min and runs
+    // the emailer as a draft-mode job on any value change.
+    const fireBtn = document.getElementById('trFireNow');
+    if (fireBtn) fireBtn.addEventListener('click', () => {
+      if (_trFireStatus === 'firing') return;
+      const ok = confirm(
+        "Fire the weekly team-report emailer now?\n\n" +
+        "Drafts will appear in Gmail within ~2 minutes for every active " +
+        "subscriber. Nothing is sent — you can review each draft first.");
+      if (!ok) return;
+      _trFireNow();
     });
     document.querySelectorAll('[data-trsubs-edit]').forEach(b =>
       b.addEventListener('click', () => {
