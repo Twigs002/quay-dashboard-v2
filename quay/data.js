@@ -9,13 +9,16 @@
    fall back to the historical `workTime / 0.85` estimate. */
 
 window.QUAY_READY = (async function () {
-  const [weekly, history, clockData, dailyData] = await Promise.all([
+  const [weekly, history, clockData, dailyData, clienthubData] = await Promise.all([
     fetch('data/weekly_data.json').then(r => r.json()),
     fetch('data/history.json').then(r => r.json()),
     fetch('data/clock_data.json').then(r => r.ok ? r.json() : null).catch(() => null),
     // Per-day stats from fetch_dialfire_daily.py — file may not exist yet
     // if the workflow hasn't run successfully. Treat as empty in that case.
     fetch('data/daily_data.json').then(r => r.ok ? r.json() : []).catch(() => []),
+    // ClientHub Master per-team stats (fetch_clienthub_teams.py). Null until
+    // the workflow has run; the tab renders a friendly empty state then.
+    fetch('data/clienthub_teams.json').then(r => r.ok ? r.json() : null).catch(() => null),
   ]);
 
   // Build a name → clocked hours map from the quay-clock fetcher output.
@@ -1178,6 +1181,8 @@ window.QUAY_READY = (async function () {
     monthlyBreakdown, weeksBreakdown,
     dailyDates, dailyFor, latestDailyDate,
     MONTHS, MONTH_CALLS, MONTH_LEADS, MONTH_EMAILS, MONTH_RENTALS, MONTH_DFHOURS,
+    CLIENTHUB: clienthubData,
+    clienthubTeams: (windowKey) => (clienthubData && clienthubData.windows && clienthubData.windows[windowKey]) || null,
     PERIODS, DELTAS, agentsFor, agentsForRange, totalsFor, prevTotalsFor, floorDailyAverage, weeksInMonth,
     periodElapsed, project, trailingAvg,
     agentHistory, agentCampaigns,
