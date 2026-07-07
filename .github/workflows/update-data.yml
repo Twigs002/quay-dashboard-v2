@@ -64,11 +64,17 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python scripts/fetch_clock.py
 
+      - name: Fetch ClientHub per-team stats
+        env:
+          CAMPAIGN_CLIENTHUB_ID: ${{ secrets.CAMPAIGN_CLIENTHUB_ID }}
+          CAMPAIGN_CLIENTHUB_TOKEN: ${{ secrets.CAMPAIGN_CLIENTHUB_TOKEN }}
+        run: python scripts/fetch_clienthub_teams.py
+
       - name: Commit updated data
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name  "github-actions[bot]"
-          git add data/weekly_data.json data/history.json data/clock_data.json
+          git add data/weekly_data.json data/history.json data/clock_data.json data/clienthub_teams.json
           git diff --staged --quiet && echo "No changes to commit" || \
             git commit -m "auto-update $(date -u +'%Y-%m-%d')"
           git pull --rebase origin main
