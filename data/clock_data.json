@@ -15,11 +15,11 @@
       "sessions": 2
     },
     {
-      "hours": 8.305,
+      "hours": 10.308,
       "id": "aqeefah-arendse",
       "name": "Aqeefah Arendse",
       "name_normalised": "Aqeefah Arendse",
-      "sessions": 2
+      "sessions": 3
     },
     {
       "hours": 9.04,
@@ -43,10 +43,24 @@
       "sessions": 1
     },
     {
+      "hours": 6.995,
+      "id": "sadiqa-carelse",
+      "name": "Sadiqa Carelse",
+      "name_normalised": "Sadiqa Carelse",
+      "sessions": 1
+    },
+    {
       "hours": 5.598,
       "id": "leon",
       "name": "Leon Kudzaishe Salimu",
       "name_normalised": "Leon Kudzaishe Salimu",
+      "sessions": 1
+    },
+    {
+      "hours": 0.0,
+      "id": "jaco",
+      "name": "Jan C (Jaco) Groenewald",
+      "name_normalised": "Jan C (Jaco) Groenewald",
       "sessions": 1
     },
     {
@@ -71,10 +85,10 @@
       "sessions": 1
     },
     {
-      "hours": 0.468,
-      "id": "jaco",
-      "name": "Jan C (Jaco) Groenewald",
-      "name_normalised": "Jan C (Jaco) Groenewald",
+      "hours": 9.097,
+      "id": "claire",
+      "name": "Claire Murch",
+      "name_normalised": "Claire Murch",
       "sessions": 1
     },
     {
@@ -230,23 +244,9 @@
       "name": "Quinn Frazier",
       "name_normalised": "Quinn Frazier",
       "sessions": 1
-    },
-    {
-      "hours": 10.082,
-      "id": "sadiqa-carelse",
-      "name": "Sadiqa Carelse",
-      "name_normalised": "Sadiqa Carelse",
-      "sessions": 1
-    },
-    {
-      "hours": 12.768,
-      "id": "claire",
-      "name": "Claire Murch",
-      "name_normalised": "Claire Murch",
-      "sessions": 1
     }
   ],
-  "generated_at": "2026-07-07T04:42:12.839141+00:00",
+  "generated_at": "2026-07-07T08:31:56.196118+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -363,11 +363,11 @@
           "sessions": 37
         },
         {
-          "hours": 366.275,
+          "hours": 368.278,
           "id": "aqeefah-arendse",
           "name": "Aqeefah Arendse",
           "name_normalised": "Aqeefah Arendse",
-          "sessions": 43
+          "sessions": 44
         },
         {
           "hours": 438.091,
@@ -454,7 +454,7 @@
           "sessions": 40
         },
         {
-          "hours": 516.883,
+          "hours": 507.41,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
@@ -489,7 +489,7 @@
           "sessions": 45
         },
         {
-          "hours": 320.373,
+          "hours": 308.29,
           "id": "sadiqa-carelse",
           "name": "Sadiqa Carelse",
           "name_normalised": "Sadiqa Carelse",
@@ -650,7 +650,7 @@
           "sessions": 7
         },
         {
-          "hours": 78.526,
+          "hours": 65.349,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
@@ -712,11 +712,11 @@
           "sessions": 10
         },
         {
-          "hours": 78.007,
+          "hours": 80.01,
           "id": "aqeefah-arendse",
           "name": "Aqeefah Arendse",
           "name_normalised": "Aqeefah Arendse",
-          "sessions": 10
+          "sessions": 11
         },
         {
           "hours": 78.58,
@@ -845,7 +845,7 @@
           "sessions": 3
         },
         {
-          "hours": 91.448,
+          "hours": 81.975,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
@@ -936,7 +936,7 @@
           "sessions": 7
         },
         {
-          "hours": 78.526,
+          "hours": 65.349,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
@@ -950,7 +950,7 @@
           "sessions": 8
         },
         {
-          "hours": 55.052,
+          "hours": 42.969,
           "id": "sadiqa-carelse",
           "name": "Sadiqa Carelse",
           "name_normalised": "Sadiqa Carelse",
@@ -1089,11 +1089,11 @@
           "sessions": 37
         },
         {
-          "hours": 366.275,
+          "hours": 368.278,
           "id": "aqeefah-arendse",
           "name": "Aqeefah Arendse",
           "name_normalised": "Aqeefah Arendse",
-          "sessions": 43
+          "sessions": 44
         },
         {
           "hours": 438.091,
@@ -1180,7 +1180,7 @@
           "sessions": 40
         },
         {
-          "hours": 516.883,
+          "hours": 507.41,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
@@ -1215,7 +1215,7 @@
           "sessions": 45
         },
         {
-          "hours": 320.373,
+          "hours": 308.29,
           "id": "sadiqa-carelse",
           "name": "Sadiqa Carelse",
           "name_normalised": "Sadiqa Carelse",
@@ -1376,7 +1376,7 @@
           "sessions": 7
         },
         {
-          "hours": 78.526,
+          "hours": 65.349,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
@@ -1452,7 +1452,7 @@
           "sessions": 5
         },
         {
-          "hours": 35.973,
+          "hours": 26.977,
           "id": "sadiqa-carelse",
           "name": "Sadiqa Carelse",
           "name_normalised": "Sadiqa Carelse",
@@ -1578,7 +1578,7 @@
           "sessions": 5
         },
         {
-          "hours": 46.985,
+          "hours": 37.479,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
@@ -1606,7 +1606,7 @@
           "sessions": 5
         },
         {
-          "hours": 59.491,
+          "hours": 50.486,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
@@ -1780,7 +1780,7 @@
           "sessions": 14
         },
         {
-          "hours": 91.036,
+          "hours": 78.953,
           "id": "sadiqa-carelse",
           "name": "Sadiqa Carelse",
           "name_normalised": "Sadiqa Carelse",
@@ -1857,11 +1857,11 @@
           "sessions": 9
         },
         {
-          "hours": 112.107,
+          "hours": 114.11,
           "id": "aqeefah-arendse",
           "name": "Aqeefah Arendse",
           "name_normalised": "Aqeefah Arendse",
-          "sessions": 14
+          "sessions": 15
         },
         {
           "hours": 111.056,
@@ -1927,7 +1927,7 @@
           "sessions": 4
         },
         {
-          "hours": 132.798,
+          "hours": 123.325,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
@@ -2053,7 +2053,7 @@
           "sessions": 7
         },
         {
-          "hours": 78.526,
+          "hours": 65.349,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
@@ -2094,11 +2094,11 @@
           "sessions": 2
         },
         {
-          "hours": 8.305,
+          "hours": 10.308,
           "id": "aqeefah-arendse",
           "name": "Aqeefah Arendse",
           "name_normalised": "Aqeefah Arendse",
-          "sessions": 2
+          "sessions": 3
         },
         {
           "hours": 9.04,
@@ -2122,10 +2122,24 @@
           "sessions": 1
         },
         {
+          "hours": 6.995,
+          "id": "sadiqa-carelse",
+          "name": "Sadiqa Carelse",
+          "name_normalised": "Sadiqa Carelse",
+          "sessions": 1
+        },
+        {
           "hours": 5.598,
           "id": "leon",
           "name": "Leon Kudzaishe Salimu",
           "name_normalised": "Leon Kudzaishe Salimu",
+          "sessions": 1
+        },
+        {
+          "hours": 0.0,
+          "id": "jaco",
+          "name": "Jan C (Jaco) Groenewald",
+          "name_normalised": "Jan C (Jaco) Groenewald",
           "sessions": 1
         },
         {
@@ -2150,10 +2164,10 @@
           "sessions": 1
         },
         {
-          "hours": 0.468,
-          "id": "jaco",
-          "name": "Jan C (Jaco) Groenewald",
-          "name_normalised": "Jan C (Jaco) Groenewald",
+          "hours": 9.097,
+          "id": "claire",
+          "name": "Claire Murch",
+          "name_normalised": "Claire Murch",
           "sessions": 1
         },
         {
@@ -2308,20 +2322,6 @@
           "id": "quinn",
           "name": "Quinn Frazier",
           "name_normalised": "Quinn Frazier",
-          "sessions": 1
-        },
-        {
-          "hours": 10.082,
-          "id": "sadiqa-carelse",
-          "name": "Sadiqa Carelse",
-          "name_normalised": "Sadiqa Carelse",
-          "sessions": 1
-        },
-        {
-          "hours": 12.768,
-          "id": "claire",
-          "name": "Claire Murch",
-          "name_normalised": "Claire Murch",
           "sessions": 1
         }
       ],
