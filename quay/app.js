@@ -3048,8 +3048,8 @@
       <div class="card mt">
         <div class="ln-filters">
           <div class="chips" role="group" aria-label="Filter by role">
-            ${roleChip('all', 'All', lnCount + assistCount)}
-            ${roleChip('ln', 'LNs', lnCount)}
+            ${roleChip('all', 'All roles', lnCount + assistCount)}
+            ${roleChip('ln', 'Nurturers', lnCount)}
             ${roleChip('assistant', 'Assistants', assistCount)}
           </div>
           <div class="ln-div-wrap" style="position:relative">
