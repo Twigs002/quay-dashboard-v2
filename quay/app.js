@@ -37,6 +37,10 @@
   let staffTeamFilter = 'all'; // 'all' | 'RM' | 'Fancy' — All Staff tab team dropdown
   let staffDateFrom = null;    // 'YYYY-MM-DD' SAST — custom range overrides topbar period when both set
   let staffDateTo   = null;    // 'YYYY-MM-DD' SAST
+  let ovDateFrom = null;       // Overview custom range (overrides topbar period when both set)
+  let ovDateTo   = null;
+  let leadDateFrom = null;     // Leadership custom range (custom-only tab, no quick pills)
+  let leadDateTo   = null;
   // Active segment on the All Staff tab: 'overall' | 'per' | 'ln'. Persisted
   // across re-renders (e.g. period change) so users don't get bounced back
   // to Callers · Overall every time the page rebuilds.
@@ -445,7 +449,45 @@
     if (tab === 'staff')        return !!(staffDateFrom && staffDateTo);
     if (tab === 'ln')           return !!(_lnDateFrom && _lnDateTo);
     if (tab === 'teams-report') return !!(_trDateFrom && _trDateTo);
+    if (tab === 'overview')     return !!(ovDateFrom && ovDateTo);
+    if (tab === 'leadership')   return true; // custom-range-only tab: never show quick pills
     return false;
+  }
+
+  // Shared custom date-range picker markup (mirrors the All Staff / LN /
+  // Teams pattern). `prefix` namespaces the input ids: `${prefix}DateFrom`,
+  // `${prefix}DateTo`, `${prefix}DateClear`. Reused by Overview + Leadership.
+  function datePickerMarkup(prefix, from, to) {
+    const today = (new Date()).toISOString().slice(0, 10);
+    const active = !!(from && to);
+    return `<div class="ln-date-picker" aria-label="Custom date range">
+      <label class="muted" for="${prefix}DateFrom">From</label>
+      <input id="${prefix}DateFrom" type="date" value="${from || ''}" max="${today}">
+      <span class="muted" aria-hidden="true">→</span>
+      <label class="muted" for="${prefix}DateTo">To</label>
+      <input id="${prefix}DateTo" type="date" value="${to || ''}" max="${today}">
+      ${active ? `<button class="btn" id="${prefix}DateClear" type="button" style="padding:5px 10px;font-size:12px">Clear</button>` : ''}
+    </div>`;
+  }
+  // Wire a datePickerMarkup instance. `onChange(kind, value)` is called with
+  // ('from'|'to', value) or ('clear'); it should update the caller's state.
+  // Re-renders via shell() and restores focus to the edited field.
+  function wireDatePicker(prefix, onChange) {
+    const f = document.getElementById(`${prefix}DateFrom`);
+    const t = document.getElementById(`${prefix}DateTo`);
+    const c = document.getElementById(`${prefix}DateClear`);
+    const refocus = (id) => { const el = document.getElementById(id); if (el) el.focus(); };
+    if (f) f.addEventListener('change', (e) => { onChange('from', e.target.value || null); shell(); refocus(`${prefix}DateFrom`); });
+    if (t) t.addEventListener('change', (e) => { onChange('to', e.target.value || null); shell(); refocus(`${prefix}DateTo`); });
+    if (c) c.addEventListener('click', () => { onChange('clear'); shell(); });
+  }
+  // Sum a per-agent list into the {calls,leads,avgSuccess,active} shape that
+  // Q.totalsFor returns — used when a custom range replaces the period totals.
+  function _totalsFromList(list) {
+    const calls = list.reduce((s, a) => s + (a.calls || 0), 0);
+    const leads = list.reduce((s, a) => s + (a.leads || 0), 0);
+    const sc    = list.reduce((s, a) => s + (a.rawSuccess || 0), 0);
+    return { calls, leads, avgSuccess: calls ? +((sc / calls) * 100).toFixed(1) : 0, active: list.length };
   }
 
   // ---------------------------------------------------- ROUTER
@@ -1922,9 +1964,17 @@
 
   // ---------------------------------------------------- OVERVIEW
   function overview() {
-    const t = Q.totalsFor(period);
-    const d = Q.DELTAS[period];
-    const agents = Q.agentsFor(period).slice().sort((a, b) => b.calls - a.calls);
+    // Custom date range (from the Overview picker) overrides the topbar
+    // period for the headline numbers. Deltas + the trailing-window visuals
+    // (trend/donut/spotlights/insights) have no range baseline, so they are
+    // hidden while a range is active — the KPIs, Top-6 and schedule cards
+    // still re-scope to the range.
+    const ovRange = (ovDateFrom && ovDateTo) ? { from: ovDateFrom, to: ovDateTo } : null;
+    const rangedList = ovRange ? Q.agentsForRange(ovRange.from, ovRange.to) : null;
+    const rangeMeta = rangedList && rangedList._range;
+    const t = rangedList ? _totalsFromList(rangedList) : Q.totalsFor(period);
+    const d = rangedList ? { calls: 0, success: 0, leads: 0, active: 0 } : Q.DELTAS[period];
+    const agents = (rangedList || Q.agentsFor(period)).slice().sort((a, b) => b.calls - a.calls);
     const top = agents[0];
     const src = Q.SOURCES.slice().sort((a, b) => b.conv - a.conv);
     const bestSrc = src[0];
@@ -2003,17 +2053,33 @@
         </div>
       </div>` : '';
 
+    const footPrev = ovRange ? 'custom range · no prior baseline' : ('vs previous ' + Q.PERIODS[period].label.toLowerCase());
+    // Curated quick filters (This Month + the two week options) + the custom
+    // range picker as the prominent control. Chips drive the global period;
+    // picking one clears any active custom range.
+    const QUICK = ['this-week', 'last-week', 'this-month'];
+    const ovChip = (k) => `<button class="qf-chip ${(!ovRange && period === k) ? 'active' : ''}" data-ovperiod="${k}" type="button">${Q.PERIODS[k].label}</button>`;
+    const ovCaption = ovRange ? `<div class="range-caption">Custom range · covers <b>${(rangeMeta && rangeMeta.effectiveFrom) || ovRange.from}</b> → <b>${(rangeMeta && rangeMeta.effectiveTo) || ovRange.to}</b>${rangeMeta && rangeMeta.weeksIncluded === 0 ? ' · <span style="color:var(--red)">no complete Mon-Sun weeks in range</span>' : (rangeMeta ? ` · ${rangeMeta.weeksIncluded} complete week${rangeMeta.weeksIncluded === 1 ? '' : 's'}` : '')}</div>` : '';
+    const ovFilterBar = `
+      <div class="card ov-filterbar">
+        <div class="qf-chips">${QUICK.map(ovChip).join('')}</div>
+        ${datePickerMarkup('ov', ovDateFrom, ovDateTo)}
+      </div>
+      ${ovCaption}`;
+
     return `
     <div class="tab-view">
       ${avgBanner}
+      ${ovFilterBar}
       <!-- KPIs -->
       <div class="row kpis">
-        ${kpi(I.phone,  'Total Calls',       fmt(t.calls),    d.calls,   'vs previous ' + Q.PERIODS[period].label.toLowerCase(), 'pct-of-base', Q.WEEK_CALLS)}
+        ${kpi(I.phone,  'Total Calls',       fmt(t.calls),    d.calls,   footPrev, 'pct-of-base', Q.WEEK_CALLS)}
         ${kpi(I.trophy, 'Avg Success Rate',  t.avgSuccess + '%', d.success, 'successes ÷ calls', 'pct', Q.WEEK_SUCCESS)}
         ${kpi(I.target, 'Total Leads',       fmt(t.leads),    d.leads,   'seller · rental · email', 'pct-of-base', Q.WEEK_LEADS)}
         ${kpi(I.users,  'Active Callers',    t.active + '',   d.active,  'RM + Fancy desks combined', 'count', Q.WEEK_ACTIVE)}
       </div>
 
+      ${ovRange ? '' : `
       <!-- trend + sources -->
       <div class="row g-2-1 mt">
         <div class="card">
@@ -2059,7 +2125,7 @@
           </div>
           <div class="spot-stat" style="margin-top:14px"><b>${risk.success}%</b> success · target <b>${(CFG.BENCHMARKS && CFG.BENCHMARKS.rm_success_rate) || 17}%</b> · ${fmt(risk.calls)} calls</div>
         </div>
-      </div>
+      </div>`}
 
       <!-- schedule adherence (real clock-in data) + LN daily recap -->
       <div class="mt">
@@ -2068,7 +2134,7 @@
       </div>
 
       <!-- insights + top10 -->
-      <div class="row g-2-1 mt" style="align-items:start">
+      <div class="row ${ovRange ? '' : 'g-2-1'} mt" style="align-items:start">
         <div class="card">
           <div class="card-head"><div><h3>Top 6 Performers</h3><div class="sub">Ranked by calls · open All Staff for the full roster</div></div>
             <button class="btn" data-goto="staff">${I.eye} View all</button></div>
@@ -2077,10 +2143,10 @@
             <tbody>${top10}</tbody>
           </table></div>
         </div>
-        <div class="card">
+        ${ovRange ? '' : `<div class="card">
           <div class="card-head"><div><h3>Insights</h3><div class="sub">Auto-generated · ${Q.PERIODS[period].label}</div></div></div>
           <div class="insights">${insights(t, d, top, bestSrc, risk, src)}</div>
-        </div>
+        </div>`}
       </div>
 
       <!-- monthly -->
@@ -2155,18 +2221,36 @@
   function afterOverview() {
     // Both the weekly trend chart and the lead-sources donut follow the
     // topbar period selector, so the visuals match the KPI block above.
-    const trend = (Q.trendSeriesFor ? Q.trendSeriesFor(period) : null)
-      || { labels: Q.WEEKS, calls: Q.WEEK_CALLS, success: Q.WEEK_SUCCESS };
-    C.weeklyTrend(document.getElementById('trendChart'), trend.labels, trend.calls, trend.success);
-    const periodSources = Q.sourcesFor ? Q.sourcesFor(period) : Q.SOURCES;
-    const total = periodSources.reduce((s, x) => s + x.calls, 0);
-    C.donut(document.getElementById('donut'),
-      periodSources.map(s => ({ value: s.calls, color: s.color })),
-      fmt(total), 'total calls');
+    // These cards are hidden while a custom range is active, so guard on the
+    // host elements existing before rendering into them.
+    const trendEl = document.getElementById('trendChart');
+    if (trendEl) {
+      const trend = (Q.trendSeriesFor ? Q.trendSeriesFor(period) : null)
+        || { labels: Q.WEEKS, calls: Q.WEEK_CALLS, success: Q.WEEK_SUCCESS };
+      C.weeklyTrend(trendEl, trend.labels, trend.calls, trend.success);
+    }
+    const donutEl = document.getElementById('donut');
+    if (donutEl) {
+      const periodSources = Q.sourcesFor ? Q.sourcesFor(period) : Q.SOURCES;
+      const total = periodSources.reduce((s, x) => s + x.calls, 0);
+      C.donut(donutEl, periodSources.map(s => ({ value: s.calls, color: s.color })),
+        fmt(total), 'total calls');
+    }
     document.querySelectorAll('.mc').forEach(el =>
       C.miniBars(el, JSON.parse(el.dataset.series), el.dataset.color));
     document.querySelectorAll('[data-goto]').forEach(b =>
       b.addEventListener('click', () => { tab = b.dataset.goto; shell(); }));
+    // Custom date-range picker (overrides the topbar period for headline nums).
+    wireDatePicker('ov', (kind, value) => {
+      if (kind === 'from') ovDateFrom = value;
+      else if (kind === 'to') ovDateTo = value;
+      else { ovDateFrom = null; ovDateTo = null; }
+    });
+    // Curated quick-filter chips — set the global period and clear any range.
+    document.querySelectorAll('[data-ovperiod]').forEach(b =>
+      b.addEventListener('click', () => {
+        period = b.dataset.ovperiod; ovDateFrom = null; ovDateTo = null; shell();
+      }));
     wireAgentClicks();
     wireFlagAckButtons();
   }
