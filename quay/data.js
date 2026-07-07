@@ -458,6 +458,22 @@ window.QUAY_READY = (async function () {
     return { calls, leads, avgSuccess, active: list.length };
   }
 
+  // Floor-wide "Avg. Daily Output": average calls per agent per working day
+  // across the last-90 (~13 week / 3 month) window. Covers the whole calling
+  // floor (RM + Fancy — that's all agentsFor returns; LN/assistants are a
+  // separate dataset). Working days = 5/week (matches periodElapsed). Uses
+  // the actual number of weeks available, so it degrades gracefully before
+  // 13 weeks of history exist.
+  function floorDailyAverage() {
+    const weeksN = _sliceFor('last-90').length || (PERIODS['last-90'].weeks || 13);
+    const list = agentsFor('last-90');
+    const agents = list.length;
+    const totalCalls = list.reduce((s, a) => s + (a.calls || 0), 0);
+    const days = weeksN * 5;
+    const perAgentPerDay = (agents && days) ? +(totalCalls / agents / days).toFixed(1) : 0;
+    return { perAgentPerDay, agents, weeks: weeksN, days, totalCalls };
+  }
+
   // ---- Period-over-period deltas (real, not hard-coded) -------------------
   function _periodTotals(weekSlice) {
     const list = aggregateWeeks(weekSlice);
@@ -1162,7 +1178,7 @@ window.QUAY_READY = (async function () {
     monthlyBreakdown, weeksBreakdown,
     dailyDates, dailyFor, latestDailyDate,
     MONTHS, MONTH_CALLS, MONTH_LEADS, MONTH_EMAILS, MONTH_RENTALS, MONTH_DFHOURS,
-    PERIODS, DELTAS, agentsFor, agentsForRange, totalsFor, prevTotalsFor, weeksInMonth,
+    PERIODS, DELTAS, agentsFor, agentsForRange, totalsFor, prevTotalsFor, floorDailyAverage, weeksInMonth,
     periodElapsed, project, trailingAvg,
     agentHistory, agentCampaigns,
     perAgentPerTeam, perAgentPerTeamRange, teamCanonical, normalizeCampaignName,

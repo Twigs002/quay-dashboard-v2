@@ -1986,8 +1986,26 @@
         <div class="src-bar"><span style="width:${(s.calls / src[0].calls) * 100}%;background:${s.color}"></span></div>
       </div>`).join('');
 
+    // Floor-wide 3-month "Avg. Daily Output" banner — average calls per agent
+    // per working day across the whole calling floor (RM + Fancy), last ~13
+    // weeks. Independent of the selected period (always the 3-month window).
+    const fda = Q.floorDailyAverage ? Q.floorDailyAverage() : null;
+    const avgBanner = (fda && fda.perAgentPerDay > 0) ? `
+      <div class="card avg-output-banner">
+        <div class="aob-ic">${I.phone}</div>
+        <div class="aob-body">
+          <div class="aob-label">Avg. Daily Output</div>
+          <div class="aob-sub">Calls per agent per working day · Engine Room (RM + Fancy) · last 3 months</div>
+        </div>
+        <div class="aob-figure">
+          <div class="aob-val tnum">${fmt(fda.perAgentPerDay)}</div>
+          <div class="aob-meta">${fda.agents} callers · ${fda.weeks} wks</div>
+        </div>
+      </div>` : '';
+
     return `
     <div class="tab-view">
+      ${avgBanner}
       <!-- KPIs -->
       <div class="row kpis">
         ${kpi(I.phone,  'Total Calls',       fmt(t.calls),    d.calls,   'vs previous ' + Q.PERIODS[period].label.toLowerCase(), 'pct-of-base', Q.WEEK_CALLS)}

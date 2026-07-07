@@ -325,6 +325,32 @@ button { font-family: inherit; cursor: pointer; }
   padding: 20px 22px;
   border-radius: var(--r-kpi);
 }
+/* Avg. Daily Output banner — full-width strip above the Overview KPIs. */
+.avg-output-banner {
+  display: flex; align-items: center; gap: 18px;
+  padding: 18px 24px; margin-bottom: 16px;
+  border-radius: var(--r-kpi);
+  background: linear-gradient(100deg, var(--navy-900), var(--navy-800));
+  color: #fff; border: none;
+}
+.avg-output-banner .aob-ic {
+  width: 42px; height: 42px; border-radius: 11px; flex: none;
+  display: grid; place-items: center; color: #fff;
+  background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.22);
+}
+.avg-output-banner .aob-ic .ic { width: 21px; height: 21px; }
+.avg-output-banner .aob-body { flex: 1 1 auto; min-width: 0; }
+.avg-output-banner .aob-label { font-size: 15px; font-weight: 700; letter-spacing: .01em; }
+.avg-output-banner .aob-sub { font-size: 12.5px; opacity: 0.8; margin-top: 3px; }
+.avg-output-banner .aob-figure { text-align: right; flex: none; }
+.avg-output-banner .aob-val {
+  font-family: var(--serif); font-weight: 700; font-size: 34px; line-height: 1;
+}
+.avg-output-banner .aob-meta { font-size: 11.5px; opacity: 0.75; margin-top: 4px; }
+@media (max-width: 560px) {
+  .avg-output-banner { flex-wrap: wrap; }
+  .avg-output-banner .aob-figure { text-align: left; }
+}
 .kpi-top { display: flex; align-items: center; justify-content: space-between; }
 .kpi-ic {
   width: 38px; height: 38px; border-radius: 10px; flex: none;
