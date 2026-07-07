@@ -24,24 +24,14 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from dialfire_common import API_BASE, LOCALE, SAST, dates_to_timespan, fetch_json  # noqa
+from dialfire_common import (  # noqa
+    API_BASE, LOCALE, SAST, dates_to_timespan, fetch_json,
+    SELLER_STATUSES, EMAIL_STATUSES,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT  = ROOT / "data" / "clienthub_teams.json"
 OWNER_MAP = ROOT / "data" / "clienthub_owners.json"
-
-# Report columns we pull per owner-group (positional in the response).
-COLUMNS = ["completed", "connectTimeDialer", "success"]
-
-
-def _hours(v):
-    """connectTimeDialer as hours. Mirrors parse_row: values are hours unless
-    the raw number is implausibly large (>1000), in which case it's ms."""
-    try:
-        n = float(v) if v not in (None, "", "-") else 0.0
-    except (TypeError, ValueError):
-        return 0.0
-    return n / 3.6e6 if n > 1000 else n
 
 
 def _num(v):
@@ -52,8 +42,8 @@ def _num(v):
 
 
 def windows_for(today):
-    """The three reporting windows: last completed Mon-Sun week, month-to-date,
-    and the full previous calendar month. All in SAST."""
+    """The reporting windows: current week-to-date, last completed Mon-Sun
+    week, month-to-date, and the full previous calendar month. All in SAST."""
     this_monday = today - datetime.timedelta(days=today.weekday())
     last_monday = this_monday - datetime.timedelta(days=7)
     last_sunday = last_monday + datetime.timedelta(days=6)
@@ -61,59 +51,87 @@ def windows_for(today):
     last_month_end = month_start - datetime.timedelta(days=1)
     last_month_start = last_month_end.replace(day=1)
     return {
+        "this-week":  (this_monday, today),
         "last-week":  (last_monday, last_sunday),
         "this-month": (month_start, today),
         "last-month": (last_month_start, last_month_end),
     }
 
 
-def fetch_window(cid, token, frm, to):
-    """Return list of {team, owner_ids[], calls, talkHrs, leads} for a window,
-    or None on fetch failure (so we preserve the prior file)."""
-    ts = dates_to_timespan(frm, to)
-    params = {"access_token": token, "asTree": "true", "timespan": ts,
-              "group0": "Contact_Owner"}
-    for i, col in enumerate(COLUMNS):
-        params[f"column{i}"] = col
+def fetch_owner_calls(cid, token, ts):
+    """{owner_id: total calls} — group the report by Contact_Owner. Returns
+    None on fetch failure so callers can preserve the prior file."""
     url = f"{API_BASE}/api/campaigns/{cid}/reports/editsDef_v2/report/{LOCALE}"
-    data = fetch_json(url, params, "clienthub", f"teams ts={ts}")
+    params = {"access_token": token, "asTree": "true", "timespan": ts,
+              "group0": "Contact_Owner", "column0": "completed"}
+    data = fetch_json(url, params, "clienthub", f"owner calls ts={ts}")
     if data is None:
         return None
-    groups = (data.get("groups") if isinstance(data, dict) else None) or []
-    return groups
-
-
-def aggregate(groups, owner_map):
-    """owner-id groups -> per-team rows (owners sharing a team name merge)."""
-    by_team = {}
-    for g in groups:
+    out = {}
+    for g in (data.get("groups") if isinstance(data, dict) else None) or []:
         if not isinstance(g, dict):
             continue
         oid = str(g.get("value", "")).strip()
-        if not oid:
-            continue
         cols = g.get("columns") or []
-        calls = _num(cols[0]) if len(cols) > 0 else 0.0
-        talk  = _hours(cols[1]) if len(cols) > 1 else 0.0
-        leads = _num(cols[2]) if len(cols) > 2 else 0.0
+        if oid:
+            out[oid] = _num(cols[0]) if cols else 0.0
+    return out
+
+
+def fetch_owner_leads(cid, token, ts):
+    """{owner_id: {seller, email}} — group by Lead_Status then Contact_Owner,
+    bucketing statuses (LEAD -> seller, GOT_EMAIL -> email). Mirrors
+    dialfire_common.fetch_lead_counts but keyed by owner instead of agent."""
+    url = f"{API_BASE}/api/campaigns/{cid}/reports/editsDef_v2/report/{LOCALE}"
+    params = {"access_token": token, "asTree": "true", "timespan": ts,
+              "group0": "Lead_Status", "group1": "Contact_Owner", "column0": "completed"}
+    data = fetch_json(url, params, "clienthub", f"owner leads ts={ts}")
+    if not (data and isinstance(data, dict)):
+        return {}
+    seller_up = {s.upper() for s in SELLER_STATUSES}
+    email_up  = {s.upper() for s in EMAIL_STATUSES}
+    out = {}
+    for sgrp in data.get("groups", []):
+        if not isinstance(sgrp, dict):
+            continue
+        status = str(sgrp.get("value", "")).strip().upper()
+        bucket = "seller" if status in seller_up else ("email" if status in email_up else None)
+        if bucket is None:
+            continue
+        for u in sgrp.get("groups", sgrp.get("children", [])):
+            if not isinstance(u, dict):
+                continue
+            oid = str(u.get("value", "")).strip()
+            if not oid or oid == "-":
+                continue
+            cols = u.get("columns") or []
+            out.setdefault(oid, {"seller": 0, "email": 0})[bucket] += int(_num(cols[0]) if cols else 0)
+    return out
+
+
+def aggregate(owner_calls, owner_leads, owner_map):
+    """owner-id -> per-team rows {team, owner_ids, calls, seller, email}
+    (owners sharing a team name merge)."""
+    by_team = {}
+    owner_ids = set(owner_calls) | set(owner_leads)
+    for oid in owner_ids:
         # Dialfire returns a small "error" bucket for calls it can't attribute
         # to an owner — keep it as "Unassigned" (honest in the totals). A
         # numeric owner id missing from the map means the map needs a refresh.
         team = owner_map.get(oid) or ("Unassigned" if not oid.isdigit() else f"Unmapped owner {oid}")
-        row = by_team.setdefault(team, {"team": team, "owner_ids": [], "calls": 0.0, "talkHrs": 0.0, "leads": 0.0})
+        lead = owner_leads.get(oid) or {}
+        row = by_team.setdefault(team, {"team": team, "owner_ids": [], "calls": 0.0, "seller": 0, "email": 0})
         row["owner_ids"].append(oid)
-        row["calls"] += calls
-        row["talkHrs"] += talk
-        row["leads"] += leads
-    rows = []
-    for r in by_team.values():
-        rows.append({
-            "team": r["team"],
-            "owner_ids": sorted(set(r["owner_ids"])),
-            "calls": int(round(r["calls"])),
-            "talkHrs": round(r["talkHrs"], 2),
-            "leads": int(round(r["leads"])),
-        })
+        row["calls"] += owner_calls.get(oid, 0.0)
+        row["seller"] += int(lead.get("seller", 0))
+        row["email"] += int(lead.get("email", 0))
+    rows = [{
+        "team": r["team"],
+        "owner_ids": sorted(set(r["owner_ids"])),
+        "calls": int(round(r["calls"])),
+        "seller": r["seller"],
+        "email": r["email"],
+    } for r in by_team.values()]
     rows.sort(key=lambda r: -r["calls"])
     return rows
 
@@ -125,13 +143,24 @@ def write(payload):
     print(f"[fetch_clienthub_teams] wrote {OUT.relative_to(ROOT)} (teams per window: {n})")
 
 
+# The Engine Room calling floor spans three ClientHub campaigns; stats are
+# summed per team across all present campaigns. Each row = (env id var, env
+# token var, short label).
+CAMPAIGNS = [
+    ("CAMPAIGN_CLIENTHUB_ID",           "CAMPAIGN_CLIENTHUB_TOKEN",           "master"),
+    ("CAMPAIGN_CLIENTHUB_NEW_ID",       "CAMPAIGN_CLIENTHUB_NEW_TOKEN",       "new"),
+    ("CAMPAIGN_CLIENTHUB_NO_ANSWER_ID", "CAMPAIGN_CLIENTHUB_NO_ANSWER_TOKEN", "na"),
+]
+
+
 def main():
-    cid   = os.environ.get("CAMPAIGN_CLIENTHUB_ID", "").strip()
-    token = os.environ.get("CAMPAIGN_CLIENTHUB_TOKEN", "").strip()
     now = datetime.datetime.now(datetime.timezone.utc)
-    if not cid or not token:
-        print("[fetch_clienthub_teams] CAMPAIGN_CLIENTHUB_ID/TOKEN not set — empty payload.")
-        write({"generated_at": now.isoformat(), "campaign_id": cid or None,
+    campaigns = [(os.environ.get(i, "").strip(), os.environ.get(t, "").strip(), lbl)
+                 for i, t, lbl in CAMPAIGNS]
+    campaigns = [(cid, tok, lbl) for cid, tok, lbl in campaigns if cid and tok]
+    if not campaigns:
+        print("[fetch_clienthub_teams] no ClientHub campaign secrets set — empty payload.")
+        write({"generated_at": now.isoformat(), "campaigns": [],
                "source": "unset", "windows": {}})
         return 0
 
@@ -145,25 +174,45 @@ def main():
     today = datetime.datetime.now(SAST).date()
     windows = {}
     for key, (frm, to) in windows_for(today).items():
-        groups = fetch_window(cid, token, frm, to)
-        if groups is None:
-            print(f"[fetch_clienthub_teams] {key}: FETCH FAILED — preserving prior file, exiting.")
-            return 0  # leave the existing clienthub_teams.json untouched
-        teams = aggregate(groups, owner_map)
+        ts = dates_to_timespan(frm, to)
+        # Sum per-owner calls + seller/email across all present campaigns.
+        owner_calls, owner_leads, contributors = {}, {}, []
+        for cid, tok, lbl in campaigns:
+            calls = fetch_owner_calls(cid, tok, ts)
+            if calls is None:
+                # The primary (master) failing means preserve the prior file;
+                # a secondary campaign failing just drops it from this window.
+                if lbl == "master":
+                    print(f"[fetch_clienthub_teams] {key}: master FETCH FAILED — preserving prior file, exiting.")
+                    return 0
+                print(f"[fetch_clienthub_teams] {key}: {lbl} fetch failed — skipping that campaign.")
+                continue
+            leads = fetch_owner_leads(cid, tok, ts)
+            contributors.append(lbl)
+            for oid, c in calls.items():
+                owner_calls[oid] = owner_calls.get(oid, 0.0) + c
+            for oid, lv in leads.items():
+                agg = owner_leads.setdefault(oid, {"seller": 0, "email": 0})
+                agg["seller"] += lv.get("seller", 0)
+                agg["email"] += lv.get("email", 0)
+        teams = aggregate(owner_calls, owner_leads, owner_map)
         windows[key] = {
             "from": frm.isoformat(), "to": to.isoformat(),
+            "campaigns": contributors,
             "teams": teams,
             "totals": {
                 "calls": sum(t["calls"] for t in teams),
-                "talkHrs": round(sum(t["talkHrs"] for t in teams), 2),
-                "leads": sum(t["leads"] for t in teams),
+                "seller": sum(t["seller"] for t in teams),
+                "email": sum(t["email"] for t in teams),
                 "teams": len(teams),
             },
         }
-        print(f"[fetch_clienthub_teams] {key} ({frm}->{to}): {len(teams)} teams, "
-              f"{windows[key]['totals']['calls']} calls")
+        print(f"[fetch_clienthub_teams] {key} ({frm}->{to}) [{'+'.join(contributors)}]: "
+              f"{len(teams)} teams, {windows[key]['totals']['calls']} calls, "
+              f"{windows[key]['totals']['seller']} seller, {windows[key]['totals']['email']} email")
 
-    write({"generated_at": now.isoformat(), "campaign_id": cid,
+    write({"generated_at": now.isoformat(),
+           "campaigns": [lbl for _, _, lbl in campaigns],
            "source": "dialfire", "windows": windows})
     return 0
 

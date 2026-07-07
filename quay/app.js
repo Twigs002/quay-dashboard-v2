@@ -128,7 +128,7 @@
     { id: 'monthly',    section: 'Time',        label: 'Monthly',        icon: I.cal2,     title: 'Monthly Breakdown',    sub: 'Month-by-month roll-up across every week of data' },
     { id: 'compare',    section: 'Time',        label: 'Compare',        icon: I.scale,    title: 'Period Comparison',    sub: 'Week vs week · month vs month' },
     { id: 'sources',    section: 'Strategy',    label: 'Lead Sources',   icon: I.target,   title: 'Lead Source Efficacy', sub: 'Which source converts best' },
-    { id: 'clienthub',  section: 'Strategy',    label: 'ClientHub Teams', icon: I.phone,   title: 'ClientHub · By Team',  sub: 'Per-team calls, talk-time & leads on the ClientHub Master campaign' },
+    { id: 'clienthub',  section: 'Strategy',    label: 'Engine Room',    icon: I.phone,   title: 'Engine Room calling',  sub: 'Per-team calls, seller leads & emails across the ClientHub campaigns' },
     { id: 'clocks',     section: 'Admin',       label: 'Clocks',         icon: I.clock,    title: 'Clocks',               sub: 'Staff hours, requests & team — manage everything in one place' },
     { id: 'team',       section: 'Admin',       label: 'Staff',          icon: I.users,    title: 'Staff Directory',      sub: 'Roster · clock-in status · forgot-to-clock-out · mark absent' },
     { id: 'payroll',    section: 'Admin',       label: 'Payroll',        icon: I.cal2,     title: 'Payroll · Divisions Allocations', sub: 'Pay-period hours by division — 21st → 20th' },
@@ -4417,14 +4417,11 @@
   // Per-team calls / talk-time / leads on the ClientHub Master campaign.
   // Each hubspot_owner_id is a team; data from fetch_clienthub_teams.py.
   const CH_WINDOWS = [
-    ['last-week',  'This Week'],   // last completed Mon-Sun
+    ['this-week',  'This Week'],   // current week-to-date (live)
+    ['last-week',  'Last Week'],   // last completed Mon-Sun
     ['this-month', 'This Month'],  // month-to-date
     ['last-month', 'Last Month'],  // full previous calendar month
   ];
-  function _chHM(hrs) {
-    const tot = Math.round((hrs || 0) * 60);
-    return Math.floor(tot / 60) + ':' + String(tot % 60).padStart(2, '0');
-  }
   function renderClientHubTeams() {
     const ch = Q.CLIENTHUB;
     if (!ch || !ch.windows) {
@@ -4441,10 +4438,7 @@
     const toggle = CH_WINDOWS.map(([k, lbl]) =>
       `<button class="qf-chip ${chWindow === k ? 'active' : ''}" data-chwin="${k}" type="button">${lbl}</button>`).join('');
 
-    // Talk time = Dialfire connect/talk time on this team's contacts, NOT
-    // total hours worked (agent session time can't be split by contact owner).
-    const TALK_DEF = "Dialfire connect (talk) time on this team's contacts. This is talk time, not total hours worked.";
-    const kpi = (icon, label, val, foot, tip) => `<div class="card kpi"${tip ? ` title="${escapeHtml(tip)}"` : ''}>
+    const kpi = (icon, label, val, foot) => `<div class="card kpi">
       <div class="kpi-top"><div class="kpi-ic">${icon}</div></div>
       <div class="kpi-label">${label}</div>
       <div class="kpi-val tnum">${val}</div>
@@ -4452,43 +4446,42 @@
     </div>`;
 
     const rows = teams.map((t, i) => {
-      const per100 = t.calls ? ((t.leads / t.calls) * 100).toFixed(1) : '0.0';
-      const bar = Math.min(100, (t.calls / maxCalls) * 100);
+      const bar = Math.min(100, (t.calls / (maxCalls || 1)) * 100);
       const flag = t.team === 'Unassigned' ? ' style="color:var(--muted)"' : '';
       return `<tr${flag}>
         <td class="num tnum">${i + 1}</td>
         <td>${escapeHtml(t.team)}</td>
         <td class="num tnum">${fmt(t.calls)}</td>
-        <td class="num tnum">${_chHM(t.talkHrs)}</td>
-        <td class="num tnum">${fmt(t.leads)}</td>
-        <td class="num tnum">${per100}</td>
+        <td class="num tnum">${fmt(t.seller || 0)}</td>
+        <td class="num tnum">${fmt(t.email || 0)}</td>
         <td class="num"><div class="cell-bar"><div class="track"><span style="width:${bar}%"></span></div></div></td>
       </tr>`;
     }).join('');
 
+    const camps = (w.campaigns || []).length ? (w.campaigns || []).join(' + ') : 'ClientHub';
     return `<div class="tab-view">
       <div class="card ov-filterbar">
         <div class="qf-chips">${toggle}</div>
         <div class="live-range-label">${escapeHtml(w.from || '')} → ${escapeHtml(w.to || '')} SAST</div>
       </div>
       <div class="row kpis mt">
-        ${kpi(I.phone,  'Total Calls', fmt(tot.calls || 0), (tot.teams || teams.length) + ' teams')}
-        ${kpi(I.clock,  'Talk Time',   _chHM(tot.talkHrs || 0) + 'h', 'talk time, not hours worked', TALK_DEF)}
-        ${kpi(I.target, 'Total Leads', fmt(tot.leads || 0), 'positive outcomes')}
-        ${kpi(I.trophy, 'Top Team',    teams[0] ? escapeHtml(teams[0].team) : '—', teams[0] ? fmt(teams[0].calls) + ' calls' : '—')}
+        ${kpi(I.phone,  'Total Calls',  fmt(tot.calls || 0), (tot.teams || teams.length) + ' teams')}
+        ${kpi(I.target, 'Seller Leads', fmt(tot.seller || 0), 'LEAD outcomes')}
+        ${kpi(I.mail || I.target, 'Emails', fmt(tot.email || 0), 'GOT_EMAIL outcomes')}
+        ${kpi(I.trophy, 'Top Team',     teams[0] ? escapeHtml(teams[0].team) : '—', teams[0] ? fmt(teams[0].calls) + ' calls' : '—')}
       </div>
       <div class="card mt">
         <div class="card-head">
-          <div><h3>Per-team performance</h3><div class="sub">ClientHub Master · calls · talk-time · leads · leads per 100 calls · <b>Talk = Dialfire connect time, not hours worked</b></div></div>
+          <div><h3>Engine Room calling</h3><div class="sub">${escapeHtml(camps)} campaigns · calls · seller leads · emails, by team</div></div>
           <button class="btn" id="chExport" type="button">${I.download} Export CSV</button>
         </div>
         <div class="tbl-wrap"><table class="tbl">
           <thead><tr>
             <th class="num">#</th><th>Team</th>
-            <th class="num">Calls</th><th class="num" title="${escapeHtml(TALK_DEF)}">Talk (h:mm)</th>
-            <th class="num">Leads</th><th class="num">Leads/100</th><th class="num">Volume</th>
+            <th class="num">Total Calls</th><th class="num">Seller Leads</th>
+            <th class="num">Emails</th><th class="num">Volume</th>
           </tr></thead>
-          <tbody>${rows || '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">No team data for this window.</td></tr>'}</tbody>
+          <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:30px">No team data for this window.</td></tr>'}</tbody>
         </table></div>
       </div>
     </div>`;
@@ -4500,16 +4493,15 @@
     if (exp) exp.addEventListener('click', () => {
       const ch = Q.CLIENTHUB; const w = ch && ch.windows && ch.windows[chWindow];
       if (!w) return;
-      const head = ['Team', 'Calls', 'TalkHours', 'Leads', 'LeadsPer100', 'OwnerIDs'];
+      const head = ['Team', 'TotalCalls', 'SellerLeads', 'Emails', 'OwnerIDs'];
       const lines = [head.join(',')].concat((w.teams || []).map(t => [
-        `"${(t.team || '').replace(/"/g, '""')}"`, t.calls, t.talkHrs, t.leads,
-        t.calls ? ((t.leads / t.calls) * 100).toFixed(1) : '0.0',
+        `"${(t.team || '').replace(/"/g, '""')}"`, t.calls, t.seller || 0, t.email || 0,
         `"${(t.owner_ids || []).join(' ')}"`,
       ].join(',')));
       const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = `clienthub_teams_${chWindow}_${(w.to || '').replace(/-/g, '')}.csv`;
+      a.href = url; a.download = `engine_room_${chWindow}_${(w.to || '').replace(/-/g, '')}.csv`;
       a.click(); URL.revokeObjectURL(url);
     });
   }
