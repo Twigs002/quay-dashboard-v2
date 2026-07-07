@@ -41,6 +41,8 @@
   let ovDateTo   = null;
   let leadDateFrom = null;     // Leadership custom range (custom-only tab, no quick pills)
   let leadDateTo   = null;
+  let liveDateFrom = null;     // Live Floor: a range switches from live cards to a historical table
+  let liveDateTo   = null;
   // Active segment on the All Staff tab: 'overall' | 'per' | 'ln'. Persisted
   // across re-renders (e.g. period change) so users don't get bounced back
   // to Callers · Overall every time the page rebuilds.
@@ -2257,9 +2259,17 @@
 
   // ---------------------------------------------------- LEADERSHIP OVERVIEW
   function leadership() {
-    const agents = Q.agentsFor(period);
-    const t = Q.totalsFor(period);
-    const d = Q.DELTAS[period];
+    // All-Stars: custom-range-only tab. The topbar period pills are hidden
+    // (pillsHiddenForActivePicker), so the custom picker is the sole control.
+    // With a range set, agent-derived numbers re-scope via agentsForRange and
+    // the period-only sections (revenue, pace, trends, campaigns, historical)
+    // are hidden — they have no meaning for an arbitrary span.
+    const leadRange = (leadDateFrom && leadDateTo) ? { from: leadDateFrom, to: leadDateTo } : null;
+    const rangedList = leadRange ? Q.agentsForRange(leadRange.from, leadRange.to) : null;
+    const leadMeta = rangedList && rangedList._range;
+    const agents = rangedList || Q.agentsFor(period);
+    const t = rangedList ? _totalsFromList(rangedList) : Q.totalsFor(period);
+    const d = rangedList ? { calls: null, success: null } : Q.DELTAS[period];
 
     // Split by team
     const rm = agents.filter(a => a.team === 'RM');
@@ -2320,7 +2330,7 @@
     // Red flags — Leadership view skips the per-person schedule flags
     // (no-shows, chronic lateness). Those are HR/manager territory and
     // still surface on Overview where managers see them.
-    const flags = redFlags(agents, d, rmT, fcT, { includeSchedule: false, includeInactive: false });
+    const flags = redFlags(agents, Q.DELTAS[period], rmT, fcT, { includeSchedule: false, includeInactive: false });
 
     // Progress vs last period — beat your previous week / month rather
     // than a stale hard-coded floor target.
@@ -2444,21 +2454,34 @@
         </div>
       </div>` : '';
 
+    const leadFoot = leadRange ? 'custom range · no prior baseline' : ('vs previous ' + Q.PERIODS[period].label.toLowerCase());
+    const leadCaption = leadRange
+      ? `<div class="range-caption">Custom range · covers <b>${(leadMeta && leadMeta.effectiveFrom) || leadRange.from}</b> → <b>${(leadMeta && leadMeta.effectiveTo) || leadRange.to}</b>${leadMeta && leadMeta.weeksIncluded === 0 ? ' · <span style="color:var(--red)">no complete Mon-Sun weeks in range</span>' : (leadMeta ? ` · ${leadMeta.weeksIncluded} complete week${leadMeta.weeksIncluded === 1 ? '' : 's'} · revenue, pace &amp; trend sections hidden for custom ranges` : '')}</div>`
+      : '';
+    const leadFilterBar = `
+      <div class="card ov-filterbar" style="justify-content:flex-end">
+        ${datePickerMarkup('lead', leadDateFrom, leadDateTo)}
+      </div>
+      ${leadCaption}`;
+
     return `
     <div class="tab-view">
-      ${staleBanner}
+      ${leadFilterBar}
+      ${leadRange ? '' : staleBanner}
       <!-- Hero KPIs -->
       <div class="row kpis">
-        ${kpi(I.phone,  'Total Calls',       fmt(t.calls),        d.calls,   'vs previous ' + Q.PERIODS[period].label.toLowerCase(), 'pct-of-base', Q.WEEK_CALLS)}
+        ${kpi(I.phone,  'Total Calls',       fmt(t.calls),        d.calls,   leadFoot, 'pct-of-base', Q.WEEK_CALLS)}
         ${kpi(I.trophy, 'Success Rate',      t.avgSuccess + '%',  d.success, 'successes ÷ calls', 'pct', Q.WEEK_SUCCESS)}
         ${kpi(I.bolt,   'Team Efficiency',   eff + '%',           null,      'dialler ÷ clocked-in time')}
-        ${kpi(I.medal,  'Estimated revenue', 'R ' + fmt(Math.round(revenue)), null,
+        ${leadRange
+          ? kpi(I.users, 'Active Callers', t.active + '', null, 'RM + Fancy desks combined')
+          : kpi(I.medal, 'Estimated revenue', 'R ' + fmt(Math.round(revenue)), null,
               fmt(sellerLeads) + ' seller · ' + fmt(rentalLeads) + ' rental — see model below')}
       </div>
 
       <div class="divider-note">Strategic snapshot</div>
       <!-- Team split + Target progress -->
-      <div class="row g-2-1 mt">
+      <div class="row ${leadRange ? '' : 'g-2-1'} mt">
         <div style="display:flex;flex-direction:column;gap:16px">
           <div class="card-head" style="padding:0">
             <div><h3 style="font-family:var(--serif);font-size:17px;color:var(--ink);margin:0">RM vs Fancy</h3>
@@ -2467,7 +2490,7 @@
           ${teamCard(CFG.TEAM_LABELS?.RM    || 'Relationship Managers', rmT, '#3D5BA6')}
           ${teamCard(CFG.TEAM_LABELS?.Fancy || 'Fancy Callers',         fcT, '#B98A02')}
         </div>
-        <div class="card card-pad">
+        ${leadRange ? '' : `<div class="card card-pad">
           <div class="card-head" style="padding:0;border:0"><div>
             <h3 style="margin:0">Pace vs last period</h3>
             <div class="sub">${period === 'this-week' || period === 'last-week' ? 'Beat last week’s totals' : 'Beat last month’s totals'} · auto-set from actuals</div>
@@ -2477,10 +2500,10 @@
           <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);line-height:1.7">
             Revenue estimate uses <b style="color:var(--ink)">R${fmt(rev.seller || rev.default)} seller / R${fmt(rev.rental || rev.default)} rental / R${fmt(rev.email || rev.default)} email</b>. Adjust in <code>quay/config.js</code> for accuracy.
           </div>
-        </div>
+        </div>`}
       </div>
 
-      <div class="divider-note">Performance trends</div>
+      ${leadRange ? '' : `<div class="divider-note">Performance trends</div>
       <!-- Top campaigns + Trend -->
       <div class="row g-2-1 mt">
         <div class="card">
@@ -2499,7 +2522,7 @@
 
       <div class="divider-note">Revenue model</div>
       <!-- Revenue model — per-campaign breakdown that drove the ceiling -->
-      ${revenueModelCard(camps0, teamRateLookup, rev.default, rentalRate)}
+      ${revenueModelCard(camps0, teamRateLookup, rev.default, rentalRate)}`}
 
       <!-- Top performers + Red flags. align-items:stretch so the
            shorter Top-5 card fills the same row height as the
@@ -2531,7 +2554,7 @@
       </div>
 
       <!-- Historical comparisons -->
-      ${historicalComparison(t)}
+      ${leadRange ? '' : historicalComparison(t)}
     </div>`;
   }
 
@@ -4328,10 +4351,53 @@
       <span><b>Answered</b> ${escapeHtml(ANSWERED_DEF)}</span>
     </div>`;
 
-    return `<div class="tab-view">${staleDailyBanner}${summary}${legend}${grid}</div>`;
+    // Date-range banner. Live Floor is realtime by default; when a range is
+    // set it switches to a historical per-agent aggregation for that span
+    // (the live cards / today summary don't apply to a past window).
+    const liveRange = (liveDateFrom && liveDateTo) ? { from: liveDateFrom, to: liveDateTo } : null;
+    const rangeBanner = `<div class="card ov-filterbar" style="justify-content:space-between">
+      <div class="live-range-label">${liveRange ? 'Historical range' : 'Live floor · today'}</div>
+      ${datePickerMarkup('live', liveDateFrom, liveDateTo)}
+    </div>`;
+
+    if (liveRange) {
+      const hist = Q.agentsForRange(liveRange.from, liveRange.to);
+      const hm = hist._range;
+      const hTot = hist.reduce((s, a) => s + (a.calls || 0), 0);
+      const hLeads = hist.reduce((s, a) => s + (a.leads || 0), 0);
+      const rows = hist.slice().sort((a, b) => b.calls - a.calls).map((a, i) => `
+        <tr data-agent="${escapeHtml(a.name)}" style="cursor:pointer">
+          <td class="num tnum">${i + 1}</td>
+          <td>${escapeHtml(a.name)}</td>
+          <td><span class="pill">${escapeHtml(a.team)}</span></td>
+          <td class="num tnum">${fmt(a.calls)}</td>
+          <td class="num tnum">${fmt(a.leads)}</td>
+          <td class="num"><span class="pill ${sucClass(a.success)}">${a.success}%</span></td>
+        </tr>`).join('');
+      const caption = `<div class="range-caption">Custom range · covers <b>${(hm && hm.effectiveFrom) || liveRange.from}</b> → <b>${(hm && hm.effectiveTo) || liveRange.to}</b>${hm && hm.weeksIncluded === 0 ? ' · <span style="color:var(--red)">no complete Mon-Sun weeks in range</span>' : (hm ? ` · ${hm.weeksIncluded} complete week${hm.weeksIncluded === 1 ? '' : 's'}` : '')} · <b>${fmt(hTot)}</b> calls · <b>${fmt(hLeads)}</b> leads. Clear the range to return to the live floor.</div>`;
+      const histCard = hist.length ? `<div class="card mt">
+        <div class="card-head"><div><h3>Historical performance</h3><div class="sub">Per-agent calls · leads · success for the selected range</div></div></div>
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th class="num">#</th><th>Agent</th><th>Team</th><th class="num">Calls</th><th class="num">Leads</th><th class="num">Success</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div></div>`
+        : `<div class="card card-pad" style="text-align:center;color:var(--muted);padding:48px 20px">No complete Mon-Sun weeks in the selected range.</div>`;
+      return `<div class="tab-view">${rangeBanner}${caption}${histCard}</div>`;
+    }
+
+    return `<div class="tab-view">${rangeBanner}${staleDailyBanner}${summary}${legend}${grid}</div>`;
   }
 
   function liveFloorWire() {
+    // Date-range picker: switches between live cards and a historical table.
+    // Wired every render (router calls this after renderLiveFloor). Also wire
+    // agent-click drill-down on the historical rows.
+    wireDatePicker('live', (kind, value) => {
+      if (kind === 'from') liveDateFrom = value;
+      else if (kind === 'to') liveDateTo = value;
+      else { liveDateFrom = null; liveDateTo = null; }
+    });
+    wireAgentClicks();
     // Warm up schedule + live_stats. Coalesce into ONE re-render at the end
     // — previously each load called render() independently, so on tab open
     // the view repainted twice in ~500ms and the second one snapped scroll
@@ -4505,12 +4571,21 @@
   }
 
   function afterLeadership() {
-    const trend = (Q.trendSeriesFor ? Q.trendSeriesFor(period) : null)
-      || { labels: Q.WEEKS, calls: Q.WEEK_CALLS, success: Q.WEEK_SUCCESS };
-    if (trend.labels && trend.labels.length) {
-      C.weeklyTrend(document.getElementById('lTrendChart'),
-        trend.labels, trend.calls, trend.success);
+    // Trend chart host only exists when NOT in a custom range (hidden then).
+    const lTrendEl = document.getElementById('lTrendChart');
+    if (lTrendEl) {
+      const trend = (Q.trendSeriesFor ? Q.trendSeriesFor(period) : null)
+        || { labels: Q.WEEKS, calls: Q.WEEK_CALLS, success: Q.WEEK_SUCCESS };
+      if (trend.labels && trend.labels.length) {
+        C.weeklyTrend(lTrendEl, trend.labels, trend.calls, trend.success);
+      }
     }
+    // Custom-range picker (this tab has no quick pills — custom only).
+    wireDatePicker('lead', (kind, value) => {
+      if (kind === 'from') leadDateFrom = value;
+      else if (kind === 'to') leadDateTo = value;
+      else { leadDateFrom = null; leadDateTo = null; }
+    });
     document.querySelectorAll('[data-goto]').forEach(b =>
       b.addEventListener('click', () => { tab = b.dataset.goto; shell(); }));
     wireAgentClicks();

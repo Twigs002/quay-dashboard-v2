@@ -330,6 +330,7 @@ button { font-family: inherit; cursor: pointer; }
   display: flex; align-items: center; justify-content: space-between;
   flex-wrap: wrap; gap: 14px; padding: 14px 18px; margin-bottom: 16px;
 }
+.live-range-label { font-size: 13px; font-weight: 700; color: var(--slate); }
 .qf-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .qf-chip {
   padding: 7px 14px; border-radius: 999px; cursor: pointer;
