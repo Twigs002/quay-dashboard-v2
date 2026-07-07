@@ -3993,6 +3993,12 @@
     // Each card carries {bucket, calls, name, html} and is flattened at the end.
     const cards = [];
 
+    // Metric definitions — single source of truth shared by the per-card
+    // hover tooltips AND the always-visible legend below the summary, so the
+    // two can never drift. (Em dashes stripped per house style.)
+    const CALLS_DEF    = "Total dial attempts (Dialfire's 'completed' column).";
+    const ANSWERED_DEF = "Connected calls, an actual conversation (Dialfire's 'success' column).";
+
     // Per-agent today's calls/leads. PRIMARY source is the live_stats table
     // (Mac daemon polls Dialfire every ~90s, pushes via Supabase realtime).
     // If no live row for an agent we fall back to the most-recent daily
@@ -4096,11 +4102,11 @@
             <span class="${pillClass}">${pillText}</span>
           </div>
           <div class="live-card-meta">
-            <div title="Total dial attempts — Dialfire's 'completed' column.">
+            <div title="${CALLS_DEF}">
               <div class="live-stat-label">Calls</div>
               <div class="live-stat-val tnum">${todayCalls != null ? fmt(todayCalls) : '—'}</div>
             </div>
-            <div title="Connected calls (an actual conversation) — Dialfire's 'success' column.">
+            <div title="${ANSWERED_DEF}">
               <div class="live-stat-label">Answered</div>
               <div class="live-stat-val tnum">${todayAnswered != null ? fmt(todayAnswered) : '—'}</div>
             </div>
@@ -4213,7 +4219,14 @@
           ${schedule ? 'No clock-in events recorded yet for the active roster.' : 'Loading live floor data — clock events are streaming from quay-clock.'}
         </div>`;
 
-    return `<div class="tab-view">${staleDailyBanner}${summary}${grid}</div>`;
+    // Always-visible metric legend so supervisors don't have to hover to know
+    // what Calls vs Answered mean. Reuses the same definitions as the tooltips.
+    const legend = `<div class="live-legend">
+      <span><b>Calls</b> ${escapeHtml(CALLS_DEF)}</span>
+      <span><b>Answered</b> ${escapeHtml(ANSWERED_DEF)}</span>
+    </div>`;
+
+    return `<div class="tab-view">${staleDailyBanner}${summary}${legend}${grid}</div>`;
   }
 
   function liveFloorWire() {
