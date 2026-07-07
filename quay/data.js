@@ -28,6 +28,7 @@ window.QUAY_READY = (async function () {
   // the right window's real hours instead of the df/0.85 estimate.
   const clockByName = new Map();
   const clockByPeriod = new Map(); // period -> Map<nameLower, hours>
+  const clockByWeek = new Map();   // weekStart 'YYYY-MM-DD' -> Map<nameLower, hours>
   // Aliases: Dialfire's prettified agent name -> canonical Supabase staff
   // name. Add new entries here when an agent shows 'est' on All Staff but
   // clearly has Supabase clock events. Keys are lowercase. Mirrors known
@@ -91,6 +92,14 @@ window.QUAY_READY = (async function () {
     if (clockData.periods && typeof clockData.periods === 'object') {
       Object.entries(clockData.periods).forEach(([periodKey, payload]) => {
         clockByPeriod.set(periodKey, buildNameMap(payload && payload.agents));
+      });
+    }
+    // Per-week clocked hours keyed by Monday weekStart (matches how weekly
+    // Dialfire data is sliced), so a CUSTOM date range can sum real hours
+    // across the weeks it covers instead of using the df/0.85 estimate.
+    if (clockData.by_week && typeof clockData.by_week === 'object') {
+      Object.entries(clockData.by_week).forEach(([weekKey, agents]) => {
+        clockByWeek.set(weekKey, buildNameMap(agents));
       });
     }
   }
@@ -318,6 +327,34 @@ window.QUAY_READY = (async function () {
       }
     }
     const list = aggregateWeeks(slice).sort((x, y) => y.calls - x.calls);
+    // Override each agent's clocked hours with the REAL per-week totals summed
+    // across the weeks in this slice, when the clock fetcher has emitted
+    // by_week data. Without it (older clock_data.json) we keep the df/0.85
+    // estimate — so this only ever adds accuracy, never regresses. This is
+    // what makes a custom date range show real clocked hours (no 'est').
+    if (clockByWeek.size > 0 && slice.length > 0) {
+      list.forEach(a => {
+        const name = (a.name || '').trim();
+        const fullKey = name.toLowerCase();
+        const parts = name.split(/\s+/);
+        const flKey = parts.length >= 2
+          ? (parts[0] + ' ' + parts[parts.length - 1]).toLowerCase()
+          : null;
+        let total = 0, found = false;
+        slice.forEach(w => {
+          const wm = clockByWeek.get(w.weekStart);
+          if (!wm) return;
+          let h = wm.get(fullKey);
+          if (h == null && flKey) h = wm.get(flKey);
+          if (h != null) { total += h; found = true; }
+        });
+        if (found && total > 0) {
+          a.ct = +total.toFixed(1);
+          a.ctSource = 'clock';
+          a.eff = a.df > 0 ? Math.round((a.df / a.ct) * 100) : a.eff;
+        }
+      });
+    }
     let effFrom = null, effTo = null;
     slice.forEach(w => {
       const ws = w.weekStart;

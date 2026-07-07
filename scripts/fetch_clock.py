@@ -87,6 +87,67 @@ def normalise_name(name: str) -> str:
     return s.strip()
 
 
+# South African Standard Time (UTC+2, no DST). quay-clock computes weeks in
+# SAST and quay/data.js slices Dialfire weeks by SAST Monday, so per-week
+# clock buckets MUST bucket events by their SAST week to line up.
+SAST = datetime.timezone(datetime.timedelta(hours=2))
+
+
+def _parse_ts(value) -> datetime.datetime | None:
+    if not value:
+        return None
+    text = str(value).replace("Z", "+00:00")
+    try:
+        dt = datetime.datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=datetime.timezone.utc)
+    return dt
+
+
+def week_monday_key(dt: datetime.datetime) -> str:
+    """Monday (SAST) of the week containing dt, as 'YYYY-MM-DD' — matches the
+    weekStart keys quay/data.js slices Dialfire weeks by."""
+    local = dt.astimezone(SAST)
+    monday = local - datetime.timedelta(days=local.weekday())
+    return monday.strftime("%Y-%m-%d")
+
+
+def aggregate_by_week(rows: list[dict]) -> dict[str, list[dict]]:
+    """Rows -> { 'YYYY-MM-DD' (Mon, SAST): [agent aggregate, ...] }.
+
+    Lets the dashboard sum real clocked hours over ANY span of whole Mon-Sun
+    weeks (custom date ranges), not just the fixed named buckets. Requires the
+    rows to carry `ts` (added to the fetch select)."""
+    weeks: dict[str, dict] = {}
+    for row in rows:
+        ts = _parse_ts(row.get("ts"))
+        if ts is None:
+            continue
+        key  = week_monday_key(ts)
+        sid  = row.get("staff_id") or ""
+        name = (row.get("staff") or {}).get("name") or sid
+        hrs  = float(row.get("duration_hrs") or 0)
+        bucket = weeks.setdefault(key, {})
+        agg = bucket.setdefault(sid, {"id": sid, "name": name, "hours": 0.0, "sessions": 0})
+        agg["hours"] += hrs
+        agg["sessions"] += 1
+    out: dict[str, list[dict]] = {}
+    for key, bucket in weeks.items():
+        out[key] = [
+            {
+                "id": a["id"],
+                "name": a["name"],
+                "name_normalised": normalise_name(a["name"]),
+                "hours": round(a["hours"], 3),
+                "sessions": a["sessions"],
+            }
+            for a in bucket.values()
+        ]
+    return out
+
+
 def fetch_window(supabase_url: str, service_key: str,
                  frm: datetime.datetime, to: datetime.datetime) -> list[dict]:
     """Page through every clock-OUT event in [frm, to]. duration_hrs is set on
@@ -104,7 +165,7 @@ def fetch_window(supabase_url: str, service_key: str,
         # gets percent-encoded; concatenating a second &ts=lte.…+00:00 by
         # hand turned the '+' into a space and produced 400 Bad Request.
         params = [
-            ("select", "duration_hrs,staff_id,staff(name)"),
+            ("select", "ts,duration_hrs,staff_id,staff(name)"),
             ("dir",    "eq.out"),
             ("ts",     f"gte.{frm.isoformat()}"),
             ("ts",     f"lte.{to.isoformat()}"),
@@ -161,7 +222,7 @@ def main() -> int:
         write_payload({
             "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "week_start": None, "week_end": None, "agents": [], "source": "unset",
-            "periods": {},
+            "periods": {}, "by_week": {},
         })
         return 0
 
@@ -187,9 +248,14 @@ def main() -> int:
     }
 
     periods: dict[str, dict] = {}
+    raw_all_time: list[dict] = []
     try:
         for key, (frm, to) in windows.items():
             rows = fetch_window(supabase_url, service_key, frm, to)
+            # The 'all-time' window is the widest (last 365 days), so we reuse
+            # its raw rows to build per-week buckets for free — no extra fetch.
+            if key == "all-time":
+                raw_all_time = rows
             periods[key] = {
                 "from": frm.isoformat(),
                 "to":   to.isoformat(),
@@ -203,9 +269,14 @@ def main() -> int:
             "week_start": windows["this-week"][0].isoformat(),
             "week_end":   windows["this-week"][1].isoformat(),
             "agents": [], "source": "error", "error": str(exc),
-            "periods": {},
+            "periods": {}, "by_week": {},
         })
         return 0
+
+    # Per-week buckets (Mon-Sun, SAST) so the dashboard can show REAL clocked
+    # hours for any custom date range, not just the fixed named periods.
+    by_week = aggregate_by_week(raw_all_time)
+    print(f"[fetch_clock] by_week: {len(by_week)} weeks")
 
     # Back-compat: top-level "agents" + week bounds mirror this-week so
     # any existing consumer that hasn't been migrated to `periods` keeps
@@ -218,6 +289,7 @@ def main() -> int:
         "agents":       this_week["agents"],
         "source":       "supabase",
         "periods":      periods,
+        "by_week":      by_week,
     })
     return 0
 
