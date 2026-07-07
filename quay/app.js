@@ -4441,7 +4441,10 @@
     const toggle = CH_WINDOWS.map(([k, lbl]) =>
       `<button class="qf-chip ${chWindow === k ? 'active' : ''}" data-chwin="${k}" type="button">${lbl}</button>`).join('');
 
-    const kpi = (icon, label, val, foot) => `<div class="card kpi">
+    // Talk time = Dialfire connect/talk time on this team's contacts, NOT
+    // total hours worked (agent session time can't be split by contact owner).
+    const TALK_DEF = "Dialfire connect (talk) time on this team's contacts. This is talk time, not total hours worked.";
+    const kpi = (icon, label, val, foot, tip) => `<div class="card kpi"${tip ? ` title="${escapeHtml(tip)}"` : ''}>
       <div class="kpi-top"><div class="kpi-ic">${icon}</div></div>
       <div class="kpi-label">${label}</div>
       <div class="kpi-val tnum">${val}</div>
@@ -4470,19 +4473,19 @@
       </div>
       <div class="row kpis mt">
         ${kpi(I.phone,  'Total Calls', fmt(tot.calls || 0), (tot.teams || teams.length) + ' teams')}
-        ${kpi(I.clock,  'Talk Time',   _chHM(tot.talkHrs || 0) + 'h', 'connect time across teams')}
+        ${kpi(I.clock,  'Talk Time',   _chHM(tot.talkHrs || 0) + 'h', 'talk time, not hours worked', TALK_DEF)}
         ${kpi(I.target, 'Total Leads', fmt(tot.leads || 0), 'positive outcomes')}
         ${kpi(I.trophy, 'Top Team',    teams[0] ? escapeHtml(teams[0].team) : '—', teams[0] ? fmt(teams[0].calls) + ' calls' : '—')}
       </div>
       <div class="card mt">
         <div class="card-head">
-          <div><h3>Per-team performance</h3><div class="sub">ClientHub Master · calls · talk-time · leads · leads per 100 calls</div></div>
+          <div><h3>Per-team performance</h3><div class="sub">ClientHub Master · calls · talk-time · leads · leads per 100 calls · <b>Talk = Dialfire connect time, not hours worked</b></div></div>
           <button class="btn" id="chExport" type="button">${I.download} Export CSV</button>
         </div>
         <div class="tbl-wrap"><table class="tbl">
           <thead><tr>
             <th class="num">#</th><th>Team</th>
-            <th class="num">Calls</th><th class="num">Talk (h:mm)</th>
+            <th class="num">Calls</th><th class="num" title="${escapeHtml(TALK_DEF)}">Talk (h:mm)</th>
             <th class="num">Leads</th><th class="num">Leads/100</th><th class="num">Volume</th>
           </tr></thead>
           <tbody>${rows || '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">No team data for this window.</td></tr>'}</tbody>
