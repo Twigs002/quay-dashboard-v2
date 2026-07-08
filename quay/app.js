@@ -43,6 +43,8 @@
   let leadDateTo   = null;
   let liveDateFrom = null;     // Live Floor: a range switches from live cards to a historical table
   let liveDateTo   = null;
+  let cmpAgDateFrom = null;    // Compare · Agent-vs-Agent custom range (overrides topbar period when both set)
+  let cmpAgDateTo   = null;
   let chWindow = 'last-week';  // ClientHub Teams tab window: last-week | this-month | last-month
   // Active segment on the All Staff tab: 'overall' | 'per' | 'ln'. Persisted
   // across re-renders (e.g. period change) so users don't get bounced back
@@ -506,7 +508,10 @@
       host.innerHTML = V.allStaff(period, staffTeamFilter, asRange);
       staffWire();
     }
-    else if (tab === 'compare')  { host.innerHTML = V.compare(period); segWire(); }
+    else if (tab === 'compare')  {
+      const agRange = (cmpAgDateFrom && cmpAgDateTo) ? { from: cmpAgDateFrom, to: cmpAgDateTo } : null;
+      host.innerHTML = V.compare(period, agRange); segWire();
+    }
     else if (tab === 'monthly')  { host.innerHTML = V.monthly(); monthlyWire(); }
     else if (tab === 'manager')  { host.innerHTML = V.manager(period); managerWire(); }
     else if (tab === 'ln')       { host.innerHTML = renderLnLeaderboard(); wireLnLeaderboard(); }
@@ -891,12 +896,47 @@
     const agb = document.getElementById('cmpAgentB');
     const agbody = document.getElementById('cmpAgentBody');
     if (aga && agb && agbody) {
-      const roster = ((Q.agentsFor && Q.agentsFor(period)) || []).slice().sort((a, b) => b.calls - a.calls);
+      const rosterFor = () => {
+        const list = (cmpAgDateFrom && cmpAgDateTo)
+          ? ((Q.agentsForRange && Q.agentsForRange(cmpAgDateFrom, cmpAgDateTo)) || [])
+          : ((Q.agentsFor && Q.agentsFor(period)) || []);
+        return list.slice().sort((a, b) => b.calls - a.calls);
+      };
+      let roster = rosterFor();
       const redrawAg = () => {
         agbody.innerHTML = V.renderAgentCompare(roster, aga.value, agb.value);
       };
       aga.addEventListener('change', redrawAg);
       agb.addEventListener('change', redrawAg);
+      // Agent-vs-Agent custom date range. Re-scope the roster + dropdown
+      // options and re-render the body IN PLACE — never shell(), which would
+      // reset the seg back to Week vs Week. The picker markup lives inside
+      // #cmpAgentPanel, so it only shows on the Agent-vs-Agent view.
+      const agRebuild = () => {
+        roster = rosterFor();
+        const prevA = aga.value, prevB = agb.value;
+        const opt = (sel) => roster.map(a =>
+          `<option value="${escapeHtml(a.name)}" ${a.name === sel ? 'selected' : ''}>${escapeHtml(a.name)}</option>`).join('');
+        const keepA = roster.some(a => a.name === prevA) ? prevA : (roster[0] ? roster[0].name : '');
+        const keepB = roster.some(a => a.name === prevB) ? prevB : (roster[1] ? roster[1].name : (roster[0] ? roster[0].name : ''));
+        aga.innerHTML = opt(keepA);
+        agb.innerHTML = opt(keepB);
+        redrawAg();
+        const note = document.getElementById('cmpAgNote');
+        if (note) note.textContent = (cmpAgDateFrom && cmpAgDateTo)
+          ? `Custom range · ${cmpAgDateFrom} → ${cmpAgDateTo}`
+          : 'Roster and numbers reflect the currently-active topbar period. Change the pill above, or pick a custom date range.';
+      };
+      const agF = document.getElementById('cmpAgDateFrom');
+      const agT = document.getElementById('cmpAgDateTo');
+      const agC = document.getElementById('cmpAgDateClear');
+      if (agF) agF.addEventListener('change', (e) => { cmpAgDateFrom = e.target.value || null; agRebuild(); });
+      if (agT) agT.addEventListener('change', (e) => { cmpAgDateTo = e.target.value || null; agRebuild(); });
+      if (agC) agC.addEventListener('click', () => {
+        cmpAgDateFrom = null; cmpAgDateTo = null;
+        if (agF) agF.value = ''; if (agT) agT.value = '';
+        agRebuild();
+      });
     }
   }
   // Click a month label to inline-expand its per-week breakdown.

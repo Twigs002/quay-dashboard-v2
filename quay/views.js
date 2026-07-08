@@ -397,15 +397,25 @@ window.VIEWS = (function () {
   // weeksBreakdown() / monthlyBreakdown(). The pickers default to
   // (latest, latest-1); on change the inner body re-renders in place
   // (no full route shell rebuild — handled in app.js segWire).
-  function compare(period) {
+  function compare(period, agRange) {
     const months = (Q.monthlyBreakdown && Q.monthlyBreakdown()) || [];
     const weeksB = (Q.weeksBreakdown && Q.weeksBreakdown()) || [];
     // Agent-vs-Agent uses the topbar period (Last Week by default) so the
     // dropdown roster and their numbers come from the same window a user
-    // is already reasoning about elsewhere on the dashboard.
+    // is already reasoning about elsewhere — UNLESS a custom date range is
+    // set via the picker on this panel (agRange), which then scopes both.
     const activePeriod = period || 'this-week';
-    const agentsList = (Q.agentsFor && Q.agentsFor(activePeriod)) || [];
+    const agRangeActive = !!(agRange && agRange.from && agRange.to);
+    const agentsList = agRangeActive
+      ? ((Q.agentsForRange && Q.agentsForRange(agRange.from, agRange.to)) || [])
+      : ((Q.agentsFor && Q.agentsFor(activePeriod)) || []);
     const sortedAgents = agentsList.slice().sort((a, b) => b.calls - a.calls);
+    const agToday = (new Date()).toISOString().slice(0, 10);
+    const agFromV = agRangeActive ? agRange.from : '';
+    const agToV   = agRangeActive ? agRange.to   : '';
+    const agNoteTxt = agRangeActive
+      ? `Custom range · ${agFromV} → ${agToV}`
+      : 'Roster and numbers reflect the currently-active topbar period. Change the pill above, or pick a custom date range.';
     const defAgA = sortedAgents[0] ? sortedAgents[0].name : '';
     const defAgB = sortedAgents[1] ? sortedAgents[1].name : (sortedAgents[0] ? sortedAgents[0].name : '');
     const agentOpts = (selected) => sortedAgents.map(a =>
@@ -474,10 +484,19 @@ window.VIEWS = (function () {
             <div class="field"><label>Agent B</label>
               <select id="cmpAgentB">${agentOpts(defAgB)}</select>
             </div>
-            <div class="muted" style="font-size:12px;padding-bottom:8px">
-              Roster and numbers reflect the currently-active topbar period. Change the pill above to shift the comparison window.
+            <div class="field" style="margin-left:auto">
+              <label>Date range</label>
+              <div class="ln-date-picker" aria-label="Custom date range">
+                <label class="muted" for="cmpAgDateFrom">From</label>
+                <input id="cmpAgDateFrom" type="date" value="${agFromV}" max="${agToday}">
+                <span class="muted" aria-hidden="true">→</span>
+                <label class="muted" for="cmpAgDateTo">To</label>
+                <input id="cmpAgDateTo" type="date" value="${agToV}" max="${agToday}">
+                <button class="btn" id="cmpAgDateClear" type="button">Clear</button>
+              </div>
             </div>
           </div>
+          <div class="muted" id="cmpAgNote" style="font-size:12px;padding:0 0 8px">${agNoteTxt}</div>
           <div id="cmpAgentBody">${renderAgentCompare(sortedAgents, defAgA, defAgB)}</div>
         </div>
       </div>
@@ -660,16 +679,19 @@ window.VIEWS = (function () {
         Pick two weeks to compare.
       </div>`;
     }
-    return cmpTable([
-      ['Active callers',   a.activeCount, b.activeCount, { kind: 'count' }],
-      ['Total calls',  a.calls,       b.calls,       { kind: 'count' }],
-      ['Avg success rate', a.successRate, b.successRate, { kind: 'pct',  suffix: '%' }],
-      ['Avg calls/hr', a.cph,         b.cph,         { kind: 'rate', decimals: 1 }],
-      ['Seller leads',     a.seller,      b.seller,      { kind: 'count' }],
-      ['Rental leads',     a.rental,      b.rental,      { kind: 'count' }],
-      ['Emails collected', a.email,       b.email,       { kind: 'count' }],
-      ['Dialler hours',    a.dfHours,     b.dfHours,     { kind: 'hours' }],
-    ], a.label, b.label);
+    // Uses cmpTableN (the Agent-vs-Agent renderer) so Week-vs-Week gets the
+    // same direction-aware winner shading on the value cells. Each row carries
+    // a `dir` (1 = higher is better); ctx is {} so no same-agent/no-data guard.
+    return cmpTableN([
+      ['Active callers',   a.activeCount, b.activeCount, { kind: 'count',                 dir: 1 }],
+      ['Total calls',  a.calls,       b.calls,       { kind: 'count',                 dir: 1 }],
+      ['Avg success rate', a.successRate, b.successRate, { kind: 'pct',  suffix: '%',    dir: 1 }],
+      ['Avg calls/hr', a.cph,         b.cph,         { kind: 'rate', decimals: 1,     dir: 1 }],
+      ['Seller leads',     a.seller,      b.seller,      { kind: 'count',                 dir: 1 }],
+      ['Rental leads',     a.rental,      b.rental,      { kind: 'count',                 dir: 1 }],
+      ['Emails collected', a.email,       b.email,       { kind: 'count',                 dir: 1 }],
+      ['Dialler hours',    a.dfHours,     b.dfHours,     { kind: 'hours',                 dir: 1 }],
+    ], a.label, b.label, {});
   }
 
   // Renders just the inner month-comparison body — used both on initial
@@ -683,17 +705,20 @@ window.VIEWS = (function () {
         Pick two months to compare.
       </div>`;
     }
-    return cmpTable([
-      ['Weeks of data',    a.weeks,       b.weeks,       { kind: 'count' }],
-      ['Active callers',   a.activeCount, b.activeCount, { kind: 'count' }],
-      ['Total calls',  a.calls,       b.calls,       { kind: 'count' }],
-      ['Avg success rate', a.successRate, b.successRate, { kind: 'pct',  suffix: '%' }],
-      ['Avg calls/hr', a.cph,         b.cph,         { kind: 'rate', decimals: 1 }],
-      ['Seller leads',     a.seller,      b.seller,      { kind: 'count' }],
-      ['Rental leads',     a.rental,      b.rental,      { kind: 'count' }],
-      ['Emails collected', a.email,       b.email,       { kind: 'count' }],
-      ['Dialler hours',    a.dfHours,     b.dfHours,     { kind: 'hours' }],
-    ], a.label, b.label);
+    // Same cmpTableN path as Week-vs-Week for matching winner shading.
+    // 'Weeks of data' is structural, not a performance metric, so dir:0
+    // (no colour) — mirrors how Agent mode treats 'Clocked hours'.
+    return cmpTableN([
+      ['Weeks of data',    a.weeks,       b.weeks,       { kind: 'count',                 dir: 0 }],
+      ['Active callers',   a.activeCount, b.activeCount, { kind: 'count',                 dir: 1 }],
+      ['Total calls',  a.calls,       b.calls,       { kind: 'count',                 dir: 1 }],
+      ['Avg success rate', a.successRate, b.successRate, { kind: 'pct',  suffix: '%',    dir: 1 }],
+      ['Avg calls/hr', a.cph,         b.cph,         { kind: 'rate', decimals: 1,     dir: 1 }],
+      ['Seller leads',     a.seller,      b.seller,      { kind: 'count',                 dir: 1 }],
+      ['Rental leads',     a.rental,      b.rental,      { kind: 'count',                 dir: 1 }],
+      ['Emails collected', a.email,       b.email,       { kind: 'count',                 dir: 1 }],
+      ['Dialler hours',    a.dfHours,     b.dfHours,     { kind: 'hours',                 dir: 1 }],
+    ], a.label, b.label, {});
   }
 
   // One reusable table renderer for both Week and Month comparisons.
