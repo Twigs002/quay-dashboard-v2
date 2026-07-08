@@ -60,6 +60,14 @@
     ['this-week', 'This Week'], ['last-week', 'Last Week'], ['this-month', 'This Month'],
     ['last-90', 'Last 90 Days'], ['all-time', 'All Time'],
   ];
+  // The label a user actually sees for a period key. Prefers the quick-chip
+  // wording (what they clicked) over the frozen, misleadingly-named
+  // Q.PERIODS.label, so the header chip, subtitle, and drill-down modal all
+  // agree on what to call the active window.
+  function periodLabelFor(key) {
+    const q = GLOBAL_QUICK.find(([k]) => k === key);
+    return (q && q[1]) || (Q.PERIODS[key] || {}).label || key;
+  }
   // Live Floor role filter, rendered into the header bar (Live Floor is
   // today/historical, not period-based, so it gets these instead of the chips).
   const DESIG_OPTS = [['all', 'All'], ['rm', 'RM'], ['ln', 'LN'], ['fancy', 'Fancy']];
@@ -327,7 +335,7 @@
     const rng = (f, t) => `${f} → ${t}`;
     const periodLabel = () => {
       const s = periodRangeSuffix();
-      return s ? s.replace(/^ · /, '') : ((Q.PERIODS[period] || {}).label || '');
+      return s ? s.replace(/^ · /, '') : periodLabelFor(period);
     };
     if (GLOBAL_RANGE_TABS.has(tab)) return (gDateFrom && gDateTo) ? rng(gDateFrom, gDateTo) : periodLabel();
     switch (tab) {
@@ -1435,7 +1443,7 @@
     // Per-campaign attribution is only computed per period, not for an
     // arbitrary range, so we omit it (with an explanatory row) when ranged.
     const camps = range ? [] : Q.agentCampaigns(name, period);
-    const scopeLabel = range ? `${range.from} → ${range.to}` : Q.PERIODS[period].label;
+    const scopeLabel = range ? `${range.from} → ${range.to}` : periodLabelFor(period);
     const onTarget = !!a.meetsTarget;
     const sc = sucClass(a.success);
     const totals = camps.reduce((s, c) => ({
