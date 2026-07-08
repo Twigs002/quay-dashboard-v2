@@ -1152,6 +1152,11 @@
       staffTeamFilter = teamSel.value;
       shell();
     });
+    // Concise date-range quick chips — set the global period, clear any range.
+    document.querySelectorAll('[data-staffperiod]').forEach(b =>
+      b.addEventListener('click', () => {
+        period = b.dataset.staffperiod; staffDateFrom = null; staffDateTo = null; shell();
+      }));
     // Custom date-range picker — same UX as Teams Reporting / LN Stats.
     // Overrides the topbar period once both ends are filled. Preserve focus
     // on the field that was just changed so the user can tab to the next.
