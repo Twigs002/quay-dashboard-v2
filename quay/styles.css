@@ -143,13 +143,13 @@ button { font-family: inherit; cursor: pointer; }
 .nav { padding: 16px 14px; flex: 1; overflow-y: auto; }
 .nav-label {
   font-size: 10px; letter-spacing: .2em; text-transform: uppercase;
-  color: rgba(255,255,255,.6); padding: 12px 12px 8px; font-weight: 700;
+  color: rgba(255,255,255,.85); padding: 12px 12px 8px; font-weight: 700;
 }
 .nav-item {
   display: flex; align-items: center; gap: 12px;
   width: 100%; text-align: left;
   padding: 11px 12px; margin: 2px 0;
-  background: none; border: none; color: rgba(255,255,255,.78);
+  background: none; border: none; color: rgba(255,255,255,.85);
   border-radius: var(--r-sm); font-size: 14px; font-weight: 600;
   transition: background .15s, color .15s;
 }
@@ -608,9 +608,10 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   font-size: 11px; font-weight: 700; letter-spacing: .02em;
 }
 .pill.rm    { background: #E7EEF4; color: var(--blue); }
-.pill.fancy { background: var(--yellow-tint); color: var(--yellow-deep); }
-.pill.ok    { background: var(--green-tint); color: var(--green); }
-.pill.warn  { background: var(--amber-tint); color: var(--amber); }
+/* Darkened text so 11px bold pill labels clear WCAG 1.4.3 (4.5:1) on their tints. */
+.pill.fancy { background: var(--yellow-tint); color: #8A6600; }
+.pill.ok    { background: var(--green-tint); color: #1F6E49; }
+.pill.warn  { background: var(--amber-tint); color: #8A6600; }
 .pill.bad   { background: var(--red-tint); color: var(--red); }
 /* Non-colour glyph so status is readable for colour-blind users (WCAG 1.4.1).
    Skips the team pills (.pill.rm / .pill.fancy) which are identity, not status. */
@@ -621,6 +622,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 /* Focus-visible rings — keyboard users need to see where they are. */
 .nav-item:focus-visible,
 .period button:focus-visible,
+.qf-chip:focus-visible,
+.seg button:focus-visible,
 .btn:focus-visible,
 .signed-out:focus-visible,
 .nav-toggle:focus-visible {
@@ -639,7 +642,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 /* Nav section headings (sidebar grouping) */
 .nav-section {
   font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
-  font-weight: 700; color: var(--on-navy-dim);
+  font-weight: 700; color: #CBD6EC;   /* lifted from --on-navy-dim to clear 4.5:1 on the navy sidebar */
   padding: 14px 16px 6px;
 }
 .nav-section:first-child { padding-top: 4px; }

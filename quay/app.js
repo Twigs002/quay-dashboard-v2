@@ -358,7 +358,7 @@
         const items = visibleTabs.filter(t => t.section === sec);
         if (!items.length) return '';
         const buttons = items.map(t => `
-          <button class="nav-item ${t.id === tab ? 'active' : ''}" data-tab="${t.id}" title="${t.label}">
+          <button class="nav-item ${t.id === tab ? 'active' : ''}" data-tab="${t.id}" title="${t.label}"${t.id === tab ? ' aria-current="page"' : ''}>
             ${t.icon}<span>${t.label}</span>
           </button>`).join('');
         return `<div class="nav-section"><span>${sec}</span></div>${buttons}`;
@@ -386,7 +386,7 @@
               <div class="signed-n">${escapeHtml(session.name || '')}</div>
               <div class="signed-r">${session.super ? 'Superuser' : 'Manager'}${session.role ? ' · ' + escapeHtml(session.role) : ''}</div>
             </div>
-            <button class="signed-out" id="signOut" title="Sign out">${I.arrow}</button>
+            <button class="signed-out" id="signOut" title="Sign out" aria-label="Sign out">${I.arrow}</button>
           </div>
           <span class="live-dot"></span><span class="foot-text">${liveSyncedLabel()}</span>
           <div class="foot-tag">Navigating Success</div>
@@ -518,8 +518,8 @@
     const liveRange = !!(liveDateFrom && liveDateTo);
     const left = liveRange
       ? `<div class="live-range-label">Historical range</div>`
-      : `<div class="qf-chips">${DESIG_OPTS.map(([k, l]) =>
-          `<button class="qf-chip ${liveDesig === k ? 'active' : ''}" data-livedesig="${k}" type="button">${l}</button>`).join('')}</div>`;
+      : `<div class="qf-chips" role="group" aria-label="Filter the floor by role">${DESIG_OPTS.map(([k, l]) =>
+          `<button class="qf-chip ${liveDesig === k ? 'active' : ''}" data-livedesig="${k}" type="button" aria-pressed="${liveDesig === k}">${l}</button>`).join('')}</div>`;
     return `<div class="datebar">${left}${datePickerMarkup('live', liveDateFrom, liveDateTo)}</div>`;
   }
 
@@ -534,8 +534,10 @@
     if (OWN_DATE_CONTROL.has(tab)) return '';   // tab owns its date control
     const migrated = GLOBAL_RANGE_TABS.has(tab);
     const gRange = migrated && !!(gDateFrom && gDateTo);
-    const chips = `<div class="qf-chips">${GLOBAL_QUICK.map(([k, lbl]) =>
-      `<button class="qf-chip ${(!gRange && period === k) ? 'active' : ''}" data-gperiod="${k}" type="button">${lbl}</button>`).join('')}</div>`;
+    const chips = `<div class="qf-chips" role="group" aria-label="Quick period">${GLOBAL_QUICK.map(([k, lbl]) => {
+      const on = !gRange && period === k;
+      return `<button class="qf-chip ${on ? 'active' : ''}" data-gperiod="${k}" type="button" aria-pressed="${on}">${lbl}</button>`;
+    }).join('')}</div>`;
     const range = migrated ? datePickerMarkup('g', gDateFrom, gDateTo) : '';
     return `<div class="datebar">${chips}${range}</div>`;
   }
@@ -934,8 +936,8 @@
   function segWire() {
     document.querySelectorAll('.seg').forEach(seg =>
       seg.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
-        seg.querySelectorAll('button').forEach(x => x.classList.remove('active'));
-        b.classList.add('active');
+        seg.querySelectorAll('button').forEach(x => { x.classList.remove('active'); x.setAttribute('aria-pressed', 'false'); });
+        b.classList.add('active'); b.setAttribute('aria-pressed', 'true');
         // Compare tab seg buttons carry data-cmp-mode and gate which panel shows.
         const mode = b.dataset.cmpMode;
         if (mode) {
@@ -1209,8 +1211,8 @@
     const lnPane = document.getElementById('staffLnReports');
     if (!seg || !overall || !per) return;
     seg.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
-      seg.querySelectorAll('button').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
+      seg.querySelectorAll('button').forEach(x => { x.classList.remove('active'); x.setAttribute('aria-pressed', 'false'); });
+      b.classList.add('active'); b.setAttribute('aria-pressed', 'true');
       const view = b.dataset.view;
       staffSegView = view;
       overall.style.display = view === 'overall' ? '' : 'none';
@@ -1321,10 +1323,9 @@
     root.querySelectorAll('th[data-sort]').forEach(th => {
       th.style.cursor = 'pointer';
       th.title = 'Click to sort';
-      // AT cues: button semantics + sort state + keyboard activation.
-      // Without these, assistive tech announces the header as a static
-      // table cell with no hint that it's interactive.
-      th.setAttribute('role', 'button');
+      // Keep the native columnheader role (so header->cell association and
+      // aria-sort stay meaningful); just make it keyboard-focusable/activatable
+      // and advertise the sort state. (Overriding role=button voided both.)
       th.setAttribute('tabindex', '0');
       if (!th.hasAttribute('aria-sort')) th.setAttribute('aria-sort', 'none');
       const doSort = () => {
@@ -1371,6 +1372,35 @@
     if (mount) mount.innerHTML = '';
     document.body.style.overflow = '';
     currentAgentModalName = null;
+  }
+
+  // Focus management for modal dialogs (WCAG 2.4.3 / 2.1.2): move focus into
+  // the dialog on open, trap Tab within it while open, and restore focus to
+  // whatever triggered it on close. Call after the modal markup is mounted;
+  // returns a teardown() to run inside the modal's own close handler.
+  function wireModalFocus(mountEl) {
+    const dialog = (mountEl && (mountEl.querySelector('[role="dialog"]') || mountEl.firstElementChild)) || null;
+    const prevFocus = document.activeElement;
+    const SEL = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    const focusables = () => dialog
+      ? Array.from(dialog.querySelectorAll(SEL)).filter(el => el.offsetParent !== null || el === document.activeElement)
+      : [];
+    const firstEl = focusables()[0];
+    if (firstEl) firstEl.focus();
+    else if (dialog && typeof dialog.focus === 'function') dialog.focus();
+    const onKey = e => {
+      if (e.key !== 'Tab') return;
+      const f = focusables();
+      if (!f.length) return;
+      const a = f[0], b = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === a) { e.preventDefault(); b.focus(); }
+      else if (!e.shiftKey && document.activeElement === b) { e.preventDefault(); a.focus(); }
+    };
+    if (mountEl) mountEl.addEventListener('keydown', onKey);
+    return function teardown() {
+      if (mountEl) mountEl.removeEventListener('keydown', onKey);
+      if (prevFocus && typeof prevFocus.focus === 'function') prevFocus.focus();
+    };
   }
 
   // The date scope currently in effect for agent-level figures on the active
@@ -1509,11 +1539,13 @@
     }
     mount.innerHTML = html;
     document.body.style.overflow = 'hidden';
+    const teardownFocus = wireModalFocus(mount);
 
     const close = () => {
       mount.innerHTML = '';
       document.body.style.overflow = '';
       document.removeEventListener('keydown', escClose);
+      teardownFocus();
       currentAgentModalName = null;
     };
     const escClose = e => { if (e.key === 'Escape') close(); };
@@ -1675,11 +1707,13 @@
     }
     mount.innerHTML = html;
     document.body.style.overflow = 'hidden';
+    const teardownFocus = wireModalFocus(mount);
 
     const close = () => {
       mount.innerHTML = '';
       document.body.style.overflow = '';
       document.removeEventListener('keydown', escClose);
+      teardownFocus();
     };
     const escClose = e => { if (e.key === 'Escape') close(); };
     document.getElementById('campaignModalClose').addEventListener('click', close);
@@ -3085,7 +3119,7 @@
     allLns.forEach(r => (r.divisions || new Set()).forEach(d => d && divisionSet.add(d)));
     const divisionList = Array.from(divisionSet).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
     const roleChip = (k, label, count) =>
-      `<button class="chip${_lnRoleFilter === k ? ' active' : ''}" data-ln-role="${k}" type="button">${escapeHtml(label)}<span class="chip-count tnum">${count}</span></button>`;
+      `<button class="chip${_lnRoleFilter === k ? ' active' : ''}" data-ln-role="${k}" type="button" aria-pressed="${_lnRoleFilter === k}">${escapeHtml(label)}<span class="chip-count tnum">${count}</span></button>`;
 
     // Multi-select team picker — mirrors the clock-in EOD form's chip style.
     const q = (_lnDivisionFilterQ || '').trim().toLowerCase();
@@ -3559,12 +3593,12 @@
       <td colspan="5" style="padding:14px 16px;background:#F6F7FB;border-top:1px solid var(--line)">
         <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:10px">
           <div style="flex:1;min-width:200px">
-            <label class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">Email</label>
+            <label class="muted" for="trSubsEmail" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">Email</label>
             <input id="trSubsEmail" type="email" value="${escapeHtml(draft.email)}" ${isNew ? '' : 'readonly'} placeholder="name@quay1.co.za"
               style="width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px;${isNew ? '' : 'background:#EDEFF4'}">
           </div>
           <div style="flex:1;min-width:160px">
-            <label class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">Name (optional)</label>
+            <label class="muted" for="trSubsName" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">Name (optional)</label>
             <input id="trSubsName" type="text" value="${escapeHtml(draft.name)}" placeholder="Sheldon"
               style="width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px">
           </div>
@@ -4532,7 +4566,7 @@
     const maxCalls = teams.length ? teams[0].calls : 1;
 
     const toggle = CH_WINDOWS.map(([k, lbl]) =>
-      `<button class="qf-chip ${chWindow === k ? 'active' : ''}" data-chwin="${k}" type="button">${lbl}</button>`).join('');
+      `<button class="qf-chip ${chWindow === k ? 'active' : ''}" data-chwin="${k}" type="button" aria-pressed="${chWindow === k}">${lbl}</button>`).join('');
 
     const kpi = (icon, label, val, foot) => `<div class="card kpi">
       <div class="kpi-top"><div class="kpi-ic">${icon}</div></div>
@@ -4794,7 +4828,14 @@
       if (el.__agentWired) return;
       el.__agentWired = true;
       if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
-      if (!el.hasAttribute('role'))     el.setAttribute('role', 'button');
+      // Table rows keep their native row/cell semantics (role=button on a <tr>
+      // collapses header->cell association); a focusable, labelled row still
+      // works with the keyboard handler below. Cards/divs become buttons.
+      if (el.tagName === 'TR') {
+        if (!el.hasAttribute('aria-label') && el.dataset.agent) el.setAttribute('aria-label', `View ${el.dataset.agent} details`);
+      } else if (!el.hasAttribute('role')) {
+        el.setAttribute('role', 'button');
+      }
       const activate = e => {
         if (e.target.closest('button, a, input, select')) return;
         openAgentModal(el.dataset.agent);
@@ -5538,10 +5579,10 @@
     const cta = busy ? 'Saving…' : (days === 1 ? 'Confirm absent' : `Confirm absent · ${days} days`);
     const title = f.mode === 'edit' ? 'Edit absence' : 'Mark absent';
     return `<div class="modal-back" id="absenceModalBack"></div>
-      <div class="modal" role="dialog" aria-modal="true" style="width:min(440px, calc(100vw - 32px))">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="absenceModalTitle" style="width:min(440px, calc(100vw - 32px))">
         <div class="modal-head">
-          <h3 style="margin:0">${title} · ${escapeHtml(f.name)}</h3>
-          <button class="modal-close" id="absenceModalClose">×</button>
+          <h3 id="absenceModalTitle" style="margin:0">${title} · ${escapeHtml(f.name)}</h3>
+          <button class="modal-close" id="absenceModalClose" aria-label="Close" title="Close">×</button>
         </div>
         <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
           <label class="field"><span>Reason</span>
@@ -5665,10 +5706,10 @@
       ['rental_support',  'Rental Support'],
     ];
     return `<div class="modal-back" id="teamModalBack"></div>
-      <div class="modal" role="dialog" aria-modal="true" style="width:min(560px, calc(100vw - 32px))">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="teamModalTitle" style="width:min(560px, calc(100vw - 32px))">
         <div class="modal-head">
-          <h3 style="margin:0">${isEdit ? 'Edit ' + escapeHtml(f.name) : 'Add a staff member'}</h3>
-          <button class="modal-close" id="teamModalClose">×</button>
+          <h3 id="teamModalTitle" style="margin:0">${isEdit ? 'Edit ' + escapeHtml(f.name) : 'Add a staff member'}</h3>
+          <button class="modal-close" id="teamModalClose" aria-label="Close" title="Close">×</button>
         </div>
         <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
           <label class="field"><span>Name</span>
@@ -5818,10 +5859,35 @@
     if (_absenceModal) wireAbsenceModal();
   }
 
+  // Inline modals (absence/team) re-render through shell() on every keystroke,
+  // so we can't hold a stable trigger reference to restore focus to. We still
+  // deliver the core WCAG needs: move focus into the dialog once on open, trap
+  // Tab within it, and wire Esc-to-close.
+  function wireInlineModal(stateObj, dialogEl, closeFn) {
+    if (!dialogEl) return;
+    const SEL = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    const list = () => Array.from(dialogEl.querySelectorAll(SEL)).filter(el => el.offsetParent !== null);
+    if (stateObj && !stateObj._focused) {
+      stateObj._focused = true;
+      const first = list()[0];
+      if (first) first.focus();
+    }
+    dialogEl.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { e.preventDefault(); closeFn(); return; }
+      if (e.key !== 'Tab') return;
+      const f = list();
+      if (!f.length) return;
+      const a = f[0], b = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === a) { e.preventDefault(); b.focus(); }
+      else if (!e.shiftKey && document.activeElement === b) { e.preventDefault(); a.focus(); }
+    });
+  }
+
   function wireAbsenceModal() {
     const close = () => { _absenceModal = null; shell(); };
     const back = document.getElementById('absenceModalBack');
     const x    = document.getElementById('absenceModalClose');
+    wireInlineModal(_absenceModal, x ? x.closest('.modal') : null, close);
     const cnl  = document.getElementById('absCancel');
     const ok   = document.getElementById('absConfirm');
     if (back) back.addEventListener('click', close);
@@ -5847,8 +5913,10 @@
   function wireTeamModal() {
     const f = _teamModal;
     const close = () => { _teamModal = null; shell(); };
+    const tmClose = document.getElementById('teamModalClose');
+    wireInlineModal(_teamModal, tmClose ? tmClose.closest('.modal') : null, close);
     document.getElementById('teamModalBack').addEventListener('click', close);
-    document.getElementById('teamModalClose').addEventListener('click', close);
+    tmClose.addEventListener('click', close);
     document.getElementById('teamModalCancel').addEventListener('click', close);
     const name = document.getElementById('tmName');
     const idIn = document.getElementById('tmId');

@@ -115,16 +115,16 @@ window.VIEWS = (function () {
       <div class="card">
         <div class="panel" style="justify-content:space-between">
           <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
-            <div class="field"><label>Team</label><select id="staffTeamFilter">
+            <div class="field"><label for="staffTeamFilter">Team</label><select id="staffTeamFilter">
               ${selOpt('all', 'All teams')}
               ${selOpt('RM', 'RM')}
               ${selOpt('Fancy', 'Fancy')}
             </select></div>
           </div>
-          <div class="seg" id="staffSeg">
-            <button class="active" data-view="overall">Callers · Overall</button>
-            <button data-view="per">Callers · Per agent</button>
-            <button data-view="ln">LN &amp; Assistants</button>
+          <div class="seg" id="staffSeg" role="group" aria-label="Staff view">
+            <button class="active" data-view="overall" aria-pressed="true">Callers · Overall</button>
+            <button data-view="per" aria-pressed="false">Callers · Per agent</button>
+            <button data-view="ln" aria-pressed="false">LN &amp; Assistants</button>
           </div>
         </div>
         ${rangeCaption}
@@ -430,10 +430,10 @@ window.VIEWS = (function () {
     <div class="tab-view">
       <div class="card">
         <div class="panel" style="gap:18px;flex-wrap:wrap">
-          <div class="seg" id="cmpSeg">
-            <button data-cmp-mode="week" class="active">${I.calendar} Week vs Week</button>
-            <button data-cmp-mode="month">${I.cal2} Month vs Month</button>
-            <button data-cmp-mode="agent">${I.users} Agent vs Agent</button>
+          <div class="seg" id="cmpSeg" role="group" aria-label="Comparison mode">
+            <button data-cmp-mode="week" class="active" aria-pressed="true">${I.calendar} Week vs Week</button>
+            <button data-cmp-mode="month" aria-pressed="false">${I.cal2} Month vs Month</button>
+            <button data-cmp-mode="agent" aria-pressed="false">${I.users} Agent vs Agent</button>
           </div>
         </div>
       </div>
@@ -442,10 +442,10 @@ window.VIEWS = (function () {
       <div id="cmpWeekPanel">
         <div class="card mt">
           <div class="panel" style="gap:18px;flex-wrap:wrap;align-items:flex-end">
-            <div class="field"><label>Week A</label>
+            <div class="field"><label for="cmpWeekA">Week A</label>
               <select id="cmpWeekA">${weekOpts(defWA)}</select>
             </div>
-            <div class="field"><label>Week B</label>
+            <div class="field"><label for="cmpWeekB">Week B</label>
               <select id="cmpWeekB">${weekOpts(defWB)}</select>
             </div>
           </div>
@@ -457,10 +457,10 @@ window.VIEWS = (function () {
       <div id="cmpMonthPanel" style="display:none">
         <div class="card mt">
           <div class="panel" style="gap:18px;flex-wrap:wrap;align-items:flex-end">
-            <div class="field"><label>Month A</label>
+            <div class="field"><label for="cmpMonthA">Month A</label>
               <select id="cmpMonthA">${monthOpts(defMA)}</select>
             </div>
-            <div class="field"><label>Month B</label>
+            <div class="field"><label for="cmpMonthB">Month B</label>
               <select id="cmpMonthB">${monthOpts(defMB)}</select>
             </div>
           </div>
@@ -472,10 +472,10 @@ window.VIEWS = (function () {
       <div id="cmpAgentPanel" style="display:none">
         <div class="card mt">
           <div class="panel" style="gap:18px;flex-wrap:wrap;align-items:flex-end">
-            <div class="field"><label>Agent A</label>
+            <div class="field"><label for="cmpAgentA">Agent A</label>
               <select id="cmpAgentA">${agentOpts(defAgA)}</select>
             </div>
-            <div class="field"><label>Agent B</label>
+            <div class="field"><label for="cmpAgentB">Agent B</label>
               <select id="cmpAgentB">${agentOpts(defAgB)}</select>
             </div>
             <div class="field" style="margin-left:auto">
@@ -789,7 +789,7 @@ window.VIEWS = (function () {
         <div class="panel" style="justify-content:space-between">
           <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
             <div class="field">
-              <label>Date</label>
+              <label for="dailyDate">Date</label>
               <input id="dailyDate" type="date" value="${date || ''}" ${available.length ? `min="${available[available.length - 1]}" max="${available[0]}"` : ''}>
             </div>
             <button class="btn" data-daily-jump="today">Today</button>
