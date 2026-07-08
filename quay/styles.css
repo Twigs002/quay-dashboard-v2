@@ -260,18 +260,6 @@ button { font-family: inherit; cursor: pointer; }
   .live-flags-badge { padding-right: 11px; }
 }
 
-.period {
-  display: inline-flex; background: var(--card); border: 1px solid var(--line);
-  border-radius: 999px; padding: 3px; box-shadow: var(--shadow-sm);
-}
-.period button {
-  border: none; background: none; padding: 7px 14px; border-radius: 999px;
-  font-size: 12.5px; font-weight: 600; color: var(--slate);
-  transition: all .15s; white-space: nowrap;
-}
-.period button:hover { color: var(--ink); }
-.period button.active { background: var(--navy-800); color: #fff; box-shadow: var(--shadow-sm); }
-
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
   border: 1px solid var(--line); background: var(--card);
@@ -629,7 +617,6 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 
 /* Focus-visible rings — keyboard users need to see where they are. */
 .nav-item:focus-visible,
-.period button:focus-visible,
 .qf-chip:focus-visible,
 .seg button:focus-visible,
 .btn:focus-visible,

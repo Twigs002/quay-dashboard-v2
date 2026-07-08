@@ -98,7 +98,7 @@ window.VIEWS = (function () {
         rangeCaption = `<div class="sub" style="margin-top:6px">
           Custom range · covers <b>${rangeMeta.effectiveFrom}</b> → <b>${rangeMeta.effectiveTo}</b>
           · ${rangeMeta.weeksIncluded} complete week${rangeMeta.weeksIncluded === 1 ? '' : 's'}${snapNote}
-          <span class="muted">(topbar period ignored while this is set)</span>
+          <span class="muted">(quick-period chips ignored while this is set)</span>
         </div>`;
       } else {
         rangeCaption = `<div class="sub" style="margin-top:6px;color:#D20A03">

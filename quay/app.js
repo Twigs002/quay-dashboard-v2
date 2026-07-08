@@ -1022,7 +1022,7 @@
         const note = document.getElementById('cmpAgNote');
         if (note) note.textContent = (cmpAgDateFrom && cmpAgDateTo)
           ? `Custom range · ${cmpAgDateFrom} → ${cmpAgDateTo}`
-          : 'Roster and numbers reflect the currently-active topbar period. Change the pill above, or pick a custom date range.';
+          : 'Roster & numbers use the latest complete week — pick a custom date range below to change the window.';
       };
       const agF = document.getElementById('cmpAgDateFrom');
       const agT = document.getElementById('cmpAgDateTo');
@@ -2402,9 +2402,9 @@
 
   // ---------------------------------------------------- LEADERSHIP OVERVIEW
   function leadership() {
-    // All-Stars: custom-range-only tab. The topbar period pills are hidden
-    // (pillsHiddenForActivePicker), so the custom picker is the sole control.
-    // With a range set, agent-derived numbers re-scope via agentsForRange and
+    // All-Stars: custom-range-only tab. It's in OWN_DATE_CONTROL, so the global
+    // quick-period chips are suppressed and this tab's own From/To picker is the
+    // sole control. With a range set, agent-derived numbers re-scope via
     // the period-only sections (revenue, pace, trends, campaigns, historical)
     // are hidden — they have no meaning for an arbitrary span.
     const leadRange = (leadDateFrom && leadDateTo) ? { from: leadDateFrom, to: leadDateTo } : null;
@@ -3172,14 +3172,7 @@
             <h3 style="margin:0;font-family:var(--serif);font-size:17px">LN &amp; Assistants Leaderboard</h3>
             <div class="sub" style="margin-top:4px">${lns.length} ${lns.length === 1 ? 'person' : 'people'} reporting · ${range.fromKey} → ${range.toKey} SAST${range.custom ? ' · <b>custom range</b>' : ''} · raw fields from each end-of-day submission</div>
           </div>
-          <div class="ln-date-picker" aria-label="Custom date range">
-            <label class="muted" for="lnDateFrom">From</label>
-            <input id="lnDateFrom" type="date" value="${_lnDateFrom || ''}" max="${sastDateStr(new Date())}">
-            <span class="muted" aria-hidden="true">→</span>
-            <label class="muted" for="lnDateTo">To</label>
-            <input id="lnDateTo" type="date" value="${_lnDateTo || ''}" max="${sastDateStr(new Date())}">
-            ${range.custom ? `<button class="btn" id="lnDateClear" type="button" style="padding:5px 10px;font-size:12px">Clear</button>` : ''}
-          </div>
+          ${datePickerMarkup('ln', _lnDateFrom, _lnDateTo)}
         </div>
       </div>
 
@@ -3381,23 +3374,11 @@
     });
     // Custom date-range picker. Both ends required before the override
     // kicks in — partial input keeps the global period in effect.
-    // Audit E3 (P1): preserve focus on the picker that was just changed
-    // so the user can tab to the second field without reclicking.
-    const dFrom = document.getElementById('lnDateFrom');
-    const dTo   = document.getElementById('lnDateTo');
-    const _reFocus = (id) => {
-      const el = document.getElementById(id);
-      if (el) el.focus();
-    };
-    if (dFrom) dFrom.addEventListener('change', (e) => {
-      _lnDateFrom = e.target.value || null; shell(); _reFocus('lnDateFrom');
-    });
-    if (dTo) dTo.addEventListener('change', (e) => {
-      _lnDateTo = e.target.value || null; shell(); _reFocus('lnDateTo');
-    });
-    const dClear = document.getElementById('lnDateClear');
-    if (dClear) dClear.addEventListener('click', () => {
-      _lnDateFrom = null; _lnDateTo = null; shell();
+    // Shared date-picker wiring (preserves focus on the edited field).
+    wireDatePicker('ln', (kind, value) => {
+      if (kind === 'from') _lnDateFrom = value;
+      else if (kind === 'to') _lnDateTo = value;
+      else { _lnDateFrom = null; _lnDateTo = null; }
     });
   }
 
@@ -4042,20 +4023,11 @@
     const pngBtn = document.getElementById('trExportPng');
     if (pngBtn) pngBtn.addEventListener('click', exportTeamsReportingPng);
     // Custom date-range picker — override the global period once both ends
-    // are filled. Preserve focus on the field that was just changed so the
-    // user can tab straight from From to To.
-    const _reFocus = (id) => { const el = document.getElementById(id); if (el) el.focus(); };
-    const trFrom = document.getElementById('trDateFrom');
-    const trTo   = document.getElementById('trDateTo');
-    if (trFrom) trFrom.addEventListener('change', (e) => {
-      _trDateFrom = e.target.value || null; shell(); _reFocus('trDateFrom');
-    });
-    if (trTo) trTo.addEventListener('change', (e) => {
-      _trDateTo = e.target.value || null; shell(); _reFocus('trDateTo');
-    });
-    const trClear = document.getElementById('trDateClear');
-    if (trClear) trClear.addEventListener('click', () => {
-      _trDateFrom = null; _trDateTo = null; shell();
+    // are filled. Shared wiring preserves focus on the edited field.
+    wireDatePicker('tr', (kind, value) => {
+      if (kind === 'from') _trDateFrom = value;
+      else if (kind === 'to') _trDateTo = value;
+      else { _trDateFrom = null; _trDateTo = null; }
     });
     // ── Subscribers card wiring
     const subsToggle = document.getElementById('trSubsToggle');
