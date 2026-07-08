@@ -339,7 +339,10 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--card); border: 1px solid var(--line);
   border-radius: var(--r-lg); box-shadow: var(--shadow-sm);
 }
-@media (max-width: 720px) { .datebar { margin: 14px 16px 0; } }
+/* Align the datebar's horizontal margin with .content's padding at the same
+   860px breakpoint where .content drops from 36px to 16px, so the bar and the
+   page body stay flush at every width. */
+@media (max-width: 860px) { .datebar { margin: 14px 16px 0; } }
 .live-range-label { font-size: 13px; font-weight: 700; color: var(--slate); }
 .qf-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .qf-chip {
@@ -350,6 +353,11 @@ button { font-family: inherit; cursor: pointer; }
 }
 .qf-chip:hover { border-color: var(--navy-800); color: var(--navy-800); }
 .qf-chip.active { background: var(--navy-800); color: #fff; border-color: var(--navy-800); }
+/* A custom date range is driving the view — dim the now-inert quick chips. */
+.qf-chip.overridden { opacity: .5; }
+.qf-chip.overridden.active { opacity: 1; }
+/* Comfortable touch targets on touch devices (WCAG 2.5.8). */
+@media (pointer: coarse) { .qf-chip, .seg button { min-height: 44px; } }
 .range-caption {
   margin: -6px 2px 14px; font-size: 12.5px; color: var(--muted); font-weight: 500;
 }

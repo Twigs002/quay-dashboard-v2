@@ -294,23 +294,29 @@
     renderLogin();
   }
 
-  // Human-readable date range for the active period — e.g. "16–22 Jun 2026".
-  // Anchors numbers to a concrete window so screenshots stay interpretable.
-  function periodRangeSuffix() {
+  // Human-readable date range for a given period key — e.g. "16–22 Jun 2026".
+  // Anchors numbers to a concrete window so labels stay interpretable (the
+  // quick-period LABELS like "This Week" are colloquial; the concrete range
+  // resolves any ambiguity about exactly which week/month is meant).
+  function formatPeriodRange(key) {
     try {
       if (!Q.periodDateRange) return '';
-      const r = Q.periodDateRange(period);
+      const r = Q.periodDateRange(key);
       if (!r || !r.fromISO || !r.toISO) return '';
       const from = new Date(r.fromISO);
       const to   = new Date(new Date(r.toISO).getTime() - 86400 * 1000); // inclusive end
       const monthYear = d => d.toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' });
       const day = d => d.getDate();
       const sameMonth = from.getFullYear() === to.getFullYear() && from.getMonth() === to.getMonth();
-      const label = sameMonth
+      return sameMonth
         ? `${day(from)}–${day(to)} ${monthYear(to)}`
         : `${day(from)} ${from.toLocaleDateString('en-ZA',{month:'short'})} – ${day(to)} ${monthYear(to)}`;
-      return ` · ${label}`;
     } catch { return ''; }
+  }
+  // Active-period range as a " · <range>" subtitle suffix.
+  function periodRangeSuffix() {
+    const l = formatPeriodRange(period);
+    return l ? ` · ${l}` : '';
   }
 
   // The effective date window for a tab's subtitle + print header — matches
@@ -536,7 +542,11 @@
     const gRange = migrated && !!(gDateFrom && gDateTo);
     const chips = `<div class="qf-chips" role="group" aria-label="Quick period">${GLOBAL_QUICK.map(([k, lbl]) => {
       const on = !gRange && period === k;
-      return `<button class="qf-chip ${on ? 'active' : ''}" data-gperiod="${k}" type="button" aria-pressed="${on}">${lbl}</button>`;
+      const rangeText = formatPeriodRange(k);
+      const title = rangeText ? `${lbl} · ${rangeText}` : lbl;
+      // When a custom range overrides the chips, dim them so it's clear they're
+      // no longer driving the view (the active range shows in the picker).
+      return `<button class="qf-chip ${on ? 'active' : ''}${gRange ? ' overridden' : ''}" data-gperiod="${k}" type="button" aria-pressed="${on}" title="${escapeHtml(title)}">${lbl}</button>`;
     }).join('')}</div>`;
     const range = migrated ? datePickerMarkup('g', gDateFrom, gDateTo) : '';
     return `<div class="datebar">${chips}${range}</div>`;
@@ -546,7 +556,9 @@
   // Teams pattern). `prefix` namespaces the input ids: `${prefix}DateFrom`,
   // `${prefix}DateTo`, `${prefix}DateClear`. Reused by Overview + Leadership.
   function datePickerMarkup(prefix, from, to) {
-    const today = (new Date()).toISOString().slice(0, 10);
+    // Cap at TODAY in SAST, not UTC — after 22:00 SAST the UTC date is still
+    // "yesterday", which would wrongly bar picking today near midnight.
+    const today = sastDateStr(new Date());
     const active = !!(from && to);
     return `<div class="ln-date-picker" aria-label="Custom date range">
       <label class="muted" for="${prefix}DateFrom">From</label>
@@ -2915,6 +2927,8 @@
     else if (period === 'this-month'){ const d = new Date(now); fromKey = sastDateStr(new Date(d.getFullYear(), d.getMonth(), 1));  toKey = todaySast; }
     else if (period === 'last-month'){ const d = new Date(now); d.setMonth(d.getMonth() - 1); fromKey = sastDateStr(new Date(d.getFullYear(), d.getMonth(), 1)); toKey = sastDateStr(new Date(d.getFullYear(), d.getMonth() + 1, 0)); }
     else if (period === 'billing-period') { const w = Q.billingPeriodWindow(); fromKey = w.fromYmd; toKey = w.toYmd; }
+    else if (period === 'last-90')    { fromKey = sastDateStr(new Date(Date.now() - 90 * 86400e3)); toKey = todaySast; }
+    else if (period === 'all-time')   { fromKey = '2020-01-01'; toKey = todaySast; }   // spans all held history
     else                              { fromKey = sastDateStr(new Date(Date.now() - 30 * 86400e3)); toKey = todaySast; }
     return { from: startOfDay(fromKey), to: endOfDay(toKey), fromKey, toKey, custom: false };
   }

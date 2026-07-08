@@ -108,7 +108,10 @@ window.QUAY_READY = (async function () {
   }
 
   // history may or may not include the current week; ensure latest first.
-  const weeks = history.slice().sort((a, b) => b.weekStart.localeCompare(a.weekStart));
+  // Drop malformed rows with no weekStart so the sort key can't throw.
+  const weeks = history.slice()
+    .filter(w => w && w.weekStart)
+    .sort((a, b) => String(b.weekStart).localeCompare(String(a.weekStart)));
   // If the live weekly_data isn't the same week as history[0], unshift it.
   if (!weeks.length || weeks[0].week !== weekly.week) weeks.unshift(weekly);
 
