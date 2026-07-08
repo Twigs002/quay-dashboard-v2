@@ -124,7 +124,6 @@
     { id: 'staff',      section: 'People',      label: 'All Staff',      icon: I.calendar, title: 'All Staff Report',     sub: 'Drill into agent-level performance' },
     { id: 'manager',    section: 'People',      label: 'Red Flags',      icon: I.chart,    title: 'Red Flags',            sub: 'Auto-detected this period · monthly trends below' },
     { id: 'ln',         section: 'People',      label: 'LN Stats',       icon: I.target,   title: 'LN Leaderboard',       sub: 'Per-LN efficiency, leads per 100 touches, compliance · from end-of-day reports' },
-    { id: 'daily',      section: 'Time',        label: 'Daily Stats',    icon: I.cal2,     title: 'Daily Stats',          sub: 'Per-caller performance for a single day' },
     { id: 'monthly',    section: 'Time',        label: 'Monthly',        icon: I.cal2,     title: 'Monthly Breakdown',    sub: 'Month-by-month roll-up across every week of data' },
     { id: 'compare',    section: 'Time',        label: 'Compare',        icon: I.scale,    title: 'Period Comparison',    sub: 'Week vs week · month vs month' },
     { id: 'sources',    section: 'Strategy',    label: 'Lead Sources',   icon: I.target,   title: 'Lead Source Efficacy', sub: 'Which source converts best' },
@@ -508,7 +507,6 @@
       staffWire();
     }
     else if (tab === 'compare')  { host.innerHTML = V.compare(period); segWire(); }
-    else if (tab === 'daily')    { host.innerHTML = V.daily(period, dailyPicked); dailyWire(); }
     else if (tab === 'monthly')  { host.innerHTML = V.monthly(); monthlyWire(); }
     else if (tab === 'manager')  { host.innerHTML = V.manager(period); managerWire(); }
     else if (tab === 'ln')       { host.innerHTML = renderLnLeaderboard(); wireLnLeaderboard(); }
@@ -1595,7 +1593,6 @@
     else if (tab === 'compare')    rows = csvCompare();
     else if (tab === 'manager')    rows = csvManager();
     else if (tab === 'monthly')    rows = csvMonthly();
-    else if (tab === 'daily')      rows = csvDaily();
     else if (tab === 'payroll')    rows = csvPayroll();
     else                            rows = csvAgents();
     downloadCSV(filename, rows);
@@ -2041,29 +2038,21 @@
         <div class="src-bar"><span style="width:${(s.calls / src[0].calls) * 100}%;background:${s.color}"></span></div>
       </div>`).join('');
 
-    // Floor-wide 3-month "Avg. Daily Output" banner — average calls per agent
-    // per working day across the whole calling floor (RM + Fancy), last ~13
-    // weeks. Independent of the selected period (always the 3-month window).
-    const fda = Q.floorDailyAverage ? Q.floorDailyAverage() : null;
-    const avgBanner = (fda && fda.perAgentPerDay > 0) ? `
-      <div class="card avg-output-banner">
-        <div class="aob-ic">${I.phone}</div>
-        <div class="aob-body">
-          <div class="aob-label">Avg. Daily Output</div>
-          <div class="aob-sub">Calls per agent per working day · Engine Room (RM + Fancy) · last 3 months</div>
-        </div>
-        <div class="aob-figure">
-          <div class="aob-val tnum">${fmt(fda.perAgentPerDay)}</div>
-          <div class="aob-meta">${fda.agents} callers · ${fda.weeks} wks</div>
-        </div>
-      </div>` : '';
-
     const footPrev = ovRange ? 'custom range · no prior baseline' : ('vs previous ' + Q.PERIODS[period].label.toLowerCase());
-    // Curated quick filters (This Month + the two week options) + the custom
-    // range picker as the prominent control. Chips drive the global period;
-    // picking one clears any active custom range.
-    const QUICK = ['this-week', 'last-week', 'this-month'];
-    const ovChip = (k) => `<button class="qf-chip ${(!ovRange && period === k) ? 'active' : ''}" data-ovperiod="${k}" type="button">${Q.PERIODS[k].label}</button>`;
+    // Quick filters + the custom-range picker as the prominent control. Chips
+    // drive the global period; picking one clears any active custom range.
+    // Labels are fixed here (not PERIODS[k].label) because the global period
+    // labels are relabelled for the topbar (see PERIODS in data.js). NOTE:
+    // weekly_data.json is completed-weeks-only, so "This Week" = the latest
+    // completed week (key this-week); the true in-progress week lives on the
+    // Live Floor.
+    const QUICK = [
+      ['this-week',  'This Week'],
+      ['last-week',  'Last Week'],
+      ['this-month', 'This Month'],
+      ['last-90',    'Last 90 Days'],
+    ];
+    const ovChip = ([k, lbl]) => `<button class="qf-chip ${(!ovRange && period === k) ? 'active' : ''}" data-ovperiod="${k}" type="button">${lbl}</button>`;
     const ovCaption = ovRange ? `<div class="range-caption">Custom range · covers <b>${(rangeMeta && rangeMeta.effectiveFrom) || ovRange.from}</b> → <b>${(rangeMeta && rangeMeta.effectiveTo) || ovRange.to}</b>${rangeMeta && rangeMeta.weeksIncluded === 0 ? ' · <span style="color:var(--red)">no complete Mon-Sun weeks in range</span>' : (rangeMeta ? ` · ${rangeMeta.weeksIncluded} complete week${rangeMeta.weeksIncluded === 1 ? '' : 's'}` : '')}</div>` : '';
     const ovFilterBar = `
       <div class="card ov-filterbar">
@@ -2074,7 +2063,6 @@
 
     return `
     <div class="tab-view">
-      ${avgBanner}
       ${ovFilterBar}
       <!-- KPIs -->
       <div class="row kpis">
