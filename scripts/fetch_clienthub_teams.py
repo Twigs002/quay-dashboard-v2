@@ -152,12 +152,59 @@ CAMPAIGNS = [
     ("CAMPAIGN_CLIENTHUB_NO_ANSWER_ID", "CAMPAIGN_CLIENTHUB_NO_ANSWER_TOKEN", "na"),
 ]
 
+# Exact Dialfire campaign name -> short label, used when resolving campaigns
+# from the DIALFIRE_CAMPAIGNS secret (below).
+CLIENTHUB_NAMES = {
+    "CLIENTHUB":           "master",
+    "CLIENTHUB_NEW":       "new",
+    "CLIENTHUB_NO_ANSWER": "na",
+}
+_LABEL_ORDER = {"master": 0, "new": 1, "na": 2}
+
+
+def campaigns_from_dialfire_secret():
+    """Fallback source: pull the three ClientHub (id, token, label) rows out of
+    the DIALFIRE_CAMPAIGNS secret — a JSON list of {id, token, name} that the
+    other fetchers already rely on. Lets the daily job self-heal when the
+    per-campaign CAMPAIGN_CLIENTHUB_* secrets aren't set (the workflow's
+    ClientHub step only passed the master pair, so NEW/NO_ANSWER never flowed
+    even when their secrets existed). Master is sorted first so the
+    'master failed -> preserve prior file' guard stays meaningful."""
+    raw = (os.environ.get("DIALFIRE_CAMPAIGNS") or "").strip()
+    if not raw:
+        return []
+    try:
+        rows = json.loads(raw)
+    except Exception as exc:
+        print(f"[fetch_clienthub_teams] WARN: DIALFIRE_CAMPAIGNS not JSON: {exc}")
+        return []
+    if not isinstance(rows, list):
+        return []
+    out = []
+    for c in rows:
+        if not isinstance(c, dict):
+            continue
+        lbl = CLIENTHUB_NAMES.get((c.get("name") or "").strip().upper())
+        cid = (c.get("id") or "").strip()
+        tok = (c.get("token") or "").strip()
+        if lbl and cid and tok:
+            out.append((cid, tok, lbl))
+    out.sort(key=lambda r: _LABEL_ORDER.get(r[2], 9))
+    return out
+
 
 def main():
     now = datetime.datetime.now(datetime.timezone.utc)
     campaigns = [(os.environ.get(i, "").strip(), os.environ.get(t, "").strip(), lbl)
                  for i, t, lbl in CAMPAIGNS]
     campaigns = [(cid, tok, lbl) for cid, tok, lbl in campaigns if cid and tok]
+    if not campaigns:
+        # Individual secrets absent — derive id+token from DIALFIRE_CAMPAIGNS,
+        # which already carries every campaign. Keeps Engine Room alive.
+        campaigns = campaigns_from_dialfire_secret()
+        if campaigns:
+            print(f"[fetch_clienthub_teams] using DIALFIRE_CAMPAIGNS fallback "
+                  f"({', '.join(l for _, _, l in campaigns)}).")
     if not campaigns:
         print("[fetch_clienthub_teams] no ClientHub campaign secrets set — empty payload.")
         write({"generated_at": now.isoformat(), "campaigns": [],

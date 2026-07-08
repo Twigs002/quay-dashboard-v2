@@ -66,8 +66,16 @@ jobs:
 
       - name: Fetch ClientHub per-team stats
         env:
+          # DIALFIRE_CAMPAIGNS carries id+token+name for every campaign; the
+          # fetcher resolves the three ClientHub campaigns from it when the
+          # per-campaign CAMPAIGN_CLIENTHUB_* secrets aren't set. Keep both.
+          DIALFIRE_CAMPAIGNS: ${{ secrets.DIALFIRE_CAMPAIGNS }}
           CAMPAIGN_CLIENTHUB_ID: ${{ secrets.CAMPAIGN_CLIENTHUB_ID }}
           CAMPAIGN_CLIENTHUB_TOKEN: ${{ secrets.CAMPAIGN_CLIENTHUB_TOKEN }}
+          CAMPAIGN_CLIENTHUB_NEW_ID: ${{ secrets.CAMPAIGN_CLIENTHUB_NEW_ID }}
+          CAMPAIGN_CLIENTHUB_NEW_TOKEN: ${{ secrets.CAMPAIGN_CLIENTHUB_NEW_TOKEN }}
+          CAMPAIGN_CLIENTHUB_NO_ANSWER_ID: ${{ secrets.CAMPAIGN_CLIENTHUB_NO_ANSWER_ID }}
+          CAMPAIGN_CLIENTHUB_NO_ANSWER_TOKEN: ${{ secrets.CAMPAIGN_CLIENTHUB_NO_ANSWER_TOKEN }}
         run: python scripts/fetch_clienthub_teams.py
 
       - name: Commit updated data
