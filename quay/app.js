@@ -467,17 +467,21 @@
     render();
   }
 
-  // Header chips vs an active in-page range. For non-migrated tabs that still
-  // own a From/To picker, an active range would desync a highlighted chip, so
-  // we hide the chips while that picker is engaged (the bug the user hit once).
-  // Migrated tabs (GLOBAL_RANGE_TABS) never hit this — the header owns both.
-  function headerChipsHidden(tab) {
-    if (GLOBAL_RANGE_TABS.has(tab)) return false;
-    if (tab === 'ln')           return !!(_lnDateFrom && _lnDateTo);
-    if (tab === 'teams-report') return !!(_trDateFrom && _trDateTo);
-    if (tab === 'leadership')   return true; // custom-range-only tab: no quick chips
-    return false;
-  }
+  // Tabs that own an in-page date control of their own (a From/To picker, a
+  // window selector, or an embedded iframe with its own pills). The shared
+  // header bar is suppressed on these so no page ever shows two date ranges:
+  //   leadership   — custom From/To only (revenue/pace need a real range)
+  //   ln           — end-of-day report From/To picker
+  //   teams-report — per-team From/To picker
+  //   compare      — week/month/agent sub-views + their own agent A/B range
+  //   clienthub    — Engine Room window selector (last-week/this-month/last-month)
+  //   clocks       — embeds the quay-clock admin, which has its own pills
+  //   team         — Staff Directory roster: no date dimension at all
+  // Payroll (own Billing Period) and Live Floor (own consolidated bar) are
+  // handled explicitly in globalDateBar().
+  const OWN_DATE_CONTROL = new Set([
+    'leadership', 'ln', 'teams-report', 'compare', 'clienthub', 'clocks', 'team',
+  ]);
 
   // Live Floor's header bar — the role filter (All/RM/LN/Fancy) plus its own
   // From/To range, consolidated up here so the floor isn't split across three
@@ -493,18 +497,18 @@
     return `<div class="datebar">${left}${datePickerMarkup('live', liveDateFrom, liveDateTo)}</div>`;
   }
 
-  // Full-width date bar below the topbar — the single date control on every tab
-  // except Payroll. The quick chips (which set `period`) show always; migrated
-  // tabs (GLOBAL_RANGE_TABS) also get the global From/To range. Non-migrated
-  // tabs keep their own in-page range picker, so we render chips only for them.
+  // Full-width date bar below the topbar — the single date control on tabs that
+  // don't own one themselves. Quick chips set `period`; migrated tabs
+  // (GLOBAL_RANGE_TABS) also get the global From/To range. Suppressed entirely
+  // on tabs that own a date control (OWN_DATE_CONTROL), on Payroll (own Billing
+  // Period selector), so a page never shows two date ranges.
   function globalDateBar(tab) {
     if (tab === 'payroll') return '';
     if (tab === 'live') return liveDateBar();   // role filter + its own range
+    if (OWN_DATE_CONTROL.has(tab)) return '';   // tab owns its date control
     const migrated = GLOBAL_RANGE_TABS.has(tab);
-    const chipsHidden = headerChipsHidden(tab);
-    if (chipsHidden && !migrated) return '';           // nothing useful to show
     const gRange = migrated && !!(gDateFrom && gDateTo);
-    const chips = chipsHidden ? '' : `<div class="qf-chips">${GLOBAL_QUICK.map(([k, lbl]) =>
+    const chips = `<div class="qf-chips">${GLOBAL_QUICK.map(([k, lbl]) =>
       `<button class="qf-chip ${(!gRange && period === k) ? 'active' : ''}" data-gperiod="${k}" type="button">${lbl}</button>`).join('')}</div>`;
     const range = migrated ? datePickerMarkup('g', gDateFrom, gDateTo) : '';
     return `<div class="datebar">${chips}${range}</div>`;
