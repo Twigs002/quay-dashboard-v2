@@ -1345,13 +1345,27 @@
     currentAgentModalName = null;
   }
 
+  // The date scope currently in effect for agent-level figures on the active
+  // tab — a custom range when one is set, else null (period). Keeps the
+  // drill-down modal and CSV export in agreement with the on-screen tables.
+  function activeAgentRange() {
+    if (GLOBAL_RANGE_TABS.has(tab) && gDateFrom && gDateTo) return { from: gDateFrom, to: gDateTo };
+    if (tab === 'live' && liveDateFrom && liveDateTo)       return { from: liveDateFrom, to: liveDateTo };
+    if (tab === 'leadership' && leadDateFrom && leadDateTo) return { from: leadDateFrom, to: leadDateTo };
+    return null;
+  }
+
   function openAgentModal(name) {
-    const all = Q.agentsFor(period);
+    const range = activeAgentRange();
+    const all = range ? (Q.agentsForRange(range.from, range.to) || []) : Q.agentsFor(period);
     const a = all.find(x => x.name === name);
     if (!a) { currentAgentModalName = null; return; }
     currentAgentModalName = name;
     const hist = Q.agentHistory(name).slice(-12);  // last 12 weeks present
-    const camps = Q.agentCampaigns(name, period);
+    // Per-campaign attribution is only computed per period, not for an
+    // arbitrary range, so we omit it (with an explanatory row) when ranged.
+    const camps = range ? [] : Q.agentCampaigns(name, period);
+    const scopeLabel = range ? `${range.from} → ${range.to}` : Q.PERIODS[period].label;
     const onTarget = !!a.meetsTarget;
     const sc = sucClass(a.success);
     const totals = camps.reduce((s, c) => ({
@@ -1367,7 +1381,7 @@
         <td class="num tnum">${fmt(c.leads)}</td>
         <td class="num"><span class="pill ${sucClass(+conv)}">${conv}%</span></td>
       </tr>`;
-    }).join('') : `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:18px">No per-campaign breakdown for this period (week pre-dates the new fetcher field).</td></tr>`;
+    }).join('') : `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:18px">${range ? 'Per-campaign breakdown isn\'t available for a custom range — pick a quick period to see it.' : 'No per-campaign breakdown for this period (week pre-dates the new fetcher field).'}</td></tr>`;
 
     const r = a._raw || {};
     const wt = r.workTime || 0;
@@ -1395,7 +1409,7 @@
         </div>
         <div class="modal-body">
           <div class="row g-3">
-            <div class="card card-pad"><div class="kpi-label" style="margin:0">Calls (${Q.PERIODS[period].label})</div><div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">${fmt(a.calls)}</div></div>
+            <div class="card card-pad"><div class="kpi-label" style="margin:0">Calls (${scopeLabel})</div><div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">${fmt(a.calls)}</div></div>
             <div class="card card-pad"><div class="kpi-label" style="margin:0">Leads</div><div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">${fmt(a.leads)}</div></div>
             <div class="card card-pad"><div class="kpi-label" style="margin:0">Dialler hrs</div><div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">${a.df.toFixed(1)}h</div></div>
             <div class="card card-pad"><div class="kpi-label" style="margin:0">CPH</div><div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">${a.cph || '—'}</div></div>
@@ -1665,9 +1679,12 @@
   // ---------------------------------------------------- EXPORT (CSV)
   function exportCurrentTab() {
     const stamp = new Date().toISOString().slice(0, 10);
-    const periodLabel = (Q.PERIODS[period] || {}).label || period;
     const safe = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    const filename = `quay-${tab}-${safe(periodLabel)}-${stamp}.csv`;
+    // Stamp the actual on-screen scope (custom range if set, else the period)
+    // so the file name matches the exported figures.
+    const aRange = activeAgentRange();
+    const scope = aRange ? `${aRange.from}_${aRange.to}` : safe((Q.PERIODS[period] || {}).label || period);
+    const filename = `quay-${tab}-${scope}-${stamp}.csv`;
     let rows;
     if (tab === 'sources')         rows = csvCampaigns();
     else if (tab === 'compare')    rows = csvCompare();
@@ -1679,14 +1696,16 @@
   }
 
   function csvAgents() {
-    const agents = Q.agentsFor(period);
+    // Match the on-screen scope: custom range if the tab has one, else period.
+    const range = activeAgentRange();
+    const agents = range ? (Q.agentsForRange(range.from, range.to) || []) : Q.agentsFor(period);
     const header = ['Name', 'Team', 'Calls', 'Leads', 'Success %', 'Connect %',
       'CPH', 'Dialler hrs', 'Talk hrs', 'Seller', 'Rental', 'Email',
       'Meets target', 'Campaigns'];
     const out = [header];
     agents.forEach(a => out.push([
-      a.name, a.team, a.calls, a.leads, a.success, a.connect,
-      a.cph || 0, a.df, (a.talkMin / 60).toFixed(2),
+      a.name, a.team, a.calls, a.leads, a.success, a.connect || 0,
+      a.cph || 0, a.df || 0, ((a.talkMin || 0) / 60).toFixed(2),
       a.seller || 0, a.rental || 0, a.email || 0,
       a.meetsTarget ? 'yes' : 'no',
       (a.campaigns || []).join('; '),
@@ -2706,7 +2725,7 @@
       const startOfTodaySAST = new Date(sastDateStr(new Date()) + 'T00:00:00+02:00').toISOString();
       const { data, error } = await window.sb
         .from('live_stats')
-        .select('staff_id,name,calls,leads,seller_leads,rental_leads,email_leads,work_hours,success_rate,updated_at')
+        .select('staff_id,name,calls,answered,leads,seller_leads,rental_leads,email_leads,work_hours,success_rate,updated_at')
         .gte('updated_at', startOfTodaySAST)
         .order('calls', { ascending: false });
       if (error) throw error;
@@ -4247,12 +4266,12 @@
           if (dailyAgent) break;
         }
         const todayCalls    = liveRow ? liveRow.calls         : (dailyAgent ? dailyAgent.calls  : null);
-        const todayAnswered = liveRow ? (liveRow.answered != null ? liveRow.answered : liveRow.calls) : (dailyAgent ? dailyAgent.success : null);
+        const todayAnswered = liveRow ? (liveRow.answered != null ? liveRow.answered : liveRow.calls) : (dailyAgent && dailyAgent.answered != null ? dailyAgent.answered : null);
         // "Leads" = seller leads only. Rental + email stay as their own columns.
         const todayLeads    = liveRow ? liveRow.seller_leads  : (dailyAgent ? (dailyAgent.seller || 0) : null);
         const todayRental   = liveRow ? liveRow.rental_leads  : (dailyAgent ? dailyAgent.rental : null);
         const todayEmail    = liveRow ? liveRow.email_leads   : (dailyAgent ? dailyAgent.email  : null);
-        const todaySuccess  = liveRow ? liveRow.success_rate  : (dailyAgent ? dailyAgent.successRate : null);
+        const todaySuccess  = liveRow ? liveRow.success_rate  : (dailyAgent ? dailyAgent.success : null);
         if (todayCalls != null) totalCallsToday += todayCalls;
         if (todayLeads != null) totalSellerLeads += todayLeads;
         if (todayCalls > 0) activeCallerCount++;

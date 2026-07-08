@@ -166,6 +166,9 @@ window.QUAY_READY = (async function () {
       calls,
       leads,
       rawSuccess,
+      // Answered = calls reached (calls − No Answer), from the Dialfire fetcher.
+      // Null when the source snapshot pre-dates the field.
+      answered: a.answered != null ? a.answered : null,
       talkMin: Math.round(talkHrs * 60),
       df: +workHrs.toFixed(1),
       pauseHrs: +pauseHrs.toFixed(2),
