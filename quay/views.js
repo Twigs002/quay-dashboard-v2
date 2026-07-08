@@ -504,7 +504,7 @@ window.VIEWS = (function () {
               </div>
             </div>
           </div>
-          <div class="muted" id="cmpAgNote" style="font-size:12px;padding:0 0 8px">${agNoteTxt}</div>
+          <div class="muted" id="cmpAgNote" style="font-size:12px;padding:6px 0 10px;text-align:center">${agNoteTxt}</div>
           <div id="cmpAgentBody">${renderAgentCompare(sortedAgents, defAgA, defAgB)}</div>
         </div>
       </div>
