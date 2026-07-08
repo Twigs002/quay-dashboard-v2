@@ -221,6 +221,7 @@ def fetch_lead_counts(cid, token, ts, label):
         if   status_val in {s.upper() for s in SELLER_STATUSES}: bucket = "seller"
         elif status_val in {s.upper() for s in RENTAL_STATUSES}: bucket = "rental"
         elif status_val in {s.upper() for s in EMAIL_STATUSES}:  bucket = "email"
+        elif status_val == "NO_ANSWER":                          bucket = "no_answer"
         if bucket is None:
             continue
         for u in sgrp.get("groups", sgrp.get("children", [])):
@@ -237,7 +238,7 @@ def fetch_lead_counts(cid, token, ts, label):
                 except Exception:
                     pass
             if ag not in result:
-                result[ag] = {"seller": 0, "rental": 0, "email": 0}
+                result[ag] = {"seller": 0, "rental": 0, "email": 0, "no_answer": 0}
             result[ag][bucket] += cnt
     return result
 
@@ -283,6 +284,9 @@ def parse_row(row):
         "seller":      int(row.get("seller_lead") or row.get("seller") or 0),
         "rental":      int(row.get("rental_lead") or row.get("rental") or 0),
         "email":       int(row.get("got_email")   or row.get("email")  or 0),
+        # hs_lead_status == NO_ANSWER count (mixed in by the live daemon). Used
+        # to derive "Answered" = calls - no_answer in finalize().
+        "no_answer":   int(row.get("no_answer") or 0),
         "cph":         cph,
         "successRate": sr,
         "workTime":    round(work_hrs, 4),
@@ -324,6 +328,7 @@ def merge_agent_row(agents, parsed, cname):
     a["seller"]   += parsed["seller"]
     a["rental"]   += parsed["rental"]
     a["email"]    += parsed["email"]
+    a["no_answer"] = a.get("no_answer", 0) + parsed.get("no_answer", 0)
     a["workTime"]  = round(a["workTime"]  + parsed["workTime"],  4)
     a["talkTime"]  = round(a.get("talkTime",0)  + parsed.get("talkTime",0),  4)
     a["wrapTime"]  = round(a.get("wrapTime",0)  + parsed.get("wrapTime",0),  4)
@@ -342,6 +347,10 @@ def finalize(agents):
     for a in agents.values():
         a["cph"] = round(a["calls"] / a["workTime"], 1) if a["workTime"] > 0 else 0.0
         a["successRate"] = round(a["success"] / a["calls"] * 100, 1) if a["calls"] > 0 else 0.0
+        # "Answered" = every reached/dispositioned call, i.e. all completed
+        # calls except those left at hs_lead_status = NO_ANSWER. Includes
+        # "Declined" outcomes (NOT_ENGAGING, DO_NOT_CONTACT). Clamped >= 0.
+        a["answered"] = max(int(a.get("calls", 0)) - int(a.get("no_answer", 0)), 0)
 
         wt = a.get("workTime", 0) or 0
         a["talkPct"] = round(a.get("talkTime", 0) / wt * 100, 1) if wt > 0 else 0.0

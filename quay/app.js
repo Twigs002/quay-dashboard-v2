@@ -4154,7 +4154,7 @@
     // hover tooltips AND the always-visible legend below the summary, so the
     // two can never drift. (Em dashes stripped per house style.)
     const CALLS_DEF    = "Total dial attempts (Dialfire's 'completed' column).";
-    const ANSWERED_DEF = "Connected calls, an actual conversation (Dialfire's 'success' column).";
+    const ANSWERED_DEF = "Calls where the person was reached — every completed call except No Answer (includes Declined outcomes).";
 
     // Per-agent today's calls/leads. PRIMARY source is the live_stats table
     // (Mac daemon polls Dialfire every ~90s, pushes via Supabase realtime).
@@ -4229,7 +4229,7 @@
           if (dailyAgent) break;
         }
         const todayCalls    = liveRow ? liveRow.calls         : (dailyAgent ? dailyAgent.calls  : null);
-        const todayAnswered = liveRow ? liveRow.leads         : (dailyAgent ? dailyAgent.success : null);
+        const todayAnswered = liveRow ? (liveRow.answered != null ? liveRow.answered : liveRow.calls) : (dailyAgent ? dailyAgent.success : null);
         // "Leads" = seller leads only. Rental + email stay as their own columns.
         const todayLeads    = liveRow ? liveRow.seller_leads  : (dailyAgent ? (dailyAgent.seller || 0) : null);
         const todayRental   = liveRow ? liveRow.rental_leads  : (dailyAgent ? dailyAgent.rental : null);

@@ -142,6 +142,7 @@ def fetch_campaign_today(campaign):
                 item["seller"] = lead_counts[ag]["seller"]
                 item["rental"] = lead_counts[ag]["rental"]
                 item["email"]  = lead_counts[ag]["email"]
+                item["no_answer"] = lead_counts[ag].get("no_answer", 0)
     return label, rows
 
 
@@ -185,6 +186,7 @@ def build_rows(agents, now_iso):
             "staff_id":     staff_slug(n),
             "name":         n,
             "calls":        int(a.get("calls") or 0),
+            "answered":     int(a.get("answered") or 0),  # calls minus NO_ANSWER (see finalize)
             "leads":        int(a.get("success") or 0),
             "seller_leads": int(a.get("seller") or 0),
             "rental_leads": int(a.get("rental") or 0),
