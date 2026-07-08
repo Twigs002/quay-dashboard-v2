@@ -240,6 +240,39 @@ def _clear_live_stats(supabase_url, service_key):
         log(f"  [supabase] clear-live_stats error: {e}")
 
 
+def _evict_absent_agents(rows, supabase_url, service_key):
+    """Delete live_stats rows for agents NOT in the current poll — anyone with
+    no calls in Dialfire's 'today' window right now.
+
+    This is what actually keeps the Live Floor honest. The once-a-day SAST
+    clear (_clear_live_stats) misaligns with Dialfire's UTC-based 0-0day
+    window: between 00:00-02:00 SAST the daemon still fetches YESTERDAY's
+    totals and re-seeds them into the freshly-cleared table, and when the
+    window rolls they strand as stale rows for agents who don't call again
+    today. Reconciling every poll evicts those within one cycle.
+
+    Skipped on an empty poll so a transient Dialfire failure can't wipe the
+    floor (mirrors upsert_live_stats' empty guard).
+    """
+    if not rows:
+        return
+    # staff_slug yields only [a-z0-9-], so unquoted PostgREST in.() is safe.
+    ids = ",".join(r["staff_id"] for r in rows)
+    url = (f"{supabase_url.rstrip('/')}/rest/v1/live_stats"
+           f"?staff_id=not.in.({ids})")
+    headers = {
+        "apikey":        service_key,
+        "Authorization": f"Bearer {service_key}",
+        "Prefer":        "return=minimal",
+    }
+    try:
+        r = requests.delete(url, headers=headers, timeout=15)
+        if r.status_code >= 300:
+            log(f"  [supabase] evict-absent HTTP {r.status_code}: {r.text[:200]}")
+    except Exception as e:
+        log(f"  [supabase] evict-absent error: {e}")
+
+
 def _maybe_clear_on_rollover(supabase_url, service_key):
     """Detect SAST day change since last poll and clear live_stats if so."""
     global _last_sast_day
@@ -283,8 +316,10 @@ def run_once(campaigns, supabase_url, service_key):
     finalize(agents)
 
     now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    rows = build_rows(agents, now_iso)
     try:
-        upsert_live_stats(build_rows(agents, now_iso), supabase_url, service_key)
+        upsert_live_stats(rows, supabase_url, service_key)
+        _evict_absent_agents(rows, supabase_url, service_key)
     except Exception as e:
         log(f"  [supabase] upsert error: {e}")
 
