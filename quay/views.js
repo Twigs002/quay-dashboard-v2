@@ -107,11 +107,6 @@ window.VIEWS = (function () {
         </div>`;
       }
     }
-    const todaySast = (new Date()).toISOString().slice(0, 10);
-    // Concise date range: quick-select chips (matching the Overview) beside the
-    // custom From/To picker. A chip sets the global period and clears any range.
-    const SQUICK = [['this-week', 'This Week'], ['last-week', 'Last Week'], ['this-month', 'This Month'], ['last-90', 'Last 90 Days']];
-    const sChip = ([k, l]) => `<button class="qf-chip ${(!usingRange && period === k) ? 'active' : ''}" data-staffperiod="${k}" type="button">${l}</button>`;
     // Coaching signal: active agents under the CPH/success benchmark.
     const belowTarget = agents.filter(a => (a.calls || 0) > 0 && !a.meetsTarget).length;
 
@@ -125,15 +120,6 @@ window.VIEWS = (function () {
               ${selOpt('RM', 'RM')}
               ${selOpt('Fancy', 'Fancy')}
             </select></div>
-            <div class="qf-chips" style="align-self:center">${SQUICK.map(sChip).join('')}</div>
-            <div class="ln-date-picker" aria-label="Custom date range" style="margin-left:6px">
-              <label class="muted" for="staffDateFrom">From</label>
-              <input id="staffDateFrom" type="date" value="${(range && range.from) || ''}" max="${todaySast}">
-              <span class="muted" aria-hidden="true">→</span>
-              <label class="muted" for="staffDateTo">To</label>
-              <input id="staffDateTo" type="date" value="${(range && range.to) || ''}" max="${todaySast}">
-              ${usingRange ? `<button class="btn" id="staffDateClear" type="button" style="padding:5px 10px;font-size:12px">Clear</button>` : ''}
-            </div>
           </div>
           <div class="seg" id="staffSeg">
             <button class="active" data-view="overall">Callers · Overall</button>

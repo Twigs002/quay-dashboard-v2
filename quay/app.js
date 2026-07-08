@@ -35,16 +35,31 @@
   let tab = 'overview'; // default landing; switched to 'leadership' for superusers below
   let dailyPicked = null; // selected date on the Daily Stats tab (yyyy-mm-dd)
   let staffTeamFilter = 'all'; // 'all' | 'RM' | 'Fancy' — All Staff tab team dropdown
-  let staffDateFrom = null;    // 'YYYY-MM-DD' SAST — custom range overrides topbar period when both set
-  let staffDateTo   = null;    // 'YYYY-MM-DD' SAST
-  let ovDateFrom = null;       // Overview custom range (overrides topbar period when both set)
-  let ovDateTo   = null;
+  // Overview + All Staff are migrated onto the global header range (gDateFrom/
+  // gDateTo below) — they no longer keep their own From/To state.
   let leadDateFrom = null;     // Leadership custom range (custom-only tab, no quick pills)
   let leadDateTo   = null;
   let liveDateFrom = null;     // Live Floor: a range switches from live cards to a historical table
   let liveDateTo   = null;
   let cmpAgDateFrom = null;    // Compare · Agent-vs-Agent custom range (overrides topbar period when both set)
   let cmpAgDateTo   = null;
+  // Global header date range — the single From/To that the shared header date
+  // bar drives. Consumed by every tab that has been migrated onto it (see
+  // GLOBAL_RANGE_TABS). Overrides the period whenever both ends are set.
+  let gDateFrom = null;
+  let gDateTo   = null;
+  // Tabs migrated onto the global header control (chips + From/To range). For
+  // these the header owns the range and the tab no longer draws its own bar.
+  // Non-migrated data tabs still show the header chips (which set `period`) and
+  // keep their own in-page range picker until migrated.
+  const GLOBAL_RANGE_TABS = new Set(['overview', 'staff']);
+  // Quick chips shown in the header on every tab except Payroll. Keys are the
+  // frozen Q.PERIODS keys (misleadingly named — 'this-week' is the most recent
+  // COMPLETE week); labels match the picker the user signed off on.
+  const GLOBAL_QUICK = [
+    ['this-week', 'This Week'], ['last-week', 'Last Week'], ['this-month', 'This Month'],
+    ['last-90', 'Last 90 Days'], ['all-time', 'All Time'],
+  ];
   let liveDesig = 'all';       // Live Floor role filter: all | rm | ln | fancy
   let chWindow = 'last-week';  // ClientHub Teams tab window: last-week | this-month | last-month
   // Active segment on the All Staff tab: 'overall' | 'per' | 'ln'. Persisted
@@ -363,14 +378,11 @@
               <span class="lfb-count" id="lfbCount">0</span>
               <span class="lfb-label">red flag<span id="lfbS"></span></span>
             </button>
-            ${pillsHiddenForActivePicker(tab) ? '' : `<div class="period" id="period" role="tablist" aria-label="Time period">
-              ${Object.entries(Q.PERIODS).map(([k, p]) =>
-                `<button data-period="${k}" class="${k === period ? 'active' : ''}" role="tab" aria-selected="${k === period ? 'true' : 'false'}">${p.label}</button>`).join('')}
-            </div>`}
             <button class="btn" id="btnPrint" title="Print / save as PDF">${I.print} Print</button>
             <button class="btn btn-primary" id="btnExport" title="Download current tab as CSV">${I.download} Export CSV</button>
           </div>
         </header>
+        ${globalDateBar(tab)}
         <div class="content" id="content"></div>
       </main>`;
 
@@ -385,9 +397,11 @@
       closeAgentModalIfOpen();
       tab = navMobile.value; shell();
     });
-    document.querySelectorAll('#period button').forEach(b =>
+    // Global header chips — set the period and clear any active global range.
+    document.querySelectorAll('[data-gperiod]').forEach(b =>
       b.addEventListener('click', () => {
-        period = b.dataset.period;
+        period = b.dataset.gperiod;
+        gDateFrom = null; gDateTo = null;
         // Preserve an open agent drill-down across the period change. The
         // shell rebuild re-renders #app (the modal lives in a body-level
         // mount so it survives), but the modal's data is stale until we
@@ -396,6 +410,12 @@
         shell();
         if (reopenAgent) openAgentModal(reopenAgent);
       }));
+    // Global header From/To range (shown only on migrated tabs).
+    wireDatePicker('g', (kind, value) => {
+      if (kind === 'from') gDateFrom = value;
+      else if (kind === 'to') gDateTo = value;
+      else { gDateFrom = null; gDateTo = null; }
+    });
     document.getElementById('btnPrint').addEventListener('click', () => window.print());
     document.getElementById('btnExport').addEventListener('click', exportCurrentTab);
     const lfb = document.getElementById('liveFlagsBadge');
@@ -444,20 +464,33 @@
     render();
   }
 
-  // Any tab that owns a From/To range picker: when both ends are set,
-  // hide the topbar This Week / Prior Week / etc pills. Otherwise the
-  // active pill looks live but silently loses to the custom-range logic
-  // in agentsForRange / _lnPeriodRange / _trPeriodRange, which was the
-  // user-reported bug ("the pill and the picker are showing different
-  // things at the same time"). Rendered from shell() so clearing the
-  // picker naturally brings pills back.
-  function pillsHiddenForActivePicker(tab) {
-    if (tab === 'staff')        return !!(staffDateFrom && staffDateTo);
+  // Header chips vs an active in-page range. For non-migrated tabs that still
+  // own a From/To picker, an active range would desync a highlighted chip, so
+  // we hide the chips while that picker is engaged (the bug the user hit once).
+  // Migrated tabs (GLOBAL_RANGE_TABS) never hit this — the header owns both.
+  function headerChipsHidden(tab) {
+    if (GLOBAL_RANGE_TABS.has(tab)) return false;
     if (tab === 'ln')           return !!(_lnDateFrom && _lnDateTo);
     if (tab === 'teams-report') return !!(_trDateFrom && _trDateTo);
-    if (tab === 'overview')     return !!(ovDateFrom && ovDateTo);
-    if (tab === 'leadership')   return true; // custom-range-only tab: never show quick pills
+    if (tab === 'live')         return !!(liveDateFrom && liveDateTo);
+    if (tab === 'leadership')   return true; // custom-range-only tab: no quick chips
     return false;
+  }
+
+  // Full-width date bar below the topbar — the single date control on every tab
+  // except Payroll. The quick chips (which set `period`) show always; migrated
+  // tabs (GLOBAL_RANGE_TABS) also get the global From/To range. Non-migrated
+  // tabs keep their own in-page range picker, so we render chips only for them.
+  function globalDateBar(tab) {
+    if (tab === 'payroll') return '';
+    const migrated = GLOBAL_RANGE_TABS.has(tab);
+    const chipsHidden = headerChipsHidden(tab);
+    if (chipsHidden && !migrated) return '';           // nothing useful to show
+    const gRange = migrated && !!(gDateFrom && gDateTo);
+    const chips = chipsHidden ? '' : `<div class="qf-chips">${GLOBAL_QUICK.map(([k, lbl]) =>
+      `<button class="qf-chip ${(!gRange && period === k) ? 'active' : ''}" data-gperiod="${k}" type="button">${lbl}</button>`).join('')}</div>`;
+    const range = migrated ? datePickerMarkup('g', gDateFrom, gDateTo) : '';
+    return `<div class="datebar">${chips}${range}</div>`;
   }
 
   // Shared custom date-range picker markup (mirrors the All Staff / LN /
@@ -505,7 +538,7 @@
     if (tab === 'leadership')    { host.innerHTML = leadership(); afterLeadership(); }
     else if (tab === 'overview') { host.innerHTML = overview(); afterOverview(); }
     else if (tab === 'staff')    {
-      const asRange = (staffDateFrom && staffDateTo) ? { from: staffDateFrom, to: staffDateTo } : null;
+      const asRange = (gDateFrom && gDateTo) ? { from: gDateFrom, to: gDateTo } : null;
       host.innerHTML = V.allStaff(period, staffTeamFilter, asRange);
       staffWire();
     }
@@ -1152,27 +1185,7 @@
       staffTeamFilter = teamSel.value;
       shell();
     });
-    // Concise date-range quick chips — set the global period, clear any range.
-    document.querySelectorAll('[data-staffperiod]').forEach(b =>
-      b.addEventListener('click', () => {
-        period = b.dataset.staffperiod; staffDateFrom = null; staffDateTo = null; shell();
-      }));
-    // Custom date-range picker — same UX as Teams Reporting / LN Stats.
-    // Overrides the topbar period once both ends are filled. Preserve focus
-    // on the field that was just changed so the user can tab to the next.
-    const _reFocusSt = (id) => { const el = document.getElementById(id); if (el) el.focus(); };
-    const sdFrom = document.getElementById('staffDateFrom');
-    const sdTo   = document.getElementById('staffDateTo');
-    if (sdFrom) sdFrom.addEventListener('change', (e) => {
-      staffDateFrom = e.target.value || null; shell(); _reFocusSt('staffDateFrom');
-    });
-    if (sdTo) sdTo.addEventListener('change', (e) => {
-      staffDateTo = e.target.value || null; shell(); _reFocusSt('staffDateTo');
-    });
-    const sdClear = document.getElementById('staffDateClear');
-    if (sdClear) sdClear.addEventListener('click', () => {
-      staffDateFrom = null; staffDateTo = null; shell();
-    });
+    // Date control lives in the shared header bar now (wired in shell()).
     sortableWire(document.getElementById('staffOverall'));
     wireAgentClicks();
     // Re-wire the LN notes expandable cells if hydration already happened
@@ -1189,8 +1202,8 @@
   async function lnReportsHydrate() {
     const lnPane = document.getElementById('staffLnReports');
     if (!lnPane) return;
-    const usingRange = !!(staffDateFrom && staffDateTo);
-    const cacheKey = usingRange ? `range:${staffDateFrom}..${staffDateTo}` : `period:${period}`;
+    const usingRange = !!(gDateFrom && gDateTo);
+    const cacheKey = usingRange ? `range:${gDateFrom}..${gDateTo}` : `period:${period}`;
     // Cache hit — render from memory.
     if (lnReportsState.cacheKey === cacheKey && lnReportsState.data) {
       lnPane.innerHTML = V.lnReports(lnReportsState.data);
@@ -1205,7 +1218,7 @@
     }
     lnReportsState = { cacheKey, loading: true, error: null, data: null };
     const loadingLabel = usingRange
-      ? `${staffDateFrom} → ${staffDateTo}`
+      ? `${gDateFrom} → ${gDateTo}`
       : ((Q.PERIODS[period]||{}).label || period);
     lnPane.innerHTML = `<div class="card card-pad" style="text-align:center;color:var(--muted);padding:40px">Loading end-of-day reports for ${escapeHtml(loadingLabel)}…</div>`;
     try {
@@ -1215,9 +1228,9 @@
       // Otherwise fall back to the period-derived range.
       let fromISO, toISO;
       if (usingRange) {
-        const [a, b] = staffDateFrom <= staffDateTo
-          ? [staffDateFrom, staffDateTo]
-          : [staffDateTo, staffDateFrom];
+        const [a, b] = gDateFrom <= gDateTo
+          ? [gDateFrom, gDateTo]
+          : [gDateTo, gDateFrom];
         fromISO = new Date(a + 'T00:00:00+02:00').toISOString();
         toISO   = new Date(b + 'T23:59:59+02:00').toISOString();
       } else {
@@ -2017,7 +2030,7 @@
     // (trend/donut/spotlights/insights) have no range baseline, so they are
     // hidden while a range is active — the KPIs, Top-6 and schedule cards
     // still re-scope to the range.
-    const ovRange = (ovDateFrom && ovDateTo) ? { from: ovDateFrom, to: ovDateTo } : null;
+    const ovRange = (gDateFrom && gDateTo) ? { from: gDateFrom, to: gDateTo } : null;
     const rangedList = ovRange ? Q.agentsForRange(ovRange.from, ovRange.to) : null;
     const rangeMeta = rangedList && rangedList._range;
     const t = rangedList ? _totalsFromList(rangedList) : Q.totalsFor(period);
@@ -2092,24 +2105,13 @@
     // weekly_data.json is completed-weeks-only, so "This Week" = the latest
     // completed week (key this-week); the true in-progress week lives on the
     // Live Floor.
-    const QUICK = [
-      ['this-week',  'This Week'],
-      ['last-week',  'Last Week'],
-      ['this-month', 'This Month'],
-      ['last-90',    'Last 90 Days'],
-    ];
-    const ovChip = ([k, lbl]) => `<button class="qf-chip ${(!ovRange && period === k) ? 'active' : ''}" data-ovperiod="${k}" type="button">${lbl}</button>`;
-    const ovCaption = ovRange ? `<div class="range-caption">Custom range · covers <b>${(rangeMeta && rangeMeta.effectiveFrom) || ovRange.from}</b> → <b>${(rangeMeta && rangeMeta.effectiveTo) || ovRange.to}</b>${rangeMeta && rangeMeta.weeksIncluded === 0 ? ' · <span style="color:var(--red)">no complete Mon-Sun weeks in range</span>' : (rangeMeta ? ` · ${rangeMeta.weeksIncluded} complete week${rangeMeta.weeksIncluded === 1 ? '' : 's'}` : '')}</div>` : '';
-    const ovFilterBar = `
-      <div class="card ov-filterbar">
-        <div class="qf-chips">${QUICK.map(ovChip).join('')}</div>
-        ${datePickerMarkup('ov', ovDateFrom, ovDateTo)}
-      </div>
-      ${ovCaption}`;
+    // Date control now lives in the shared header bar (globalDateBar). Only the
+    // range caption stays in-page, for the extra "N complete weeks" context.
+    const ovCaption = ovRange ? `<div class="range-caption" style="margin-top:0">Custom range · covers <b>${(rangeMeta && rangeMeta.effectiveFrom) || ovRange.from}</b> → <b>${(rangeMeta && rangeMeta.effectiveTo) || ovRange.to}</b>${rangeMeta && rangeMeta.weeksIncluded === 0 ? ' · <span style="color:var(--red)">no complete Mon-Sun weeks in range</span>' : (rangeMeta ? ` · ${rangeMeta.weeksIncluded} complete week${rangeMeta.weeksIncluded === 1 ? '' : 's'}` : '')}</div>` : '';
 
     return `
     <div class="tab-view">
-      ${ovFilterBar}
+      ${ovCaption}
       <!-- KPIs -->
       <div class="row kpis">
         ${kpi(I.phone,  'Total Calls',       fmt(t.calls),    d.calls,   footPrev, 'pct-of-base', Q.WEEK_CALLS)}
@@ -2279,17 +2281,7 @@
       C.miniBars(el, JSON.parse(el.dataset.series), el.dataset.color));
     document.querySelectorAll('[data-goto]').forEach(b =>
       b.addEventListener('click', () => { tab = b.dataset.goto; shell(); }));
-    // Custom date-range picker (overrides the topbar period for headline nums).
-    wireDatePicker('ov', (kind, value) => {
-      if (kind === 'from') ovDateFrom = value;
-      else if (kind === 'to') ovDateTo = value;
-      else { ovDateFrom = null; ovDateTo = null; }
-    });
-    // Curated quick-filter chips — set the global period and clear any range.
-    document.querySelectorAll('[data-ovperiod]').forEach(b =>
-      b.addEventListener('click', () => {
-        period = b.dataset.ovperiod; ovDateFrom = null; ovDateTo = null; shell();
-      }));
+    // Date control lives in the shared header bar now (wired in shell()).
     wireAgentClicks();
     wireFlagAckButtons();
   }
