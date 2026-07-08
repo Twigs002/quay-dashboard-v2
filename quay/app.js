@@ -45,6 +45,7 @@
   let liveDateTo   = null;
   let cmpAgDateFrom = null;    // Compare · Agent-vs-Agent custom range (overrides topbar period when both set)
   let cmpAgDateTo   = null;
+  let liveDesig = 'all';       // Live Floor role filter: all | rm | ln | fancy
   let chWindow = 'last-week';  // ClientHub Teams tab window: last-week | this-month | last-month
   // Active segment on the All Staff tab: 'overall' | 'per' | 'ln'. Persisted
   // across re-renders (e.g. period change) so users don't get bounced back
@@ -4182,6 +4183,9 @@
 
     if (schedule && schedule.byStaff && schedule.byStaff.size) {
       schedule.byStaff.forEach(rec => {
+        // Role filter (RM / LN / Fancy). Applied first so the summary counts
+        // and cards both reflect the selected group. 'all' shows everyone.
+        if (liveDesig !== 'all' && (rec.designation || '') !== liveDesig) return;
         totalRoster++;
         const today = rec.days && rec.days[todayKey];
         const inAt = today && today.first ? today.first : null;
@@ -4391,6 +4395,16 @@
       ${datePickerMarkup('live', liveDateFrom, liveDateTo)}
     </div>`;
 
+    // Role filter — view the live floor as RMs, LNs, or Fancy Callers only.
+    // Live-view only: the historical range path aggregates by team, not by
+    // designation, so the filter chips don't apply there.
+    const DESIG_OPTS = [['all', 'All'], ['rm', 'RM'], ['ln', 'LN'], ['fancy', 'Fancy']];
+    const desigBar = liveRange ? '' : `<div class="card ov-filterbar">
+      <div class="qf-chips">${DESIG_OPTS.map(([k, l]) =>
+        `<button class="qf-chip ${liveDesig === k ? 'active' : ''}" data-livedesig="${k}" type="button">${l}</button>`).join('')}</div>
+      <div class="live-range-label" style="font-size:12px">Filter the floor by role</div>
+    </div>`;
+
     if (liveRange) {
       const hist = Q.agentsForRange(liveRange.from, liveRange.to);
       const hm = hist._range;
@@ -4416,7 +4430,7 @@
       return `<div class="tab-view">${rangeBanner}${caption}${histCard}</div>`;
     }
 
-    return `<div class="tab-view">${rangeBanner}${staleDailyBanner}${summary}${legend}${grid}</div>`;
+    return `<div class="tab-view">${rangeBanner}${desigBar}${staleDailyBanner}${summary}${legend}${grid}</div>`;
   }
 
   function liveFloorWire() {
@@ -4428,6 +4442,9 @@
       else if (kind === 'to') liveDateTo = value;
       else { liveDateFrom = null; liveDateTo = null; }
     });
+    // Role filter chips (RM / LN / Fancy) — re-render the live tab in place.
+    document.querySelectorAll('[data-livedesig]').forEach(b =>
+      b.addEventListener('click', () => { liveDesig = b.dataset.livedesig; shell(); }));
     wireAgentClicks();
     // Warm up schedule + live_stats. Coalesce into ONE re-render at the end
     // — previously each load called render() independently, so on tab open
@@ -4786,6 +4803,7 @@
       const byStaff = new Map();
       (staff || []).forEach(s => byStaff.set(s.id, {
         id: s.id, name: s.name, days: {},
+        designation: (s.designation || '').toLowerCase(),  // rm | ln | fancy | ... — powers the Live Floor role filter
         late: 0, early: 0, missed: 0, avgStartMin: null, avgEndMin: null,
         forgotRecentTs: forgotRecentByStaff.get(s.id) || null,
         absenceToday: absencesTodayByStaff.get(s.id) || null,
