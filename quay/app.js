@@ -60,6 +60,9 @@
     ['this-week', 'This Week'], ['last-week', 'Last Week'], ['this-month', 'This Month'],
     ['last-90', 'Last 90 Days'], ['all-time', 'All Time'],
   ];
+  // Live Floor role filter, rendered into the header bar (Live Floor is
+  // today/historical, not period-based, so it gets these instead of the chips).
+  const DESIG_OPTS = [['all', 'All'], ['rm', 'RM'], ['ln', 'LN'], ['fancy', 'Fancy']];
   let liveDesig = 'all';       // Live Floor role filter: all | rm | ln | fancy
   let chWindow = 'last-week';  // ClientHub Teams tab window: last-week | this-month | last-month
   // Active segment on the All Staff tab: 'overall' | 'per' | 'ln'. Persisted
@@ -472,9 +475,22 @@
     if (GLOBAL_RANGE_TABS.has(tab)) return false;
     if (tab === 'ln')           return !!(_lnDateFrom && _lnDateTo);
     if (tab === 'teams-report') return !!(_trDateFrom && _trDateTo);
-    if (tab === 'live')         return !!(liveDateFrom && liveDateTo);
     if (tab === 'leadership')   return true; // custom-range-only tab: no quick chips
     return false;
+  }
+
+  // Live Floor's header bar — the role filter (All/RM/LN/Fancy) plus its own
+  // From/To range, consolidated up here so the floor isn't split across three
+  // bars. Live Floor is today/historical (not period-based), so it shows these
+  // instead of the quick chips. When a range is set it flips to historical
+  // mode, where the role filter no longer applies — so we swap in a label.
+  function liveDateBar() {
+    const liveRange = !!(liveDateFrom && liveDateTo);
+    const left = liveRange
+      ? `<div class="live-range-label">Historical range</div>`
+      : `<div class="qf-chips">${DESIG_OPTS.map(([k, l]) =>
+          `<button class="qf-chip ${liveDesig === k ? 'active' : ''}" data-livedesig="${k}" type="button">${l}</button>`).join('')}</div>`;
+    return `<div class="datebar">${left}${datePickerMarkup('live', liveDateFrom, liveDateTo)}</div>`;
   }
 
   // Full-width date bar below the topbar — the single date control on every tab
@@ -483,6 +499,7 @@
   // tabs keep their own in-page range picker, so we render chips only for them.
   function globalDateBar(tab) {
     if (tab === 'payroll') return '';
+    if (tab === 'live') return liveDateBar();   // role filter + its own range
     const migrated = GLOBAL_RANGE_TABS.has(tab);
     const chipsHidden = headerChipsHidden(tab);
     if (chipsHidden && !migrated) return '';           // nothing useful to show
@@ -4383,24 +4400,10 @@
       <span><b>Answered</b> ${escapeHtml(ANSWERED_DEF)}</span>
     </div>`;
 
-    // Date-range banner. Live Floor is realtime by default; when a range is
-    // set it switches to a historical per-agent aggregation for that span
-    // (the live cards / today summary don't apply to a past window).
+    // Live Floor is realtime by default; when a range is set (via the header
+    // bar) it switches to a historical per-agent aggregation for that span.
+    // The date picker + role filter live in the header now (see liveDateBar).
     const liveRange = (liveDateFrom && liveDateTo) ? { from: liveDateFrom, to: liveDateTo } : null;
-    const rangeBanner = `<div class="card ov-filterbar" style="justify-content:space-between">
-      <div class="live-range-label">${liveRange ? 'Historical range' : 'Live floor · today'}</div>
-      ${datePickerMarkup('live', liveDateFrom, liveDateTo)}
-    </div>`;
-
-    // Role filter — view the live floor as RMs, LNs, or Fancy Callers only.
-    // Live-view only: the historical range path aggregates by team, not by
-    // designation, so the filter chips don't apply there.
-    const DESIG_OPTS = [['all', 'All'], ['rm', 'RM'], ['ln', 'LN'], ['fancy', 'Fancy']];
-    const desigBar = liveRange ? '' : `<div class="card ov-filterbar">
-      <div class="qf-chips">${DESIG_OPTS.map(([k, l]) =>
-        `<button class="qf-chip ${liveDesig === k ? 'active' : ''}" data-livedesig="${k}" type="button">${l}</button>`).join('')}</div>
-      <div class="live-range-label" style="font-size:12px">Filter the floor by role</div>
-    </div>`;
 
     if (liveRange) {
       const hist = Q.agentsForRange(liveRange.from, liveRange.to);
@@ -4424,10 +4427,10 @@
           <tbody>${rows}</tbody>
         </table></div></div>`
         : `<div class="card card-pad" style="text-align:center;color:var(--muted);padding:48px 20px">No complete Mon-Sun weeks in the selected range.</div>`;
-      return `<div class="tab-view">${rangeBanner}${caption}${histCard}</div>`;
+      return `<div class="tab-view">${caption}${histCard}</div>`;
     }
 
-    return `<div class="tab-view">${rangeBanner}${desigBar}${staleDailyBanner}${summary}${legend}${grid}</div>`;
+    return `<div class="tab-view">${staleDailyBanner}${summary}${legend}${grid}</div>`;
   }
 
   function liveFloorWire() {
