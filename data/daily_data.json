@@ -1,7 +1,457 @@
 [
   {
+    "date": "2026-07-08",
+    "generated": "2026-07-08T07:21:59.250424+00:00",
+    "rm": [
+      {
+        "name": "Test",
+        "calls": 78,
+        "success": 11,
+        "seller": 1,
+        "rental": 0,
+        "email": 9,
+        "cph": 56.1,
+        "successRate": 14.1,
+        "workTime": 1.3906,
+        "talkTime": 0.4044,
+        "wrapTime": 0.9475,
+        "pauseTime": 0.0017,
+        "waitTime": 0.0369,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB"
+        ],
+        "talkPct": 29.1,
+        "wrapPct": 68.1,
+        "waitPct": 2.7,
+        "workPct": 99.9
+      },
+      {
+        "name": "SadiqaCarelse",
+        "calls": 63,
+        "success": 6,
+        "seller": 2,
+        "rental": 0,
+        "email": 4,
+        "cph": 54.5,
+        "successRate": 9.5,
+        "workTime": 1.1556,
+        "talkTime": 0.4414,
+        "wrapTime": 0.6842,
+        "pauseTime": 0.0,
+        "waitTime": 0.03,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB"
+        ],
+        "talkPct": 38.2,
+        "wrapPct": 59.2,
+        "waitPct": 2.6,
+        "workPct": 100.0
+      },
+      {
+        "name": "Gio",
+        "calls": 57,
+        "success": 6,
+        "seller": 2,
+        "rental": 1,
+        "email": 3,
+        "cph": 40.2,
+        "successRate": 10.5,
+        "workTime": 1.4189,
+        "talkTime": 0.4308,
+        "wrapTime": 0.9544,
+        "pauseTime": 0.0036,
+        "waitTime": 0.03,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB"
+        ],
+        "talkPct": 30.4,
+        "wrapPct": 67.3,
+        "waitPct": 2.1,
+        "workPct": 99.7
+      },
+      {
+        "name": "SiphesihleSibanyoni",
+        "calls": 48,
+        "success": 10,
+        "seller": 2,
+        "rental": 0,
+        "email": 8,
+        "cph": 38.3,
+        "successRate": 20.8,
+        "workTime": 1.2539,
+        "talkTime": 0.4192,
+        "wrapTime": 0.8053,
+        "pauseTime": 0.0078,
+        "waitTime": 0.0217,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB"
+        ],
+        "talkPct": 33.4,
+        "wrapPct": 64.2,
+        "waitPct": 1.7,
+        "workPct": 99.4
+      }
+    ],
+    "fancy": [
+      {
+        "name": "Aqeefah Arendse",
+        "calls": 41,
+        "success": 7,
+        "seller": 1,
+        "rental": 0,
+        "email": 6,
+        "cph": 40.8,
+        "successRate": 17.1,
+        "workTime": 1.0042,
+        "talkTime": 0.5186,
+        "wrapTime": 0.13,
+        "pauseTime": 0.0114,
+        "waitTime": 0.3442,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "DEALMAKERS"
+        ],
+        "talkPct": 51.6,
+        "wrapPct": 12.9,
+        "waitPct": 34.3,
+        "workPct": 98.9
+      },
+      {
+        "name": "DeclanT",
+        "calls": 33,
+        "success": 4,
+        "seller": 0,
+        "rental": 0,
+        "email": 4,
+        "cph": 41.3,
+        "successRate": 12.1,
+        "workTime": 0.7992,
+        "talkTime": 0.4325,
+        "wrapTime": 0.0828,
+        "pauseTime": 0.0322,
+        "waitTime": 0.2517,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "DEALMAKERS"
+        ],
+        "talkPct": 54.1,
+        "wrapPct": 10.4,
+        "waitPct": 31.5,
+        "workPct": 96.1
+      },
+      {
+        "name": "GenevaGomes",
+        "calls": 30,
+        "success": 4,
+        "seller": 0,
+        "rental": 0,
+        "email": 4,
+        "cph": 42.6,
+        "successRate": 13.3,
+        "workTime": 0.7047,
+        "talkTime": 0.3497,
+        "wrapTime": 0.0997,
+        "pauseTime": 0.0097,
+        "waitTime": 0.2456,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "WEASELS"
+        ],
+        "talkPct": 49.6,
+        "wrapPct": 14.1,
+        "waitPct": 34.9,
+        "workPct": 98.6
+      },
+      {
+        "name": "ZivanaKriel",
+        "calls": 26,
+        "success": 8,
+        "seller": 4,
+        "rental": 0,
+        "email": 3,
+        "cph": 25.3,
+        "successRate": 30.8,
+        "workTime": 1.0266,
+        "talkTime": 0.4319,
+        "wrapTime": 0.2389,
+        "pauseTime": 0.0031,
+        "waitTime": 0.3528,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "AMIGOS",
+          "AMIGOS_NEW",
+          "SLAYERS"
+        ],
+        "talkPct": 42.1,
+        "wrapPct": 23.3,
+        "waitPct": 34.4,
+        "workPct": 99.7
+      },
+      {
+        "name": "TamzinJacobs",
+        "calls": 18,
+        "success": 4,
+        "seller": 1,
+        "rental": 0,
+        "email": 3,
+        "cph": 42.1,
+        "successRate": 22.2,
+        "workTime": 0.4278,
+        "talkTime": 0.1967,
+        "wrapTime": 0.0458,
+        "pauseTime": 0.0056,
+        "waitTime": 0.1797,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "HOEKERS"
+        ],
+        "talkPct": 46.0,
+        "wrapPct": 10.7,
+        "waitPct": 42.0,
+        "workPct": 98.7
+      },
+      {
+        "name": "JoshAdonis",
+        "calls": 18,
+        "success": 0,
+        "seller": 0,
+        "rental": 0,
+        "email": 0,
+        "cph": 42.1,
+        "successRate": 0.0,
+        "workTime": 0.4278,
+        "talkTime": 0.0522,
+        "wrapTime": 0.2253,
+        "pauseTime": 0.0072,
+        "waitTime": 0.1431,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "HOOLIGANS"
+        ],
+        "talkPct": 12.2,
+        "wrapPct": 52.7,
+        "waitPct": 33.5,
+        "workPct": 98.3
+      },
+      {
+        "name": "BronwynBotha",
+        "calls": 13,
+        "success": 0,
+        "seller": 0,
+        "rental": 0,
+        "email": 0,
+        "cph": 58.1,
+        "successRate": 0.0,
+        "workTime": 0.2236,
+        "talkTime": 0.0603,
+        "wrapTime": 0.1119,
+        "pauseTime": 0.0,
+        "waitTime": 0.0514,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "DUTCHMEN"
+        ],
+        "talkPct": 27.0,
+        "wrapPct": 50.0,
+        "waitPct": 23.0,
+        "workPct": 100.0
+      },
+      {
+        "name": "QhayiyaDayimani",
+        "calls": 2,
+        "success": 0,
+        "seller": 0,
+        "rental": 0,
+        "email": 0,
+        "cph": 30.3,
+        "successRate": 0.0,
+        "workTime": 0.0661,
+        "talkTime": 0.0053,
+        "wrapTime": 0.0475,
+        "pauseTime": 0.0,
+        "waitTime": 0.0133,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "HOUT_BAES"
+        ],
+        "talkPct": 8.0,
+        "wrapPct": 71.9,
+        "waitPct": 20.1,
+        "workPct": 100.0
+      }
+    ],
+    "by_agent_campaign": {
+      "ZivanaKriel": {
+        "AMIGOS_CM": {
+          "calls": 13,
+          "success": 3,
+          "seller": 1,
+          "rental": 0,
+          "email": 2,
+          "workTime": 0.3436,
+          "talkTime": 0.1517
+        },
+        "AMIGOS_NEW": {
+          "calls": 2,
+          "success": 2,
+          "seller": 1,
+          "rental": 0,
+          "email": 1,
+          "workTime": 0.2036,
+          "talkTime": 0.0594
+        },
+        "SLAYERS_CM": {
+          "calls": 11,
+          "success": 3,
+          "seller": 2,
+          "rental": 0,
+          "email": 0,
+          "workTime": 0.4794,
+          "talkTime": 0.2208
+        }
+      },
+      "Aqeefah Arendse": {
+        "DEALMAKERS_CM": {
+          "calls": 41,
+          "success": 7,
+          "seller": 1,
+          "rental": 0,
+          "email": 6,
+          "workTime": 1.0042,
+          "talkTime": 0.5186
+        }
+      },
+      "DeclanT": {
+        "DEALMAKERS_CM": {
+          "calls": 33,
+          "success": 4,
+          "seller": 0,
+          "rental": 0,
+          "email": 4,
+          "workTime": 0.7992,
+          "talkTime": 0.4325
+        }
+      },
+      "BronwynBotha": {
+        "DUTCHMEN_CM": {
+          "calls": 13,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "workTime": 0.2236,
+          "talkTime": 0.0603
+        }
+      },
+      "TamzinJacobs": {
+        "HOEKERS_CM": {
+          "calls": 18,
+          "success": 4,
+          "seller": 1,
+          "rental": 0,
+          "email": 3,
+          "workTime": 0.4278,
+          "talkTime": 0.1967
+        }
+      },
+      "JoshAdonis": {
+        "HOOLIGANS_CM": {
+          "calls": 18,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "workTime": 0.4278,
+          "talkTime": 0.0522
+        }
+      },
+      "QhayiyaDayimani": {
+        "HOUT_BAES_CM": {
+          "calls": 2,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "workTime": 0.0661,
+          "talkTime": 0.0053
+        }
+      },
+      "GenevaGomes": {
+        "WEASELS_CM": {
+          "calls": 30,
+          "success": 4,
+          "seller": 0,
+          "rental": 0,
+          "email": 4,
+          "workTime": 0.7047,
+          "talkTime": 0.3497
+        }
+      },
+      "Gio": {
+        "CLIENTHUB": {
+          "calls": 57,
+          "success": 6,
+          "seller": 2,
+          "rental": 1,
+          "email": 3,
+          "workTime": 1.4189,
+          "talkTime": 0.4308
+        }
+      },
+      "SadiqaCarelse": {
+        "CLIENTHUB": {
+          "calls": 63,
+          "success": 6,
+          "seller": 2,
+          "rental": 0,
+          "email": 4,
+          "workTime": 1.1556,
+          "talkTime": 0.4414
+        }
+      },
+      "SiphesihleSibanyoni": {
+        "CLIENTHUB": {
+          "calls": 48,
+          "success": 10,
+          "seller": 2,
+          "rental": 0,
+          "email": 8,
+          "workTime": 1.2539,
+          "talkTime": 0.4192
+        }
+      },
+      "Test": {
+        "CLIENTHUB": {
+          "calls": 78,
+          "success": 11,
+          "seller": 1,
+          "rental": 0,
+          "email": 9,
+          "workTime": 1.3906,
+          "talkTime": 0.4044
+        }
+      }
+    }
+  },
+  {
     "date": "2026-07-07",
-    "generated": "2026-07-07T19:06:03.846776+00:00",
+    "generated": "2026-07-08T07:21:59.250424+00:00",
     "rm": [
       {
         "name": "Test",
@@ -884,7 +1334,7 @@
   },
   {
     "date": "2026-07-06",
-    "generated": "2026-07-07T19:06:03.846776+00:00",
+    "generated": "2026-07-08T07:21:59.250424+00:00",
     "rm": [
       {
         "name": "Test",
@@ -1738,21 +2188,21 @@
   },
   {
     "date": "2026-07-05",
-    "generated": "2026-07-07T19:06:03.846776+00:00",
+    "generated": "2026-07-08T07:21:59.250424+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-07-04",
-    "generated": "2026-07-07T19:06:03.846776+00:00",
+    "generated": "2026-07-08T07:21:59.250424+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-07-03",
-    "generated": "2026-07-07T19:06:03.846776+00:00",
+    "generated": "2026-07-08T07:21:59.250424+00:00",
     "rm": [
       {
         "name": "SiphesihleSibanyoni",
@@ -2316,7 +2766,7 @@
   },
   {
     "date": "2026-07-02",
-    "generated": "2026-07-07T19:06:03.846776+00:00",
+    "generated": "2026-07-08T07:21:59.250424+00:00",
     "rm": [
       {
         "name": "Test",
@@ -2940,7 +3390,7 @@
   },
   {
     "date": "2026-07-01",
-    "generated": "2026-07-07T19:06:03.846776+00:00",
+    "generated": "2026-07-08T07:21:59.250424+00:00",
     "rm": [
       {
         "name": "Test",
@@ -3167,9 +3617,9 @@
         "name": "quinn",
         "calls": 32,
         "success": 18,
-        "seller": 1,
+        "seller": 0,
         "rental": 0,
-        "email": 17,
+        "email": 0,
         "cph": 19.6,
         "successRate": 56.2,
         "workTime": 1.6308,
@@ -3378,9 +3828,9 @@
         "WIZARDS_CM": {
           "calls": 32,
           "success": 18,
-          "seller": 1,
+          "seller": 0,
           "rental": 0,
-          "email": 17,
+          "email": 0,
           "workTime": 1.6308,
           "talkTime": 0.2189
         }
