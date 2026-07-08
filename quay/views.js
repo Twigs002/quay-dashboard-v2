@@ -394,11 +394,11 @@ window.VIEWS = (function () {
   function compare(period, agRange) {
     const months = (Q.monthlyBreakdown && Q.monthlyBreakdown()) || [];
     const weeksB = (Q.weeksBreakdown && Q.weeksBreakdown()) || [];
-    // Agent-vs-Agent uses the topbar period (Last Week by default) so the
-    // dropdown roster and their numbers come from the same window a user
-    // is already reasoning about elsewhere — UNLESS a custom date range is
-    // set via the picker on this panel (agRange), which then scopes both.
-    const activePeriod = period || 'this-week';
+    // Agent-vs-Agent is self-contained: Compare has no period control, so the
+    // roster + numbers default to the latest COMPLETE week rather than
+    // inheriting whatever period leaked in from another tab — UNLESS a custom
+    // date range is set via the picker on this panel (agRange), which scopes both.
+    const activePeriod = 'this-week';
     const agRangeActive = !!(agRange && agRange.from && agRange.to);
     const agentsList = agRangeActive
       ? ((Q.agentsForRange && Q.agentsForRange(agRange.from, agRange.to)) || [])
@@ -409,7 +409,7 @@ window.VIEWS = (function () {
     const agToV   = agRangeActive ? agRange.to   : '';
     const agNoteTxt = agRangeActive
       ? `Custom range · ${agFromV} → ${agToV}`
-      : 'Roster and numbers reflect the currently-active topbar period. Change the pill above, or pick a custom date range.';
+      : 'Roster & numbers use the latest complete week — pick a custom date range below to change the window.';
     const defAgA = sortedAgents[0] ? sortedAgents[0].name : '';
     const defAgB = sortedAgents[1] ? sortedAgents[1].name : (sortedAgents[0] ? sortedAgents[0].name : '');
     const agentOpts = (selected) => sortedAgents.map(a =>
@@ -518,7 +518,7 @@ window.VIEWS = (function () {
     if (!a || !b) {
       return `<div class="cmp-empty">
         <div class="cmp-empty-t">Pick two agents to compare.</div>
-        <div class="cmp-empty-s">Change the topbar period pill if the dropdowns look thin.</div>
+        <div class="cmp-empty-s">Set a custom date range on this panel if the dropdowns look thin.</div>
       </div>`;
     }
     const sameAgent = a.name === b.name;

@@ -313,6 +313,30 @@
     } catch { return ''; }
   }
 
+  // The effective date window for a tab's subtitle + print header — matches
+  // whatever date control governs that tab's body, so the header label never
+  // contradicts the on-screen data. Empty string = the tab has no date scope
+  // (or carries its own dates inline), so no label is shown.
+  function tabWindowLabel(tab) {
+    const rng = (f, t) => `${f} → ${t}`;
+    const periodLabel = () => {
+      const s = periodRangeSuffix();
+      return s ? s.replace(/^ · /, '') : ((Q.PERIODS[period] || {}).label || '');
+    };
+    if (GLOBAL_RANGE_TABS.has(tab)) return (gDateFrom && gDateTo) ? rng(gDateFrom, gDateTo) : periodLabel();
+    switch (tab) {
+      case 'live':         return (liveDateFrom && liveDateTo) ? rng(liveDateFrom, liveDateTo) : 'today';
+      case 'leadership':   return (leadDateFrom && leadDateTo) ? rng(leadDateFrom, leadDateTo) : '';
+      case 'ln':           return (_lnDateFrom && _lnDateTo)   ? rng(_lnDateFrom, _lnDateTo)   : periodLabel();
+      case 'teams-report': return (_trDateFrom && _trDateTo)   ? rng(_trDateFrom, _trDateTo)   : periodLabel();
+      case 'manager':
+      case 'sources':      return periodLabel();
+      // monthly / compare / clienthub / clocks / team / payroll carry their own
+      // dating in the body (or have none) — no header date label.
+      default:             return '';
+    }
+  }
+
   // ---------------------------------------------------- SHELL
   function shell() {
     // We're authenticated when supabase has an active session AND we know
@@ -457,11 +481,12 @@
     }
 
     const meta = TABS.find(t => t.id === tab);
+    const winLabel = tabWindowLabel(tab);
     document.getElementById('tabTitle').textContent = meta.title;
-    document.getElementById('tabSub').textContent = meta.sub + periodRangeSuffix();
+    document.getElementById('tabSub').textContent = meta.sub + (winLabel ? ` · ${winLabel}` : '');
     // Stamp print-time metadata used by the @media print header strip
     document.body.dataset.printTitle  = meta.title;
-    document.body.dataset.printPeriod = (Q.PERIODS[period] || {}).label || period;
+    document.body.dataset.printPeriod = winLabel || ((Q.PERIODS[period] || {}).label || period);
     document.body.dataset.printDate   = new Date().toLocaleDateString('en-ZA',
       { day: '2-digit', month: 'short', year: 'numeric' });
     render();
@@ -477,10 +502,11 @@
   //   clienthub    — Engine Room window selector (last-week/this-month/last-month)
   //   clocks       — embeds the quay-clock admin, which has its own pills
   //   team         — Staff Directory roster: no date dimension at all
+  //   monthly      — all-time month-by-month roll-up: ignores period entirely
   // Payroll (own Billing Period) and Live Floor (own consolidated bar) are
   // handled explicitly in globalDateBar().
   const OWN_DATE_CONTROL = new Set([
-    'leadership', 'ln', 'teams-report', 'compare', 'clienthub', 'clocks', 'team',
+    'leadership', 'ln', 'teams-report', 'compare', 'clienthub', 'clocks', 'team', 'monthly',
   ]);
 
   // Live Floor's header bar — the role filter (All/RM/LN/Fancy) plus its own
@@ -952,9 +978,11 @@
     const agbody = document.getElementById('cmpAgentBody');
     if (aga && agb && agbody) {
       const rosterFor = () => {
+        // Self-contained: latest complete week by default (Compare has no
+        // period control), matching V.compare()'s activePeriod.
         const list = (cmpAgDateFrom && cmpAgDateTo)
           ? ((Q.agentsForRange && Q.agentsForRange(cmpAgDateFrom, cmpAgDateTo)) || [])
-          : ((Q.agentsFor && Q.agentsFor(period)) || []);
+          : ((Q.agentsFor && Q.agentsFor('this-week')) || []);
         return list.slice().sort((a, b) => b.calls - a.calls);
       };
       let roster = rosterFor();
