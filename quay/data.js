@@ -193,14 +193,18 @@ window.QUAY_READY = (async function () {
   }
 
   // ---- Aggregate multiple weeks into one virtual agent list ----
-  function aggregateWeeks(weekList) {
+  // Merge a set of already-normalized per-agent lists (one per week OR per
+  // day) into cumulative totals, re-deriving rates from the sums. Shared by
+  // weekly (aggregateWeeks) and daily (aggregateDailyRange) aggregation so
+  // both paths produce identical record shapes.
+  function _mergeAgentLists(lists) {
     const byName = new Map();
-    weekList.forEach(w => {
-      agentsForWeek(w).forEach(a => {
+    lists.forEach(list => {
+      (list || []).forEach(a => {
         const key = a.name + '|' + a.team;
         const prev = byName.get(key);
         if (!prev) {
-          byName.set(key, { ...a, campaigns: a.campaigns.slice() });
+          byName.set(key, { ...a, campaigns: (a.campaigns || []).slice() });
         } else {
           prev.calls += a.calls;
           prev.leads += a.leads;
@@ -214,7 +218,7 @@ window.QUAY_READY = (async function () {
           prev.email += a.email;
           // Merge campaigns set
           const seen = new Set(prev.campaigns);
-          a.campaigns.forEach(c => { if (!seen.has(c)) prev.campaigns.push(c); });
+          (a.campaigns || []).forEach(c => { if (!seen.has(c)) prev.campaigns.push(c); });
         }
       });
     });
@@ -233,6 +237,23 @@ window.QUAY_READY = (async function () {
         connect: Math.round(talkPct),
       };
     });
+  }
+  function aggregateWeeks(weekList) {
+    return _mergeAgentLists(weekList.map(w => agentsForWeek(w)));
+  }
+  // Aggregate per-day records across [fromYmd, toYmd] inclusive. Fallback for
+  // agentsForRange when a range encloses no complete Mon–Sun week (e.g.
+  // "yesterday" or a 2–3 day span) but per-day data covers it. Returns null
+  // when no daily snapshots fall in the span. Clocked hours stay estimated
+  // (df/0.85 via _normAgent) since clock data is weekly, not daily.
+  function aggregateDailyRange(fromYmd, toYmd) {
+    const dates = dailyDates
+      .filter(d => d >= fromYmd && d <= toYmd)
+      .sort();                                   // ascending: oldest → newest
+    if (!dates.length) return null;
+    const list = _mergeAgentLists(dates.map(d => dailyFor(d)))
+      .sort((x, y) => y.calls - x.calls);
+    return { list, dates };
   }
 
   // ---- Period selectors ----------------------------------------------------
@@ -333,6 +354,23 @@ window.QUAY_READY = (async function () {
         snappedTo = `${yyyy}-${mm}-${dd}`;
         const snapped = enclose(a, snappedTo);
         if (snapped.length > 0) slice = snapped;
+      }
+    }
+    // Daily fallback: still no complete week enclosed, but we DO have per-day
+    // snapshots covering the requested span — aggregate those so single-day
+    // ("yesterday") and partial-week ranges show real numbers instead of an
+    // empty "no complete weeks" state.
+    if (slice.length === 0) {
+      const daily = aggregateDailyRange(a, b);
+      if (daily && daily.list.length) {
+        daily.list._range = {
+          requestedFrom: a, requestedTo: b,
+          effectiveFrom: daily.dates[0],
+          effectiveTo: daily.dates[daily.dates.length - 1],
+          weeksIncluded: 0, daysIncluded: daily.dates.length,
+          granularity: 'daily', autoSnappedTo: null,
+        };
+        return daily.list;
       }
     }
     const list = aggregateWeeks(slice).sort((x, y) => y.calls - x.calls);

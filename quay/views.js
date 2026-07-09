@@ -91,7 +91,15 @@ window.VIEWS = (function () {
     // as the Teams Reporting tab so directors read one consistent label.
     let rangeCaption = '';
     if (usingRange) {
-      if (rangeMeta && rangeMeta.weeksIncluded > 0) {
+      if (rangeMeta && rangeMeta.granularity === 'daily') {
+        // Sub-week span served from per-day snapshots (e.g. yesterday).
+        const n = rangeMeta.daysIncluded || 0;
+        rangeCaption = `<div class="sub" style="margin-top:6px">
+          Custom range · covers <b>${rangeMeta.effectiveFrom}</b> → <b>${rangeMeta.effectiveTo}</b>
+          · ${n} day${n === 1 ? '' : 's'} <span class="muted">· per-day data (clocked hours estimated)</span>
+          <span class="muted">(quick-period chips ignored while this is set)</span>
+        </div>`;
+      } else if (rangeMeta && rangeMeta.weeksIncluded > 0) {
         const snapNote = rangeMeta.autoSnappedTo
           ? ` <span class="muted">· auto-extended to ${rangeMeta.autoSnappedTo} so the last Mon–Sun week is included</span>`
           : '';
@@ -103,7 +111,7 @@ window.VIEWS = (function () {
       } else {
         rangeCaption = `<div class="sub" style="margin-top:6px;color:#D20A03">
           Custom range · ${range.from} → ${range.to}
-          · no complete Mon–Sun weeks in this range
+          · no data for this range
         </div>`;
       }
     }
