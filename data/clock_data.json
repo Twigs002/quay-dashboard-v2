@@ -99,11 +99,11 @@
       "sessions": 3
     },
     {
-      "hours": 15.714,
+      "hours": 24.606,
       "id": "craig-carroll",
       "name": "Craig Carroll",
       "name_normalised": "Craig Carroll",
-      "sessions": 2
+      "sessions": 3
     },
     {
       "hours": 21.896,
@@ -113,11 +113,11 @@
       "sessions": 3
     },
     {
-      "hours": 17.989,
+      "hours": 26.975,
       "id": "jason-hendricks",
       "name": "Jason Hendricks",
       "name_normalised": "Jason Hendricks",
-      "sessions": 2
+      "sessions": 3
     },
     {
       "hours": 26.845,
@@ -127,11 +127,11 @@
       "sessions": 3
     },
     {
-      "hours": 21.181,
+      "hours": 23.785,
       "id": "josh-adonis",
       "name": "Josh Adonis",
       "name_normalised": "Josh Adonis",
-      "sessions": 4
+      "sessions": 5
     },
     {
       "hours": 27.087,
@@ -253,11 +253,11 @@
       "sessions": 2
     },
     {
-      "hours": 9.817,
+      "hours": 18.099,
       "id": "zivana-kriel",
       "name": "Zivana Kriel",
       "name_normalised": "Zivana Kriel",
-      "sessions": 3
+      "sessions": 4
     },
     {
       "hours": 20.153,
@@ -3442,11 +3442,11 @@
         "sessions": 3
       },
       {
-        "hours": 15.714,
+        "hours": 24.606,
         "id": "craig-carroll",
         "name": "Craig Carroll",
         "name_normalised": "Craig Carroll",
-        "sessions": 2
+        "sessions": 3
       },
       {
         "hours": 21.896,
@@ -3456,11 +3456,11 @@
         "sessions": 3
       },
       {
-        "hours": 17.989,
+        "hours": 26.975,
         "id": "jason-hendricks",
         "name": "Jason Hendricks",
         "name_normalised": "Jason Hendricks",
-        "sessions": 2
+        "sessions": 3
       },
       {
         "hours": 26.845,
@@ -3470,11 +3470,11 @@
         "sessions": 3
       },
       {
-        "hours": 21.181,
+        "hours": 23.785,
         "id": "josh-adonis",
         "name": "Josh Adonis",
         "name_normalised": "Josh Adonis",
-        "sessions": 4
+        "sessions": 5
       },
       {
         "hours": 27.087,
@@ -3596,11 +3596,11 @@
         "sessions": 2
       },
       {
-        "hours": 9.817,
+        "hours": 18.099,
         "id": "zivana-kriel",
         "name": "Zivana Kriel",
         "name_normalised": "Zivana Kriel",
-        "sessions": 3
+        "sessions": 4
       },
       {
         "hours": 20.153,
@@ -3618,7 +3618,7 @@
       }
     ]
   },
-  "generated_at": "2026-07-08T18:38:51.259815+00:00",
+  "generated_at": "2026-07-09T04:40:15.160411+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -3721,11 +3721,11 @@
           "sessions": 37
         },
         {
-          "hours": 464.082,
+          "hours": 473.068,
           "id": "jason-hendricks",
           "name": "Jason Hendricks",
           "name_normalised": "Jason Hendricks",
-          "sessions": 54
+          "sessions": 55
         },
         {
           "hours": 348.3,
@@ -3756,11 +3756,11 @@
           "sessions": 38
         },
         {
-          "hours": 395.653,
+          "hours": 404.545,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
-          "sessions": 47
+          "sessions": 48
         },
         {
           "hours": 382.178,
@@ -3847,11 +3847,11 @@
           "sessions": 49
         },
         {
-          "hours": 301.069,
+          "hours": 303.673,
           "id": "josh-adonis",
           "name": "Josh Adonis",
           "name_normalised": "Josh Adonis",
-          "sessions": 40
+          "sessions": 41
         },
         {
           "hours": 391.901,
@@ -3903,11 +3903,11 @@
           "sessions": 26
         },
         {
-          "hours": 339.501,
+          "hours": 347.783,
           "id": "zivana-kriel",
           "name": "Zivana Kriel",
           "name_normalised": "Zivana Kriel",
-          "sessions": 43
+          "sessions": 44
         },
         {
           "hours": 233.899,
@@ -4043,8 +4043,8 @@
           "sessions": 6
         }
       ],
-      "from": "2025-07-09T00:00:00+00:00",
-      "to": "2026-07-08T23:59:59+00:00"
+      "from": "2025-07-10T00:00:00+00:00",
+      "to": "2026-07-09T23:59:59+00:00"
     },
     "billing-period": {
       "agents": [
@@ -4056,11 +4056,11 @@
           "sessions": 17
         },
         {
-          "hours": 89.217,
+          "hours": 97.499,
           "id": "zivana-kriel",
           "name": "Zivana Kriel",
           "name_normalised": "Zivana Kriel",
-          "sessions": 14
+          "sessions": 15
         },
         {
           "hours": 114.608,
@@ -4140,11 +4140,11 @@
           "sessions": 13
         },
         {
-          "hours": 61.602,
+          "hours": 64.206,
           "id": "josh-adonis",
           "name": "Josh Adonis",
           "name_normalised": "Josh Adonis",
-          "sessions": 9
+          "sessions": 10
         },
         {
           "hours": 85.451,
@@ -4224,11 +4224,11 @@
           "sessions": 14
         },
         {
-          "hours": 75.37,
+          "hours": 84.262,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
-          "sessions": 9
+          "sessions": 10
         },
         {
           "hours": 69.436,
@@ -4266,11 +4266,11 @@
           "sessions": 2
         },
         {
-          "hours": 80.031,
+          "hours": 89.017,
           "id": "jason-hendricks",
           "name": "Jason Hendricks",
           "name_normalised": "Jason Hendricks",
-          "sessions": 9
+          "sessions": 10
         },
         {
           "hours": 67.448,
@@ -4447,11 +4447,11 @@
           "sessions": 37
         },
         {
-          "hours": 464.082,
+          "hours": 473.068,
           "id": "jason-hendricks",
           "name": "Jason Hendricks",
           "name_normalised": "Jason Hendricks",
-          "sessions": 54
+          "sessions": 55
         },
         {
           "hours": 348.3,
@@ -4482,11 +4482,11 @@
           "sessions": 38
         },
         {
-          "hours": 395.653,
+          "hours": 404.545,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
-          "sessions": 47
+          "sessions": 48
         },
         {
           "hours": 382.178,
@@ -4573,11 +4573,11 @@
           "sessions": 49
         },
         {
-          "hours": 301.069,
+          "hours": 303.673,
           "id": "josh-adonis",
           "name": "Josh Adonis",
           "name_normalised": "Josh Adonis",
-          "sessions": 40
+          "sessions": 41
         },
         {
           "hours": 391.901,
@@ -4629,11 +4629,11 @@
           "sessions": 26
         },
         {
-          "hours": 339.501,
+          "hours": 347.783,
           "id": "zivana-kriel",
           "name": "Zivana Kriel",
           "name_normalised": "Zivana Kriel",
-          "sessions": 43
+          "sessions": 44
         },
         {
           "hours": 233.899,
@@ -4769,8 +4769,8 @@
           "sessions": 6
         }
       ],
-      "from": "2026-04-10T00:00:00+00:00",
-      "to": "2026-07-08T23:59:59+00:00"
+      "from": "2026-04-11T00:00:00+00:00",
+      "to": "2026-07-09T23:59:59+00:00"
     },
     "last-week": {
       "agents": [
@@ -5096,11 +5096,11 @@
           "sessions": 21
         },
         {
-          "hours": 84.17,
+          "hours": 93.062,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
-          "sessions": 10
+          "sessions": 11
         },
         {
           "hours": 28.367,
@@ -5110,18 +5110,18 @@
           "sessions": 3
         },
         {
-          "hours": 114.865,
+          "hours": 123.851,
           "id": "jason-hendricks",
           "name": "Jason Hendricks",
           "name_normalised": "Jason Hendricks",
-          "sessions": 13
+          "sessions": 14
         },
         {
-          "hours": 93.869,
+          "hours": 96.473,
           "id": "josh-adonis",
           "name": "Josh Adonis",
           "name_normalised": "Josh Adonis",
-          "sessions": 13
+          "sessions": 14
         },
         {
           "hours": 26.666,
@@ -5187,11 +5187,11 @@
           "sessions": 5
         },
         {
-          "hours": 123.351,
+          "hours": 131.633,
           "id": "zivana-kriel",
           "name": "Zivana Kriel",
           "name_normalised": "Zivana Kriel",
-          "sessions": 18
+          "sessions": 19
         },
         {
           "hours": 141.837,
@@ -5550,11 +5550,11 @@
           "sessions": 3
         },
         {
-          "hours": 15.714,
+          "hours": 24.606,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
-          "sessions": 2
+          "sessions": 3
         },
         {
           "hours": 21.896,
@@ -5564,11 +5564,11 @@
           "sessions": 3
         },
         {
-          "hours": 17.989,
+          "hours": 26.975,
           "id": "jason-hendricks",
           "name": "Jason Hendricks",
           "name_normalised": "Jason Hendricks",
-          "sessions": 2
+          "sessions": 3
         },
         {
           "hours": 26.845,
@@ -5578,11 +5578,11 @@
           "sessions": 3
         },
         {
-          "hours": 21.181,
+          "hours": 23.785,
           "id": "josh-adonis",
           "name": "Josh Adonis",
           "name_normalised": "Josh Adonis",
-          "sessions": 4
+          "sessions": 5
         },
         {
           "hours": 27.087,
@@ -5704,11 +5704,11 @@
           "sessions": 2
         },
         {
-          "hours": 9.817,
+          "hours": 18.099,
           "id": "zivana-kriel",
           "name": "Zivana Kriel",
           "name_normalised": "Zivana Kriel",
-          "sessions": 3
+          "sessions": 4
         },
         {
           "hours": 20.153,
