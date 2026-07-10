@@ -338,7 +338,11 @@ window.QUAY_READY = (async function () {
     // "no complete Mon-Sun weeks" error. Report the snap in _range so the
     // view can render a small "auto-adjusted to X" caption.
     let snappedTo = null;
-    if (slice.length === 0) {
+    // Only auto-snap a genuine multi-day range (a !== b). A single-day pick
+    // must fall through to the daily fallback below — otherwise selecting a
+    // lone Monday would extend TO to that same week's Sunday and enclose the
+    // whole Mon-Sun week, silently turning "just Monday" into "the week".
+    if (slice.length === 0 && a !== b) {
       // Days until next Sunday (Sun=0 in JS Date). If b is already Sunday
       // there's nothing to extend, so leave it — the strict-empty case will
       // still surface a red message for that.
