@@ -156,7 +156,7 @@
     { id: 'monthly',    section: 'Time',        label: 'Monthly',        icon: I.cal2,     title: 'Monthly Breakdown',    sub: 'Month-by-month roll-up across every week of data' },
     { id: 'compare',    section: 'Time',        label: 'Compare',        icon: I.scale,    title: 'Period Comparison',    sub: 'Week vs week · month vs month' },
     { id: 'sources',    section: 'Strategy',    label: 'Lead Sources',   icon: I.target,   title: 'Lead Source Efficacy', sub: 'Which source converts best' },
-    { id: 'clienthub',  section: 'Strategy',    label: 'Engine Room',    icon: I.phone,   title: 'Engine Room calling',  sub: 'Per-team calls, seller leads & emails across the ClientHub campaigns' },
+    { id: 'clienthub',  section: 'Strategy',    label: 'Engine Room',    icon: I.phone,   title: 'Engine Room calling',  sub: 'Per-team calls, seller leads, rental leads & emails across the ClientHub campaigns' },
     { id: 'clocks',     section: 'Admin',       label: 'Clocks',         icon: I.clock,    title: 'Clocks',               sub: 'Staff hours, requests & team — manage everything in one place' },
     { id: 'team',       section: 'Admin',       label: 'Staff',          icon: I.users,    title: 'Staff Directory',      sub: 'Roster · clock-in status · forgot-to-clock-out · mark absent' },
     { id: 'payroll',    section: 'Admin',       label: 'Payroll',        icon: I.cal2,     title: 'Payroll · Divisions Allocations', sub: 'Pay-period hours by division — 21st → 20th' },
@@ -4577,6 +4577,7 @@
         <td>${escapeHtml(t.team)}</td>
         <td class="num tnum">${fmt(t.calls)}</td>
         <td class="num tnum">${fmt(t.seller || 0)}</td>
+        <td class="num tnum">${fmt(t.rental || 0)}</td>
         <td class="num tnum">${fmt(t.email || 0)}</td>
         <td class="num"><div class="cell-bar"><div class="track"><span style="width:${bar}%"></span></div></div></td>
       </tr>`;
@@ -4591,21 +4592,22 @@
       <div class="row kpis mt">
         ${kpi(I.phone,  'Total Calls',  fmt(tot.calls || 0), (tot.teams || teams.length) + ' teams')}
         ${kpi(I.target, 'Seller Leads', fmt(tot.seller || 0), 'LEAD outcomes')}
+        ${kpi(I.target, 'Rental Leads', fmt(tot.rental || 0), 'RENTAL_LEAD outcomes')}
         ${kpi(I.mail || I.target, 'Emails', fmt(tot.email || 0), 'GOT_EMAIL outcomes')}
-        ${kpi(I.trophy, 'Top Team',     teams[0] ? escapeHtml(teams[0].team) : '—', teams[0] ? fmt(teams[0].calls) + ' calls' : '—')}
       </div>
       <div class="card mt">
         <div class="card-head">
-          <div><h3>Engine Room calling</h3><div class="sub">${escapeHtml(camps)} campaigns · calls · seller leads · emails, by team</div></div>
+          <div><h3>Engine Room calling</h3><div class="sub">${escapeHtml(camps)} campaigns · calls · seller leads · rental leads · emails, by team</div></div>
           <button class="btn" id="chExport" type="button">${I.download} Export CSV</button>
         </div>
         <div class="tbl-wrap"><table class="tbl">
           <thead><tr>
             <th class="num">#</th><th>Team</th>
             <th class="num">Total Calls</th><th class="num">Seller Leads</th>
+            <th class="num">Rental Leads</th>
             <th class="num">Emails</th><th class="num">Volume</th>
           </tr></thead>
-          <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:30px">No team data for this window.</td></tr>'}</tbody>
+          <tbody>${rows || '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">No team data for this window.</td></tr>'}</tbody>
         </table></div>
       </div>
     </div>`;
@@ -4617,9 +4619,9 @@
     if (exp) exp.addEventListener('click', () => {
       const ch = Q.CLIENTHUB; const w = ch && ch.windows && ch.windows[chWindow];
       if (!w) return;
-      const head = ['Team', 'TotalCalls', 'SellerLeads', 'Emails', 'OwnerIDs'];
+      const head = ['Team', 'TotalCalls', 'SellerLeads', 'RentalLeads', 'Emails', 'OwnerIDs'];
       const lines = [head.join(',')].concat((w.teams || []).map(t => [
-        `"${(t.team || '').replace(/"/g, '""')}"`, t.calls, t.seller || 0, t.email || 0,
+        `"${(t.team || '').replace(/"/g, '""')}"`, t.calls, t.seller || 0, t.rental || 0, t.email || 0,
         `"${(t.owner_ids || []).join(' ')}"`,
       ].join(',')));
       const blob = new Blob([lines.join('\n')], { type: 'text/csv' });

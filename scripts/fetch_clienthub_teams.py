@@ -26,7 +26,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dialfire_common import (  # noqa
     API_BASE, LOCALE, SAST, dates_to_timespan, fetch_json,
-    SELLER_STATUSES, EMAIL_STATUSES,
+    SELLER_STATUSES, RENTAL_STATUSES, EMAIL_STATUSES,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -79,9 +79,10 @@ def fetch_owner_calls(cid, token, ts):
 
 
 def fetch_owner_leads(cid, token, ts):
-    """{owner_id: {seller, email}} — group by Lead_Status then Contact_Owner,
-    bucketing statuses (LEAD -> seller, GOT_EMAIL -> email). Mirrors
-    dialfire_common.fetch_lead_counts but keyed by owner instead of agent."""
+    """{owner_id: {seller, rental, email}} — group by Lead_Status then
+    Contact_Owner, bucketing statuses (LEAD -> seller, RENTAL_LEAD -> rental,
+    GOT_EMAIL -> email). Mirrors dialfire_common.fetch_lead_counts but keyed
+    by owner instead of agent."""
     url = f"{API_BASE}/api/campaigns/{cid}/reports/editsDef_v2/report/{LOCALE}"
     params = {"access_token": token, "asTree": "true", "timespan": ts,
               "group0": "Lead_Status", "group1": "Contact_Owner", "column0": "completed"}
@@ -89,13 +90,17 @@ def fetch_owner_leads(cid, token, ts):
     if not (data and isinstance(data, dict)):
         return {}
     seller_up = {s.upper() for s in SELLER_STATUSES}
+    rental_up = {s.upper() for s in RENTAL_STATUSES}
     email_up  = {s.upper() for s in EMAIL_STATUSES}
     out = {}
     for sgrp in data.get("groups", []):
         if not isinstance(sgrp, dict):
             continue
         status = str(sgrp.get("value", "")).strip().upper()
-        bucket = "seller" if status in seller_up else ("email" if status in email_up else None)
+        if   status in seller_up: bucket = "seller"
+        elif status in rental_up: bucket = "rental"
+        elif status in email_up:  bucket = "email"
+        else:                     bucket = None
         if bucket is None:
             continue
         for u in sgrp.get("groups", sgrp.get("children", [])):
@@ -105,12 +110,12 @@ def fetch_owner_leads(cid, token, ts):
             if not oid or oid == "-":
                 continue
             cols = u.get("columns") or []
-            out.setdefault(oid, {"seller": 0, "email": 0})[bucket] += int(_num(cols[0]) if cols else 0)
+            out.setdefault(oid, {"seller": 0, "rental": 0, "email": 0})[bucket] += int(_num(cols[0]) if cols else 0)
     return out
 
 
 def aggregate(owner_calls, owner_leads, owner_map):
-    """owner-id -> per-team rows {team, owner_ids, calls, seller, email}
+    """owner-id -> per-team rows {team, owner_ids, calls, seller, rental, email}
     (owners sharing a team name merge)."""
     by_team = {}
     owner_ids = set(owner_calls) | set(owner_leads)
@@ -120,16 +125,18 @@ def aggregate(owner_calls, owner_leads, owner_map):
         # numeric owner id missing from the map means the map needs a refresh.
         team = owner_map.get(oid) or ("Unassigned" if not oid.isdigit() else f"Unmapped owner {oid}")
         lead = owner_leads.get(oid) or {}
-        row = by_team.setdefault(team, {"team": team, "owner_ids": [], "calls": 0.0, "seller": 0, "email": 0})
+        row = by_team.setdefault(team, {"team": team, "owner_ids": [], "calls": 0.0, "seller": 0, "rental": 0, "email": 0})
         row["owner_ids"].append(oid)
         row["calls"] += owner_calls.get(oid, 0.0)
         row["seller"] += int(lead.get("seller", 0))
+        row["rental"] += int(lead.get("rental", 0))
         row["email"] += int(lead.get("email", 0))
     rows = [{
         "team": r["team"],
         "owner_ids": sorted(set(r["owner_ids"])),
         "calls": int(round(r["calls"])),
         "seller": r["seller"],
+        "rental": r["rental"],
         "email": r["email"],
     } for r in by_team.values()]
     rows.sort(key=lambda r: -r["calls"])
@@ -239,8 +246,9 @@ def main():
             for oid, c in calls.items():
                 owner_calls[oid] = owner_calls.get(oid, 0.0) + c
             for oid, lv in leads.items():
-                agg = owner_leads.setdefault(oid, {"seller": 0, "email": 0})
+                agg = owner_leads.setdefault(oid, {"seller": 0, "rental": 0, "email": 0})
                 agg["seller"] += lv.get("seller", 0)
+                agg["rental"] += lv.get("rental", 0)
                 agg["email"] += lv.get("email", 0)
         teams = aggregate(owner_calls, owner_leads, owner_map)
         windows[key] = {
@@ -250,13 +258,15 @@ def main():
             "totals": {
                 "calls": sum(t["calls"] for t in teams),
                 "seller": sum(t["seller"] for t in teams),
+                "rental": sum(t["rental"] for t in teams),
                 "email": sum(t["email"] for t in teams),
                 "teams": len(teams),
             },
         }
         print(f"[fetch_clienthub_teams] {key} ({frm}->{to}) [{'+'.join(contributors)}]: "
               f"{len(teams)} teams, {windows[key]['totals']['calls']} calls, "
-              f"{windows[key]['totals']['seller']} seller, {windows[key]['totals']['email']} email")
+              f"{windows[key]['totals']['seller']} seller, {windows[key]['totals']['rental']} rental, "
+              f"{windows[key]['totals']['email']} email")
 
     write({"generated_at": now.isoformat(),
            "campaigns": [lbl for _, _, lbl in campaigns],
