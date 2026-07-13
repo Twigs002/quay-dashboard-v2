@@ -1,5 +1,13 @@
 {
-  "agents": [],
+  "agents": [
+    {
+      "hours": 0.99,
+      "id": "aqeefah-arendse",
+      "name": "Aqeefah Arendse",
+      "name_normalised": "Aqeefah Arendse",
+      "sessions": 1
+    }
+  ],
   "by_week": {
     "2026-04-20": [
       {
@@ -2830,7 +2838,7 @@
         "sessions": 5
       },
       {
-        "hours": 29.266,
+        "hours": 22.049,
         "id": "maud",
         "name": "Sinenhlanhla Maud Mthembu",
         "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -3266,7 +3274,7 @@
         "sessions": 5
       },
       {
-        "hours": 41.43,
+        "hours": 39.089,
         "id": "maud",
         "name": "Sinenhlanhla Maud Mthembu",
         "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -3342,9 +3350,18 @@
         "name_normalised": "Admin",
         "sessions": 2
       }
+    ],
+    "2026-07-13": [
+      {
+        "hours": 0.99,
+        "id": "aqeefah-arendse",
+        "name": "Aqeefah Arendse",
+        "name_normalised": "Aqeefah Arendse",
+        "sessions": 1
+      }
     ]
   },
-  "generated_at": "2026-07-13T04:20:15.763059+00:00",
+  "generated_at": "2026-07-13T08:28:17.205890+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -3461,11 +3478,11 @@
           "sessions": 37
         },
         {
-          "hours": 402.146,
+          "hours": 403.136,
           "id": "aqeefah-arendse",
           "name": "Aqeefah Arendse",
           "name_normalised": "Aqeefah Arendse",
-          "sessions": 52
+          "sessions": 53
         },
         {
           "hours": 472.726,
@@ -3713,7 +3730,7 @@
           "sessions": 3
         },
         {
-          "hours": 86.457,
+          "hours": 76.899,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -3810,11 +3827,11 @@
           "sessions": 14
         },
         {
-          "hours": 113.878,
+          "hours": 114.868,
           "id": "aqeefah-arendse",
           "name": "Aqeefah Arendse",
           "name_normalised": "Aqeefah Arendse",
-          "sessions": 19
+          "sessions": 20
         },
         {
           "hours": 114.596,
@@ -3957,7 +3974,7 @@
           "sessions": 12
         },
         {
-          "hours": 86.457,
+          "hours": 76.899,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -4187,11 +4204,11 @@
           "sessions": 37
         },
         {
-          "hours": 402.146,
+          "hours": 403.136,
           "id": "aqeefah-arendse",
           "name": "Aqeefah Arendse",
           "name_normalised": "Aqeefah Arendse",
-          "sessions": 52
+          "sessions": 53
         },
         {
           "hours": 472.726,
@@ -4439,7 +4456,7 @@
           "sessions": 3
         },
         {
-          "hours": 86.457,
+          "hours": 76.899,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -4697,7 +4714,7 @@
           "sessions": 5
         },
         {
-          "hours": 41.43,
+          "hours": 39.089,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -4815,11 +4832,11 @@
           "sessions": 14
         },
         {
-          "hours": 113.878,
+          "hours": 114.868,
           "id": "aqeefah-arendse",
           "name": "Aqeefah Arendse",
           "name_normalised": "Aqeefah Arendse",
-          "sessions": 19
+          "sessions": 20
         },
         {
           "hours": 114.596,
@@ -4962,7 +4979,7 @@
           "sessions": 12
         },
         {
-          "hours": 86.457,
+          "hours": 76.899,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -5078,7 +5095,15 @@
       "to": "2026-07-19T23:59:59+00:00"
     },
     "this-week": {
-      "agents": [],
+      "agents": [
+        {
+          "hours": 0.99,
+          "id": "aqeefah-arendse",
+          "name": "Aqeefah Arendse",
+          "name_normalised": "Aqeefah Arendse",
+          "sessions": 1
+        }
+      ],
       "from": "2026-07-13T00:00:00+00:00",
       "to": "2026-07-19T23:59:59+00:00"
     }
