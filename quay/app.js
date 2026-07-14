@@ -2055,6 +2055,43 @@
       }
       return out;
     }
+    if (view === 'comparison') {
+      const out = [['First name', 'Last name', 'Designation', 'Division',
+        'Hours (Decimal)', 'Earned', 'Full Salary', '% of Salary', 'Shortfall']];
+      if (s.allocations) {
+        const ETOT = s.allocations.empTotalHours;
+        const EMETA = s.allocations.empMeta || new Map();
+        const agents = Array.from(ETOT.keys()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        let gEarn = 0, gSal = 0, gDiff = 0;
+        agents.forEach(agent => {
+          const total = ETOT.get(agent) || 0;
+          const meta = EMETA.get(agent) || {};
+          const rate = meta.hourlyRate;
+          const salary = meta.salary;
+          const earned = rate != null ? total * rate : null;
+          const canCompare = earned != null && salary != null;
+          const diff = canCompare ? (salary - earned) : null;
+          const pct = canCompare && salary > 0 ? (earned / salary) * 100 : null;
+          if (earned != null) gEarn += earned;
+          if (salary != null) gSal += salary;
+          if (canCompare) gDiff += diff;
+          const parts = (agent || '').split(/\s+/);
+          const fn = parts.slice(0, -1).join(' ') || parts[0] || '';
+          const ln = parts.length > 1 ? parts[parts.length - 1] : '';
+          out.push([fn, ln, meta.designation || '', meta.division || '',
+            total.toFixed(2),
+            earned == null ? '' : earned.toFixed(2),
+            salary == null ? '' : salary.toFixed(2),
+            pct == null ? '' : pct.toFixed(0),
+            diff == null ? '' : diff.toFixed(2)]);
+        });
+        const gPct = gSal > 0 ? (gEarn / gSal) * 100 : null;
+        out.push(['TOTAL', '', '', '', '',
+          gEarn.toFixed(2), gSal.toFixed(2),
+          gPct == null ? '' : gPct.toFixed(0), gDiff.toFixed(2)]);
+      }
+      return out;
+    }
     if (view === 'byDivision') {
       // Wide pivot — match the on-screen layout.
       const ETH = s.allocations ? s.allocations.empTeamHours : new Map();
