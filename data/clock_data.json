@@ -50,6 +50,13 @@
       "sessions": 1
     },
     {
+      "hours": 7.829,
+      "id": "maud",
+      "name": "Sinenhlanhla Maud Mthembu",
+      "name_normalised": "Sinenhlanhla Maud Mthembu",
+      "sessions": 1
+    },
+    {
       "hours": 9.014,
       "id": "basil-tambwe",
       "name": "Basil Tambwe",
@@ -176,13 +183,6 @@
       "sessions": 1
     },
     {
-      "hours": 8.052,
-      "id": "maud",
-      "name": "Sinenhlanhla Maud Mthembu",
-      "name_normalised": "Sinenhlanhla Maud Mthembu",
-      "sessions": 1
-    },
-    {
       "hours": 9.302,
       "id": "declan",
       "name": "Declan Ryder Tyler",
@@ -190,7 +190,7 @@
       "sessions": 1
     },
     {
-      "hours": 8.619,
+      "hours": 9.452,
       "id": "claire",
       "name": "Claire Murch",
       "name_normalised": "Claire Murch",
@@ -3386,7 +3386,7 @@
         "sessions": 5
       },
       {
-        "hours": 30.68,
+        "hours": 21.583,
         "id": "claire",
         "name": "Claire Murch",
         "name_normalised": "Claire Murch",
@@ -3498,7 +3498,7 @@
         "sessions": 5
       },
       {
-        "hours": 39.089,
+        "hours": 30.896,
         "id": "maud",
         "name": "Sinenhlanhla Maud Mthembu",
         "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -3623,6 +3623,13 @@
         "id": "simone-vermeulen",
         "name": "Simone Vermeulen",
         "name_normalised": "Simone Vermeulen",
+        "sessions": 1
+      },
+      {
+        "hours": 7.829,
+        "id": "maud",
+        "name": "Sinenhlanhla Maud Mthembu",
+        "name_normalised": "Sinenhlanhla Maud Mthembu",
         "sessions": 1
       },
       {
@@ -3752,13 +3759,6 @@
         "sessions": 1
       },
       {
-        "hours": 8.052,
-        "id": "maud",
-        "name": "Sinenhlanhla Maud Mthembu",
-        "name_normalised": "Sinenhlanhla Maud Mthembu",
-        "sessions": 1
-      },
-      {
         "hours": 9.302,
         "id": "declan",
         "name": "Declan Ryder Tyler",
@@ -3766,7 +3766,7 @@
         "sessions": 1
       },
       {
-        "hours": 8.619,
+        "hours": 9.452,
         "id": "claire",
         "name": "Claire Murch",
         "name_normalised": "Claire Murch",
@@ -3809,7 +3809,7 @@
       }
     ]
   },
-  "generated_at": "2026-07-14T04:03:08.511204+00:00",
+  "generated_at": "2026-07-14T07:19:23.320161+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -4178,7 +4178,7 @@
           "sessions": 3
         },
         {
-          "hours": 84.951,
+          "hours": 76.535,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -4213,7 +4213,7 @@
           "sessions": 12
         },
         {
-          "hours": 95.551,
+          "hours": 87.287,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
@@ -4422,7 +4422,7 @@
           "sessions": 13
         },
         {
-          "hours": 84.951,
+          "hours": 76.535,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -4499,7 +4499,7 @@
           "sessions": 12
         },
         {
-          "hours": 95.551,
+          "hours": 87.287,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
@@ -4904,7 +4904,7 @@
           "sessions": 3
         },
         {
-          "hours": 84.951,
+          "hours": 76.535,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -4939,7 +4939,7 @@
           "sessions": 12
         },
         {
-          "hours": 95.551,
+          "hours": 87.287,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
@@ -5050,7 +5050,7 @@
           "sessions": 5
         },
         {
-          "hours": 30.68,
+          "hours": 21.583,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
@@ -5162,7 +5162,7 @@
           "sessions": 5
         },
         {
-          "hours": 39.089,
+          "hours": 30.896,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -5427,7 +5427,7 @@
           "sessions": 13
         },
         {
-          "hours": 84.951,
+          "hours": 76.535,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -5504,7 +5504,7 @@
           "sessions": 12
         },
         {
-          "hours": 95.551,
+          "hours": 87.287,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
@@ -5591,6 +5591,13 @@
           "id": "simone-vermeulen",
           "name": "Simone Vermeulen",
           "name_normalised": "Simone Vermeulen",
+          "sessions": 1
+        },
+        {
+          "hours": 7.829,
+          "id": "maud",
+          "name": "Sinenhlanhla Maud Mthembu",
+          "name_normalised": "Sinenhlanhla Maud Mthembu",
           "sessions": 1
         },
         {
@@ -5720,13 +5727,6 @@
           "sessions": 1
         },
         {
-          "hours": 8.052,
-          "id": "maud",
-          "name": "Sinenhlanhla Maud Mthembu",
-          "name_normalised": "Sinenhlanhla Maud Mthembu",
-          "sessions": 1
-        },
-        {
           "hours": 9.302,
           "id": "declan",
           "name": "Declan Ryder Tyler",
@@ -5734,7 +5734,7 @@
           "sessions": 1
         },
         {
-          "hours": 8.619,
+          "hours": 9.452,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
