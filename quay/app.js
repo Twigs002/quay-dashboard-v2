@@ -5868,8 +5868,11 @@
       ['admin_assistant', 'Admin Assistant'],
       ['rental_support',  'Rental Support'],
     ];
-    const MGR_DESIG = ['rm', 'ln', 'assistant', 'admin_assistant'];
+    const MGR_DESIG = ['rm', 'fancy', 'ln', 'assistant', 'admin_assistant'];
     let desigOpts = isSuper ? ALL_DESIG : ALL_DESIG.filter(([v]) => MGR_DESIG.includes(v));
+    // Managers may set salary + hourly rate when ADDING staff (adds run
+    // through the service-role Edge Function). Editing pay stays super-only.
+    const showPay = !isBrokerModal && (isSuper || f.mode === 'add');
     // Edit-mode safety net: if we're editing someone whose current designation
     // is outside the manager-allowed set, keep it in the list so saving does
     // not silently change it (the value stays disabled-in-spirit — the DB
@@ -5922,7 +5925,7 @@
               ${desigOpts.map(([v, l]) => `<option value="${v}" ${f.designation === v ? 'selected' : ''}>${l}</option>`).join('')}
             </select>
           </label>
-          ${isSuper ? `
+          ${showPay ? `
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
             <label class="field"><span>Hourly rate (R)</span>
               <input id="tmRate" type="number" step="0.01" min="0" value="${escapeHtml(f.hourly_rate)}" placeholder="e.g. 75.00">
@@ -5931,6 +5934,11 @@
               <input id="tmHours" type="number" step="0.5" min="0" max="80" value="${escapeHtml(f.weekly_hours)}" placeholder="e.g. 40">
             </label>
           </div>
+          <label class="field"><span>Monthly salary (R)</span>
+            <input id="tmSalary" type="number" step="0.01" min="0" value="${escapeHtml(f.salary)}" placeholder="e.g. 12000.00">
+          </label>
+          ` : ''}
+          ${isSuper ? `
           <label style="display:flex;align-items:center;gap:8px;font-size:13.5px">
             <input id="tmAdmin" type="checkbox" ${f.admin ? 'checked' : ''}>
             <span>Admin — can open the manager dashboard</span>
@@ -5982,10 +5990,10 @@
     if (addBtn) addBtn.addEventListener('click', () => {
       _teamModal = {
         mode: 'add', name: '', id: '', pin: '',
-        // Managers can only pick from RM/LN/Assistant/Admin Assistant, so
-        // default them to RM; supers keep the wider default of Fancy Caller.
+        // Managers pick from RM/Fancy/LN/Assistant/Admin Assistant; default
+        // them to RM. Supers keep the wider default of Fancy Caller.
         designation: (session && session.super) ? 'fancy' : 'rm',
-        hourly_rate: '', weekly_hours: '',
+        hourly_rate: '', weekly_hours: '', salary: '',
         admin: false, super: false,
         busy: false, error: '',
       };
@@ -6001,6 +6009,7 @@
           designation: s.designation || 'fancy',
           hourly_rate:  s.hourly_rate  != null ? String(s.hourly_rate)  : '',
           weekly_hours: s.weekly_hours != null ? String(s.weekly_hours) : '',
+          salary:       s.salary       != null ? String(s.salary)       : '',
           admin: !!s.is_admin, super: !!s.is_super,
           busy: false, error: '',
         };
@@ -6152,6 +6161,8 @@
     if (rate)  rate.addEventListener('input',  (e) => { f.hourly_rate  = e.target.value; });
     const hours = document.getElementById('tmHours');
     if (hours) hours.addEventListener('input', (e) => { f.weekly_hours = e.target.value; });
+    const salary = document.getElementById('tmSalary');
+    if (salary) salary.addEventListener('input', (e) => { f.salary = e.target.value; });
     const adm2 = document.getElementById('tmAdmin');
     if (adm2) adm2.addEventListener('change',(e) => { f.admin = e.target.checked; });
     const sup2 = document.getElementById('tmSuper');
@@ -6189,6 +6200,7 @@
           payload.is_super     = !!f.super;
           payload.hourly_rate  = f.hourly_rate  === '' ? null : Number(f.hourly_rate);
           payload.weekly_hours = f.weekly_hours === '' ? null : Number(f.weekly_hours);
+          payload.salary       = f.salary       === '' ? null : Number(f.salary);
           payload.designation  = f.designation || null;
         }
         const res = await fetch(`${CFG.SUPABASE_URL}/functions/v1/admin-create-staff`, {
@@ -6216,6 +6228,7 @@
               designation: f.designation || null,
               hourly_rate:  f.hourly_rate  === '' ? null : Number(f.hourly_rate),
               weekly_hours: f.weekly_hours === '' ? null : Number(f.weekly_hours),
+              salary:       f.salary       === '' ? null : Number(f.salary),
             };
         const { error } = await window.sb.from('staff').update(patch).eq('id', f.id);
         if (error) throw new Error(error.message);
