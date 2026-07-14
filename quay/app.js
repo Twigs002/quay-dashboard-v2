@@ -31,7 +31,7 @@
     session = s;
   }
 
-  let period = 'this-week';
+  let period = 'current-week'; // default: the live, in-progress "This Week" chip
   let tab = 'overview'; // default landing; switched to 'leadership' for superusers below
   let dailyPicked = null; // selected date on the Daily Stats tab (yyyy-mm-dd)
   let staffTeamFilter = 'all'; // 'all' | 'RM' | 'Fancy' — All Staff tab team dropdown
@@ -57,7 +57,11 @@
   // frozen Q.PERIODS keys (misleadingly named — 'this-week' is the most recent
   // COMPLETE week); labels match the picker the user signed off on.
   const GLOBAL_QUICK = [
-    ['this-week', 'This Week'], ['last-week', 'Last Week'], ['this-month', 'This Month'],
+    // 2026-07-14: shifted one week fresher. "This Week" is now the live,
+    // in-progress week (key `current-week`, aggregated from daily data);
+    // "Last Week" is the last completed full week (frozen key `this-week` =
+    // weeks[0]). The old `last-week`/"Prior Week" is no longer a chip.
+    ['current-week', 'This Week'], ['this-week', 'Last Week'], ['this-month', 'This Month'],
     ['last-90', 'Last 90 Days'], ['all-time', 'All Time'],
   ];
   // The label a user actually sees for a period key. Prefers the quick-chip
@@ -2219,7 +2223,9 @@
         <div class="src-bar"><span style="width:${(s.calls / src[0].calls) * 100}%;background:${s.color}"></span></div>
       </div>`).join('');
 
-    const footPrev = ovRange ? 'custom range · no prior baseline' : ('vs previous ' + Q.PERIODS[period].label.toLowerCase());
+    const footPrev = ovRange ? 'custom range · no prior baseline'
+      : (period === 'current-week' ? 'vs same days last week'
+        : ('vs previous ' + Q.PERIODS[period].label.toLowerCase()));
     // Quick filters + the custom-range picker as the prominent control. Chips
     // drive the global period; picking one clears any active custom range.
     // Labels are fixed here (not PERIODS[k].label) because the global period
@@ -2589,7 +2595,7 @@
           ${showPace ? `<span style="position:absolute;left:0;top:0;height:100%;width:${Math.min(100,projPct)}%;background:repeating-linear-gradient(45deg,transparent 0 5px,${fillColor}33 5px 10px);border-right:2px dashed ${fillColor};opacity:.85"></span>` : ''}
         </div>
         ${showPace ? `<div style="display:flex;justify-content:space-between;font-size:11.5px;margin-top:5px;color:var(--muted)">
-          <span>${elapsed.elapsed}/${elapsed.total} ${period === 'this-week' ? 'working days' : 'days'} elapsed</span>
+          <span>${elapsed.elapsed}/${elapsed.total} ${period === 'current-week' || period === 'this-week' ? 'working days' : 'days'} elapsed</span>
           <span>At pace: <b class="tnum" style="color:${projPct >= 95 ? 'var(--green)' : projPct >= 75 ? 'var(--amber)' : 'var(--red)'}">${fmt(projected)} (${projPct.toFixed(0)}%)</b></span>
         </div>` : ''}
       </div>`;
@@ -2605,7 +2611,9 @@
         </div>
       </div>` : '';
 
-    const leadFoot = leadRange ? 'custom range · no prior baseline' : ('vs previous ' + Q.PERIODS[period].label.toLowerCase());
+    const leadFoot = leadRange ? 'custom range · no prior baseline'
+      : (period === 'current-week' ? 'vs same days last week'
+        : ('vs previous ' + Q.PERIODS[period].label.toLowerCase()));
     const leadCaption = leadRange
       ? `<div class="range-caption">Custom range · covers <b>${(leadMeta && leadMeta.effectiveFrom) || leadRange.from}</b> → <b>${(leadMeta && leadMeta.effectiveTo) || leadRange.to}</b>${leadMeta && leadMeta.weeksIncluded === 0 ? ' · <span style="color:var(--red)">no complete Mon-Sun weeks in range</span>' : (leadMeta ? ` · ${leadMeta.weeksIncluded} complete week${leadMeta.weeksIncluded === 1 ? '' : 's'} · revenue, pace &amp; trend sections hidden for custom ranges` : '')}</div>`
       : '';
@@ -2644,7 +2652,7 @@
         ${leadRange ? '' : `<div class="card card-pad">
           <div class="card-head" style="padding:0;border:0"><div>
             <h3 style="margin:0">Pace vs last period</h3>
-            <div class="sub">${period === 'this-week' || period === 'last-week' ? 'Beat last week’s totals' : 'Beat last month’s totals'} · auto-set from actuals</div>
+            <div class="sub">${period === 'current-week' || period === 'this-week' || period === 'last-week' ? 'Beat last week’s totals' : 'Beat last month’s totals'} · auto-set from actuals</div>
           </div></div>
           ${tgtBar('Total calls', t.calls, tgtCalls)}
           ${tgtBar('Total leads',     t.leads, tgtLeads)}
@@ -2930,8 +2938,12 @@
       return { from: startOfDay(a), to: endOfDay(b), fromKey: a, toKey: b, custom: true };
     }
     let fromKey, toKey;
-    if (period === 'this-week')      { fromKey = sastMonday(now);                                                 toKey = todaySast; }
-    else if (period === 'last-week') { const d = new Date(now); d.setDate(d.getDate() - 7); fromKey = sastMonday(d); const e = new Date(fromKey + 'T00:00:00+02:00'); e.setDate(e.getDate() + 6); toKey = sastDateStr(e); }
+    // Keys mirror the header chips (2026-07-14 shift): current-week = live
+    // in-progress week (Mon→today); this-week = "Last Week" chip = last
+    // completed full week; last-week = "Prior Week" = the week before that.
+    if (period === 'current-week')   { fromKey = sastMonday(now);                                                 toKey = todaySast; }
+    else if (period === 'this-week') { const d = new Date(now); d.setDate(d.getDate() - 7); fromKey = sastMonday(d); const e = new Date(fromKey + 'T00:00:00+02:00'); e.setDate(e.getDate() + 6); toKey = sastDateStr(e); }
+    else if (period === 'last-week') { const d = new Date(now); d.setDate(d.getDate() - 14); fromKey = sastMonday(d); const e = new Date(fromKey + 'T00:00:00+02:00'); e.setDate(e.getDate() + 6); toKey = sastDateStr(e); }
     else if (period === 'this-month'){ const d = new Date(now); fromKey = sastDateStr(new Date(d.getFullYear(), d.getMonth(), 1));  toKey = todaySast; }
     else if (period === 'last-month'){ const d = new Date(now); d.setMonth(d.getMonth() - 1); fromKey = sastDateStr(new Date(d.getFullYear(), d.getMonth(), 1)); toKey = sastDateStr(new Date(d.getFullYear(), d.getMonth() + 1, 0)); }
     else if (period === 'billing-period') { const w = Q.billingPeriodWindow(); fromKey = w.fromYmd; toKey = w.toYmd; }

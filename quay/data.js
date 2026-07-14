@@ -260,12 +260,20 @@ window.QUAY_READY = (async function () {
   const PERIODS = {
     // NOTE (2026-07-06 relabel): weekly_data.json is a snapshot of the
     // last COMPLETED calendar week, not the in-progress current week — so
-    // weeks[0] is Mon-Sun of the just-finished week. The pill labels here
-    // are the human-facing names, chosen so "Last Week" (what everyone
-    // means) points at weeks[0] and matches the weekly team emailer's
-    // "Week of ..." payload. The KEY strings (this-week / last-week) stay
-    // frozen because they're used across app.js, views.js and the
-    // Overview / Compare / Daily tabs — renaming them would ripple.
+    // weeks[0] is Mon-Sun of the just-finished week. The KEY strings
+    // (this-week / last-week) stay frozen because they're used across
+    // app.js, views.js and the Overview / Compare / Daily tabs on the
+    // weeks[]-offset model — renaming them would ripple.
+    //
+    // NOTE (2026-07-14 live current week): the header chips were shifted one
+    // week fresher so "This Week" means the ACTUAL in-progress week. That is
+    // the NEW `current-week` key below — a live, week-to-date aggregation of
+    // daily_data.json (Mon → today), NOT a weeks[] slice. The frozen
+    // this-week key keeps meaning weeks[0] (= the "Last Week" chip = last
+    // completed full week); last-week (weeks[1]) is no longer a chip. See
+    // the `current-week` branches in agentsFor / campaignsFor / periodElapsed
+    // and DELTAS below, and GLOBAL_QUICK in app.js for the chip wiring.
+    'current-week':  { label: 'This Week',       weeks: 0, liveWeek: true },
     'this-week':     { label: 'Last Week',       weeks: 1  },
     'last-week':     { label: 'Prior Week',      weeks: 1, offset: 1 },
     'this-month':    { label: 'This Month',      weeks: 4  },
@@ -303,6 +311,20 @@ window.QUAY_READY = (async function () {
       fromYmd: `${startY}-${pad2(startM)}-21`,
       toYmd:   `${endY}-${pad2(endM)}-20`,
     };
+  }
+
+  // SAST-anchored current calendar week: Monday (00:00 SAST) → today. Feeds the
+  // live `current-week` period (the "This Week" chip). Returns { fromYmd, toYmd }
+  // as 'YYYY-MM-DD' so it drops straight into agentsForRange's daily fallback.
+  function currentWeekWindow(now = new Date()) {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Africa/Johannesburg',
+      year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short',
+    }).formatToParts(now);
+    const g = (t) => parts.find(p => p.type === t).value;
+    const ymd = `${g('year')}-${g('month')}-${g('day')}`;
+    const back = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 }[g('weekday')] || 0;
+    return { fromYmd: _addDaysYmd(ymd, -back), toYmd: ymd };
   }
 
   function _sliceFor(periodKey) {
@@ -421,6 +443,35 @@ window.QUAY_READY = (async function () {
   }
 
   function agentsFor(periodKey) {
+    // Live current week ("This Week" chip). weekly_data.json only holds
+    // COMPLETED weeks, so the in-progress week is aggregated from daily_data
+    // (Mon → today) via agentsForRange's daily fallback. Clocked hours come
+    // from clock_data.json's in-progress `this-week` bucket (the clock fetcher
+    // names the calendar-week-in-progress `this-week`, which is exactly this
+    // window — see the CLOCK_KEY_MAP note below for why the Dialfire keys differ).
+    if (periodKey === 'current-week') {
+      const w = currentWeekWindow();
+      const list = agentsForRange(w.fromYmd, w.toYmd);
+      const periodMap = clockByPeriod.get('this-week');
+      if (periodMap && periodMap.size > 0) {
+        list.forEach(a => {
+          const name = (a.name || '').trim();
+          let real = periodMap.get(name.toLowerCase());
+          if (real == null) {
+            const parts = name.split(/\s+/);
+            if (parts.length >= 2) {
+              real = periodMap.get((parts[0] + ' ' + parts[parts.length - 1]).toLowerCase());
+            }
+          }
+          if (real != null && real > 0) {
+            a.ct = +real.toFixed(1);
+            a.ctSource = 'clock';
+            a.eff = a.df > 0 ? Math.round((a.df / a.ct) * 100) : a.eff;
+          }
+        });
+      }
+      return list.sort((a, b) => b.calls - a.calls);
+    }
     // Billing Period is a day-based window (21st to 20th), so it does not
     // fit the weekly-slice model _sliceFor uses. Delegate to agentsForRange
     // which already knows how to aggregate Mon-Sun weeks fully inside an
@@ -555,10 +606,17 @@ window.QUAY_READY = (async function () {
 
   const DELTAS = {};
   Object.keys(PERIODS).forEach(k => { DELTAS[k] = _delta(k); });
+  // NOTE: DELTAS['current-week'] is a live week-to-date delta that needs the
+  // daily snapshots (dailyDates/dailyByDate), which are initialized further
+  // below — so it is (re)computed there, after that section, to avoid a
+  // temporal-dead-zone ReferenceError at module load.
 
   // Totals for the period immediately preceding `periodKey` — used by the
   // Leadership "progress vs last period" bars instead of hard-coded targets.
   function prevTotalsFor(periodKey) {
+    // Live current week's "previous period" baseline is the last completed
+    // full week (weeks[0]) — there is no weeks[] slice for the in-progress week.
+    if (periodKey === 'current-week') return _periodTotals(weeks.slice(0, 1));
     const p = PERIODS[periodKey] || PERIODS['this-week'];
     const prev = weeks.slice((p.offset || 0) + p.weeks,
                               (p.offset || 0) + p.weeks * 2);
@@ -677,6 +735,37 @@ window.QUAY_READY = (async function () {
   function latestDailyDate() {
     return dailyDates[0] || null;
   }
+
+  // Live current-week delta (deferred from the DELTAS block above so the daily
+  // snapshots are initialized). Compares this week-to-date against the SAME
+  // weekday span of last week (Mon..today-7) using daily data — a fair pace
+  // delta, not partial-week-vs-full-week. Falls back to zeros if either side
+  // has no daily coverage yet.
+  (function () {
+    const w = currentWeekWindow();
+    const curList = agentsFor('current-week');
+    // Compare against the SAME days that the current week actually has data
+    // for (not the nominal Mon→today window). Early in the day today's daily
+    // snapshot may not be ingested yet, so pinning the baseline to the real
+    // covered span keeps the WoW delta like-for-like instead of comparing
+    // N days against N+1. dailyDates is newest-first.
+    const curDates = dailyDates.filter(d => d >= w.fromYmd && d <= w.toYmd);
+    const prevAgg = curDates.length
+      ? aggregateDailyRange(
+          _addDaysYmd(curDates[curDates.length - 1], -7),  // oldest covered day − 7
+          _addDaysYmd(curDates[0], -7))                    // newest covered day − 7
+      : null;
+    const prevList = prevAgg ? prevAgg.list : [];
+    const sum = (list, f) => list.reduce((s, a) => s + f(a), 0);
+    const rate = (list) => { const c = sum(list, a => a.calls); return c ? (sum(list, a => a.rawSuccess || 0) / c) * 100 : 0; };
+    const pct = (n, d) => d ? +(((n - d) / d) * 100).toFixed(1) : 0;
+    DELTAS['current-week'] = {
+      calls:   pct(sum(curList, a => a.calls), sum(prevList, a => a.calls)),
+      leads:   pct(sum(curList, a => a.leads), sum(prevList, a => a.leads)),
+      success: +(rate(curList) - rate(prevList)).toFixed(1),
+      active:  curList.length - prevList.length,
+    };
+  })();
 
   // ---- Monthly Breakdown — All Time -----------------------------------------
   // One row per calendar month covering every week we have data for.
@@ -851,7 +940,19 @@ window.QUAY_READY = (async function () {
   }
 
   function campaignsFor(periodKey) {
-    const slice = _sliceFor(periodKey);
+    // Live current week: build the slice from daily snapshots (Mon → today)
+    // instead of weeks[]. Daily entries carry the same by_agent_campaign /
+    // rm / fancy shape as weekly ones, so the aggregation below is unchanged.
+    let slice;
+    if (periodKey === 'current-week') {
+      const w = currentWeekWindow();
+      slice = dailyDates
+        .filter(d => d >= w.fromYmd && d <= w.toYmd)
+        .map(d => dailyByDate.get(d))
+        .filter(Boolean);
+    } else {
+      slice = _sliceFor(periodKey);
+    }
     const byCamp = new Map();
 
     // Per-week strategy: use exact per-agent-per-campaign breakdown
@@ -947,6 +1048,13 @@ window.QUAY_READY = (async function () {
   // Other periods are historical / complete → no projection (factor=1).
   function periodElapsed(periodKey) {
     const now = new Date();
+    if (periodKey === 'current-week') {
+      // Live week-to-date: working days elapsed so far (Mon-Fri, weekend
+      // counts as the full 5). Drives the Overview pace/projection bars.
+      const dow = now.getDay(); // 0=Sun, 1=Mon..6=Sat
+      const workedDays = (dow === 0 || dow === 6) ? 5 : Math.min(5, dow);
+      return { elapsed: workedDays, total: 5, fraction: workedDays / 5, stale: false };
+    }
     if (periodKey === 'this-week') {
       // The 'this-week' bucket in weekly_data is whichever week the Dialfire
       // fetcher last wrote. On Mondays the fetcher returns last week's full
