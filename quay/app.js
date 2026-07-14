@@ -162,8 +162,7 @@
     { id: 'sources',    section: 'Strategy',    label: 'Lead Sources',   icon: I.target,   title: 'Lead Source Efficacy', sub: 'Which source converts best' },
     { id: 'clienthub',  section: 'Strategy',    label: 'Engine Room',    icon: I.phone,   title: 'Engine Room calling',  sub: 'Per-team calls, seller leads, rental leads & emails across the ClientHub campaigns' },
     { id: 'clocks',     section: 'Admin',       label: 'Clocks',         icon: I.clock,    title: 'Clocks',               sub: 'Staff hours, requests & team — manage everything in one place' },
-    { id: 'team',       section: 'Admin',       label: 'Staff',          icon: I.users,    title: 'Staff Directory',      sub: 'Roster · clock-in status · forgot-to-clock-out · mark absent' },
-    { id: 'brokers',    section: 'Admin',       label: 'Brokers',        icon: I.users,    title: 'Brokers',              sub: 'Broker logins for the HubSpot marketing dashboard · no clock-in' },
+    { id: 'team',       section: 'Admin',       label: 'Staff',          icon: I.users,    title: 'Staff Directory',      sub: 'Roster · clock-in status · forgot-to-clock-out · mark absent · broker logins' },
     { id: 'payroll',    section: 'Admin',       label: 'Payroll',        icon: I.cal2,     title: 'Payroll · Divisions Allocations', sub: 'Pay-period hours by division — 21st → 20th' },
     { id: 'teams-report', section: 'Admin',     label: 'Teams Reporting', icon: I.medal,   title: 'Teams Reporting',      sub: 'Pick teams · see who called for them (incl. cross-team) · export PDF/PNG for sharing' },
   ];
@@ -366,8 +365,7 @@
     // Payroll is visible to managers too (they need pay-period hours).
     const visibleTabs = TABS.filter(t =>
       (t.id !== 'leadership'   || session.super) &&
-      (t.id !== 'teams-report' || session.super) &&
-      (t.id !== 'brokers'      || session.super)
+      (t.id !== 'teams-report' || session.super)
     );
     // If a non-super lands on a hidden tab (e.g. via deep link), bounce to overview.
     if (!visibleTabs.find(t => t.id === tab)) tab = 'overview';
@@ -610,7 +608,6 @@
     const host = document.getElementById('content');
     if (tab === 'leadership'   && !session?.super) { tab = 'overview'; }
     if (tab === 'teams-report' && !session?.super) { tab = 'overview'; }
-    if (tab === 'brokers'      && !session?.super) { tab = 'overview'; }
     if (tab === 'leadership')    { host.innerHTML = leadership(); afterLeadership(); }
     else if (tab === 'overview') { host.innerHTML = overview(); afterOverview(); }
     else if (tab === 'staff')    {
@@ -630,7 +627,6 @@
     else if (tab === 'payroll')  { host.innerHTML = V.payroll(payrollState); payrollWire(); }
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
     else if (tab === 'team')     { host.innerHTML = renderTeamView(); wireTeamView(); }
-    else if (tab === 'brokers')  { host.innerHTML = renderBrokersView(); wireBrokersView(); }
     else if (tab === 'live')     { host.innerHTML = renderLiveFloor(); liveFloorWire(); }
     else if (tab === 'teams-report') { host.innerHTML = renderTeamsReporting(); wireTeamsReporting(); }
     // Any per-card "Export CSV" button shares the topbar export handler.
@@ -5425,7 +5421,8 @@
   let _teamSortBy = 'name';     // name | status | designation | lastClocked | forgot
   let _teamSortDir = 'asc';
   let _teamModal = null;        // form state when modal is open (staff + broker)
-  let _brokerFilter = '';       // search box on the Brokers tab
+  let _brokerFilter = '';       // search box on the Brokers sub-view
+  let _teamSubTab = 'staff';     // Staff tab sub-view: 'staff' | 'brokers' (Brokers is super-only)
   let _forgotThisWeek = [];     // forgot-to-clock-out events since Monday SAST
   let _absencesToday = new Map(); // staff_id -> {reason, reason_note, marked_by, marked_at}
   let _absenceModal = null;     // { staffId, name, reason, note, busy, error } when open
@@ -5521,13 +5518,29 @@
     }
   }
 
+  // Segmented Staff/Brokers toggle shown at the top of the Staff tab for
+  // superusers only. Brokers used to be a separate top-level Admin tab; it's
+  // now a sub-view here so broker logins sit alongside the staff roster.
+  function _staffSubToggle() {
+    const onBrokers = _teamSubTab === 'brokers';
+    return `<div class="seg" id="staffSubSeg" role="group" aria-label="Staff section" style="margin-bottom:14px">
+        <button class="${onBrokers ? '' : 'active'}" data-staff-subtab="staff" aria-pressed="${onBrokers ? 'false' : 'true'}">Staff Directory</button>
+        <button class="${onBrokers ? 'active' : ''}" data-staff-subtab="brokers" aria-pressed="${onBrokers ? 'true' : 'false'}">Brokers</button>
+      </div>`;
+  }
+
   function renderTeamView() {
     if (_team == null && !_teamLoading) {
       loadTeam().then(() => { if (tab === 'team') shell(); });
     }
-    // The Staff Directory never shows brokers — they live on the super-only
-    // Brokers tab. Filtering here (for everyone) is what keeps managers from
-    // ever seeing a broker.
+    // Brokers are a super-only sub-view of the Staff tab. Non-supers never see
+    // the toggle and are pinned to the staff roster.
+    const canBrokers = !!(session && session.super);
+    const subToggle = canBrokers ? _staffSubToggle() : '';
+    if (canBrokers && _teamSubTab === 'brokers') return renderBrokersView(subToggle);
+    // The Staff Directory never shows brokers — they live in the Brokers
+    // sub-view. Filtering here (for everyone) keeps managers from ever
+    // seeing a broker.
     const roster = (_team || []).filter(s => !isBrokerRow(s));
     const q = _teamFilter.trim().toLowerCase();
     const filtered = roster.filter(s =>
@@ -5632,6 +5645,7 @@
           </div>`).join('');
 
     return `<div class="tab-view">
+      ${subToggle}
       <div class="card card-pad" style="border-left:4px solid ${weekRows.length === 0 ? 'var(--green,#0E6B3A)' : '#8B1A1A'}">
         <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px">
           <h3 style="margin:0;font-family:var(--serif);font-size:15px">Forgot to clock out · this week</h3>
@@ -5978,6 +5992,16 @@
   }
 
   function wireTeamView() {
+    // Staff/Brokers sub-tab toggle (super-only). Switching re-renders the tab.
+    document.querySelectorAll('#staffSubSeg button[data-staff-subtab]').forEach(b => {
+      b.addEventListener('click', () => {
+        const v = b.dataset.staffSubtab;
+        if (v && v !== _teamSubTab) { _teamSubTab = v; shell(); }
+      });
+    });
+    // When the Brokers sub-view is showing, its wiring is entirely separate
+    // from the staff roster — delegate and skip the staff handlers below.
+    if (session && session.super && _teamSubTab === 'brokers') { wireBrokersView(); return; }
     const search = document.getElementById('teamSearch');
     if (search) search.addEventListener('input', (e) => {
       _teamFilter = e.target.value;
@@ -6286,9 +6310,9 @@
   // Brokers are login-only accounts for the HubSpot marketing dashboard — no
   // clock-in, no payroll. They live in the staff table (is_broker=true) and
   // reuse the shared add/edit modal in its 'broker' flavour.
-  function renderBrokersView() {
+  function renderBrokersView(subToggle = '') {
     if (_team == null && !_teamLoading) {
-      loadTeam().then(() => { if (tab === 'brokers') shell(); });
+      loadTeam().then(() => { if (tab === 'team') shell(); });
     }
     const q = _brokerFilter.trim().toLowerCase();
     const all = (_team || []).filter(isBrokerRow);
@@ -6320,6 +6344,7 @@
             </tr>`;
           }).join('');
     return `<div class="tab-view">
+      ${subToggle}
       <div class="card card-pad" style="border-left:4px solid var(--blue-800,#1B3A6B)">
         <h3 style="margin:0;font-family:var(--serif);font-size:15px">Broker logins</h3>
         <div class="muted" style="font-size:12.5px;margin-top:4px">These accounts sign into the HubSpot marketing dashboard only. They never clock in and have no payroll or performance tracking.</div>
