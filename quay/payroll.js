@@ -875,7 +875,7 @@
       if (activeView === 'allShifts') body = V.payrollAllShifts(shifts)
       else if (activeView === 'perAgent') body = V.payrollPerAgent(alloc.empTeamHours, alloc.empTotalHours, alloc.empMeta)
       else if (activeView === 'byDivision') body = V.payrollByDivision(alloc.empTeamHours, alloc.empTotalHours)
-      else if (activeView === 'divisionCosts') body = V.payrollDivisionCosts(alloc.empTeamHours, alloc.empTotalHours, alloc.empMeta)
+      else if (activeView === 'divisionCosts') body = V.payrollDivisionCosts(alloc.empTeamHours, alloc.empTotalHours, alloc.empMeta, (state && state.divCostTeam) || 'all')
       else if (activeView === 'earnings') body = V.payrollEarnings(alloc.empTotalHours, alloc.empMeta)
     }
 
@@ -1200,7 +1200,7 @@
   //                        column itself stays at PAYROLL × 0.011 too —
   //                        not halved).
   //   TOTAL FANCY/LN     = sum of DIV CONTRIBUTION across agents in this row
-  V.payrollDivisionCosts = function (empTeamHours, empTotalHours, empMeta) {
+  V.payrollDivisionCosts = function (empTeamHours, empTotalHours, empMeta, filterTeam) {
     const SDL_RATE = 0.011
 
     // Invert empTeamHours → team → Map<emp, hrs>
@@ -1213,9 +1213,6 @@
         })
       })
     }
-    let maxHead = 1
-    teamEmp.forEach(m => { if (m.size > maxHead) maxHead = m.size })
-    if (maxHead < 1) maxHead = 1
 
     const nonCanonical = []
     teamEmp.forEach((_m, t) => {
@@ -1223,6 +1220,32 @@
     })
     nonCanonical.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
     const hasNoTeam = teamEmp.has('(No team noted)')
+
+    // Full ordered list of divisions available in the picker: canonical (always
+    // listed, in master order) + any non-canonical present + the no-team bucket.
+    const allRowTeams = CONFIG.CANONICAL_TEAMS
+      .concat(nonCanonical)
+      .concat(hasNoTeam ? ['(No team noted)'] : [])
+
+    // Division filter (picker). 'all' shows every row; a valid team name narrows
+    // to just that division — which also shrinks the wide pivot's column count.
+    const activeFilter = (filterTeam && filterTeam !== 'all' && allRowTeams.includes(filterTeam))
+      ? filterTeam : 'all'
+    const rowTeams = activeFilter === 'all' ? allRowTeams : [activeFilter]
+
+    // Column count (agent blocks) is sized to the RENDERED divisions only, so
+    // filtering to one team collapses the table to that team's headcount.
+    let maxHead = 1
+    rowTeams.forEach(t => { const m = teamEmp.get(t); if (m && m.size > maxHead) maxHead = m.size })
+    if (maxHead < 1) maxHead = 1
+
+    // Note text for a division row (canonical / non-canonical / no-team).
+    const noteFor = (team) => {
+      if (team === '(No team noted)') return 'Shifts where the Employee notes field was blank'
+      if (!CONFIG.CANONICAL_SET.has(team)) return 'Not in master list'
+      const m = teamEmp.get(team)
+      return (m && m.size) ? '' : 'no agents this period'
+    }
 
     // Header — 1 (division) + 5N (agent blocks) + 1 (total) + 1 (notes)
     const headCells = ['<th>DIVISION</th>']
@@ -1302,20 +1325,21 @@
     }
 
     let body = ''
-    for (const team of CONFIG.CANONICAL_TEAMS) {
-      const members = teamEmp.get(team)
-      const note = (members && members.size) ? '' : 'no agents this period'
-      body += rowFor(team, note)
-    }
-    if (nonCanonical.length || hasNoTeam) {
-      const spanCols = 1 + maxHead * 5 + 1 + 1
-      body += `<tr class="payroll-noncanon-sep">
-        <td colspan="${spanCols}" style="background:var(--red);color:#fff;text-align:center;font-weight:700;letter-spacing:0.4px;padding:10px">
-          Not in master list — review
-        </td>
-      </tr>`
-      for (const team of nonCanonical) body += rowFor(team, 'Not in master list')
-      if (hasNoTeam) body += rowFor('(No team noted)', 'Shifts where the Employee notes field was blank')
+    if (activeFilter === 'all') {
+      for (const team of CONFIG.CANONICAL_TEAMS) body += rowFor(team, noteFor(team))
+      if (nonCanonical.length || hasNoTeam) {
+        const spanCols = 1 + maxHead * 5 + 1 + 1
+        body += `<tr class="payroll-noncanon-sep">
+          <td colspan="${spanCols}" style="background:var(--red);color:#fff;text-align:center;font-weight:700;letter-spacing:0.4px;padding:10px">
+            Not in master list — review
+          </td>
+        </tr>`
+        for (const team of nonCanonical) body += rowFor(team, 'Not in master list')
+        if (hasNoTeam) body += rowFor('(No team noted)', 'Shifts where the Employee notes field was blank')
+      }
+    } else {
+      // Single division selected via the picker.
+      body += rowFor(activeFilter, noteFor(activeFilter))
     }
 
     // Grand-total row. PAYROLL/SDL floor totals print once in slot 0;
@@ -1332,14 +1356,28 @@
     totalCells.push('<td></td>')
     body += `<tr style="background:var(--paper);font-weight:700">${totalCells.join('')}</tr>`
 
+    const teamOpts = [`<option value="all"${activeFilter === 'all' ? ' selected' : ''}>All divisions</option>`]
+      .concat(allRowTeams.map(t =>
+        `<option value="${esc(t)}"${t === activeFilter ? ' selected' : ''}>${esc(t)}</option>`))
+      .join('')
+    const subCaption = activeFilter === 'all'
+      ? 'Cost-attribution pivot · PAYROLL = total hrs × rate · SDL = 1.1% levy · DIV CONTRIBUTION = hours on this division × rate'
+      : `Showing <b>${esc(activeFilter)}</b> only · pick “All divisions” to see the full pivot`
+
     return `
       <div class="card">
         <div class="card-head">
           <div>
             <h3>Division Costs</h3>
-            <div class="sub">Cost-attribution pivot · PAYROLL = total hrs × rate · SDL = 1.1% levy · DIV CONTRIBUTION = hours on this division × rate</div>
+            <div class="sub">${subCaption}</div>
           </div>
-          ${_exportBtn()}
+          <div style="display:flex;align-items:flex-end;gap:12px">
+            <div class="field" style="margin-bottom:0">
+              <label>Division</label>
+              <select id="divCostTeamFilter" style="min-width:180px">${teamOpts}</select>
+            </div>
+            ${_exportBtn()}
+          </div>
         </div>
         <div class="tbl-wrap"><table class="tbl payroll-divcosts">
           <thead><tr>${headCells.join('')}</tr></thead>

@@ -178,6 +178,7 @@
     allocations: null,
     loading: false,
     error: null,
+    divCostTeam: 'all', // Division Costs view: 'all' or a specific division name
   };
 
   // ---------------------------------------------------- LOGIN
@@ -707,9 +708,18 @@
     document.querySelectorAll('#payrollSubNav button[data-payroll-view]').forEach(b => {
       b.addEventListener('click', () => {
         payrollState.activeView = b.dataset.payrollView;
+        // Reset the Division Costs filter when leaving that view so it doesn't
+        // silently persist an old selection when the user returns.
+        if (b.dataset.payrollView !== 'divisionCosts') payrollState.divCostTeam = 'all';
         // Re-render shell so the host pane swaps to the new sub-view.
         shell();
       });
+    });
+    // Division Costs — team/division picker (present only on that sub-view).
+    const divFilter = document.getElementById('divCostTeamFilter');
+    if (divFilter) divFilter.addEventListener('change', () => {
+      payrollState.divCostTeam = divFilter.value || 'all';
+      shell();
     });
     // First mount: hydrate config from DB, then kick off the fetch if
     // we haven't already. Config load + shift fetch run in parallel so
@@ -2030,8 +2040,23 @@
         if (!teamEmp.has(t)) teamEmp.set(t, new Map());
         teamEmp.get(t).set(emp, hrs);
       }));
+      // Division filter — mirror the on-screen picker so the CSV is WYSIWYG.
+      const _nonCanonAll = [];
+      teamEmp.forEach((_m, t) => {
+        if (!window.PAYROLL.CANONICAL_SET.has(t) && t !== '(No team noted)') _nonCanonAll.push(t);
+      });
+      const _allRowTeams = window.PAYROLL.CANONICAL_TEAMS
+        .concat(_nonCanonAll)
+        .concat(teamEmp.has('(No team noted)') ? ['(No team noted)'] : []);
+      const divFilter = (s.divCostTeam && s.divCostTeam !== 'all' && _allRowTeams.includes(s.divCostTeam))
+        ? s.divCostTeam : 'all';
       let maxHead = 1;
-      teamEmp.forEach(m => { if (m.size > maxHead) maxHead = m.size; });
+      if (divFilter === 'all') {
+        teamEmp.forEach(m => { if (m.size > maxHead) maxHead = m.size; });
+      } else {
+        const m = teamEmp.get(divFilter);
+        if (m && m.size > maxHead) maxHead = m.size;
+      }
       const header = ['Division'];
       for (let i = 1; i <= maxHead; i++) {
         header.push(`Fancy / LN name ${i}`);
@@ -2091,19 +2116,25 @@
         gtRowTotal += rowTotal;
         return row;
       };
-      window.PAYROLL.CANONICAL_TEAMS.forEach(t => {
-        const members = teamEmp.get(t);
-        out.push(rowFor(t, (members && members.size) ? '' : 'no agents this period'));
-      });
-      const nonCanon = [];
-      teamEmp.forEach((_m, t) => {
-        if (!window.PAYROLL.CANONICAL_SET.has(t) && t !== '(No team noted)') nonCanon.push(t);
-      });
-      nonCanon.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-      if (nonCanon.length || teamEmp.has('(No team noted)')) {
-        out.push(['--- Not in master list — review ---']);
-        nonCanon.forEach(t => out.push(rowFor(t, 'Not in master list')));
-        if (teamEmp.has('(No team noted)')) out.push(rowFor('(No team noted)', 'Shifts where the Employee notes field was blank'));
+      if (divFilter === 'all') {
+        window.PAYROLL.CANONICAL_TEAMS.forEach(t => {
+          const members = teamEmp.get(t);
+          out.push(rowFor(t, (members && members.size) ? '' : 'no agents this period'));
+        });
+        const nonCanon = _nonCanonAll.slice().sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        if (nonCanon.length || teamEmp.has('(No team noted)')) {
+          out.push(['--- Not in master list — review ---']);
+          nonCanon.forEach(t => out.push(rowFor(t, 'Not in master list')));
+          if (teamEmp.has('(No team noted)')) out.push(rowFor('(No team noted)', 'Shifts where the Employee notes field was blank'));
+        }
+      } else {
+        // Single division selected via the picker.
+        const isCanon = window.PAYROLL.CANONICAL_SET.has(divFilter);
+        const members = teamEmp.get(divFilter);
+        const note = divFilter === '(No team noted)' ? 'Shifts where the Employee notes field was blank'
+          : !isCanon ? 'Not in master list'
+          : (members && members.size) ? '' : 'no agents this period';
+        out.push(rowFor(divFilter, note));
       }
       // Grand-total row — floor PAYROLL/SDL in slot 0 only, per-slot CONTRIB.
       const tot = ['GRAND TOTAL'];
