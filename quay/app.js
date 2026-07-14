@@ -3053,6 +3053,22 @@
   // team filter offers the exact same picks as clock-in. Admin-managed
   // via the ln_teams table; this reference is stable for the tab's life.
   const LN_TEAMS_ALL = Q.LN_TEAMS_ALL;
+  // Archived teams (ln_teams.active = false) are hidden from managers but
+  // remain editable by superusers, who get them appended to every team
+  // picker via lnTeamUniverse(). _isArchivedTeam drives the "· archived" tag.
+  const LN_TEAMS_ARCHIVED = Q.LN_TEAMS_ARCHIVED || [];
+  const _archivedTeamSet = new Set(LN_TEAMS_ARCHIVED.map(t => String(t).toLowerCase()));
+  function lnTeamUniverse() {
+    return (session && session.super) ? LN_TEAMS_ALL.concat(LN_TEAMS_ARCHIVED) : LN_TEAMS_ALL.slice();
+  }
+  function _isArchivedTeam(name) {
+    return _archivedTeamSet.has(String(name || '').toLowerCase());
+  }
+  function _archTag(name) {
+    return _isArchivedTeam(name)
+      ? ' <span class="muted" style="font-size:10px;font-weight:600">· archived</span>'
+      : '';
+  }
 
   function _lnPeriodRange() {
     // Map the global `period` to a [from, to] SAST date range — unless
@@ -3283,7 +3299,7 @@
     // Team list = canonical clock-in roster PLUS any historical divisions
     // seen in reports (in case a team was renamed or archived after data
     // landed). Union, then sort.
-    const divisionSet = new Set(LN_TEAMS_ALL);
+    const divisionSet = new Set(lnTeamUniverse());
     allLns.forEach(r => (r.divisions || new Set()).forEach(d => d && divisionSet.add(d)));
     const divisionList = Array.from(divisionSet).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
     const roleChip = (k, label, count) =>
@@ -3315,7 +3331,7 @@
           ${filteredTeams.length === 0
             ? '<div class="muted" style="grid-column:1/-1;padding:8px;font-size:12.5px">No teams match</div>'
             : filteredTeams.map(t =>
-                `<button type="button" class="ln-team-chip ${_lnDivisionsPicked.has(t) ? 'on' : ''}" data-ln-team-toggle="${escapeHtml(t)}">${escapeHtml(t)}${_lnDivisionsPicked.has(t) ? ' ✓' : ''}</button>`).join('')}
+                `<button type="button" class="ln-team-chip ${_lnDivisionsPicked.has(t) ? 'on' : ''}" data-ln-team-toggle="${escapeHtml(t)}">${escapeHtml(t)}${_archTag(t)}${_lnDivisionsPicked.has(t) ? ' ✓' : ''}</button>`).join('')}
         </div>
       </div>` : '';
 
@@ -3716,11 +3732,14 @@
   }
 
   function _trSubsEditRowHtml(draft, isNew) {
-    // Reuses the LN_TEAMS_ALL roster for the team multi-select.
+    // Reuses the team roster for the multi-select. Superusers also get
+    // archived teams (lnTeamUniverse) so they can still edit a subscriber's
+    // teams even after a team has been retired.
     const q = (_trSubsTeamFilterQ || '').trim().toLowerCase();
+    const _subsRoster = lnTeamUniverse();
     const teamRoster = q
-      ? LN_TEAMS_ALL.filter(t => t.toLowerCase().includes(q))
-      : LN_TEAMS_ALL;
+      ? _subsRoster.filter(t => t.toLowerCase().includes(q))
+      : _subsRoster;
     const pickedCount = draft.teams.size;
     const summary = pickedCount === 0 ? 'Pick teams…'
       : pickedCount === 1 ? Array.from(draft.teams)[0]
@@ -3733,7 +3752,7 @@
         </div>
         <div class="tr-team-picker-grid">
           ${teamRoster.map(t =>
-            `<button type="button" class="tr-team-chip ${draft.teams.has(t) ? 'on' : ''}" data-trsubs-team-toggle="${escapeHtml(t)}">${escapeHtml(t)}${draft.teams.has(t) ? ' ✓' : ''}</button>`).join('')}
+            `<button type="button" class="tr-team-chip ${draft.teams.has(t) ? 'on' : ''}" data-trsubs-team-toggle="${escapeHtml(t)}">${escapeHtml(t)}${_archTag(t)}${draft.teams.has(t) ? ' ✓' : ''}</button>`).join('')}
         </div>
       </div>` : '';
     const chips = Array.from(draft.teams).sort().map(t =>
@@ -3910,7 +3929,7 @@
     // form. Dedupe by teamCanonical so 'Babes' and 'BABES' don't both
     // appear in the picker.
     const canonToPretty = new Map();
-    LN_TEAMS_ALL.forEach(t => canonToPretty.set(Q.teamCanonical(t), t));
+    lnTeamUniverse().forEach(t => canonToPretty.set(Q.teamCanonical(t), t));
     const observedByCanon = new Map();
     rows.forEach(r => r.byTeam.forEach(s => {
       const k = Q.teamCanonical(s.team);
@@ -4000,7 +4019,7 @@
           ${filteredTeams.length === 0
             ? '<div class="muted" style="grid-column:1/-1;padding:8px;font-size:12.5px">No teams match</div>'
             : filteredTeams.map(t =>
-                `<button type="button" class="tr-team-chip ${_trTeamsPicked.has(t) ? 'on' : ''}" data-tr-team-toggle="${escapeHtml(t)}">${escapeHtml(t)}${_trTeamsPicked.has(t) ? ' ✓' : ''}</button>`).join('')}
+                `<button type="button" class="tr-team-chip ${_trTeamsPicked.has(t) ? 'on' : ''}" data-tr-team-toggle="${escapeHtml(t)}">${escapeHtml(t)}${_archTag(t)}${_trTeamsPicked.has(t) ? ' ✓' : ''}</button>`).join('')}
         </div>
       </div>` : '';
 
