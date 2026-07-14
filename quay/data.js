@@ -258,24 +258,27 @@ window.QUAY_READY = (async function () {
 
   // ---- Period selectors ----------------------------------------------------
   const PERIODS = {
-    // NOTE (2026-07-06 relabel): weekly_data.json is a snapshot of the
-    // last COMPLETED calendar week, not the in-progress current week — so
-    // weeks[0] is Mon-Sun of the just-finished week. The KEY strings
-    // (this-week / last-week) stay frozen because they're used across
-    // app.js, views.js and the Overview / Compare / Daily tabs on the
-    // weeks[]-offset model — renaming them would ripple.
+    // Week model (corrected 2026-07-14): the Dialfire weekly fetcher writes
+    // weeks[0] = the IN-PROGRESS current week (it can briefly lag to the just-
+    // finished week at the very start of a week, until that week's first cron
+    // runs — periodElapsed's `stale` flag detects that). So weeks[0] = this
+    // week, weeks[1] = last completed week, weeks[2] = the week before.
+    // (An earlier 2026-07-06 note wrongly assumed weeks[0] was always the last
+    // COMPLETED week and relabelled the pills one week older — that made the
+    // dashboard permanently a week behind; reverted here.)
     //
-    // NOTE (2026-07-14 live current week): the header chips were shifted one
-    // week fresher so "This Week" means the ACTUAL in-progress week. That is
-    // the NEW `current-week` key below — a live, week-to-date aggregation of
-    // daily_data.json (Mon → today), NOT a weeks[] slice. The frozen
-    // this-week key keeps meaning weeks[0] (= the "Last Week" chip = last
-    // completed full week); last-week (weeks[1]) is no longer a chip. See
-    // the `current-week` branches in agentsFor / campaignsFor / periodElapsed
-    // and DELTAS below, and GLOBAL_QUICK in app.js for the chip wiring.
+    // `current-week` is a live, week-to-date period aggregated from
+    // daily_data.json (Mon → today), NOT a weeks[] slice. It's what the "This
+    // Week" chip uses so the in-progress week is correct even during the
+    // start-of-week weekly-fetcher lag. The frozen this-week/last-week keys
+    // keep their weeks[]-offset meaning (weeks[0] / weeks[1]) for internal
+    // callers and the "Last Week" chip. See the `current-week` branches in
+    // agentsFor / campaignsFor / periodElapsed / DELTAS below and GLOBAL_QUICK
+    // in app.js. `last-week` is date-anchored in _sliceFor so it stays the
+    // real previous calendar week even if weeks[0] is momentarily lagging.
     'current-week':  { label: 'This Week',       weeks: 0, liveWeek: true },
-    'this-week':     { label: 'Last Week',       weeks: 1  },
-    'last-week':     { label: 'Prior Week',      weeks: 1, offset: 1 },
+    'this-week':     { label: 'This Week',       weeks: 1  },
+    'last-week':     { label: 'Last Week',       weeks: 1, offset: 1 },
     'this-month':    { label: 'This Month',      weeks: 4  },
     // Billing Period follows Quay 1's payroll cycle: 21st of month M-1
     // through 20th of month M inclusive. Aggregation reuses agentsForRange
@@ -328,6 +331,16 @@ window.QUAY_READY = (async function () {
   }
 
   function _sliceFor(periodKey) {
+    // Date-anchor "Last Week" to the actual previous calendar week (weekStart
+    // === last Monday), so it stays the real last completed week even when
+    // weeks[0] is momentarily lagging to the just-finished week at the very
+    // start of a week (before that week's first Dialfire cron runs). Falls
+    // back to the plain weeks[1] offset if that week isn't in history.
+    if (periodKey === 'last-week') {
+      const lastMon = _addDaysYmd(currentWeekWindow().fromYmd, -7);
+      const w = weeks.find(x => x.weekStart === lastMon);
+      if (w) return [w];
+    }
     const p = PERIODS[periodKey] || PERIODS['this-week'];
     const start = p.offset || 0;
     return weeks.slice(start, start + p.weeks);
@@ -506,18 +519,15 @@ window.QUAY_READY = (async function () {
     // clocked hours with the real total for THIS period (rather than
     // summing per-week this-week estimates across the slice).
     //
-    // Semantic mismatch (2026-07-06): Dialfire's weekly_data.json treats
-    // weeks[0] as "last completed calendar week" (the pill labeled Last
-    // Week under the current rename), while clock_data.json's `this-week`
-    // bucket is the calendar week in progress. Without translation the
-    // pill labelled "Last Week" would show its Dialfire data for the
-    // completed week but its clock data for the in-progress week — which
-    // is exactly what produced Declan's "829 calls + 2.8h clocked" bogus
-    // row. Translate here so the clock lookup lands the same span as the
-    // Dialfire slice.
+    // Align each Dialfire weekly slice with the matching clock_data.json
+    // bucket (corrected 2026-07-14, now that weeks[0] = the in-progress week):
+    //   this-week (weeks[0], current week)  -> clock's `this-week` bucket
+    //   last-week (weeks[1], last complete) -> clock's `last-week` bucket
+    // Without this the clocked-hours override would land a different span than
+    // the calls, producing bogus "N calls + Mh clocked" rows.
     const CLOCK_KEY_MAP = {
-      'this-week':  'last-week',   // pill "Last Week"  = weeks[0] = clock's last-week bucket
-      'last-week':  null,          // pill "Prior Week" = weeks[1] — no clock bucket for the week before last; fall back to df/0.85 estimate
+      'this-week':  'this-week',   // weeks[0] = current week    = clock's this-week bucket
+      'last-week':  'last-week',   // weeks[1] = last complete   = clock's last-week bucket
       'this-month': 'this-month',
       'last-90':    'last-90',
       'all-time':   'all-time',

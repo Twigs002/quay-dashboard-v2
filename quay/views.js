@@ -406,7 +406,8 @@ window.VIEWS = (function () {
     // roster + numbers default to the latest COMPLETE week rather than
     // inheriting whatever period leaked in from another tab — UNLESS a custom
     // date range is set via the picker on this panel (agRange), which scopes both.
-    const activePeriod = 'this-week';
+    // last-week = weeks[1] (last completed); this-week is now the in-progress week.
+    const activePeriod = 'last-week';
     const agRangeActive = !!(agRange && agRange.from && agRange.to);
     const agentsList = agRangeActive
       ? ((Q.agentsForRange && Q.agentsForRange(agRange.from, agRange.to)) || [])

@@ -53,15 +53,15 @@
   // Non-migrated data tabs still show the header chips (which set `period`) and
   // keep their own in-page range picker until migrated.
   const GLOBAL_RANGE_TABS = new Set(['overview', 'staff']);
-  // Quick chips shown in the header on every tab except Payroll. Keys are the
-  // frozen Q.PERIODS keys (misleadingly named — 'this-week' is the most recent
-  // COMPLETE week); labels match the picker the user signed off on.
+  // Quick chips shown in the header on every tab except Payroll. Keys are
+  // Q.PERIODS keys; labels match the picker the user signed off on.
   const GLOBAL_QUICK = [
-    // 2026-07-14: shifted one week fresher. "This Week" is now the live,
-    // in-progress week (key `current-week`, aggregated from daily data);
-    // "Last Week" is the last completed full week (frozen key `this-week` =
-    // weeks[0]). The old `last-week`/"Prior Week" is no longer a chip.
-    ['current-week', 'This Week'], ['this-week', 'Last Week'], ['this-month', 'This Month'],
+    // "This Week" = live in-progress week (key `current-week`, aggregated from
+    // daily data so it's correct even during the start-of-week weekly-fetcher
+    // lag). "Last Week" = last completed calendar week (key `last-week`,
+    // date-anchored in data.js). weeks[0] is the current week, so `last-week`
+    // (weeks[1]) is the correct last-completed-week bucket.
+    ['current-week', 'This Week'], ['last-week', 'Last Week'], ['this-month', 'This Month'],
     ['last-90', 'Last 90 Days'], ['all-time', 'All Time'],
   ];
   // The label a user actually sees for a period key. Prefers the quick-chip
@@ -1005,10 +1005,11 @@
     if (aga && agb && agbody) {
       const rosterFor = () => {
         // Self-contained: latest complete week by default (Compare has no
-        // period control), matching V.compare()'s activePeriod.
+        // period control), matching V.compare()'s activePeriod. Uses last-week
+        // (weeks[1], last completed) — this-week is now the in-progress week.
         const list = (cmpAgDateFrom && cmpAgDateTo)
           ? ((Q.agentsForRange && Q.agentsForRange(cmpAgDateFrom, cmpAgDateTo)) || [])
-          : ((Q.agentsFor && Q.agentsFor('this-week')) || []);
+          : ((Q.agentsFor && Q.agentsFor('last-week')) || []);
         return list.slice().sort((a, b) => b.calls - a.calls);
       };
       let roster = rosterFor();
@@ -2938,12 +2939,11 @@
       return { from: startOfDay(a), to: endOfDay(b), fromKey: a, toKey: b, custom: true };
     }
     let fromKey, toKey;
-    // Keys mirror the header chips (2026-07-14 shift): current-week = live
-    // in-progress week (Mon→today); this-week = "Last Week" chip = last
-    // completed full week; last-week = "Prior Week" = the week before that.
-    if (period === 'current-week')   { fromKey = sastMonday(now);                                                 toKey = todaySast; }
-    else if (period === 'this-week') { const d = new Date(now); d.setDate(d.getDate() - 7); fromKey = sastMonday(d); const e = new Date(fromKey + 'T00:00:00+02:00'); e.setDate(e.getDate() + 6); toKey = sastDateStr(e); }
-    else if (period === 'last-week') { const d = new Date(now); d.setDate(d.getDate() - 14); fromKey = sastMonday(d); const e = new Date(fromKey + 'T00:00:00+02:00'); e.setDate(e.getDate() + 6); toKey = sastDateStr(e); }
+    // Keys mirror the header chips: current-week (and its this-week alias) =
+    // the live in-progress week (Mon→today); last-week = the last completed
+    // full calendar week.
+    if (period === 'current-week' || period === 'this-week') { fromKey = sastMonday(now); toKey = todaySast; }
+    else if (period === 'last-week') { const d = new Date(now); d.setDate(d.getDate() - 7); fromKey = sastMonday(d); const e = new Date(fromKey + 'T00:00:00+02:00'); e.setDate(e.getDate() + 6); toKey = sastDateStr(e); }
     else if (period === 'this-month'){ const d = new Date(now); fromKey = sastDateStr(new Date(d.getFullYear(), d.getMonth(), 1));  toKey = todaySast; }
     else if (period === 'last-month'){ const d = new Date(now); d.setMonth(d.getMonth() - 1); fromKey = sastDateStr(new Date(d.getFullYear(), d.getMonth(), 1)); toKey = sastDateStr(new Date(d.getFullYear(), d.getMonth() + 1, 0)); }
     else if (period === 'billing-period') { const w = Q.billingPeriodWindow(); fromKey = w.fromYmd; toKey = w.toYmd; }
