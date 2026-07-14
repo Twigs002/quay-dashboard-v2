@@ -178,7 +178,7 @@
     allocations: null,
     loading: false,
     error: null,
-    divCostTeam: 'all', // Division Costs view: 'all' or a specific division name
+    divCostTeams: [], // Division Costs view: [] = all, else selected division names
   };
 
   // ---------------------------------------------------- LOGIN
@@ -710,22 +710,92 @@
         payrollState.activeView = b.dataset.payrollView;
         // Reset the Division Costs filter when leaving that view so it doesn't
         // silently persist an old selection when the user returns.
-        if (b.dataset.payrollView !== 'divisionCosts') payrollState.divCostTeam = 'all';
+        if (b.dataset.payrollView !== 'divisionCosts') payrollState.divCostTeams = [];
         // Re-render shell so the host pane swaps to the new sub-view.
         shell();
       });
     });
-    // Division Costs — team/division picker (present only on that sub-view).
-    const divFilter = document.getElementById('divCostTeamFilter');
-    if (divFilter) divFilter.addEventListener('change', () => {
-      payrollState.divCostTeam = divFilter.value || 'all';
-      shell();
-    });
+    // Division Costs — multi-select division picker (present only on that view).
+    payrollDivPickerWire();
     // First mount: hydrate config from DB, then kick off the fetch if
     // we haven't already. Config load + shift fetch run in parallel so
     // tab open isn't bottle-necked by either.
     if (payrollState.shifts === null && !payrollState.loading) {
       payrollFetchAndRender();
+    }
+  }
+
+  // Wires the Division Costs multi-select division picker. Ticking a box
+  // re-renders ONLY the table (via V.payrollDivisionCostsTable) so the open
+  // menu, its search text and scroll position all survive — no full shell().
+  let _divPickerDocBound = false;
+  function payrollDivPickerWire() {
+    const btn = document.getElementById('divCostPickerBtn');
+    const menu = document.getElementById('divCostMenu');
+    if (!btn || !menu) return;
+    const list = document.getElementById('divCostList');
+    const search = document.getElementById('divCostSearch');
+    const clearBtn = document.getElementById('divCostClear');
+    const V = window.VIEWS || {};
+
+    const closeMenu = () => { menu.style.display = 'none'; btn.setAttribute('aria-expanded', 'false'); };
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (menu.style.display === 'block') { closeMenu(); return; }
+      menu.style.display = 'block';
+      btn.setAttribute('aria-expanded', 'true');
+      if (search) search.focus();
+    });
+    // Clicks inside the menu shouldn't reach the document outside-click closer.
+    menu.addEventListener('click', (e) => e.stopPropagation());
+
+    const applySelection = () => {
+      if (!list) return;
+      const checked = Array.from(list.querySelectorAll('input[type=checkbox]:checked')).map(c => c.value);
+      payrollState.divCostTeams = checked;
+      const host = document.getElementById('divCostTableHost');
+      const alloc = payrollState.allocations || {};
+      if (host && V.payrollDivisionCostsTable) {
+        host.innerHTML = V.payrollDivisionCostsTable(alloc.empTeamHours, alloc.empTotalHours, alloc.empMeta, checked);
+      }
+      const summary = document.getElementById('divCostSummary');
+      if (summary && V.divCostSummary) summary.textContent = V.divCostSummary(checked);
+      const count = document.getElementById('divCostCount');
+      if (count) count.textContent = checked.length ? `${checked.length} selected` : 'All divisions';
+      const cap = document.getElementById('divCostCaption');
+      if (cap) cap.innerHTML = checked.length
+        ? `Showing ${checked.length} selected division${checked.length === 1 ? '' : 's'} · use the Divisions picker to change`
+        : 'Cost-attribution pivot · PAYROLL = total hrs × rate · SDL = 1.1% levy · DIV CONTRIBUTION = hours on this division × rate';
+    };
+
+    if (list) list.addEventListener('change', (e) => {
+      if (e.target && e.target.matches('input[type=checkbox]')) applySelection();
+    });
+    if (clearBtn) clearBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      list.querySelectorAll('input[type=checkbox]:checked').forEach(c => { c.checked = false; });
+      applySelection();
+    });
+    if (search) search.addEventListener('input', () => {
+      const q = search.value.trim().toLowerCase();
+      list.querySelectorAll('label.divcost-opt').forEach(lab => {
+        const name = (lab.textContent || '').trim().toLowerCase();
+        lab.style.display = (!q || name.includes(q)) ? '' : 'none';
+      });
+    });
+
+    // Outside-click closes the menu. Bound once on document; it re-resolves
+    // the (re-rendered) elements by id each time so it survives shell() rebuilds.
+    if (!_divPickerDocBound) {
+      _divPickerDocBound = true;
+      document.addEventListener('click', () => {
+        const m = document.getElementById('divCostMenu');
+        if (m && m.style.display === 'block') {
+          m.style.display = 'none';
+          const b = document.getElementById('divCostPickerBtn');
+          if (b) b.setAttribute('aria-expanded', 'false');
+        }
+      });
     }
   }
 
@@ -2048,15 +2118,14 @@
       const _allRowTeams = window.PAYROLL.CANONICAL_TEAMS
         .concat(_nonCanonAll)
         .concat(teamEmp.has('(No team noted)') ? ['(No team noted)'] : []);
-      const divFilter = (s.divCostTeam && s.divCostTeam !== 'all' && _allRowTeams.includes(s.divCostTeam))
-        ? s.divCostTeam : 'all';
+      // Selected divisions (multi-select). Empty = all. Column count is sized
+      // to the rendered divisions only, matching the on-screen table.
+      const _selSet = new Set((Array.isArray(s.divCostTeams) ? s.divCostTeams : [])
+        .filter(t => _allRowTeams.includes(t)));
+      const _isFiltered = _selSet.size > 0;
+      const _rowTeams = _allRowTeams.filter(t => !_isFiltered || _selSet.has(t));
       let maxHead = 1;
-      if (divFilter === 'all') {
-        teamEmp.forEach(m => { if (m.size > maxHead) maxHead = m.size; });
-      } else {
-        const m = teamEmp.get(divFilter);
-        if (m && m.size > maxHead) maxHead = m.size;
-      }
+      _rowTeams.forEach(t => { const m = teamEmp.get(t); if (m && m.size > maxHead) maxHead = m.size; });
       const header = ['Division'];
       for (let i = 1; i <= maxHead; i++) {
         header.push(`Fancy / LN name ${i}`);
@@ -2116,25 +2185,19 @@
         gtRowTotal += rowTotal;
         return row;
       };
-      if (divFilter === 'all') {
-        window.PAYROLL.CANONICAL_TEAMS.forEach(t => {
-          const members = teamEmp.get(t);
-          out.push(rowFor(t, (members && members.size) ? '' : 'no agents this period'));
-        });
-        const nonCanon = _nonCanonAll.slice().sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-        if (nonCanon.length || teamEmp.has('(No team noted)')) {
-          out.push(['--- Not in master list — review ---']);
-          nonCanon.forEach(t => out.push(rowFor(t, 'Not in master list')));
-          if (teamEmp.has('(No team noted)')) out.push(rowFor('(No team noted)', 'Shifts where the Employee notes field was blank'));
-        }
-      } else {
-        // Single division selected via the picker.
-        const isCanon = window.PAYROLL.CANONICAL_SET.has(divFilter);
-        const members = teamEmp.get(divFilter);
-        const note = divFilter === '(No team noted)' ? 'Shifts where the Employee notes field was blank'
-          : !isCanon ? 'Not in master list'
-          : (members && members.size) ? '' : 'no agents this period';
-        out.push(rowFor(divFilter, note));
+      window.PAYROLL.CANONICAL_TEAMS.forEach(t => {
+        if (_isFiltered && !_selSet.has(t)) return;
+        const members = teamEmp.get(t);
+        out.push(rowFor(t, (members && members.size) ? '' : 'no agents this period'));
+      });
+      const nonCanon = _nonCanonAll
+        .filter(t => !_isFiltered || _selSet.has(t))
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+      const showNoTeam = teamEmp.has('(No team noted)') && (!_isFiltered || _selSet.has('(No team noted)'));
+      if (nonCanon.length || showNoTeam) {
+        out.push(['--- Not in master list — review ---']);
+        nonCanon.forEach(t => out.push(rowFor(t, 'Not in master list')));
+        if (showNoTeam) out.push(rowFor('(No team noted)', 'Shifts where the Employee notes field was blank'));
       }
       // Grand-total row — floor PAYROLL/SDL in slot 0 only, per-slot CONTRIB.
       const tot = ['GRAND TOTAL'];

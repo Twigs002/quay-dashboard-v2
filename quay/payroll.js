@@ -1200,7 +1200,35 @@
   //                        column itself stays at PAYROLL × 0.011 too —
   //                        not halved).
   //   TOTAL FANCY/LN     = sum of DIV CONTRIBUTION across agents in this row
-  V.payrollDivisionCosts = function (empTeamHours, empTotalHours, empMeta, filterTeam) {
+  // Ordered list of every division available to the Division Costs picker:
+  // canonical (master order) + any non-canonical present + the no-team bucket.
+  // Shared by the view, the live table re-render, and the CSV export so all
+  // three agree on ordering and membership.
+  V.divCostAllTeams = function (empTeamHours) {
+    const teamEmp = new Map()
+    if (empTeamHours) {
+      empTeamHours.forEach((teams, emp) => {
+        teams.forEach((_hrs, t) => {
+          if (!teamEmp.has(t)) teamEmp.set(t, new Set())
+          teamEmp.get(t).add(emp)
+        })
+      })
+    }
+    const nonCanonical = []
+    teamEmp.forEach((_m, t) => {
+      if (!CONFIG.CANONICAL_SET.has(t) && t !== '(No team noted)') nonCanonical.push(t)
+    })
+    nonCanonical.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+    return CONFIG.CANONICAL_TEAMS
+      .concat(nonCanonical)
+      .concat(teamEmp.has('(No team noted)') ? ['(No team noted)'] : [])
+  }
+
+  // Just the Division Costs <table> (wrapped in .tbl-wrap), for the given
+  // `selected` division names (empty array = all divisions). Kept separate from
+  // the card shell so ticking a checkbox can re-render only the table without
+  // rebuilding — and closing — the multi-select picker.
+  V.payrollDivisionCostsTable = function (empTeamHours, empTotalHours, empMeta, selected) {
     const SDL_RATE = 0.011
 
     // Invert empTeamHours → team → Map<emp, hrs>
@@ -1221,20 +1249,17 @@
     nonCanonical.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
     const hasNoTeam = teamEmp.has('(No team noted)')
 
-    // Full ordered list of divisions available in the picker: canonical (always
-    // listed, in master order) + any non-canonical present + the no-team bucket.
-    const allRowTeams = CONFIG.CANONICAL_TEAMS
-      .concat(nonCanonical)
-      .concat(hasNoTeam ? ['(No team noted)'] : [])
-
-    // Division filter (picker). 'all' shows every row; a valid team name narrows
-    // to just that division — which also shrinks the wide pivot's column count.
-    const activeFilter = (filterTeam && filterTeam !== 'all' && allRowTeams.includes(filterTeam))
-      ? filterTeam : 'all'
-    const rowTeams = activeFilter === 'all' ? allRowTeams : [activeFilter]
+    // Selection → which divisions render. Empty = all. Order is always the
+    // master canonical order, then non-canonical, then the no-team bucket.
+    const selSet = new Set(Array.isArray(selected) ? selected : [])
+    const isFiltered = selSet.size > 0
+    const canonRows   = CONFIG.CANONICAL_TEAMS.filter(t => !isFiltered || selSet.has(t))
+    const nonCanonRows = nonCanonical.filter(t => !isFiltered || selSet.has(t))
+    const showNoTeam  = hasNoTeam && (!isFiltered || selSet.has('(No team noted)'))
+    const rowTeams = canonRows.concat(nonCanonRows, showNoTeam ? ['(No team noted)'] : [])
 
     // Column count (agent blocks) is sized to the RENDERED divisions only, so
-    // filtering to one team collapses the table to that team's headcount.
+    // filtering to a few teams collapses the wide pivot to their headcount.
     let maxHead = 1
     rowTeams.forEach(t => { const m = teamEmp.get(t); if (m && m.size > maxHead) maxHead = m.size })
     if (maxHead < 1) maxHead = 1
@@ -1325,21 +1350,20 @@
     }
 
     let body = ''
-    if (activeFilter === 'all') {
-      for (const team of CONFIG.CANONICAL_TEAMS) body += rowFor(team, noteFor(team))
-      if (nonCanonical.length || hasNoTeam) {
-        const spanCols = 1 + maxHead * 5 + 1 + 1
-        body += `<tr class="payroll-noncanon-sep">
-          <td colspan="${spanCols}" style="background:var(--red);color:#fff;text-align:center;font-weight:700;letter-spacing:0.4px;padding:10px">
-            Not in master list — review
-          </td>
-        </tr>`
-        for (const team of nonCanonical) body += rowFor(team, 'Not in master list')
-        if (hasNoTeam) body += rowFor('(No team noted)', 'Shifts where the Employee notes field was blank')
-      }
-    } else {
-      // Single division selected via the picker.
-      body += rowFor(activeFilter, noteFor(activeFilter))
+    for (const team of canonRows) body += rowFor(team, noteFor(team))
+    if (nonCanonRows.length || showNoTeam) {
+      const spanCols = 1 + maxHead * 5 + 1 + 1
+      body += `<tr class="payroll-noncanon-sep">
+        <td colspan="${spanCols}" style="background:var(--red);color:#fff;text-align:center;font-weight:700;letter-spacing:0.4px;padding:10px">
+          Not in master list — review
+        </td>
+      </tr>`
+      for (const team of nonCanonRows) body += rowFor(team, 'Not in master list')
+      if (showNoTeam) body += rowFor('(No team noted)', 'Shifts where the Employee notes field was blank')
+    }
+    if (!body) {
+      const spanCols = 1 + maxHead * 5 + 1 + 1
+      body = `<tr><td colspan="${spanCols}" style="text-align:center;color:var(--muted);padding:18px">No divisions match the current selection.</td></tr>`
     }
 
     // Grand-total row. PAYROLL/SDL floor totals print once in slot 0;
@@ -1356,33 +1380,67 @@
     totalCells.push('<td></td>')
     body += `<tr style="background:var(--paper);font-weight:700">${totalCells.join('')}</tr>`
 
-    const teamOpts = [`<option value="all"${activeFilter === 'all' ? ' selected' : ''}>All divisions</option>`]
-      .concat(allRowTeams.map(t =>
-        `<option value="${esc(t)}"${t === activeFilter ? ' selected' : ''}>${esc(t)}</option>`))
-      .join('')
-    const subCaption = activeFilter === 'all'
+    return `<div class="tbl-wrap"><table class="tbl payroll-divcosts">
+        <thead><tr>${headCells.join('')}</tr></thead>
+        <tbody>${body}</tbody>
+      </table></div>`
+  }
+
+  // Human summary of the current multi-selection for the picker button.
+  V.divCostSummary = function (selected) {
+    const n = Array.isArray(selected) ? selected.length : 0
+    if (n === 0) return 'All divisions'
+    if (n === 1) return selected[0]
+    return `${n} divisions`
+  }
+
+  V.payrollDivisionCosts = function (empTeamHours, empTotalHours, empMeta, filterTeams) {
+    const allRowTeams = V.divCostAllTeams(empTeamHours)
+    // Keep only still-valid selections (a team may vanish between pay periods).
+    const selected = (Array.isArray(filterTeams) ? filterTeams : [])
+      .filter(t => allRowTeams.includes(t))
+    const selSet = new Set(selected)
+
+    const subCaption = selected.length === 0
       ? 'Cost-attribution pivot · PAYROLL = total hrs × rate · SDL = 1.1% levy · DIV CONTRIBUTION = hours on this division × rate'
-      : `Showing <b>${esc(activeFilter)}</b> only · pick “All divisions” to see the full pivot`
+      : `Showing ${selected.length} selected division${selected.length === 1 ? '' : 's'} · use the Divisions picker to change`
+
+    const options = allRowTeams.map(t =>
+      `<label class="divcost-opt" style="display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;cursor:pointer;font-size:13px">
+        <input type="checkbox" value="${esc(t)}"${selSet.has(t) ? ' checked' : ''} style="margin:0;flex:none">
+        <span>${esc(t)}</span>
+      </label>`).join('')
 
     return `
       <div class="card">
         <div class="card-head">
           <div>
             <h3>Division Costs</h3>
-            <div class="sub">${subCaption}</div>
+            <div class="sub" id="divCostCaption">${subCaption}</div>
           </div>
           <div style="display:flex;align-items:flex-end;gap:12px">
-            <div class="field" style="margin-bottom:0">
-              <label>Division</label>
-              <select id="divCostTeamFilter" style="min-width:180px">${teamOpts}</select>
+            <div class="field" style="margin-bottom:0;position:relative">
+              <label>Divisions</label>
+              <button type="button" id="divCostPickerBtn" aria-haspopup="true" aria-expanded="false"
+                style="min-width:200px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper,#fff);cursor:pointer;font-size:13px;color:inherit">
+                <span id="divCostSummary">${esc(V.divCostSummary(selected))}</span>
+                <span aria-hidden="true" style="opacity:.55">▾</span>
+              </button>
+              <div id="divCostMenu" role="menu"
+                style="display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:60;background:var(--paper,#fff);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 34px rgba(15,23,42,.16);width:270px;padding:10px">
+                <input type="text" id="divCostSearch" placeholder="Search divisions…" autocomplete="off"
+                  style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;font-size:13px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                  <span style="font-size:11.5px;color:var(--muted)" id="divCostCount">${selected.length ? selected.length + ' selected' : 'All divisions'}</span>
+                  <button type="button" id="divCostClear" style="border:none;background:none;color:var(--brass,#b8860b);font-size:12px;cursor:pointer;padding:2px 4px">Clear</button>
+                </div>
+                <div id="divCostList" style="max-height:280px;overflow:auto;display:flex;flex-direction:column;gap:1px">${options}</div>
+              </div>
             </div>
             ${_exportBtn()}
           </div>
         </div>
-        <div class="tbl-wrap"><table class="tbl payroll-divcosts">
-          <thead><tr>${headCells.join('')}</tr></thead>
-          <tbody>${body}</tbody>
-        </table></div>
+        <div id="divCostTableHost">${V.payrollDivisionCostsTable(empTeamHours, empTotalHours, empMeta, selected)}</div>
       </div>`
   }
 
