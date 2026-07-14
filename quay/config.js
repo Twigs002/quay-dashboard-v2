@@ -111,4 +111,10 @@ window.QUAY_CONFIG = {
 
   // URL of the embedded admin (same origin, ?embed=1).
   CLOCK_ADMIN_EMBED: 'https://twigs002.github.io/quay-clock/admin/?embed=1',
+
+  // ---- Aqua Promotions contracts backend ------------------------------
+  // Standalone Apps Script web app (separate from Quay 1 recruitment). The
+  // Staff > Contracts sub-tab POSTs here with the logged-in user's Supabase
+  // JWT (verified server-side; admins/supers only) — no secret ships in this JS.
+  AQUA_ENDPOINT: 'https://script.google.com/macros/s/AKfycbwQJda6kDKmwaIFX5H1o8sVAuwVe2Y3_epMO4cVdnq2wrWk8gDLP9DwWze5Q5cINNdY/exec',
 };
