@@ -1302,25 +1302,34 @@ window.QUAY_READY = (async function () {
     'Weasels', 'Wizards', 'Wolves', 'Wombats',
   ];
 
+  // Loads the full ln_teams roster split into active + archived. The active
+  // list drives every picker for all users; the archived list is offered only
+  // to superusers (see app.js lnTeamUniverse) so they can still edit teams
+  // that were retired from the clock-in roster.
   async function loadLnTeams() {
     try {
-      if (!window.sb || !window.sb.from) return LN_TEAMS_FALLBACK.slice();
+      if (!window.sb || !window.sb.from) return { active: LN_TEAMS_FALLBACK.slice(), archived: [] };
       const { data, error } = await window.sb
         .from('ln_teams')
-        .select('name, display_order')
-        .eq('active', true)
+        .select('name, display_order, active')
         .order('display_order', { ascending: true });
       if (error) throw error;
-      const names = (data || []).map(r => r && r.name).filter(Boolean);
-      if (!names.length) return LN_TEAMS_FALLBACK.slice();
-      return names;
+      const active = [], archived = [];
+      (data || []).forEach(r => {
+        if (!r || !r.name) return;
+        (r.active === false ? archived : active).push(r.name);
+      });
+      if (!active.length) return { active: LN_TEAMS_FALLBACK.slice(), archived };
+      return { active, archived };
     } catch (e) {
       console.warn('[data.js] ln_teams fetch failed, using static fallback:', e && e.message || e);
-      return LN_TEAMS_FALLBACK.slice();
+      return { active: LN_TEAMS_FALLBACK.slice(), archived: [] };
     }
   }
 
-  const LN_TEAMS_ALL = await loadLnTeams();
+  const _lnTeams = await loadLnTeams();
+  const LN_TEAMS_ALL = _lnTeams.active;
+  const LN_TEAMS_ARCHIVED = _lnTeams.archived;
 
   // Map a period key onto a {fromISO, toISO} range, used by Supabase
   // queries that need a date filter (e.g. clock_out_reports lookups for
@@ -1356,6 +1365,7 @@ window.QUAY_READY = (async function () {
     periodDateRange,
     billingPeriodWindow,
     LN_TEAMS_ALL,
+    LN_TEAMS_ARCHIVED,
   };
   return window.QUAY;
 })();
