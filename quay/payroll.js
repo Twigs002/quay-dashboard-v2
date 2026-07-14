@@ -547,7 +547,7 @@
     // period unpaired and the view empty. _fetchAllEvents paginates.
     const [staffRes, events] = await Promise.all([
       window.sb.from('staff')
-        .select('id, name, designation, division, active, hourly_rate')
+        .select('id, name, designation, division, active, hourly_rate, salary')
         .order('name', { ascending: true }),
       _fetchAllEvents(fromISO, toISO),
     ])
@@ -557,12 +557,14 @@
     const nameById = new Map()
     const designationById = new Map()
     const divisionById = new Map()
-    const rateById = new Map();
+    const rateById = new Map()
+    const salaryById = new Map();
     (staff || []).forEach(s => {
       nameById.set(s.id, s.name || s.id)
       designationById.set(s.id, s.designation || '')
       divisionById.set(s.id, s.division || '')
       rateById.set(s.id, s.hourly_rate == null ? null : Number(s.hourly_rate))
+      salaryById.set(s.id, s.salary == null ? null : Number(s.salary))
     })
 
     // Group events by staff_id, sort each group by ts asc (the order-by
@@ -599,6 +601,7 @@
             designation: designationById.get(staffId) || '',
             division: divisionById.get(staffId) || '',
             hourlyRate: rateById.get(staffId),
+            salary: salaryById.get(staffId),
             clockInAt: openIn.ts,
             clockOutAt: ev.ts,
             shiftHours: hrs,
@@ -647,6 +650,7 @@
       if (!empMeta.has(emp)) {
         empMeta.set(emp, {
           hourlyRate: sh.hourlyRate == null ? null : Number(sh.hourlyRate),
+          salary: sh.salary == null ? null : Number(sh.salary),
           designation: sh.designation || '',
           division: sh.division || '',
         })
@@ -856,6 +860,7 @@
       ['byDivision', 'By Division'],
       ['divisionCosts', 'Division Costs'],
       ['earnings', 'Earnings'],
+      ['comparison', 'Salary vs Earnings'],
     ]
     const activeView = (state && state.activeView) || 'allShifts'
     const subNav = subTabs.map(([id, label]) =>
@@ -877,6 +882,7 @@
       else if (activeView === 'byDivision') body = V.payrollByDivision(alloc.empTeamHours, alloc.empTotalHours)
       else if (activeView === 'divisionCosts') body = V.payrollDivisionCosts(alloc.empTeamHours, alloc.empTotalHours, alloc.empMeta, (state && state.divCostTeam) || 'all')
       else if (activeView === 'earnings') body = V.payrollEarnings(alloc.empTotalHours, alloc.empMeta)
+    else if (activeView === 'comparison') body = V.payrollComparison(alloc.empTotalHours, alloc.empMeta)
     }
 
     return `
@@ -1087,6 +1093,111 @@
               <td class="num tnum">${grandHours.toFixed(2)}</td>
               <td></td>
               <td class="num tnum">${_fmtZAR(grandPay)}</td>
+            </tr>
+          </tbody>
+        </table></div>
+        ${warn}
+      </div>`
+  }
+
+  // Salary vs Earnings — compares each agent's FULL monthly salary against
+  // what they actually earned this pay period (hours × hourly_rate). The
+  // "Shortfall" column is what they missed out on by working fewer hours
+  // (e.g. only 3 of 4 weeks). A negative shortfall means they earned at or
+  // above their salary (overtime), shown in green.
+  V.payrollComparison = function (empTotalHours, empMeta) {
+    if (!empTotalHours || empTotalHours.size === 0) {
+      return `<div class="card card-pad" style="color:var(--muted)">No closed shifts in this pay period.</div>`
+    }
+    const GREEN = 'var(--green,#0E6B3A)'
+    const agents = Array.from(empTotalHours.keys()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+    let grandEarned = 0, grandSalary = 0, grandDiff = 0
+    let missingRate = 0, missingSalary = 0
+    const rows = agents.map(agent => {
+      const total = empTotalHours.get(agent) || 0
+      const meta = empMeta ? empMeta.get(agent) : null
+      const rate = meta ? meta.hourlyRate : null
+      const salary = meta ? meta.salary : null
+      const designation = meta ? meta.designation : ''
+      const division = meta ? meta.division : ''
+      const earned = rate != null ? total * rate : null
+      // Shortfall only makes sense when we have both a salary and actual earnings.
+      const canCompare = earned != null && salary != null
+      const diff = canCompare ? (salary - earned) : null   // +ve = missed out
+      const pctEarned = canCompare && salary > 0 ? (earned / salary) * 100 : null
+      if (earned != null) grandEarned += earned
+      if (salary != null) grandSalary += salary
+      if (canCompare) grandDiff += diff
+      if (rate == null) missingRate++
+      if (salary == null) missingSalary++
+      const nameParts = (agent || '').split(/\s+/)
+      const fn = nameParts.slice(0, -1).join(' ') || nameParts[0] || ''
+      const ln = nameParts.length > 1 ? nameParts[nameParts.length - 1] : ''
+      const earnedCell = earned == null
+        ? '<span style="color:var(--red)" title="No hourly_rate set in staff table">— missing rate</span>'
+        : _fmtZAR(earned)
+      const salaryCell = salary == null
+        ? '<span style="color:var(--red)" title="No salary set in staff table">— no salary</span>'
+        : _fmtZAR(salary)
+      let diffCell = '<span style="color:var(--muted)">—</span>'
+      if (canCompare) {
+        if (diff > 0) diffCell = `<span style="color:var(--red);font-weight:700" title="Missed out this period">${_fmtZAR(diff)}</span>`
+        else if (diff < 0) diffCell = `<span style="color:${GREEN};font-weight:700" title="Earned above salary (overtime)">+${_fmtZAR(-diff)}</span>`
+        else diffCell = _fmtZAR(0)
+      }
+      const pctCell = pctEarned == null
+        ? '<span style="color:var(--muted)">—</span>'
+        : `${pctEarned.toFixed(0)}%`
+      return `<tr>
+        <td>${esc(fn)}</td>
+        <td>${esc(ln)}</td>
+        <td>${esc(designation || '—')}</td>
+        <td>${esc(division || '—')}</td>
+        <td class="num tnum">${total.toFixed(2)}</td>
+        <td class="num tnum">${earnedCell}</td>
+        <td class="num tnum">${salaryCell}</td>
+        <td class="num tnum">${pctCell}</td>
+        <td class="num tnum">${diffCell}</td>
+      </tr>`
+    }).join('')
+    const grandPct = grandSalary > 0 ? (grandEarned / grandSalary) * 100 : null
+    const grandDiffCell = grandDiff > 0
+      ? `<span style="color:var(--red)">${_fmtZAR(grandDiff)}</span>`
+      : grandDiff < 0 ? `<span style="color:${GREEN}">+${_fmtZAR(-grandDiff)}</span>` : _fmtZAR(0)
+    const warns = []
+    if (missingRate > 0) warns.push(`<b>${missingRate}</b> agent${missingRate === 1 ? '' : 's'} missing an hourly_rate`)
+    if (missingSalary > 0) warns.push(`<b>${missingSalary}</b> missing a salary`)
+    const warn = warns.length
+      ? `<div class="sub" style="color:var(--red);margin-top:8px">${warns.join(' · ')} — set these in the quay-clock admin (Edit Staff) so they can be compared.</div>`
+      : ''
+    return `
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>Salary vs Earnings</h3>
+            <div class="sub">Full monthly salary vs what each agent actually earned this pay period (hours × hourly_rate). Shortfall = what they missed out on by working fewer hours.</div>
+          </div>
+          ${_exportBtn()}
+        </div>
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr>
+            <th>First name</th>
+            <th>Last name</th>
+            <th>Designation</th>
+            <th>Division</th>
+            <th class="num">Hours</th>
+            <th class="num">Earned</th>
+            <th class="num">Full Salary</th>
+            <th class="num" title="Earned as a percentage of full salary">% of Salary</th>
+            <th class="num" title="Full salary minus what they earned. Positive = missed out; green = earned above salary.">Shortfall</th>
+          </tr></thead>
+          <tbody>${rows}
+            <tr style="background:var(--paper);font-weight:700">
+              <td colspan="5">TOTAL — ${agents.length} agent${agents.length === 1 ? '' : 's'}</td>
+              <td class="num tnum">${_fmtZAR(grandEarned)}</td>
+              <td class="num tnum">${_fmtZAR(grandSalary)}</td>
+              <td class="num tnum">${grandPct == null ? '—' : grandPct.toFixed(0) + '%'}</td>
+              <td class="num tnum">${grandDiffCell}</td>
             </tr>
           </tbody>
         </table></div>

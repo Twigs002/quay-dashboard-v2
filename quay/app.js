@@ -163,6 +163,7 @@
     { id: 'clienthub',  section: 'Strategy',    label: 'Engine Room',    icon: I.phone,   title: 'Engine Room calling',  sub: 'Per-team calls, seller leads, rental leads & emails across the ClientHub campaigns' },
     { id: 'clocks',     section: 'Admin',       label: 'Clocks',         icon: I.clock,    title: 'Clocks',               sub: 'Staff hours, requests & team — manage everything in one place' },
     { id: 'team',       section: 'Admin',       label: 'Staff',          icon: I.users,    title: 'Staff Directory',      sub: 'Roster · clock-in status · forgot-to-clock-out · mark absent' },
+    { id: 'brokers',    section: 'Admin',       label: 'Brokers',        icon: I.users,    title: 'Brokers',              sub: 'Broker logins for the HubSpot marketing dashboard · no clock-in' },
     { id: 'payroll',    section: 'Admin',       label: 'Payroll',        icon: I.cal2,     title: 'Payroll · Divisions Allocations', sub: 'Pay-period hours by division — 21st → 20th' },
     { id: 'teams-report', section: 'Admin',     label: 'Teams Reporting', icon: I.medal,   title: 'Teams Reporting',      sub: 'Pick teams · see who called for them (incl. cross-team) · export PDF/PNG for sharing' },
   ];
@@ -361,11 +362,12 @@
     // We're authenticated when supabase has an active session AND we know
     // the staff row. setSession({...staff}) is set by submitLogin/setSession.
     if (!session || !session.id) { renderLogin(); return; }
-    // Filter tabs by role: only superusers see Leadership + Payroll + Teams Reporting.
+    // Filter tabs by role: only superusers see Leadership + Teams Reporting.
+    // Payroll is visible to managers too (they need pay-period hours).
     const visibleTabs = TABS.filter(t =>
       (t.id !== 'leadership'   || session.super) &&
-      (t.id !== 'payroll'      || session.super) &&
-      (t.id !== 'teams-report' || session.super)
+      (t.id !== 'teams-report' || session.super) &&
+      (t.id !== 'brokers'      || session.super)
     );
     // If a non-super lands on a hidden tab (e.g. via deep link), bounce to overview.
     if (!visibleTabs.find(t => t.id === tab)) tab = 'overview';
@@ -607,8 +609,8 @@
   function render() {
     const host = document.getElementById('content');
     if (tab === 'leadership'   && !session?.super) { tab = 'overview'; }
-    if (tab === 'payroll'      && !session?.super) { tab = 'overview'; }
     if (tab === 'teams-report' && !session?.super) { tab = 'overview'; }
+    if (tab === 'brokers'      && !session?.super) { tab = 'overview'; }
     if (tab === 'leadership')    { host.innerHTML = leadership(); afterLeadership(); }
     else if (tab === 'overview') { host.innerHTML = overview(); afterOverview(); }
     else if (tab === 'staff')    {
@@ -628,6 +630,7 @@
     else if (tab === 'payroll')  { host.innerHTML = V.payroll(payrollState); payrollWire(); }
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
     else if (tab === 'team')     { host.innerHTML = renderTeamView(); wireTeamView(); }
+    else if (tab === 'brokers')  { host.innerHTML = renderBrokersView(); wireBrokersView(); }
     else if (tab === 'live')     { host.innerHTML = renderLiveFloor(); liveFloorWire(); }
     else if (tab === 'teams-report') { host.innerHTML = renderTeamsReporting(); wireTeamsReporting(); }
     // Any per-card "Export CSV" button shares the topbar export handler.
@@ -2049,6 +2052,43 @@
         });
         out.push(['TOTAL', '', '', '',
           window.PAYROLL.decimalToHHMM(gHrs), gHrs.toFixed(2), '', gPay.toFixed(2)]);
+      }
+      return out;
+    }
+    if (view === 'comparison') {
+      const out = [['First name', 'Last name', 'Designation', 'Division',
+        'Hours (Decimal)', 'Earned', 'Full Salary', '% of Salary', 'Shortfall']];
+      if (s.allocations) {
+        const ETOT = s.allocations.empTotalHours;
+        const EMETA = s.allocations.empMeta || new Map();
+        const agents = Array.from(ETOT.keys()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        let gEarn = 0, gSal = 0, gDiff = 0;
+        agents.forEach(agent => {
+          const total = ETOT.get(agent) || 0;
+          const meta = EMETA.get(agent) || {};
+          const rate = meta.hourlyRate;
+          const salary = meta.salary;
+          const earned = rate != null ? total * rate : null;
+          const canCompare = earned != null && salary != null;
+          const diff = canCompare ? (salary - earned) : null;
+          const pct = canCompare && salary > 0 ? (earned / salary) * 100 : null;
+          if (earned != null) gEarn += earned;
+          if (salary != null) gSal += salary;
+          if (canCompare) gDiff += diff;
+          const parts = (agent || '').split(/\s+/);
+          const fn = parts.slice(0, -1).join(' ') || parts[0] || '';
+          const ln = parts.length > 1 ? parts[parts.length - 1] : '';
+          out.push([fn, ln, meta.designation || '', meta.division || '',
+            total.toFixed(2),
+            earned == null ? '' : earned.toFixed(2),
+            salary == null ? '' : salary.toFixed(2),
+            pct == null ? '' : pct.toFixed(0),
+            diff == null ? '' : diff.toFixed(2)]);
+        });
+        const gPct = gSal > 0 ? (gEarn / gSal) * 100 : null;
+        out.push(['TOTAL', '', '', '', '',
+          gEarn.toFixed(2), gSal.toFixed(2),
+          gPct == null ? '' : gPct.toFixed(0), gDiff.toFixed(2)]);
       }
       return out;
     }
@@ -5365,7 +5405,8 @@
   let _teamFilter = '';
   let _teamSortBy = 'name';     // name | status | designation | lastClocked | forgot
   let _teamSortDir = 'asc';
-  let _teamModal = null;        // form state when modal is open
+  let _teamModal = null;        // form state when modal is open (staff + broker)
+  let _brokerFilter = '';       // search box on the Brokers tab
   let _forgotThisWeek = [];     // forgot-to-clock-out events since Monday SAST
   let _absencesToday = new Map(); // staff_id -> {reason, reason_note, marked_by, marked_at}
   let _absenceModal = null;     // { staffId, name, reason, note, busy, error } when open
@@ -5380,6 +5421,17 @@
     if (s.is_super || s.is_admin) return true;
     const d = String(s.designation || '').toLowerCase();
     return d === 'super_admin' || d === 'manager';
+  }
+
+  // Brokers are a separate class of account: they never clock in and only
+  // exist so they can log into the HubSpot marketing dashboard. We treat a
+  // row as a broker if the is_broker flag is set OR (legacy) its designation
+  // is 'broker'. Brokers are shown ONLY on the super-only Brokers tab — never
+  // in the Staff Directory — so managers never see them.
+  function isBrokerRow(s) {
+    if (!s) return false;
+    return s.is_broker === true
+        || String(s.designation || '').toLowerCase() === 'broker';
   }
 
   async function loadTeam() {
@@ -5454,8 +5506,12 @@
     if (_team == null && !_teamLoading) {
       loadTeam().then(() => { if (tab === 'team') shell(); });
     }
+    // The Staff Directory never shows brokers — they live on the super-only
+    // Brokers tab. Filtering here (for everyone) is what keeps managers from
+    // ever seeing a broker.
+    const roster = (_team || []).filter(s => !isBrokerRow(s));
     const q = _teamFilter.trim().toLowerCase();
-    const filtered = (_team || []).filter(s =>
+    const filtered = roster.filter(s =>
       !q || s.name.toLowerCase().includes(q)
          || (s.designation || '').toLowerCase().includes(q)
     );
@@ -5517,7 +5573,7 @@
       `<th class="${cls || ''}" style="cursor:pointer" data-team-sort="${k}">${escapeHtml(label)}${sortIndic(k)}</th>`;
     // Only count staff who are subject to clock-in (excludes admins,
     // super admins, and managers — they don't need to clock in).
-    const trackable = (_team || []).filter(s => !isExemptStaff(s));
+    const trackable = roster.filter(s => !isExemptStaff(s));
     const onCount      = trackable.filter(s => s.status === 'in').length;
     const absentCount  = trackable.filter(s => _absencesToday.has(s.id)).length;
     const accountedFor = onCount + absentCount;
@@ -5536,7 +5592,7 @@
     // Forgot-to-clock-out · this week digest. Aggregates rows from
     // _forgotThisWeek (populated by loadTeam) so admin sees who slipped
     // up over the current week at a glance.
-    const nameById = new Map((_team || []).map(s => [s.id, s.name]));
+    const nameById = new Map(roster.map(s => [s.id, s.name]));
     const weekByStaff = new Map();
     (_forgotThisWeek || []).forEach(e => {
       if (!weekByStaff.has(e.staff_id)) weekByStaff.set(e.staff_id, []);
@@ -5795,8 +5851,14 @@
 
   function renderTeamModal() {
     const f = _teamModal;
-    const isEdit = f.mode === 'edit';
-    const designations = [
+    const isEdit  = f.mode === 'edit';
+    const isSuper = !!(session && session.super);
+    const isBrokerModal = f.kind === 'broker';
+
+    // Full designation set (brokers are managed on the Brokers tab, so they're
+    // deliberately absent here). Managers may only pick the caller/support
+    // roles below; everything else is superuser-only.
+    const ALL_DESIG = [
       ['super_admin',     'Super Admin'],
       ['manager',         'Manager'],
       ['rm',              'RM (Relationship Manager)'],
@@ -5804,13 +5866,30 @@
       ['ln',              'LN (Lead Nurturer)'],
       ['assistant',       'Assistant'],
       ['admin_assistant', 'Admin Assistant'],
-      ['broker',          'Broker'],
       ['rental_support',  'Rental Support'],
     ];
+    const MGR_DESIG = ['rm', 'ln', 'assistant', 'admin_assistant'];
+    let desigOpts = isSuper ? ALL_DESIG : ALL_DESIG.filter(([v]) => MGR_DESIG.includes(v));
+    // Edit-mode safety net: if we're editing someone whose current designation
+    // is outside the manager-allowed set, keep it in the list so saving does
+    // not silently change it (the value stays disabled-in-spirit — the DB
+    // trigger still rejects a non-super trying to change it).
+    if (isEdit && f.designation && !desigOpts.some(([v]) => v === f.designation)) {
+      const lbl = (ALL_DESIG.find(([v]) => v === f.designation) || [f.designation, f.designation])[1];
+      desigOpts = [[f.designation, lbl], ...desigOpts];
+    }
+
+    const title = isBrokerModal
+      ? (isEdit ? 'Edit broker · ' + escapeHtml(f.name) : 'Add a broker')
+      : (isEdit ? 'Edit ' + escapeHtml(f.name)          : 'Add a staff member');
+    const saveLabel = isBrokerModal
+      ? (isEdit ? 'Save changes' : 'Add broker')
+      : (isEdit ? 'Save changes' : 'Add staff');
+
     return `<div class="modal-back" id="teamModalBack"></div>
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="teamModalTitle" style="width:min(560px, calc(100vw - 32px))">
         <div class="modal-head">
-          <h3 id="teamModalTitle" style="margin:0">${isEdit ? 'Edit ' + escapeHtml(f.name) : 'Add a staff member'}</h3>
+          <h3 id="teamModalTitle" style="margin:0">${title}</h3>
           <button class="modal-close" id="teamModalClose" aria-label="Close" title="Close">×</button>
         </div>
         <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
@@ -5832,11 +5911,18 @@
               <input id="tmPin" type="text" inputmode="numeric" maxlength="6" value="${escapeHtml(f.pin)}" placeholder="6 digits">
             </label>
           `}
+          ${isBrokerModal ? `
+          <label class="field"><span>Work email</span>
+            <input id="tmEmail" type="email" value="${escapeHtml(f.email || '')}" placeholder="name@quay1.co.za" autocapitalize="off">
+            <div class="muted" style="font-size:11px;margin-top:3px">Real @quay1.co.za address — used to match their recruitment candidates on the HubSpot dashboard.</div>
+          </label>
+          ` : `
           <label class="field"><span>Designation</span>
             <select id="tmDesignation">
-              ${designations.map(([v, l]) => `<option value="${v}" ${f.designation === v ? 'selected' : ''}>${l}</option>`).join('')}
+              ${desigOpts.map(([v, l]) => `<option value="${v}" ${f.designation === v ? 'selected' : ''}>${l}</option>`).join('')}
             </select>
           </label>
+          ${isSuper ? `
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
             <label class="field"><span>Hourly rate (R)</span>
               <input id="tmRate" type="number" step="0.01" min="0" value="${escapeHtml(f.hourly_rate)}" placeholder="e.g. 75.00">
@@ -5853,11 +5939,13 @@
             <input id="tmSuper" type="checkbox" ${f.super ? 'checked' : ''}>
             <span>Superuser — can also see Leadership</span>
           </label>
+          ` : ''}
+          `}
           ${f.error ? `<div class="banner" style="display:block">${escapeHtml(f.error)}</div>` : ''}
         </div>
         <div class="modal-foot">
           <button class="btn" id="teamModalCancel">Cancel</button>
-          <button class="btn btn-primary" id="teamModalSave" ${f.busy ? 'disabled' : ''}>${f.busy ? 'Saving…' : (isEdit ? 'Save changes' : 'Add staff')}</button>
+          <button class="btn btn-primary" id="teamModalSave" ${f.busy ? 'disabled' : ''}>${f.busy ? 'Saving…' : saveLabel}</button>
         </div>
       </div>`;
   }
@@ -5894,7 +5982,9 @@
     if (addBtn) addBtn.addEventListener('click', () => {
       _teamModal = {
         mode: 'add', name: '', id: '', pin: '',
-        designation: 'fancy',
+        // Managers can only pick from RM/LN/Assistant/Admin Assistant, so
+        // default them to RM; supers keep the wider default of Fancy Caller.
+        designation: (session && session.super) ? 'fancy' : 'rm',
         hourly_rate: '', weekly_hours: '',
         admin: false, super: false,
         busy: false, error: '',
@@ -6036,7 +6126,12 @@
     if (pin)  pin.addEventListener('input', () => {
       f.pin = pin.value.replace(/\D/g, '').slice(0, 6); pin.value = f.pin;
     });
-    document.getElementById('tmDesignation').addEventListener('change', (e) => {
+    // The following inputs only render for superuser staff modals (and none
+    // render for the broker modal), so every lookup is null-guarded.
+    const email = document.getElementById('tmEmail');
+    if (email) email.addEventListener('input', (e) => { f.email = e.target.value; });
+    const desig = document.getElementById('tmDesignation');
+    if (desig) desig.addEventListener('change', (e) => {
       f.designation = e.target.value;
       // Sync Admin + Super checkboxes to match the chosen role so users
       // don't have to remember to also untick a stale 'Super' from when
@@ -6053,10 +6148,14 @@
       if (adm) adm.checked = isAdmin;
       if (sup) sup.checked = isSuper;
     });
-    document.getElementById('tmRate').addEventListener('input',  (e) => { f.hourly_rate  = e.target.value; });
-    document.getElementById('tmHours').addEventListener('input', (e) => { f.weekly_hours = e.target.value; });
-    document.getElementById('tmAdmin').addEventListener('change',(e) => { f.admin = e.target.checked; });
-    document.getElementById('tmSuper').addEventListener('change',(e) => { f.super = e.target.checked; });
+    const rate  = document.getElementById('tmRate');
+    if (rate)  rate.addEventListener('input',  (e) => { f.hourly_rate  = e.target.value; });
+    const hours = document.getElementById('tmHours');
+    if (hours) hours.addEventListener('input', (e) => { f.weekly_hours = e.target.value; });
+    const adm2 = document.getElementById('tmAdmin');
+    if (adm2) adm2.addEventListener('change',(e) => { f.admin = e.target.checked; });
+    const sup2 = document.getElementById('tmSuper');
+    if (sup2) sup2.addEventListener('change',(e) => { f.super = e.target.checked; });
     document.getElementById('teamModalSave').addEventListener('click', saveTeamModal);
   }
 
@@ -6069,12 +6168,29 @@
       f.error = 'PIN must be 6 digits';
       shell(); return;
     }
+    const isBrokerModal = f.kind === 'broker';
     f.busy = true; shell();
     try {
       if (f.mode === 'add') {
         // Call the same admin-create-staff Edge Function the clock admin uses.
         const { data: { session: s } } = await window.sb.auth.getSession();
         if (!s) throw new Error('Not signed in');
+        const payload = { id: f.id.trim() || f.name, name: f.name.trim(), pin: f.pin };
+        if (isBrokerModal) {
+          // Brokers never clock in and get no admin/super rights — they only
+          // exist to log into the HubSpot marketing dashboard.
+          payload.designation = 'broker';
+          payload.is_broker   = true;
+          payload.admin       = false;
+          payload.is_super    = false;
+          payload.email       = (f.email || '').trim() || null;
+        } else {
+          payload.admin        = !!f.admin;
+          payload.is_super     = !!f.super;
+          payload.hourly_rate  = f.hourly_rate  === '' ? null : Number(f.hourly_rate);
+          payload.weekly_hours = f.weekly_hours === '' ? null : Number(f.weekly_hours);
+          payload.designation  = f.designation || null;
+        }
         const res = await fetch(`${CFG.SUPABASE_URL}/functions/v1/admin-create-staff`, {
           method: 'POST',
           headers: {
@@ -6082,25 +6198,25 @@
             'Authorization': `Bearer ${s.access_token}`,
             'apikey': CFG.SUPABASE_ANON_KEY,
           },
-          body: JSON.stringify({
-            id: f.id.trim() || f.name, name: f.name.trim(), pin: f.pin,
-            admin: !!f.admin, is_super: !!f.super,
-            hourly_rate:  f.hourly_rate  === '' ? null : Number(f.hourly_rate),
-            weekly_hours: f.weekly_hours === '' ? null : Number(f.weekly_hours),
-            designation: f.designation || null,
-          }),
+          body: JSON.stringify(payload),
         });
         const body = await res.json().catch(() => ({}));
         if (!res.ok || body.ok === false) throw new Error(body.error || 'Could not create staff');
       } else {
         // Direct PATCH for non-PIN fields — RLS allows it for admins.
-        const patch = {
-          name: f.name.trim(),
-          is_admin: !!f.admin, is_super: !!f.super,
-          designation: f.designation || null,
-          hourly_rate:  f.hourly_rate  === '' ? null : Number(f.hourly_rate),
-          weekly_hours: f.weekly_hours === '' ? null : Number(f.weekly_hours),
-        };
+        const patch = isBrokerModal
+          ? {
+              name: f.name.trim(),
+              designation: 'broker', is_broker: true,
+              email: (f.email || '').trim() || null,
+            }
+          : {
+              name: f.name.trim(),
+              is_admin: !!f.admin, is_super: !!f.super,
+              designation: f.designation || null,
+              hourly_rate:  f.hourly_rate  === '' ? null : Number(f.hourly_rate),
+              weekly_hours: f.weekly_hours === '' ? null : Number(f.weekly_hours),
+            };
         const { error } = await window.sb.from('staff').update(patch).eq('id', f.id);
         if (error) throw new Error(error.message);
 
@@ -6132,6 +6248,104 @@
       f.error = String(e.message || e);
       shell();
     }
+  }
+
+  // ---------------------------------------------------- BROKERS (super-only)
+  // Brokers are login-only accounts for the HubSpot marketing dashboard — no
+  // clock-in, no payroll. They live in the staff table (is_broker=true) and
+  // reuse the shared add/edit modal in its 'broker' flavour.
+  function renderBrokersView() {
+    if (_team == null && !_teamLoading) {
+      loadTeam().then(() => { if (tab === 'brokers') shell(); });
+    }
+    const q = _brokerFilter.trim().toLowerCase();
+    const all = (_team || []).filter(isBrokerRow);
+    const brokers = all
+      .filter(s => !q || s.name.toLowerCase().includes(q)
+                      || (s.email || '').toLowerCase().includes(q)
+                      || String(s.id || '').toLowerCase().includes(q))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    const total = all.length;
+    const rowsHtml = _team == null
+      ? '<tr><td colspan="4" class="muted" style="text-align:center;padding:30px">Loading…</td></tr>'
+      : brokers.length === 0
+        ? `<tr><td colspan="4" class="muted" style="text-align:center;padding:30px">${total === 0 ? 'No brokers yet. Add one to give them HubSpot dashboard access.' : 'No brokers match.'}</td></tr>`
+        : brokers.map(s => {
+            const active = s.active !== false;
+            const statusPill = active
+              ? '<span class="pill ok" style="font-size:11px;padding:3px 9px">Active</span>'
+              : '<span class="pill" style="font-size:11px;padding:3px 9px;background:#EEF0F6;color:#7A8499">Disabled</span>';
+            const emailCell = s.email
+              ? escapeHtml(s.email)
+              : '<span class="muted" style="font-size:12px">— no email —</span>';
+            return `<tr>
+              <td><div class="agent-cell"><div class="avatar">${escapeHtml(initialsOf(s.name))}</div>
+                <div class="agent-name">${escapeHtml(s.name)}</div></div></td>
+              <td class="muted tnum" style="font-size:12.5px">${escapeHtml(s.id || '')}</td>
+              <td style="font-size:12.5px">${emailCell}</td>
+              <td class="r" style="display:flex;gap:6px;justify-content:flex-end;align-items:center">${statusPill}
+                <button class="btn small" data-edit-broker-id="${escapeHtml(s.id)}">Edit</button></td>
+            </tr>`;
+          }).join('');
+    return `<div class="tab-view">
+      <div class="card card-pad" style="border-left:4px solid var(--blue-800,#1B3A6B)">
+        <h3 style="margin:0;font-family:var(--serif);font-size:15px">Broker logins</h3>
+        <div class="muted" style="font-size:12.5px;margin-top:4px">These accounts sign into the HubSpot marketing dashboard only. They never clock in and have no payroll or performance tracking.</div>
+      </div>
+      <div class="card card-pad mt">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+          <input id="brokerSearch" type="search" placeholder="Search name, email or username..."
+                 value="${escapeHtml(_brokerFilter)}"
+                 style="flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-family:Montserrat">
+          <div class="muted" style="font-size:13px"><b>${total}</b> broker${total === 1 ? '' : 's'}</div>
+          <button class="btn btn-primary" id="brokerAddBtn">${I.plus || '+'} Add broker</button>
+        </div>
+      </div>
+      <div class="card mt">
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>Name</th><th>Username</th><th>Email</th><th class="r"></th></tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table></div>
+      </div>
+      ${_teamModal ? renderTeamModal() : ''}
+    </div>`;
+  }
+
+  function wireBrokersView() {
+    const search = document.getElementById('brokerSearch');
+    if (search) search.addEventListener('input', (e) => {
+      _brokerFilter = e.target.value;
+      const caret = e.target.selectionStart;
+      shell();
+      const again = document.getElementById('brokerSearch');
+      if (again) { again.focus(); try { again.setSelectionRange(caret, caret); } catch {} }
+    });
+    const addBtn = document.getElementById('brokerAddBtn');
+    if (addBtn) addBtn.addEventListener('click', () => {
+      _teamModal = {
+        kind: 'broker', mode: 'add',
+        name: '', id: '', pin: '', email: '',
+        designation: 'broker', is_broker: true,
+        admin: false, super: false,
+        busy: false, error: '',
+      };
+      shell();
+    });
+    document.querySelectorAll('button[data-edit-broker-id]').forEach(b => {
+      b.addEventListener('click', () => {
+        const s = (_team || []).find(x => x.id === b.dataset.editBrokerId);
+        if (!s) return;
+        _teamModal = {
+          kind: 'broker', mode: 'edit',
+          id: s.id, name: s.name, pin: '', email: s.email || '',
+          designation: 'broker', is_broker: true,
+          admin: false, super: false,
+          busy: false, error: '',
+        };
+        shell();
+      });
+    });
+    if (_teamModal) wireTeamModal();
   }
 
   // ─── Live red-flags badge ────────────────────────────────────────────
