@@ -5422,7 +5422,7 @@
   let _teamSortDir = 'asc';
   let _teamModal = null;        // form state when modal is open (staff + broker)
   let _brokerFilter = '';       // search box on the Brokers sub-view
-  let _teamSubTab = 'staff';     // Staff tab sub-view: 'staff' | 'brokers' (Brokers is super-only)
+  let _teamSubTab = 'staff';     // Staff tab sub-view: 'staff' | 'brokers' | 'contracts' (brokers/contracts super-only)
   let _forgotThisWeek = [];     // forgot-to-clock-out events since Monday SAST
   let _absencesToday = new Map(); // staff_id -> {reason, reason_note, marked_by, marked_at}
   let _absenceModal = null;     // { staffId, name, reason, note, busy, error } when open
@@ -5518,14 +5518,21 @@
     }
   }
 
-  // Segmented Staff/Brokers toggle shown at the top of the Staff tab for
-  // superusers only. Brokers used to be a separate top-level Admin tab; it's
-  // now a sub-view here so broker logins sit alongside the staff roster.
+  // Segmented Staff sub-view toggle shown at the top of the Staff tab for
+  // superusers only: Staff Directory, Brokers (login accounts), and Contracts
+  // (Aqua Promotions agreement generator + progress). Each was/would otherwise
+  // be a separate top-level tab; grouping them keeps the Staff area cohesive.
   function _staffSubToggle() {
-    const onBrokers = _teamSubTab === 'brokers';
+    const segs = [
+      ['staff',     'Staff Directory'],
+      ['brokers',   'Brokers'],
+      ['contracts', 'Contracts'],
+    ];
     return `<div class="seg" id="staffSubSeg" role="group" aria-label="Staff section" style="margin-bottom:14px">
-        <button class="${onBrokers ? '' : 'active'}" data-staff-subtab="staff" aria-pressed="${onBrokers ? 'false' : 'true'}">Staff Directory</button>
-        <button class="${onBrokers ? 'active' : ''}" data-staff-subtab="brokers" aria-pressed="${onBrokers ? 'true' : 'false'}">Brokers</button>
+        ${segs.map(([id, label]) => {
+          const on = _teamSubTab === id;
+          return `<button class="${on ? 'active' : ''}" data-staff-subtab="${id}" aria-pressed="${on ? 'true' : 'false'}">${label}</button>`;
+        }).join('')}
       </div>`;
   }
 
@@ -5533,11 +5540,12 @@
     if (_team == null && !_teamLoading) {
       loadTeam().then(() => { if (tab === 'team') shell(); });
     }
-    // Brokers are a super-only sub-view of the Staff tab. Non-supers never see
-    // the toggle and are pinned to the staff roster.
-    const canBrokers = !!(session && session.super);
-    const subToggle = canBrokers ? _staffSubToggle() : '';
-    if (canBrokers && _teamSubTab === 'brokers') return renderBrokersView(subToggle);
+    // The Brokers + Contracts sub-views are super-only. Non-supers never see the
+    // toggle and are pinned to the staff roster.
+    const canSub = !!(session && session.super);
+    const subToggle = canSub ? _staffSubToggle() : '';
+    if (canSub && _teamSubTab === 'brokers')   return renderBrokersView(subToggle);
+    if (canSub && _teamSubTab === 'contracts') return renderAquaContracts(subToggle);
     // The Staff Directory never shows brokers — they live in the Brokers
     // sub-view. Filtering here (for everyone) keeps managers from ever
     // seeing a broker.
@@ -6001,7 +6009,8 @@
     });
     // When the Brokers sub-view is showing, its wiring is entirely separate
     // from the staff roster — delegate and skip the staff handlers below.
-    if (session && session.super && _teamSubTab === 'brokers') { wireBrokersView(); return; }
+    if (session && session.super && _teamSubTab === 'brokers')   { wireBrokersView();  return; }
+    if (session && session.super && _teamSubTab === 'contracts') { wireAquaContracts(); return; }
     const search = document.getElementById('teamSearch');
     if (search) search.addEventListener('input', (e) => {
       _teamFilter = e.target.value;
@@ -6403,6 +6412,164 @@
       });
     });
     if (_teamModal) wireTeamModal();
+  }
+
+  // ---------------------------------------------------- AQUA CONTRACTS (super-only)
+  // Aqua Promotions (Pty) Ltd agreement generator + progress. Talks to a
+  // standalone Apps Script web app (CFG.AQUA_ENDPOINT), completely separate from
+  // the Quay 1 recruitment/broker pipeline. Auth is the logged-in user's Supabase
+  // JWT, verified server-side (admins/supers only) — no shared secret ships in
+  // this public JS. The list is managed by direct DOM injection (never a shell()
+  // re-render) so the form inputs are preserved while the user types.
+
+  async function _aquaFetch(payload) {
+    const { data } = await window.sb.auth.getSession();
+    const accessToken = data && data.session ? data.session.access_token : null;
+    if (!accessToken) throw new Error('Not signed in.');
+    const res = await fetch(CFG.AQUA_ENDPOINT, {
+      method: 'POST',
+      // text/plain keeps it a "simple" request (no CORS preflight, which Apps
+      // Script web apps reject).
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(Object.assign({ accessToken }, payload)),
+    });
+    return res.json();
+  }
+
+  function renderAquaContracts(subToggle = '') {
+    const teal = '#0F766E';
+    return `<div class="tab-view">
+      ${subToggle}
+      <div class="card card-pad" style="border-left:4px solid ${teal}">
+        <h3 style="margin:0;font-family:var(--serif);font-size:15px">Aqua Promotions contracts</h3>
+        <div class="muted" style="font-size:12.5px;margin-top:4px">Generate a Memorandum of Agreement for Aqua Promotions (Pty) Ltd. Kept completely separate from the Quay 1 broker contracts.</div>
+      </div>
+
+      <div class="card card-pad mt">
+        <div id="aquaFormMsg"></div>
+        <label class="field"><span>Full name</span>
+          <input id="aqName" type="text" autocomplete="off" placeholder="e.g. Jane Doe"></label>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <label class="field" style="flex:1;min-width:200px"><span>ID number</span>
+            <input id="aqId" type="text" inputmode="numeric" autocomplete="off" placeholder="13-digit SA ID"></label>
+          <label class="field" style="flex:1;min-width:200px"><span>Start date</span>
+            <input id="aqStart" type="date"></label>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <label class="field" style="flex:1;min-width:200px"><span>Remuneration (rand, pro-rata)</span>
+            <input id="aqRem" type="text" autocomplete="off" placeholder="e.g. 8000"></label>
+          <label class="field" style="flex:1;min-width:200px"><span>Contractor email <span class="muted" style="font-weight:400">(optional)</span></span>
+            <input id="aqEmail" type="email" autocomplete="off" placeholder="Leave blank to only file the PDF"></label>
+        </div>
+        <div class="muted" style="font-size:12px;margin:-4px 0 12px">Entered as a rand amount (formatted R8,000.00 on a pro-rata basis). If an email is given, the contractor is emailed their agreement with Aqua Promotions branding.</div>
+        <button class="btn btn-primary" id="aquaGenBtn" style="background:${teal}">Generate agreement</button>
+      </div>
+
+      <div class="card mt">
+        <div class="card-pad" style="display:flex;align-items:center;gap:12px;padding-bottom:0">
+          <strong style="font-size:14px">Generated contracts</strong>
+          <span id="aquaCount" class="muted" style="font-size:12.5px"></span>
+          <button class="btn small" id="aquaRefreshBtn" style="margin-left:auto">Refresh</button>
+        </div>
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr>
+            <th>Name</th><th>ID</th><th>Start</th><th>Remuneration</th>
+            <th>Status</th><th>Created</th><th class="r"></th>
+          </tr></thead>
+          <tbody id="aquaListBody">
+            <tr><td colspan="7" class="muted" style="text-align:center;padding:30px">Loading…</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>`;
+  }
+
+  function wireAquaContracts() {
+    const msg = (kind, text) => {
+      const m = document.getElementById('aquaFormMsg');
+      if (!m) return;
+      const bg = kind === 'err' ? '#FDECEA' : '#E6F4F1';
+      const fg = kind === 'err' ? '#B42318' : '#0B5A54';
+      const bd = kind === 'err' ? '#F5C6C0' : '#CDE8E2';
+      m.innerHTML = text
+        ? `<div style="padding:12px 14px;border-radius:10px;font-size:14px;margin:0 0 14px;background:${bg};color:${fg};border:1px solid ${bd}">${escapeHtml(text)}</div>`
+        : '';
+    };
+    const errRow = (e) => `<tr><td colspan="7" class="muted" style="text-align:center;padding:24px;color:#B42318">Error: ${escapeHtml(String(e))}</td></tr>`;
+
+    function statusPill(s) {
+      if (s === 'Signed')     return '<span class="pill ok" style="font-size:11px;padding:3px 9px">Signed</span>';
+      if (s === 'Draft sent') return '<span class="pill" style="font-size:11px;padding:3px 9px;background:#E6F4F1;color:#0B5A54">Draft sent</span>';
+      return `<span class="pill" style="font-size:11px;padding:3px 9px;background:#EEF2F1;color:#3C4A48">${escapeHtml(s || 'Generated')}</span>`;
+    }
+
+    function renderRows(rows) {
+      const count = document.getElementById('aquaCount');
+      if (count) count.textContent = rows.length + (rows.length === 1 ? ' contract' : ' contracts');
+      const body = document.getElementById('aquaListBody');
+      if (!body) return;
+      if (!rows.length) { body.innerHTML = '<tr><td colspan="7" class="muted" style="text-align:center;padding:30px">No contracts yet.</td></tr>'; return; }
+      body.innerHTML = rows.map(r => {
+        const actions = [];
+        if (r.pdfUrl) actions.push(`<a href="${escapeHtml(r.pdfUrl)}" target="_blank" rel="noopener">PDF</a>`);
+        if (r.status !== 'Signed') actions.push(`<a href="#" data-aqua-sign="${escapeHtml(r.folderId)}">Mark signed</a>`);
+        return `<tr>
+          <td><div class="agent-cell"><div class="avatar">${escapeHtml(initialsOf(r.full_name))}</div>
+            <div class="agent-name">${escapeHtml(r.full_name)}${r.email ? `<div class="muted" style="font-size:11.5px;font-weight:400">${escapeHtml(r.email)}</div>` : ''}</div></div></td>
+          <td class="muted tnum" style="font-size:12.5px">${escapeHtml(r.id_number)}</td>
+          <td style="font-size:12.5px">${escapeHtml(r.start_date)}</td>
+          <td style="font-size:12.5px">${escapeHtml(r.remuneration)}</td>
+          <td>${statusPill(r.status)}</td>
+          <td class="muted tnum" style="font-size:12px">${escapeHtml(r.created)}</td>
+          <td class="r" style="white-space:nowrap;font-size:12.5px">${actions.join(' · ')}</td>
+        </tr>`;
+      }).join('');
+      body.querySelectorAll('a[data-aqua-sign]').forEach(a => {
+        a.addEventListener('click', async (ev) => {
+          ev.preventDefault();
+          if (!confirm('Mark this contract as signed?')) return;
+          try {
+            const res = await _aquaFetch({ kind: 'mark_signed', folderId: a.getAttribute('data-aqua-sign') });
+            if (res.ok) loadList(); else msg('err', 'Error: ' + (res.error || 'unknown'));
+          } catch (e) { msg('err', 'Network error: ' + e); }
+        });
+      });
+    }
+
+    async function loadList() {
+      const body = document.getElementById('aquaListBody');
+      if (body) body.innerHTML = '<tr><td colspan="7" class="muted" style="text-align:center;padding:30px">Loading…</td></tr>';
+      try {
+        const res = await _aquaFetch({ kind: 'list' });
+        if (!res.ok) { if (body) body.innerHTML = errRow(res.error || 'unauthorized'); return; }
+        renderRows(res.rows || []);
+      } catch (e) { if (body) body.innerHTML = errRow(e); }
+    }
+
+    const gen = document.getElementById('aquaGenBtn');
+    if (gen) gen.addEventListener('click', async () => {
+      msg('', '');
+      const val = (id) => (document.getElementById(id)?.value || '').trim();
+      const fields = { full_name: val('aqName'), id_number: val('aqId'), start_date: val('aqStart'), remuneration: val('aqRem'), email: val('aqEmail') };
+      if (!fields.full_name || !fields.id_number) { msg('err', 'Full name and ID number are required.'); return; }
+      gen.disabled = true; const label = gen.textContent; gen.textContent = 'Generating…';
+      try {
+        const res = await _aquaFetch({ fields });
+        gen.disabled = false; gen.textContent = label;
+        if (!res.ok) { msg('err', 'Error: ' + (res.error || 'unknown')); return; }
+        msg('ok', 'Agreement generated for ' + fields.full_name + '.' + (res.emailed ? ' Emailed to the contractor.' : ''));
+        ['aqName', 'aqId', 'aqStart', 'aqRem', 'aqEmail'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        loadList();
+      } catch (e) {
+        gen.disabled = false; gen.textContent = label;
+        msg('err', 'Network error: ' + e);
+      }
+    });
+
+    const refresh = document.getElementById('aquaRefreshBtn');
+    if (refresh) refresh.addEventListener('click', loadList);
+
+    loadList();
   }
 
   // ─── Live red-flags badge ────────────────────────────────────────────
