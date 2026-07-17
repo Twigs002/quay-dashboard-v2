@@ -908,6 +908,47 @@
     </div>`
   }
 
+  // Standalone director report — the Division Costs pivot on its own top-level
+  // tab (super-only), with the SDL column hidden. Reuses the exact same payroll
+  // pay-period data pipeline (shifts + allocations) as V.payroll; the only
+  // differences are that it shows a single view and drops the SDL figure.
+  // `state` is the shared payrollState owned by app.js.
+  V.divCostsReport = function (state) {
+    const periods = payPeriodsForPicker(12)
+    const curLabel = state && state.period ? state.period.label : periods[0].label
+    const opts = periods.map(p =>
+      `<option value="${esc(p.label)}" ${p.label === curLabel ? 'selected' : ''}>${esc(p.label)}</option>`
+    ).join('')
+
+    let body = ''
+    if (state && state.loading) {
+      body = `<div class="card card-pad" style="text-align:center;color:var(--muted);padding:40px">Loading shifts for ${esc(curLabel)}…</div>`
+    } else if (state && state.error) {
+      body = `<div class="card card-pad" style="color:var(--red)">Failed to load: ${esc(state.error)}</div>`
+    } else if (!state || !state.shifts || !state.allocations) {
+      body = `<div class="card card-pad" style="color:var(--muted)">No data yet.</div>`
+    } else {
+      const alloc = state.allocations
+      body = V.payrollDivisionCosts(alloc.empTeamHours, alloc.empTotalHours, alloc.empMeta,
+        (state && state.divCostTeams) || [], { hideSdl: true })
+    }
+
+    return `
+    <div class="tab-view">
+      <div class="card card-pad">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px">
+          <div class="field" style="margin-bottom:0">
+            <label>Pay period</label>
+            <select id="payrollPeriod" style="min-width:240px">
+              ${opts}
+            </select>
+          </div>
+        </div>
+      </div>
+      <div id="payrollBody" class="mt">${body}</div>
+    </div>`
+  }
+
   // §5.1 — All Shifts, grouped by agent with blank separator rows.
   V.payrollAllShifts = function (shifts) {
     if (!shifts || !shifts.length) {
@@ -1345,8 +1386,14 @@
   // `selected` division names (empty array = all divisions). Kept separate from
   // the card shell so ticking a checkbox can re-render only the table without
   // rebuilding — and closing — the multi-select picker.
-  V.payrollDivisionCostsTable = function (empTeamHours, empTotalHours, empMeta, selected) {
+  V.payrollDivisionCostsTable = function (empTeamHours, empTotalHours, empMeta, selected, opts) {
     const SDL_RATE = 0.011
+    // When hideSdl is set (the standalone "Division Costs" director report),
+    // the SDL column is dropped from the header, every agent block, and the
+    // grand-total row. The DIV CONTRIBUTION math is UNCHANGED — SDL is still
+    // folded into it exactly as before; only the visible figure is hidden.
+    const hideSdl = !!(opts && opts.hideSdl)
+    const NB = hideSdl ? 4 : 5 // cells per agent block (5 with SDL, 4 without)
 
     // Invert empTeamHours → team → Map<emp, hrs>
     const teamEmp = new Map()
@@ -1394,7 +1441,7 @@
     for (let n = 1; n <= maxHead; n++) {
       headCells.push(`<th>FANCY / LN NAME ${n}</th>`)
       headCells.push(`<th class="num">PAYROLL AMOUNT</th>`)
-      headCells.push(`<th class="num">SDL</th>`)
+      if (!hideSdl) headCells.push(`<th class="num">SDL</th>`)
       headCells.push(`<th class="num">PERCENTAGE</th>`)
       headCells.push(`<th class="num">DIV CONTRIBUTION</th>`)
     }
@@ -1443,7 +1490,7 @@
           const x = enriched[i]
           cells.push(`<td>${esc(x.emp)}</td>`)
           cells.push(`<td class="num tnum">${x.payroll == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(x.payroll)}</td>`)
-          cells.push(`<td class="num tnum">${x.sdl == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(x.sdl)}</td>`)
+          if (!hideSdl) cells.push(`<td class="num tnum">${x.sdl == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(x.sdl)}</td>`)
           cells.push(`<td class="num tnum">${(x.pct * 100).toFixed(1)}%</td>`)
           cells.push(`<td class="num tnum">${x.contrib == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(x.contrib)}</td>`)
           if (!gtCountedEmps.has(x.emp)) {
@@ -1456,7 +1503,7 @@
             rowTotal += x.contrib
           }
         } else {
-          cells.push('<td></td><td></td><td></td><td></td><td></td>')
+          cells.push('<td></td>'.repeat(NB))
         }
       }
       cells.push(`<td class="num tnum"><b>${rowTotal > 0 ? _fmtZAR(rowTotal) : '<span style="color:var(--muted)">—</span>'}</b></td>`)
@@ -1469,7 +1516,7 @@
     let body = ''
     for (const team of canonRows) body += rowFor(team, noteFor(team))
     if (nonCanonRows.length || showNoTeam) {
-      const spanCols = 1 + maxHead * 5 + 1 + 1
+      const spanCols = 1 + maxHead * NB + 1 + 1
       body += `<tr class="payroll-noncanon-sep">
         <td colspan="${spanCols}" style="background:var(--red);color:#fff;text-align:center;font-weight:700;letter-spacing:0.4px;padding:10px">
           Not in master list — review
@@ -1479,7 +1526,7 @@
       if (showNoTeam) body += rowFor('(No team noted)', 'Shifts where the Employee notes field was blank')
     }
     if (!body) {
-      const spanCols = 1 + maxHead * 5 + 1 + 1
+      const spanCols = 1 + maxHead * NB + 1 + 1
       body = `<tr><td colspan="${spanCols}" style="text-align:center;color:var(--muted);padding:18px">No divisions match the current selection.</td></tr>`
     }
 
@@ -1489,7 +1536,7 @@
     for (let i = 0; i < maxHead; i++) {
       totalCells.push('<td></td>')
       totalCells.push(`<td class="num tnum">${i === 0 && gtPayrollTotal ? _fmtZAR(gtPayrollTotal) : ''}</td>`)
-      totalCells.push(`<td class="num tnum">${i === 0 && gtSdlTotal ? _fmtZAR(gtSdlTotal) : ''}</td>`)
+      if (!hideSdl) totalCells.push(`<td class="num tnum">${i === 0 && gtSdlTotal ? _fmtZAR(gtSdlTotal) : ''}</td>`)
       totalCells.push('<td></td>')
       totalCells.push(`<td class="num tnum">${gtContrib[i] ? _fmtZAR(gtContrib[i]) : ''}</td>`)
     }
@@ -1511,15 +1558,19 @@
     return `${n} divisions`
   }
 
-  V.payrollDivisionCosts = function (empTeamHours, empTotalHours, empMeta, filterTeams) {
+  V.payrollDivisionCosts = function (empTeamHours, empTotalHours, empMeta, filterTeams, opts) {
+    const hideSdl = !!(opts && opts.hideSdl)
     const allRowTeams = V.divCostAllTeams(empTeamHours)
     // Keep only still-valid selections (a team may vanish between pay periods).
     const selected = (Array.isArray(filterTeams) ? filterTeams : [])
       .filter(t => allRowTeams.includes(t))
     const selSet = new Set(selected)
 
+    const allCaption = hideSdl
+      ? 'Cost-attribution pivot · PAYROLL = total hrs × rate · DIV CONTRIBUTION = hours on this division × rate'
+      : 'Cost-attribution pivot · PAYROLL = total hrs × rate · SDL = 1.1% levy · DIV CONTRIBUTION = hours on this division × rate'
     const subCaption = selected.length === 0
-      ? 'Cost-attribution pivot · PAYROLL = total hrs × rate · SDL = 1.1% levy · DIV CONTRIBUTION = hours on this division × rate'
+      ? allCaption
       : `Showing ${selected.length} selected division${selected.length === 1 ? '' : 's'} · use the Divisions picker to change`
 
     const options = allRowTeams.map(t =>
@@ -1557,7 +1608,7 @@
             ${_exportBtn()}
           </div>
         </div>
-        <div id="divCostTableHost">${V.payrollDivisionCostsTable(empTeamHours, empTotalHours, empMeta, selected)}</div>
+        <div id="divCostTableHost"${hideSdl ? ' data-hide-sdl="1"' : ''}>${V.payrollDivisionCostsTable(empTeamHours, empTotalHours, empMeta, selected, { hideSdl })}</div>
       </div>`
   }
 
