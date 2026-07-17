@@ -782,8 +782,8 @@
       if (count) count.textContent = checked.length ? `${checked.length} selected` : 'All divisions';
       const cap = document.getElementById('divCostCaption');
       const allCap = hideSdl
-        ? 'Cost-attribution pivot · PAYROLL = total hrs × rate · DIV CONTRIBUTION = hours on this division × rate'
-        : 'Cost-attribution pivot · PAYROLL = total hrs × rate · SDL = 1.1% levy · DIV CONTRIBUTION = hours on this division × rate';
+        ? 'Cost-attribution pivot · PAYROLL = total hrs × rate · DIV CONTRIBUTION = half the wage for hours on this division (50% split · head office carries the other half)'
+        : 'Cost-attribution pivot · PAYROLL = total hrs × rate · SDL = 1.1% levy · DIV CONTRIBUTION = half the wage for hours on this division + its SDL share (50% split · head office carries the other half)';
       if (cap) cap.innerHTML = checked.length
         ? `Showing ${checked.length} selected division${checked.length === 1 ? '' : 's'} · use the Divisions picker to change`
         : allCap;
