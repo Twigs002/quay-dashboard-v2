@@ -547,7 +547,7 @@
     // period unpaired and the view empty. _fetchAllEvents paginates.
     const [staffRes, events] = await Promise.all([
       window.sb.from('staff')
-        .select('id, name, designation, division, active, hourly_rate, salary')
+        .select('id, name, designation, division, active, hourly_rate, salary, is_broker')
         .order('name', { ascending: true }),
       _fetchAllEvents(fromISO, toISO),
     ])
@@ -558,19 +558,25 @@
     const designationById = new Map()
     const divisionById = new Map()
     const rateById = new Map()
-    const salaryById = new Map();
+    const salaryById = new Map()
+    // Brokers are login-only accounts (no clock-in, no payroll). They should
+    // never produce clock events, but exclude them defensively so a stray
+    // event can never surface a broker in the pay run.
+    const brokerIds = new Set();
     (staff || []).forEach(s => {
       nameById.set(s.id, s.name || s.id)
       designationById.set(s.id, s.designation || '')
       divisionById.set(s.id, s.division || '')
       rateById.set(s.id, s.hourly_rate == null ? null : Number(s.hourly_rate))
       salaryById.set(s.id, s.salary == null ? null : Number(s.salary))
+      if (s.is_broker === true || String(s.designation || '').toLowerCase() === 'broker') brokerIds.add(s.id)
     })
 
     // Group events by staff_id, sort each group by ts asc (the order-by
     // above already sorts globally, but we re-sort per-group to be safe).
     const byStaff = new Map();
     (events || []).forEach(e => {
+      if (brokerIds.has(e.staff_id)) return   // brokers never enter the pay run
       if (!byStaff.has(e.staff_id)) byStaff.set(e.staff_id, [])
       byStaff.get(e.staff_id).push(e)
     })
