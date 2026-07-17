@@ -249,7 +249,7 @@
       if (error || !data.user) throw new Error('Username or PIN not recognised');
       // Confirm this user is in the staff table AND is_admin.
       const { data: staff, error: sErr } = await window.sb.from('staff')
-        .select('id, name, role, team, is_admin, is_super, is_payroll, active')
+        .select('*')
         .eq('auth_user_id', data.user.id).maybeSingle();
       // Payroll logins are a restricted role (Clocks / Staff / Payroll only) and
       // may sign in on is_payroll alone — they don't need the is_admin flag.
@@ -5290,7 +5290,7 @@
       const { data: { user } } = await window.sb.auth.getUser();
       if (user) {
         const { data: staff } = await window.sb.from('staff')
-          .select('id, name, role, team, is_admin, is_super, is_payroll, active')
+          .select('*')
           .eq('auth_user_id', user.id).maybeSingle();
         if (staff && (staff.is_admin || staff.is_payroll) && staff.active !== false) {
           setSession({
