@@ -164,8 +164,7 @@
     { id: 'clocks',     section: 'Admin',       label: 'Clocks',         icon: I.clock,    title: 'Clocks',               sub: 'Staff hours, requests & team — manage everything in one place' },
     { id: 'team',       section: 'Admin',       label: 'Staff',          icon: I.users,    title: 'Staff Directory',      sub: 'Roster · clock-in status · forgot-to-clock-out · mark absent · broker logins' },
     { id: 'payroll',    section: 'Admin',       label: 'Payroll',        icon: I.cal2,     title: 'Payroll · Divisions Allocations', sub: 'Pay-period hours by division — 21st → 20th' },
-    { id: 'teams-report', section: 'Admin',     label: 'Teams Reporting', icon: I.medal,   title: 'Teams Reporting',      sub: 'Pick teams · see who called for them (incl. cross-team) · export PDF/PNG for sharing' },
-    { id: 'div-costs',  section: 'Admin',       label: 'Division Costs',  icon: I.chart,   title: 'Division Costs',       sub: 'Cost-attribution pivot per division — payroll share by team · SDL hidden · super-only' },
+    { id: 'teams-report', section: 'Admin',     label: 'Teams Reporting', icon: I.medal,   title: 'Teams Reporting',      sub: 'Pick teams · see who called for them (incl. cross-team) · division cost-attribution · export PDF/PNG' },
   ];
 
   // ---- Payroll tab state (super-only) ----
@@ -180,7 +179,7 @@
     loading: false,
     error: null,
     divCostTeams: [], // Division Costs view: [] = all, else selected division names
-    hideSdl: false,   // true only while the standalone Division Costs report tab is active
+    hideSdl: false,   // true while the Division Costs card is shown inside Teams Reporting
   };
 
   // ---------------------------------------------------- LOGIN
@@ -367,8 +366,7 @@
     // Payroll is visible to managers too (they need pay-period hours).
     const visibleTabs = TABS.filter(t =>
       (t.id !== 'leadership'   || session.super) &&
-      (t.id !== 'teams-report' || session.super) &&
-      (t.id !== 'div-costs'    || session.super)
+      (t.id !== 'teams-report' || session.super)
     );
     // If a non-super lands on a hidden tab (e.g. via deep link), bounce to overview.
     if (!visibleTabs.find(t => t.id === tab)) tab = 'overview';
@@ -551,7 +549,7 @@
   // on tabs that own a date control (OWN_DATE_CONTROL), on Payroll (own Billing
   // Period selector), so a page never shows two date ranges.
   function globalDateBar(tab) {
-    if (tab === 'payroll' || tab === 'div-costs') return '';
+    if (tab === 'payroll') return '';
     if (tab === 'live') return liveDateBar();   // role filter + its own range
     if (OWN_DATE_CONTROL.has(tab)) return '';   // tab owns its date control
     const migrated = GLOBAL_RANGE_TABS.has(tab);
@@ -611,7 +609,6 @@
     const host = document.getElementById('content');
     if (tab === 'leadership'   && !session?.super) { tab = 'overview'; }
     if (tab === 'teams-report' && !session?.super) { tab = 'overview'; }
-    if (tab === 'div-costs'    && !session?.super) { tab = 'overview'; }
     if (tab === 'leadership')    { host.innerHTML = leadership(); afterLeadership(); }
     else if (tab === 'overview') { host.innerHTML = overview(); afterOverview(); }
     else if (tab === 'staff')    {
@@ -629,11 +626,10 @@
     else if (tab === 'sources')  host.innerHTML = V.leadSources(period);
     else if (tab === 'clienthub'){ host.innerHTML = renderClientHubTeams(); wireClientHubTeams(); }
     else if (tab === 'payroll')  { payrollState.hideSdl = false; host.innerHTML = V.payroll(payrollState); payrollWire(); }
-    else if (tab === 'div-costs'){ payrollState.hideSdl = true; host.innerHTML = V.divCostsReport(payrollState); payrollWire(); }
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
     else if (tab === 'team')     { host.innerHTML = renderTeamView(); wireTeamView(); }
     else if (tab === 'live')     { host.innerHTML = renderLiveFloor(); liveFloorWire(); }
-    else if (tab === 'teams-report') { host.innerHTML = renderTeamsReporting(); wireTeamsReporting(); }
+    else if (tab === 'teams-report') { payrollState.hideSdl = true; host.innerHTML = renderTeamsReporting(); wireTeamsReporting(); }
     // Any per-card "Export CSV" button shares the topbar export handler.
     document.querySelectorAll('#content .js-export').forEach(b => {
       if (b.__exportWired) return; b.__exportWired = true;
@@ -814,7 +810,7 @@
     payrollState.loading = true;
     payrollState.error = null;
     // Render the loading state immediately.
-    if (tab === 'payroll' || tab === 'div-costs') shell();
+    if (tab === 'payroll' || tab === 'teams-report') shell();
     try {
       // Make sure CONFIG is hydrated before parsing notes. Both calls
       // are network-bound so kick them off in parallel; the algorithm
@@ -834,7 +830,7 @@
       payrollState.allocations = { empTeamHours: new Map(), empTotalHours: new Map(), rawVariantsPerTeam: new Map() };
     } finally {
       payrollState.loading = false;
-      if (tab === 'payroll' || tab === 'div-costs') shell();
+      if (tab === 'payroll' || tab === 'teams-report') shell();
     }
   }
 
@@ -1868,7 +1864,7 @@
     else if (tab === 'manager')    rows = csvManager();
     else if (tab === 'monthly')    rows = csvMonthly();
     else if (tab === 'payroll')    rows = csvPayroll();
-    else if (tab === 'div-costs')  rows = csvPayroll();
+    else if (tab === 'teams-report') rows = csvPayroll(); // Division Costs card CSV (SDL hidden)
     else                            rows = csvAgents();
     downloadCSV(filename, rows);
   }
@@ -4138,6 +4134,8 @@
         </table></div>
       </div>
 
+      ${V.divCostsSection(payrollState)}
+
       ${_trSubscribersCard()}
     </div>`;
   }
@@ -4295,6 +4293,26 @@
         shell();
       })
     );
+
+    // ── Division Costs section (embedded, SDL hidden) ─────────────────────
+    // Shares the Payroll data pipeline via payrollState. Pay-period picker
+    // re-fetches; the division multi-select re-renders in place; first mount
+    // kicks off the fetch (payrollFetchAndRender re-renders teams-report when
+    // the shifts land — see its tab guards).
+    const dcPeriod = document.getElementById('payrollPeriod');
+    if (dcPeriod) dcPeriod.addEventListener('change', () => {
+      const all = window.PAYROLL.payPeriodsForPicker(12);
+      const next = all.find(p => p.label === dcPeriod.value);
+      if (!next) return;
+      payrollState.period = next;
+      payrollState.shifts = null;
+      payrollState.allocations = null;
+      payrollFetchAndRender();
+    });
+    payrollDivPickerWire();
+    if (window.PAYROLL && payrollState.shifts === null && !payrollState.loading) {
+      payrollFetchAndRender();
+    }
   }
 
   // Snapshot the Teams Reporting view as a PNG and trigger a download.
