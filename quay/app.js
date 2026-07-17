@@ -165,6 +165,7 @@
     { id: 'team',       section: 'Admin',       label: 'Staff',          icon: I.users,    title: 'Staff Directory',      sub: 'Roster · clock-in status · forgot-to-clock-out · mark absent · broker logins' },
     { id: 'payroll',    section: 'Admin',       label: 'Payroll',        icon: I.cal2,     title: 'Payroll · Divisions Allocations', sub: 'Pay-period hours by division — 21st → 20th' },
     { id: 'teams-report', section: 'Admin',     label: 'Teams Reporting', icon: I.medal,   title: 'Teams Reporting',      sub: 'Pick teams · see who called for them (incl. cross-team) · export PDF/PNG for sharing' },
+    { id: 'div-costs',  section: 'Admin',       label: 'Division Costs',  icon: I.chart,   title: 'Division Costs',       sub: 'Cost-attribution pivot per division — payroll share by team · SDL hidden · super-only' },
   ];
 
   // ---- Payroll tab state (super-only) ----
@@ -179,6 +180,7 @@
     loading: false,
     error: null,
     divCostTeams: [], // Division Costs view: [] = all, else selected division names
+    hideSdl: false,   // true only while the standalone Division Costs report tab is active
   };
 
   // ---------------------------------------------------- LOGIN
@@ -365,7 +367,8 @@
     // Payroll is visible to managers too (they need pay-period hours).
     const visibleTabs = TABS.filter(t =>
       (t.id !== 'leadership'   || session.super) &&
-      (t.id !== 'teams-report' || session.super)
+      (t.id !== 'teams-report' || session.super) &&
+      (t.id !== 'div-costs'    || session.super)
     );
     // If a non-super lands on a hidden tab (e.g. via deep link), bounce to overview.
     if (!visibleTabs.find(t => t.id === tab)) tab = 'overview';
@@ -548,7 +551,7 @@
   // on tabs that own a date control (OWN_DATE_CONTROL), on Payroll (own Billing
   // Period selector), so a page never shows two date ranges.
   function globalDateBar(tab) {
-    if (tab === 'payroll') return '';
+    if (tab === 'payroll' || tab === 'div-costs') return '';
     if (tab === 'live') return liveDateBar();   // role filter + its own range
     if (OWN_DATE_CONTROL.has(tab)) return '';   // tab owns its date control
     const migrated = GLOBAL_RANGE_TABS.has(tab);
@@ -608,6 +611,7 @@
     const host = document.getElementById('content');
     if (tab === 'leadership'   && !session?.super) { tab = 'overview'; }
     if (tab === 'teams-report' && !session?.super) { tab = 'overview'; }
+    if (tab === 'div-costs'    && !session?.super) { tab = 'overview'; }
     if (tab === 'leadership')    { host.innerHTML = leadership(); afterLeadership(); }
     else if (tab === 'overview') { host.innerHTML = overview(); afterOverview(); }
     else if (tab === 'staff')    {
@@ -624,7 +628,8 @@
     else if (tab === 'ln')       { host.innerHTML = renderLnLeaderboard(); wireLnLeaderboard(); }
     else if (tab === 'sources')  host.innerHTML = V.leadSources(period);
     else if (tab === 'clienthub'){ host.innerHTML = renderClientHubTeams(); wireClientHubTeams(); }
-    else if (tab === 'payroll')  { host.innerHTML = V.payroll(payrollState); payrollWire(); }
+    else if (tab === 'payroll')  { payrollState.hideSdl = false; host.innerHTML = V.payroll(payrollState); payrollWire(); }
+    else if (tab === 'div-costs'){ payrollState.hideSdl = true; host.innerHTML = V.divCostsReport(payrollState); payrollWire(); }
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
     else if (tab === 'team')     { host.innerHTML = renderTeamView(); wireTeamView(); }
     else if (tab === 'live')     { host.innerHTML = renderLiveFloor(); liveFloorWire(); }
@@ -754,17 +759,23 @@
       payrollState.divCostTeams = checked;
       const host = document.getElementById('divCostTableHost');
       const alloc = payrollState.allocations || {};
+      // The standalone Division Costs report tags its host with data-hide-sdl
+      // so live re-renders keep the SDL column hidden.
+      const hideSdl = !!(host && host.dataset.hideSdl === '1');
       if (host && V.payrollDivisionCostsTable) {
-        host.innerHTML = V.payrollDivisionCostsTable(alloc.empTeamHours, alloc.empTotalHours, alloc.empMeta, checked);
+        host.innerHTML = V.payrollDivisionCostsTable(alloc.empTeamHours, alloc.empTotalHours, alloc.empMeta, checked, { hideSdl });
       }
       const summary = document.getElementById('divCostSummary');
       if (summary && V.divCostSummary) summary.textContent = V.divCostSummary(checked);
       const count = document.getElementById('divCostCount');
       if (count) count.textContent = checked.length ? `${checked.length} selected` : 'All divisions';
       const cap = document.getElementById('divCostCaption');
+      const allCap = hideSdl
+        ? 'Cost-attribution pivot · PAYROLL = total hrs × rate · DIV CONTRIBUTION = hours on this division × rate'
+        : 'Cost-attribution pivot · PAYROLL = total hrs × rate · SDL = 1.1% levy · DIV CONTRIBUTION = hours on this division × rate';
       if (cap) cap.innerHTML = checked.length
         ? `Showing ${checked.length} selected division${checked.length === 1 ? '' : 's'} · use the Divisions picker to change`
-        : 'Cost-attribution pivot · PAYROLL = total hrs × rate · SDL = 1.1% levy · DIV CONTRIBUTION = hours on this division × rate';
+        : allCap;
     };
 
     if (list) list.addEventListener('change', (e) => {
@@ -803,7 +814,7 @@
     payrollState.loading = true;
     payrollState.error = null;
     // Render the loading state immediately.
-    if (tab === 'payroll') shell();
+    if (tab === 'payroll' || tab === 'div-costs') shell();
     try {
       // Make sure CONFIG is hydrated before parsing notes. Both calls
       // are network-bound so kick them off in parallel; the algorithm
@@ -823,7 +834,7 @@
       payrollState.allocations = { empTeamHours: new Map(), empTotalHours: new Map(), rawVariantsPerTeam: new Map() };
     } finally {
       payrollState.loading = false;
-      if (tab === 'payroll') shell();
+      if (tab === 'payroll' || tab === 'div-costs') shell();
     }
   }
 
@@ -1857,6 +1868,7 @@
     else if (tab === 'manager')    rows = csvManager();
     else if (tab === 'monthly')    rows = csvMonthly();
     else if (tab === 'payroll')    rows = csvPayroll();
+    else if (tab === 'div-costs')  rows = csvPayroll();
     else                            rows = csvAgents();
     downloadCSV(filename, rows);
   }
@@ -1978,7 +1990,10 @@
   // mirrors what's on screen.
   function csvPayroll() {
     const s = payrollState || {};
-    const view = s.activeView || 'allShifts';
+    // The standalone Division Costs report (hideSdl) always exports that pivot,
+    // regardless of the Payroll tab's remembered sub-view.
+    const hideSdl = !!s.hideSdl;
+    const view = hideSdl ? 'divisionCosts' : (s.activeView || 'allShifts');
     const periodLbl = s.period ? s.period.label : '';
     if (view === 'allShifts') {
       const out = [['Agent', 'Type', 'Date in', 'Time in', 'Date out', 'Time out', 'Employee notes', 'Shift hours (HH:MM)', 'Shift hours (Decimal)']];
@@ -2166,7 +2181,7 @@
       for (let i = 1; i <= maxHead; i++) {
         header.push(`Fancy / LN name ${i}`);
         header.push('Payroll amount');
-        header.push('SDL');
+        if (!hideSdl) header.push('SDL');
         header.push('Percentage');
         header.push('Div contribution');
       }
@@ -2203,7 +2218,7 @@
             const x = enriched[i];
             row.push(x.emp);
             row.push(fmt2(x.payroll));
-            row.push(fmt2(x.sdl));
+            if (!hideSdl) row.push(fmt2(x.sdl));
             row.push((x.pct * 100).toFixed(1) + '%');
             row.push(fmt2(x.contrib));
             if (!gtCountedEmps.has(x.emp)) {
@@ -2213,7 +2228,8 @@
             }
             if (x.contrib != null) { gtContrib[i] += x.contrib; rowTotal += x.contrib; }
           } else {
-            row.push(''); row.push(''); row.push(''); row.push(''); row.push('');
+            row.push(''); row.push(''); row.push(''); row.push('');
+            if (!hideSdl) row.push('');
           }
         }
         row.push(fmt2(rowTotal));
@@ -2240,7 +2256,7 @@
       for (let i = 0; i < maxHead; i++) {
         tot.push('');
         tot.push(i === 0 ? fmt2(gtPayrollTotal) : '');
-        tot.push(i === 0 ? fmt2(gtSdlTotal) : '');
+        if (!hideSdl) tot.push(i === 0 ? fmt2(gtSdlTotal) : '');
         tot.push('');
         tot.push(fmt2(gtContrib[i]));
       }
