@@ -908,12 +908,13 @@
     </div>`
   }
 
-  // Standalone director report — the Division Costs pivot on its own top-level
-  // tab (super-only), with the SDL column hidden. Reuses the exact same payroll
-  // pay-period data pipeline (shifts + allocations) as V.payroll; the only
-  // differences are that it shows a single view and drops the SDL figure.
-  // `state` is the shared payrollState owned by app.js.
-  V.divCostsReport = function (state) {
+  // Division Costs section — embedded INSIDE the Teams Reporting tab (super-
+  // only), with the SDL column hidden. Reuses the exact same payroll pay-period
+  // data pipeline (shifts + allocations) as V.payroll; the only differences are
+  // that it shows a single view, drops the SDL figure, and carries its own
+  // pay-period picker so it works standalone within Teams Reporting.
+  // Returns embeddable cards (no tab-view wrapper). `state` is payrollState.
+  V.divCostsSection = function (state) {
     const periods = payPeriodsForPicker(12)
     const curLabel = state && state.period ? state.period.label : periods[0].label
     const opts = periods.map(p =>
@@ -926,7 +927,7 @@
     } else if (state && state.error) {
       body = `<div class="card card-pad" style="color:var(--red)">Failed to load: ${esc(state.error)}</div>`
     } else if (!state || !state.shifts || !state.allocations) {
-      body = `<div class="card card-pad" style="color:var(--muted)">No data yet.</div>`
+      body = `<div class="card card-pad" style="color:var(--muted)">Loading division costs…</div>`
     } else {
       const alloc = state.allocations
       body = V.payrollDivisionCosts(alloc.empTeamHours, alloc.empTotalHours, alloc.empMeta,
@@ -934,9 +935,12 @@
     }
 
     return `
-    <div class="tab-view">
-      <div class="card card-pad">
-        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px">
+      <div class="card mt card-pad">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between">
+          <div>
+            <h3 style="margin:0;font-family:var(--serif);font-size:17px">Division Costs</h3>
+            <div class="sub" style="margin-top:4px">Cost-attribution pivot per division — payroll share by team</div>
+          </div>
           <div class="field" style="margin-bottom:0">
             <label>Pay period</label>
             <select id="payrollPeriod" style="min-width:240px">
@@ -945,8 +949,7 @@
           </div>
         </div>
       </div>
-      <div id="payrollBody" class="mt">${body}</div>
-    </div>`
+      <div id="payrollBody" class="mt">${body}</div>`
   }
 
   // §5.1 — All Shifts, grouped by agent with blank separator rows.
