@@ -169,8 +169,12 @@
 
   // The dedicated Payroll role sees only these tabs: Clocks, Staff (Directory)
   // and Payroll. Super wins over Payroll, so a superuser who also carries the
-  // is_payroll flag keeps full access.
+  // payroll marker keeps full access.
   const PAYROLL_TAB_IDS = new Set(['clocks', 'team', 'payroll']);
+  // A login is a Payroll login when its designation is 'payroll' (settable in
+  // the Add-Staff form, no DB migration needed) OR the optional is_payroll flag
+  // is set (if that column ever gets added). Designation is the primary path.
+  const isPayrollLogin = (st) => !!st && (st.designation === 'payroll' || !!st.is_payroll);
   const payrollRole = () => !!(session && session.payroll && !session.super);
   const defaultTabFor = () =>
     (session && session.super) ? 'leadership' : payrollRole() ? 'payroll' : 'overview';
@@ -252,17 +256,17 @@
         .select('*')
         .eq('auth_user_id', data.user.id).maybeSingle();
       // Payroll logins are a restricted role (Clocks / Staff / Payroll only) and
-      // may sign in on is_payroll alone — they don't need the is_admin flag.
-      if (sErr || !staff || !(staff.is_admin || staff.is_payroll) || staff.active === false) {
+      // may sign in without the is_admin flag (designation 'payroll' is enough).
+      if (sErr || !staff || !(staff.is_admin || isPayrollLogin(staff)) || staff.active === false) {
         await window.sb.auth.signOut();
         throw new Error('Not an admin');
       }
       setSession({
         id: staff.id, name: staff.name, role: staff.role || '', team: staff.team || '',
-        admin: true, super: !!staff.is_super, payroll: !!staff.is_payroll,
+        admin: true, super: !!staff.is_super, payroll: isPayrollLogin(staff),
       });
-      if (staff.is_super) tab = 'leadership';       // superusers land on Leadership
-      else if (staff.is_payroll) tab = 'payroll';   // payroll role lands on Payroll
+      if (staff.is_super) tab = 'leadership';           // superusers land on Leadership
+      else if (isPayrollLogin(staff)) tab = 'payroll';  // payroll role lands on Payroll
       try { localStorage.setItem('quay_dash_last_user', username); } catch {}
       pinBuf = ''; loginError = '';
       shell();
@@ -5292,13 +5296,13 @@
         const { data: staff } = await window.sb.from('staff')
           .select('*')
           .eq('auth_user_id', user.id).maybeSingle();
-        if (staff && (staff.is_admin || staff.is_payroll) && staff.active !== false) {
+        if (staff && (staff.is_admin || isPayrollLogin(staff)) && staff.active !== false) {
           setSession({
             id: staff.id, name: staff.name, role: staff.role || '', team: staff.team || '',
-            admin: true, super: !!staff.is_super, payroll: !!staff.is_payroll,
+            admin: true, super: !!staff.is_super, payroll: isPayrollLogin(staff),
           });
           if (staff.is_super) tab = 'leadership';
-          else if (staff.is_payroll) tab = 'payroll';
+          else if (isPayrollLogin(staff)) tab = 'payroll';
           loadScheduleData().then(() => {
             updateLiveFlagsBadge();
             if (tab === 'overview' || tab === 'leadership' || tab === 'payroll') shell();
@@ -5486,7 +5490,7 @@
     if (!s) return false;
     if (s.is_super || s.is_admin) return true;
     const d = String(s.designation || '').toLowerCase();
-    return d === 'super_admin' || d === 'manager';
+    return d === 'super_admin' || d === 'manager' || d === 'payroll';
   }
 
   // Brokers are a separate class of account: they never clock in and only
@@ -5615,6 +5619,7 @@
       admin_assistant: 'Admin Assistant',
       broker:          'Broker',
       rental_support:  'Rental Support',
+      payroll:         'Payroll',
     }[d] || (d || '—'));
     // Status sort weight — on-the-clock first, then absent, then clocked
     // out, then never-showed, then exempt. Matches the natural triage
@@ -5958,6 +5963,7 @@
       ['assistant',       'Assistant'],
       ['admin_assistant', 'Admin Assistant'],
       ['rental_support',  'Rental Support'],
+      ['payroll',         'Payroll (dashboard access)'],
     ];
     const MGR_DESIG = ['rm', 'fancy', 'ln', 'assistant', 'admin_assistant'];
     let desigOpts = isSuper ? ALL_DESIG : ALL_DESIG.filter(([v]) => MGR_DESIG.includes(v));
