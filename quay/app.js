@@ -240,7 +240,7 @@
       if (error || !data.user) throw new Error('Username or PIN not recognised');
       // Confirm this user is in the staff table AND is_admin.
       const { data: staff, error: sErr } = await window.sb.from('staff')
-        .select('id, name, role, team, is_admin, is_super, can_manage_brokers, active')
+        .select('id, name, role, team, is_admin, is_super, active')
         .eq('auth_user_id', data.user.id).maybeSingle();
       if (sErr || !staff || !staff.is_admin || staff.active === false) {
         await window.sb.auth.signOut();
@@ -249,9 +249,6 @@
       setSession({
         id: staff.id, name: staff.name, role: staff.role || '', team: staff.team || '',
         admin: true, super: !!staff.is_super,
-        // Broker management is a separate grant from superuser — a super (e.g.
-        // Alan) sees Staff but NOT the Brokers sub-view unless can_manage_brokers.
-        canManageBrokers: !!staff.can_manage_brokers,
       });
       if (staff.is_super) tab = 'leadership'; // superusers land on Leadership by default
       try { localStorage.setItem('quay_dash_last_user', username); } catch {}
@@ -5425,7 +5422,7 @@
   let _teamSortDir = 'asc';
   let _teamModal = null;        // form state when modal is open (staff + broker)
   let _brokerFilter = '';       // search box on the Brokers sub-view
-  let _teamSubTab = 'staff';     // Staff tab sub-view: 'staff' | 'brokers' (Brokers gated on can_manage_brokers)
+  let _teamSubTab = 'staff';     // Staff tab sub-view: 'staff' | 'brokers' (Brokers is super-only)
   let _forgotThisWeek = [];     // forgot-to-clock-out events since Monday SAST
   let _absencesToday = new Map(); // staff_id -> {reason, reason_note, marked_by, marked_at}
   let _absenceModal = null;     // { staffId, name, reason, note, busy, error } when open
@@ -5522,9 +5519,8 @@
   }
 
   // Segmented Staff/Brokers toggle shown at the top of the Staff tab for
-  // users with can_manage_brokers. Brokers used to be a separate top-level
-  // Admin tab; it's now a sub-view here so broker logins sit alongside the
-  // staff roster.
+  // superusers only. Brokers used to be a separate top-level Admin tab; it's
+  // now a sub-view here so broker logins sit alongside the staff roster.
   function _staffSubToggle() {
     const onBrokers = _teamSubTab === 'brokers';
     return `<div class="seg" id="staffSubSeg" role="group" aria-label="Staff section" style="margin-bottom:14px">
@@ -5537,10 +5533,10 @@
     if (_team == null && !_teamLoading) {
       loadTeam().then(() => { if (tab === 'team') shell(); });
     }
-    // Brokers are a sub-view of the Staff tab gated on the dedicated
-    // can_manage_brokers grant (NOT is_super). A superuser without the grant
-    // sees only the staff roster — no toggle, no Brokers view.
-    const canBrokers = !!(session && session.canManageBrokers);
+    // Brokers are a super-only sub-view of the Staff tab. Non-supers (incl.
+    // plain admins/managers like Alan) never see the toggle and are pinned to
+    // the staff roster.
+    const canBrokers = !!(session && session.super);
     const subToggle = canBrokers ? _staffSubToggle() : '';
     if (canBrokers && _teamSubTab === 'brokers') return renderBrokersView(subToggle);
     // The Staff Directory never shows brokers — they live in the Brokers
@@ -6006,7 +6002,7 @@
     });
     // When the Brokers sub-view is showing, its wiring is entirely separate
     // from the staff roster — delegate and skip the staff handlers below.
-    if (session && session.canManageBrokers && _teamSubTab === 'brokers') { wireBrokersView(); return; }
+    if (session && session.super && _teamSubTab === 'brokers') { wireBrokersView(); return; }
     const search = document.getElementById('teamSearch');
     if (search) search.addEventListener('input', (e) => {
       _teamFilter = e.target.value;
