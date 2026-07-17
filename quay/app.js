@@ -168,6 +168,14 @@
     { id: 'div-costs',  section: 'Admin',       label: 'Division Costs',  icon: I.chart,   title: 'Division Costs',       sub: 'Cost-attribution pivot per division — payroll share by team · SDL hidden · super-only' },
   ];
 
+  // The dedicated Payroll role sees only these tabs: Clocks, Staff (Directory)
+  // and Payroll. Super wins over Payroll, so a superuser who also carries the
+  // is_payroll flag keeps full access.
+  const PAYROLL_TAB_IDS = new Set(['clocks', 'team', 'payroll']);
+  const payrollRole = () => !!(session && session.payroll && !session.super);
+  const defaultTabFor = () =>
+    (session && session.super) ? 'leadership' : payrollRole() ? 'payroll' : 'overview';
+
   // ---- Payroll tab state (super-only) ----
   // Holds the active pay period, sub-tab, cached shifts + allocations so
   // the view doesn't re-fetch on every sub-tab toggle. Re-fetched whenever
@@ -242,17 +250,20 @@
       if (error || !data.user) throw new Error('Username or PIN not recognised');
       // Confirm this user is in the staff table AND is_admin.
       const { data: staff, error: sErr } = await window.sb.from('staff')
-        .select('id, name, role, team, is_admin, is_super, active')
+        .select('id, name, role, team, is_admin, is_super, is_payroll, active')
         .eq('auth_user_id', data.user.id).maybeSingle();
-      if (sErr || !staff || !staff.is_admin || staff.active === false) {
+      // Payroll logins are a restricted role (Clocks / Staff / Payroll only) and
+      // may sign in on is_payroll alone — they don't need the is_admin flag.
+      if (sErr || !staff || !(staff.is_admin || staff.is_payroll) || staff.active === false) {
         await window.sb.auth.signOut();
         throw new Error('Not an admin');
       }
       setSession({
         id: staff.id, name: staff.name, role: staff.role || '', team: staff.team || '',
-        admin: true, super: !!staff.is_super,
+        admin: true, super: !!staff.is_super, payroll: !!staff.is_payroll,
       });
-      if (staff.is_super) tab = 'leadership'; // superusers land on Leadership by default
+      if (staff.is_super) tab = 'leadership';       // superusers land on Leadership
+      else if (staff.is_payroll) tab = 'payroll';   // payroll role lands on Payroll
       try { localStorage.setItem('quay_dash_last_user', username); } catch {}
       pinBuf = ''; loginError = '';
       shell();
@@ -365,13 +376,17 @@
     if (!session || !session.id) { renderLogin(); return; }
     // Filter tabs by role: only superusers see Leadership + Teams Reporting.
     // Payroll is visible to managers too (they need pay-period hours).
-    const visibleTabs = TABS.filter(t =>
-      (t.id !== 'leadership'   || session.super) &&
-      (t.id !== 'teams-report' || session.super) &&
-      (t.id !== 'div-costs'    || session.super)
-    );
-    // If a non-super lands on a hidden tab (e.g. via deep link), bounce to overview.
-    if (!visibleTabs.find(t => t.id === tab)) tab = 'overview';
+    // The dedicated Payroll role is restricted to just Clocks / Staff / Payroll.
+    const PAYROLL_ONLY = payrollRole();
+    const visibleTabs = TABS.filter(t => {
+      if (PAYROLL_ONLY) return PAYROLL_TAB_IDS.has(t.id);
+      return (t.id !== 'leadership'   || session.super) &&
+             (t.id !== 'teams-report' || session.super) &&
+             (t.id !== 'div-costs'    || session.super);
+    });
+    // If someone lands on a hidden tab (e.g. via deep link), bounce to their
+    // role's home tab (Payroll → Payroll; everyone else → Overview).
+    if (!visibleTabs.find(t => t.id === tab)) tab = defaultTabFor();
     // Group nav items by section (Performance / People / Time / Strategy / Admin).
     // Reduces cognitive load — see Miller's 7±2.
     const sectionOrder = ['Performance', 'People', 'Time', 'Strategy', 'Admin'];
@@ -406,7 +421,7 @@
             <div class="signed-av">${initials(session.name || 'A')}</div>
             <div class="signed-who">
               <div class="signed-n">${escapeHtml(session.name || '')}</div>
-              <div class="signed-r">${session.super ? 'Superuser' : 'Manager'}${session.role ? ' · ' + escapeHtml(session.role) : ''}</div>
+              <div class="signed-r">${session.super ? 'Superuser' : payrollRole() ? 'Payroll' : 'Manager'}${session.role ? ' · ' + escapeHtml(session.role) : ''}</div>
             </div>
             <button class="signed-out" id="signOut" title="Sign out" aria-label="Sign out">${I.arrow}</button>
           </div>
@@ -5257,17 +5272,18 @@
       const { data: { user } } = await window.sb.auth.getUser();
       if (user) {
         const { data: staff } = await window.sb.from('staff')
-          .select('id, name, role, team, is_admin, is_super, active')
+          .select('id, name, role, team, is_admin, is_super, is_payroll, active')
           .eq('auth_user_id', user.id).maybeSingle();
-        if (staff && staff.is_admin && staff.active !== false) {
+        if (staff && (staff.is_admin || staff.is_payroll) && staff.active !== false) {
           setSession({
             id: staff.id, name: staff.name, role: staff.role || '', team: staff.team || '',
-            admin: true, super: !!staff.is_super,
+            admin: true, super: !!staff.is_super, payroll: !!staff.is_payroll,
           });
           if (staff.is_super) tab = 'leadership';
+          else if (staff.is_payroll) tab = 'payroll';
           loadScheduleData().then(() => {
             updateLiveFlagsBadge();
-            if (tab === 'overview' || tab === 'leadership') shell();
+            if (tab === 'overview' || tab === 'leadership' || tab === 'payroll') shell();
           });
           loadFlagAcks();
           subscribeRealtime();
