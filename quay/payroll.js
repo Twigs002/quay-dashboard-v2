@@ -939,7 +939,7 @@
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between">
           <div>
             <h3 style="margin:0;font-family:var(--serif);font-size:17px">Division Costs</h3>
-            <div class="sub" style="margin-top:4px">Cost-attribution pivot per division — payroll share by team</div>
+            <div class="sub" style="margin-top:4px">Cost-attribution pivot per division · each team carries half the wage for hours worked (50% split)</div>
           </div>
           <div class="field" style="margin-bottom:0">
             <label>Pay period</label>
@@ -965,13 +965,19 @@
     }
     let html = ''
     const totalShifts = shifts.length
-    const totalHours = shifts.reduce((s, x) => s + x.shiftHours, 0)
+    // Reconcile with Earnings / Allocations, which count only real shifts.
+    // A corrupt shift (clock-out before clock-in => negative hours) would
+    // otherwise subtract time from the visible total and make the two tabs
+    // disagree. Exclude non-positive durations from the totals (same as the
+    // pay calc) but still SHOW those rows, flagged, so they get corrected.
+    const negCount = shifts.reduce((n, x) => n + (x.shiftHours < 0 ? 1 : 0), 0)
+    const totalHours = shifts.reduce((s, x) => s + (x.shiftHours > 0 ? x.shiftHours : 0), 0)
     html += `
       <div class="card">
         <div class="card-head">
           <div>
             <h3>All Shifts</h3>
-            <div class="sub">${byAgent.size} agent${byAgent.size === 1 ? '' : 's'} · ${totalShifts} shift${totalShifts === 1 ? '' : 's'} · ${decimalToHHMM(totalHours)} total</div>
+            <div class="sub">${byAgent.size} agent${byAgent.size === 1 ? '' : 's'} · ${totalShifts} shift${totalShifts === 1 ? '' : 's'} · ${decimalToHHMM(totalHours)} total${negCount ? ` · <span style="color:var(--red);font-weight:600">${negCount} with bad clock times (not counted)</span>` : ''}</div>
           </div>
           ${_exportBtn()}
         </div>
@@ -995,7 +1001,7 @@
         html += `<tr class="payroll-sep"><td colspan="10" style="background:#FAF7EF;border-top:2px solid var(--line);height:8px"></td></tr>`
       }
       first = false
-      const total = list.reduce((s, x) => s + x.shiftHours, 0)
+      const total = list.reduce((s, x) => s + (x.shiftHours > 0 ? x.shiftHours : 0), 0)
       list.forEach((sh, idx) => {
         const nameParts = (sh.agentName || '').split(/\s+/)
         const fn = nameParts.slice(0, -1).join(' ') || nameParts[0] || ''
@@ -1010,7 +1016,9 @@
           <td class="tnum">${esc(_fmtDateLabel(sh.clockOutAt))}</td>
           <td class="tnum">${esc(_fmtTimeLabel(sh.clockOutAt))}</td>
           <td>${esc(sh.note || '')}</td>
-          <td class="num tnum">${decimalToHHMM(sh.shiftHours)}</td>
+          <td class="num tnum">${sh.shiftHours < 0
+            ? '<span style="color:var(--red);font-weight:700" title="Clock-out is not after clock-in. Excluded from totals and pay until corrected.">⚠ bad time</span>'
+            : decimalToHHMM(sh.shiftHours)}</td>
           <td class="num tnum"><b>${idx === 0 ? decimalToHHMM(total) : ''}</b></td>
         </tr>`
       })
@@ -1570,8 +1578,8 @@
     const selSet = new Set(selected)
 
     const allCaption = hideSdl
-      ? 'Cost-attribution pivot · PAYROLL = total hrs × rate · DIV CONTRIBUTION = hours on this division × rate'
-      : 'Cost-attribution pivot · PAYROLL = total hrs × rate · SDL = 1.1% levy · DIV CONTRIBUTION = hours on this division × rate'
+      ? 'Cost-attribution pivot · PAYROLL = total hrs × rate · DIV CONTRIBUTION = half the wage for hours on this division (50% split · head office carries the other half)'
+      : 'Cost-attribution pivot · PAYROLL = total hrs × rate · SDL = 1.1% levy · DIV CONTRIBUTION = half the wage for hours on this division + its SDL share (50% split · head office carries the other half)'
     const subCaption = selected.length === 0
       ? allCaption
       : `Showing ${selected.length} selected division${selected.length === 1 ? '' : 's'} · use the Divisions picker to change`
