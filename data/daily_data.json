@@ -1,14 +1,14 @@
 [
   {
     "date": "2026-07-18",
-    "generated": "2026-07-18T06:51:42.846587+00:00",
+    "generated": "2026-07-18T18:00:21.357674+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-07-17",
-    "generated": "2026-07-18T06:51:42.846587+00:00",
+    "generated": "2026-07-18T18:00:21.357674+00:00",
     "rm": [
       {
         "name": "Test",
@@ -116,32 +116,6 @@
       }
     ],
     "fancy": [
-      {
-        "name": "ReevahMbaba",
-        "calls": 150,
-        "success": 3,
-        "seller": 0,
-        "rental": 0,
-        "email": 3,
-        "no_answer": 0,
-        "cph": 42.5,
-        "successRate": 2.0,
-        "workTime": 3.5294,
-        "talkTime": 0.2767,
-        "wrapTime": 2.78,
-        "pauseTime": 0.0364,
-        "waitTime": 0.4364,
-        "is_rm": false,
-        "meetsTarget": false,
-        "campaigns": [
-          "SAMURAIS"
-        ],
-        "answered": 150,
-        "talkPct": 7.8,
-        "wrapPct": 78.8,
-        "waitPct": 12.4,
-        "workPct": 99.0
-      },
       {
         "name": "LisabellPanze",
         "calls": 90,
@@ -602,17 +576,6 @@
           "talkTime": 0.4247
         }
       },
-      "ReevahMbaba": {
-        "SAMURAIS_NA": {
-          "calls": 150,
-          "success": 3,
-          "seller": 0,
-          "rental": 0,
-          "email": 3,
-          "workTime": 3.5294,
-          "talkTime": 0.2767
-        }
-      },
       "ZivanaKriel": {
         "SLAYERS_NEW": {
           "calls": 7,
@@ -703,7 +666,7 @@
   },
   {
     "date": "2026-07-16",
-    "generated": "2026-07-18T06:51:42.846587+00:00",
+    "generated": "2026-07-18T18:00:21.357674+00:00",
     "rm": [
       {
         "name": "KirstenLS",
@@ -1500,7 +1463,7 @@
   },
   {
     "date": "2026-07-15",
-    "generated": "2026-07-18T06:51:42.846587+00:00",
+    "generated": "2026-07-18T18:00:21.357674+00:00",
     "rm": [
       {
         "name": "Test",
@@ -2281,7 +2244,7 @@
   },
   {
     "date": "2026-07-14",
-    "generated": "2026-07-18T06:51:42.846587+00:00",
+    "generated": "2026-07-18T18:00:21.357674+00:00",
     "rm": [
       {
         "name": "Test",
@@ -3031,7 +2994,7 @@
   },
   {
     "date": "2026-07-13",
-    "generated": "2026-07-18T06:51:42.846587+00:00",
+    "generated": "2026-07-18T18:00:21.357674+00:00",
     "rm": [
       {
         "name": "Test",
@@ -3719,14 +3682,14 @@
   },
   {
     "date": "2026-07-12",
-    "generated": "2026-07-18T06:51:42.846587+00:00",
+    "generated": "2026-07-18T18:00:21.357674+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-07-11",
-    "generated": "2026-07-18T06:51:42.846587+00:00",
+    "generated": "2026-07-18T18:00:21.357674+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
