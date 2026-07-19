@@ -1047,21 +1047,24 @@
             <th>Agent</th>
             <th>Team / Division</th>
             <th class="num">Hours (HH:MM)</th>
+            <th class="num">Hours (Decimal)</th>
             <th class="num">% of Agent's Time</th>
             <th class="num">R-amount</th>
           </tr></thead>
           <tbody>`
     let first = true
     for (const agent of agents) {
-      if (!first) html += `<tr><td colspan="5" style="height:6px;background:transparent;border:0"></td></tr>`
+      if (!first) html += `<tr><td colspan="6" style="height:6px;background:transparent;border:0"></td></tr>`
       first = false
       const teams = Array.from(empTeamHours.get(agent).entries())
         .sort((a, b) => b[1] - a[1])
       const total = empTotalHours.get(agent) || teams.reduce((s, t) => s + t[1], 0)
       const rate = empMeta && empMeta.get(agent) ? empMeta.get(agent).hourlyRate : null
-      let sumPct = 0, sumPay = 0
+      let sumDec = 0, sumPct = 0, sumPay = 0
       for (const [team, hrs] of teams) {
+        const dec = Math.round(hrs * 100) / 100
         const pct = total > 0 ? (hrs / total) * 100 : 0
+        sumDec += dec
         sumPct += pct
         const pay = rate != null ? hrs * rate : null
         if (pay != null) sumPay += pay
@@ -1069,6 +1072,7 @@
           <td>${esc(agent)}</td>
           <td>${esc(team)}</td>
           <td class="num tnum">${decimalToHHMM(hrs)}</td>
+          <td class="num tnum">${dec.toFixed(2)}</td>
           <td class="num tnum">${pct.toFixed(1)}%</td>
           <td class="num tnum">${pay == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(pay)}</td>
         </tr>`
@@ -1077,6 +1081,7 @@
         <td>${esc(agent)} — TOTAL</td>
         <td>${rate == null ? '<span style="font-weight:400;color:var(--muted);font-size:12px">no rate set</span>' : '<span style="font-weight:400;color:var(--muted);font-size:12px">@ ' + _fmtZAR(rate) + '/hr</span>'}</td>
         <td class="num tnum">${decimalToHHMM(total)}</td>
+        <td class="num tnum">${sumDec.toFixed(2)}</td>
         <td class="num tnum">${sumPct.toFixed(1)}%</td>
         <td class="num tnum">${rate == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(sumPay)}</td>
       </tr>`
@@ -1111,6 +1116,7 @@
         <td>${esc(designation || '—')}</td>
         <td>${esc(division || '—')}</td>
         <td class="num tnum">${decimalToHHMM(total)}</td>
+        <td class="num tnum">${total.toFixed(2)}</td>
         <td class="num tnum">${rate == null ? '<span style="color:var(--red)" title="No hourly_rate set in staff table">— missing</span>' : _fmtZAR(rate)}</td>
         <td class="num tnum">${pay == null ? '<span style="color:var(--red)">—</span>' : _fmtZAR(pay)}</td>
       </tr>`
@@ -1134,6 +1140,7 @@
             <th>Designation</th>
             <th>Division</th>
             <th class="num">Hours (HH:MM)</th>
+            <th class="num">Hours (Decimal)</th>
             <th class="num">Hourly Rate</th>
             <th class="num">Total Pay</th>
           </tr></thead>
@@ -1141,6 +1148,7 @@
             <tr style="background:var(--paper);font-weight:700">
               <td colspan="4">TOTAL — ${agents.length} agent${agents.length === 1 ? '' : 's'}</td>
               <td class="num tnum">${decimalToHHMM(grandHours)}</td>
+              <td class="num tnum">${grandHours.toFixed(2)}</td>
               <td></td>
               <td class="num tnum">${_fmtZAR(grandPay)}</td>
             </tr>
@@ -1203,7 +1211,7 @@
         <td>${esc(ln)}</td>
         <td>${esc(designation || '—')}</td>
         <td>${esc(division || '—')}</td>
-        <td class="num tnum">${decimalToHHMM(total)}</td>
+        <td class="num tnum">${total.toFixed(2)}</td>
         <td class="num tnum">${earnedCell}</td>
         <td class="num tnum">${salaryCell}</td>
         <td class="num tnum">${pctCell}</td>

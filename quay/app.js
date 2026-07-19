@@ -2011,7 +2011,7 @@
     const view = hideSdl ? 'divisionCosts' : (s.activeView || 'allShifts');
     const periodLbl = s.period ? s.period.label : '';
     if (view === 'allShifts') {
-      const out = [['Agent', 'Type', 'Date in', 'Time in', 'Date out', 'Time out', 'Employee notes', 'Shift hours (HH:MM)']];
+      const out = [['Agent', 'Type', 'Date in', 'Time in', 'Date out', 'Time out', 'Employee notes', 'Shift hours (HH:MM)', 'Shift hours (Decimal)']];
       (s.shifts || []).forEach(sh => {
         const d = window.PAYROLL.decimalToHHMM(sh.shiftHours);
         const fmtD = iso => iso ? new Date(iso).toISOString().slice(0, 10) : '';
@@ -2021,12 +2021,12 @@
           return `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
         };
         out.push([sh.agentName, sh.designation || '', fmtD(sh.clockInAt), fmtT(sh.clockInAt),
-          fmtD(sh.clockOutAt), fmtT(sh.clockOutAt), sh.note || '', d]);
+          fmtD(sh.clockOutAt), fmtT(sh.clockOutAt), sh.note || '', d, sh.shiftHours.toFixed(2)]);
       });
       return out;
     }
     if (view === 'perAgent') {
-      const out = [['Agent', 'Team / Division', 'Hours (HH:MM)', '% of Agent Time', 'Hourly Rate', 'R-amount']];
+      const out = [['Agent', 'Team / Division', 'Hours (HH:MM)', 'Hours (Decimal)', '% of Agent Time', 'Hourly Rate', 'R-amount']];
       if (s.allocations) {
         const ETH = s.allocations.empTeamHours;
         const ETOT = s.allocations.empTotalHours;
@@ -2041,12 +2041,12 @@
             const pct = total > 0 ? (hrs / total) * 100 : 0;
             const pay = rate != null ? hrs * rate : null;
             if (pay != null) sumPay += pay;
-            out.push([agent, t, window.PAYROLL.decimalToHHMM(hrs),
+            out.push([agent, t, window.PAYROLL.decimalToHHMM(hrs), hrs.toFixed(2),
               pct.toFixed(1) + '%', rate == null ? '' : rate.toFixed(2),
               pay == null ? '' : pay.toFixed(2)]);
           });
           out.push([agent + ' — TOTAL', '', window.PAYROLL.decimalToHHMM(total),
-            '100.0%',
+            total.toFixed(2), '100.0%',
             rate == null ? '' : rate.toFixed(2),
             rate == null ? '' : sumPay.toFixed(2)]);
         });
@@ -2055,7 +2055,7 @@
     }
     if (view === 'earnings') {
       const out = [['First name', 'Last name', 'Designation', 'Division',
-        'Hours (HH:MM)', 'Hourly Rate', 'Total Pay']];
+        'Hours (HH:MM)', 'Hours (Decimal)', 'Hourly Rate', 'Total Pay']];
       if (s.allocations) {
         const ETOT = s.allocations.empTotalHours;
         const EMETA = s.allocations.empMeta || new Map();
@@ -2072,18 +2072,18 @@
           const fn = parts.slice(0, -1).join(' ') || parts[0] || '';
           const ln = parts.length > 1 ? parts[parts.length - 1] : '';
           out.push([fn, ln, meta.designation || '', meta.division || '',
-            window.PAYROLL.decimalToHHMM(total),
+            window.PAYROLL.decimalToHHMM(total), total.toFixed(2),
             rate == null ? '' : rate.toFixed(2),
             pay == null ? '' : pay.toFixed(2)]);
         });
         out.push(['TOTAL', '', '', '',
-          window.PAYROLL.decimalToHHMM(gHrs), '', gPay.toFixed(2)]);
+          window.PAYROLL.decimalToHHMM(gHrs), gHrs.toFixed(2), '', gPay.toFixed(2)]);
       }
       return out;
     }
     if (view === 'comparison') {
       const out = [['First name', 'Last name', 'Designation', 'Division',
-        'Hours (HH:MM)', 'Earned', 'Full Salary', '% of Salary', 'Shortfall']];
+        'Hours (Decimal)', 'Earned', 'Full Salary', '% of Salary', 'Shortfall']];
       if (s.allocations) {
         const ETOT = s.allocations.empTotalHours;
         const EMETA = s.allocations.empMeta || new Map();
@@ -2105,7 +2105,7 @@
           const fn = parts.slice(0, -1).join(' ') || parts[0] || '';
           const ln = parts.length > 1 ? parts[parts.length - 1] : '';
           out.push([fn, ln, meta.designation || '', meta.division || '',
-            window.PAYROLL.decimalToHHMM(total),
+            total.toFixed(2),
             earned == null ? '' : earned.toFixed(2),
             salary == null ? '' : salary.toFixed(2),
             pct == null ? '' : pct.toFixed(0),
