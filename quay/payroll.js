@@ -514,31 +514,48 @@
     // floor would ever produce — abort rather than spin forever.
     const MAX_PAGES = 50
     for (let page = 0; page < MAX_PAGES; page++) {
-      // Tiebreaker on staff_id: PostgREST .range() pagination is only
-      // deterministic when the ORDER BY is total. Two events sharing an
-      // exact ts (rare but possible — two staff clocking in the same ms)
-      // could otherwise straddle a page boundary unpredictably and either
-      // duplicate or skip rows. ts asc, staff_id asc makes the page cut
-      // stable across requests.
+      // PostgREST .range() pagination is only skip/dup-safe when the ORDER BY
+      // is a TOTAL order. ts+staff_id is not total: one staffer with two events
+      // at the same ts (a double-tap, or a clock that truncates to the second)
+      // ties, and the tied pair can land on either side of a page boundary
+      // differently between requests — silently skipping or duplicating a row.
+      // The `id` primary key is unique, so appending it makes the order total
+      // and the page cut fully deterministic.
       const { data, error } = await window.sb.from('events')
-        .select('staff_id, ts, dir, note')
+        .select('id, staff_id, ts, dir, note')
         .gte('ts', fromISO).lte('ts', toISO)
         .order('ts', { ascending: true })
         .order('staff_id', { ascending: true })
+        .order('id', { ascending: true })
         .range(offset, offset + PAGE_SIZE - 1)
       if (error) throw error
       if (!data || data.length === 0) break
       all.push(...data)
-      if (data.length < PAGE_SIZE) break
+      if (data.length < PAGE_SIZE) return all
       offset += PAGE_SIZE
     }
-    return all
+    // Every one of MAX_PAGES pages came back full — there are more events we
+    // did not fetch. Abort loudly rather than silently returning a truncated
+    // set that would drop the tail of the period and under-pay staff.
+    throw new Error(`[payroll] event pagination exceeded ${MAX_PAGES} pages ` +
+      `(> ${MAX_PAGES * PAGE_SIZE} events) — aborting to avoid a partial pay run`)
   }
 
   async function fetchShiftsForPeriod(start, end) {
     if (!window.sb) throw new Error('Supabase client not initialised')
-    const fromISO = _sastDateToUtcISO(start)
-    const toISO = _sastDateToUtcISO(end)
+    // currentPayPeriod builds start/end as Date objects whose LOCAL wall-clock
+    // parts are the intended SAST bounds (the 21st 00:00:00 → 20th 23:59:59.999).
+    // Feed those literal parts to _sastDateToUtcISO's object form so the SQL
+    // bounds are anchored to SAST regardless of the browser's zone. Passing the
+    // Date itself would instead re-derive SAST from the absolute instant, which
+    // is only correct when the browser already runs on SAST (else the period is
+    // shifted by the local↔SAST offset and shifts at the day's edges are lost).
+    const _sastParts = dt => (dt instanceof Date
+      ? { y: dt.getFullYear(), m: dt.getMonth(), d: dt.getDate(),
+          hh: dt.getHours(), mm: dt.getMinutes(), ss: dt.getSeconds(), ms: dt.getMilliseconds() }
+      : dt)
+    const fromISO = _sastDateToUtcISO(_sastParts(start))
+    const toISO = _sastDateToUtcISO(_sastParts(end))
 
     // Pull staff first so we can name-decorate the shifts. RLS already
     // allows authenticated reads on both tables (used by other tabs).
@@ -582,22 +599,31 @@
     })
 
     const shifts = []
+    // Clock-punch problems that would otherwise vanish with only a console
+    // warning. Each is a shift's worth of time that is NOT paid (an 'in' with
+    // no 'out', or an 'out' with no 'in'). Surfaced in the All Shifts view so
+    // they get corrected before the pay run closes — they never enter the pay
+    // calc (computeAllocations only sees the paired `shifts` array below).
+    const anomalies = []
     byStaff.forEach((rows, staffId) => {
+      const agentName = nameById.get(staffId) || staffId
       rows.sort((a, b) => a.ts < b.ts ? -1 : a.ts > b.ts ? 1 : 0)
       let openIn = null
       for (const ev of rows) {
         if (ev.dir === 'in') {
           if (openIn) {
-            // Two ins in a row — treat the previous as orphaned (still
-            // clocked-in). Per spec §2 we just skip it.
+            // Two ins in a row — the previous 'in' never got an 'out', so its
+            // shift is lost (the classic "forgot to clock out"). Flag it.
             console.warn('[payroll] orphaned in event (no matching out):',
               staffId, openIn.ts)
+            anomalies.push({ agentName, kind: 'no-clock-out', at: openIn.ts })
           }
           openIn = ev
         } else if (ev.dir === 'out') {
           if (!openIn) {
             console.warn('[payroll] orphaned out event (no matching in):',
               staffId, ev.ts)
+            anomalies.push({ agentName, kind: 'no-clock-in', at: ev.ts })
             continue
           }
           const hrs = hoursDecimal(openIn.ts, ev.ts)
@@ -616,7 +642,9 @@
           openIn = null
         }
       }
-      // Unpaired trailing 'in' = still on the clock — spec §2 says exclude.
+      // Unpaired trailing 'in' = still on the clock at period close — its shift
+      // is excluded from pay (spec §2). Flag it so it can be corrected.
+      if (openIn) anomalies.push({ agentName, kind: 'no-clock-out', at: openIn.ts })
     })
 
     shifts.sort((a, b) => {
@@ -624,6 +652,14 @@
       if (n !== 0) return n
       return a.clockInAt < b.clockInAt ? -1 : a.clockInAt > b.clockInAt ? 1 : 0
     })
+    anomalies.sort((a, b) => {
+      const n = (a.agentName || '').localeCompare(b.agentName || '', undefined, { sensitivity: 'base' })
+      if (n !== 0) return n
+      return a.at < b.at ? -1 : a.at > b.at ? 1 : 0
+    })
+    // Carried as a property on the array so every existing caller (which
+    // iterates/spreads the shifts) is unaffected; the All Shifts view reads it.
+    shifts.anomalies = anomalies
     return shifts
   }
 
@@ -886,7 +922,7 @@
       if (activeView === 'allShifts') body = V.payrollAllShifts(shifts)
       else if (activeView === 'perAgent') body = V.payrollPerAgent(alloc.empTeamHours, alloc.empTotalHours, alloc.empMeta)
       else if (activeView === 'byDivision') body = V.payrollByDivision(alloc.empTeamHours, alloc.empTotalHours)
-      else if (activeView === 'divisionCosts') body = V.payrollDivisionCosts(alloc.empTeamHours, alloc.empTotalHours, alloc.empMeta, (state && state.divCostTeam) || 'all')
+      else if (activeView === 'divisionCosts') body = V.payrollDivisionCosts(alloc.empTeamHours, alloc.empTotalHours, alloc.empMeta, (state && state.divCostTeams) || [])
       else if (activeView === 'earnings') body = V.payrollEarnings(alloc.empTotalHours, alloc.empMeta)
     else if (activeView === 'comparison') body = V.payrollComparison(alloc.empTotalHours, alloc.empMeta)
     }
@@ -972,6 +1008,21 @@
     // pay calc) but still SHOW those rows, flagged, so they get corrected.
     const negCount = shifts.reduce((n, x) => n + (x.shiftHours < 0 ? 1 : 0), 0)
     const totalHours = shifts.reduce((s, x) => s + (x.shiftHours > 0 ? x.shiftHours : 0), 0)
+    // Unpaired clock punches (in with no out, or out with no in). These are NOT
+    // in the paid totals — surface them so they get fixed before pay closes.
+    const anomalies = Array.isArray(shifts.anomalies) ? shifts.anomalies : []
+    if (anomalies.length) {
+      const label = { 'no-clock-out': 'clocked in, never clocked out', 'no-clock-in': 'clocked out with no clock-in' }
+      const items = anomalies.map(a =>
+        `<li style="margin:2px 0"><b>${esc(a.agentName)}</b> — ${label[a.kind] || a.kind} · ${esc(_fmtDateLabel(a.at))} ${esc(_fmtTimeLabel(a.at))}</li>`
+      ).join('')
+      html += `
+      <div class="card card-pad" style="border-left:4px solid var(--red);background:#FEF3F2;margin-bottom:14px">
+        <div style="font-weight:700;color:var(--red);margin-bottom:6px">⚠ ${anomalies.length} unpaired clock punch${anomalies.length === 1 ? '' : 'es'} — not counted in pay</div>
+        <div class="sub" style="margin-bottom:8px">These shifts are excluded from the totals below and from pay. Fix the clock times in quay-clock admin before the pay run closes, or the staff member is under-paid.</div>
+        <ul style="margin:0;padding-left:18px;font-size:13px">${items}</ul>
+      </div>`
+    }
     html += `
       <div class="card">
         <div class="card-head">
@@ -1060,11 +1111,10 @@
         .sort((a, b) => b[1] - a[1])
       const total = empTotalHours.get(agent) || teams.reduce((s, t) => s + t[1], 0)
       const rate = empMeta && empMeta.get(agent) ? empMeta.get(agent).hourlyRate : null
-      let sumDec = 0, sumPct = 0, sumPay = 0
+      let sumPct = 0, sumPay = 0
       for (const [team, hrs] of teams) {
         const dec = Math.round(hrs * 100) / 100
         const pct = total > 0 ? (hrs / total) * 100 : 0
-        sumDec += dec
         sumPct += pct
         const pay = rate != null ? hrs * rate : null
         if (pay != null) sumPay += pay
@@ -1081,7 +1131,7 @@
         <td>${esc(agent)} — TOTAL</td>
         <td>${rate == null ? '<span style="font-weight:400;color:var(--muted);font-size:12px">no rate set</span>' : '<span style="font-weight:400;color:var(--muted);font-size:12px">@ ' + _fmtZAR(rate) + '/hr</span>'}</td>
         <td class="num tnum">${decimalToHHMM(total)}</td>
-        <td class="num tnum">${sumDec.toFixed(2)}</td>
+        <td class="num tnum">${total.toFixed(2)}</td>
         <td class="num tnum">${sumPct.toFixed(1)}%</td>
         <td class="num tnum">${rate == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(sumPay)}</td>
       </tr>`

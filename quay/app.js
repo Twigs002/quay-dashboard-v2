@@ -2012,16 +2012,18 @@
     const periodLbl = s.period ? s.period.label : '';
     if (view === 'allShifts') {
       const out = [['Agent', 'Type', 'Date in', 'Time in', 'Date out', 'Time out', 'Employee notes', 'Shift hours (HH:MM)', 'Shift hours (Decimal)']];
+      // SAST-anchored date/time so the CSV matches the on-screen table (which
+      // uses Africa/Johannesburg) regardless of the exporter's machine zone.
+      const fmtD = iso => iso ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Johannesburg', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso)) : '';
+      const fmtT = iso => iso ? new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Johannesburg', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso)) : '';
       (s.shifts || []).forEach(sh => {
-        const d = window.PAYROLL.decimalToHHMM(sh.shiftHours);
-        const fmtD = iso => iso ? new Date(iso).toISOString().slice(0, 10) : '';
-        const fmtT = iso => {
-          if (!iso) return '';
-          const dt = new Date(iso);
-          return `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
-        };
+        // Bad clock time (out before in => negative): flag it, don't export a
+        // real negative number a clerk would subtract when summing the column.
+        const bad = sh.shiftHours < 0;
+        const hhmm = bad ? 'BAD TIME' : window.PAYROLL.decimalToHHMM(sh.shiftHours);
+        const dec = bad ? 'BAD TIME' : sh.shiftHours.toFixed(2);
         out.push([sh.agentName, sh.designation || '', fmtD(sh.clockInAt), fmtT(sh.clockInAt),
-          fmtD(sh.clockOutAt), fmtT(sh.clockOutAt), sh.note || '', d, sh.shiftHours.toFixed(2)]);
+          fmtD(sh.clockOutAt), fmtT(sh.clockOutAt), sh.note || '', hhmm, dec]);
       });
       return out;
     }
@@ -2041,7 +2043,7 @@
             const pct = total > 0 ? (hrs / total) * 100 : 0;
             const pay = rate != null ? hrs * rate : null;
             if (pay != null) sumPay += pay;
-            out.push([agent, t, window.PAYROLL.decimalToHHMM(hrs), hrs.toFixed(2),
+            out.push([agent, t, window.PAYROLL.decimalToHHMM(hrs), (Math.round(hrs * 100) / 100).toFixed(2),
               pct.toFixed(1) + '%', rate == null ? '' : rate.toFixed(2),
               pay == null ? '' : pay.toFixed(2)]);
           });
