@@ -706,6 +706,14 @@
               expires_at: data.session.expires_at,
             },
           }, ev.origin);
+          // Deep-link: a payroll "Edit day" button may have asked to open a
+          // specific staff member's timesheet on an exact day. The admin is now
+          // ready + authed, so hand off the target; it opens once its data loads.
+          if (window.__clockEditTarget) {
+            const t = window.__clockEditTarget;
+            window.__clockEditTarget = null;
+            target.postMessage({ type: 'quay-open-editor', staffId: t.staffId, day: t.day, agentName: t.agentName }, ev.origin);
+          }
         } catch {}
       });
     }
@@ -736,6 +744,24 @@
     });
     // Division Costs — multi-select division picker (present only on that view).
     payrollDivPickerWire();
+    // "Edit day →" deep-links (on the no-team / unpaired-punch lists): stash the
+    // target, switch to the Clocks tab. The fresh admin iframe boots, reports
+    // ready, and wireClocks hands it the target to open (see quay-open-editor).
+    if (!window.__clockEditWired) {
+      window.__clockEditWired = true;
+      document.addEventListener('click', (ev) => {
+        const btn = ev.target.closest && ev.target.closest('[data-clock-edit]');
+        if (!btn) return;
+        ev.preventDefault();
+        window.__clockEditTarget = {
+          staffId: btn.dataset.clockEdit,
+          day: btn.dataset.clockDay,
+          agentName: btn.dataset.clockName,
+        };
+        tab = 'clocks';
+        shell();
+      });
+    }
     // First mount: hydrate config from DB, then kick off the fetch if
     // we haven't already. Config load + shift fetch run in parallel so
     // tab open isn't bottle-necked by either.

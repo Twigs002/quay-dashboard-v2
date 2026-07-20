@@ -616,14 +616,14 @@
             // shift is lost (the classic "forgot to clock out"). Flag it.
             console.warn('[payroll] orphaned in event (no matching out):',
               staffId, openIn.ts)
-            anomalies.push({ agentName, kind: 'no-clock-out', at: openIn.ts })
+            anomalies.push({ agentId: staffId, agentName, kind: 'no-clock-out', at: openIn.ts })
           }
           openIn = ev
         } else if (ev.dir === 'out') {
           if (!openIn) {
             console.warn('[payroll] orphaned out event (no matching in):',
               staffId, ev.ts)
-            anomalies.push({ agentName, kind: 'no-clock-in', at: ev.ts })
+            anomalies.push({ agentId: staffId, agentName, kind: 'no-clock-in', at: ev.ts })
             continue
           }
           const hrs = hoursDecimal(openIn.ts, ev.ts)
@@ -644,7 +644,7 @@
       }
       // Unpaired trailing 'in' = still on the clock at period close — its shift
       // is excluded from pay (spec §2). Flag it so it can be corrected.
-      if (openIn) anomalies.push({ agentName, kind: 'no-clock-out', at: openIn.ts })
+      if (openIn) anomalies.push({ agentId: staffId, agentName, kind: 'no-clock-out', at: openIn.ts })
     })
 
     shifts.sort((a, b) => {
@@ -1008,19 +1008,52 @@
     // pay calc) but still SHOW those rows, flagged, so they get corrected.
     const negCount = shifts.reduce((n, x) => n + (x.shiftHours < 0 ? 1 : 0), 0)
     const totalHours = shifts.reduce((s, x) => s + (x.shiftHours > 0 ? x.shiftHours : 0), 0)
+    // SAST calendar day for an instant — matches the clock admin's day keys so
+    // the "Edit day" deep-link lands on the exact row.
+    const _sastDay = iso => new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Johannesburg', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso))
+    // An "Edit day" button that jumps to the clock admin editor for this staff,
+    // scrolled to this exact day (handled by app.js → embedded admin).
+    const _editDayBtn = (agentId, day, name) =>
+      `<button class="btn" style="padding:3px 12px;font-size:12px;margin-left:10px;flex:none" data-clock-edit="${esc(agentId || '')}" data-clock-day="${esc(day)}" data-clock-name="${esc(name || '')}">Edit day →</button>`
+    const _rowLi = inner => `<li style="margin:5px 0;display:flex;align-items:center;flex-wrap:wrap;gap:2px">${inner}</li>`
+
     // Unpaired clock punches (in with no out, or out with no in). These are NOT
     // in the paid totals — surface them so they get fixed before pay closes.
     const anomalies = Array.isArray(shifts.anomalies) ? shifts.anomalies : []
     if (anomalies.length) {
       const label = { 'no-clock-out': 'clocked in, never clocked out', 'no-clock-in': 'clocked out with no clock-in' }
-      const items = anomalies.map(a =>
-        `<li style="margin:2px 0"><b>${esc(a.agentName)}</b> — ${label[a.kind] || a.kind} · ${esc(_fmtDateLabel(a.at))} ${esc(_fmtTimeLabel(a.at))}</li>`
-      ).join('')
+      const items = anomalies.map(a => _rowLi(
+        `<span><b>${esc(a.agentName)}</b> — ${label[a.kind] || a.kind} · ${esc(_fmtDateLabel(a.at))} ${esc(_fmtTimeLabel(a.at))}</span>${_editDayBtn(a.agentId, _sastDay(a.at), a.agentName)}`
+      )).join('')
       html += `
       <div class="card card-pad" style="border-left:4px solid var(--red);background:#FEF3F2;margin-bottom:14px">
         <div style="font-weight:700;color:var(--red);margin-bottom:6px">⚠ ${anomalies.length} unpaired clock punch${anomalies.length === 1 ? '' : 'es'} — not counted in pay</div>
         <div class="sub" style="margin-bottom:8px">These shifts are excluded from the totals below and from pay. Fix the clock times in quay-clock admin before the pay run closes, or the staff member is under-paid.</div>
-        <ul style="margin:0;padding-left:18px;font-size:13px">${items}</ul>
+        <ul style="margin:0;padding-left:0;list-style:none;font-size:13px">${items}</ul>
+      </div>`
+    }
+
+    // Shifts with no team note — paid, but the hours can't be allocated to a
+    // division until a team is added. One entry per (agent, day).
+    const noTeamMap = new Map()
+    shifts.forEach(sh => {
+      if (sh.shiftHours > 0 && !String(sh.note || '').trim()) {
+        const day = _sastDay(sh.clockInAt)
+        const key = (sh.agentId || sh.agentName) + '|' + day
+        if (!noTeamMap.has(key)) noTeamMap.set(key, { agentId: sh.agentId, agentName: sh.agentName, day, at: sh.clockInAt })
+      }
+    })
+    const noTeam = [...noTeamMap.values()].sort((a, b) =>
+      (a.agentName || '').localeCompare(b.agentName || '', undefined, { sensitivity: 'base' }) || a.day.localeCompare(b.day))
+    if (noTeam.length) {
+      const items = noTeam.map(n => _rowLi(
+        `<span><b>${esc(n.agentName)}</b> — no team · ${esc(_fmtDateLabel(n.at))}</span>${_editDayBtn(n.agentId, n.day, n.agentName)}`
+      )).join('')
+      html += `
+      <div class="card card-pad" style="border-left:4px solid #C77700;background:#FFF8EC;margin-bottom:14px">
+        <div style="font-weight:700;color:#9A5B00;margin-bottom:6px">⚑ ${noTeam.length} shift${noTeam.length === 1 ? '' : 's'} with no team for the day</div>
+        <div class="sub" style="margin-bottom:8px">These are paid, but with no team the hours can't be allocated to a division. Add the team on that day (the button opens the exact day in the clock admin).</div>
+        <ul style="margin:0;padding-left:0;list-style:none;font-size:13px">${items}</ul>
       </div>`
     }
     html += `
