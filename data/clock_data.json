@@ -1,5 +1,13 @@
 {
-  "agents": [],
+  "agents": [
+    {
+      "hours": 1.88,
+      "id": "tamzin-jacobs",
+      "name": "Tamzin Jacobs",
+      "name_normalised": "Tamzin Jacobs",
+      "sessions": 1
+    }
+  ],
   "by_week": {
     "2026-04-20": [
       {
@@ -3005,7 +3013,7 @@
         "sessions": 5
       },
       {
-        "hours": 50.486,
+        "hours": 59.491,
         "id": "jaco",
         "name": "Jan C (Jaco) Groenewald",
         "name_normalised": "Jan C (Jaco) Groenewald",
@@ -3112,7 +3120,7 @@
         "sessions": 4
       },
       {
-        "hours": 38.791,
+        "hours": 29.771,
         "id": "sadiqa-carelse",
         "name": "Sadiqa Carelse",
         "name_normalised": "Sadiqa Carelse",
@@ -3126,7 +3134,7 @@
         "sessions": 5
       },
       {
-        "hours": 18.141,
+        "hours": 26.141,
         "id": "jaco",
         "name": "Jan C (Jaco) Groenewald",
         "name_normalised": "Jan C (Jaco) Groenewald",
@@ -3259,14 +3267,14 @@
         "sessions": 5
       },
       {
-        "hours": 42.743,
+        "hours": 34.195,
         "id": "jason-julius",
         "name": "Jason Julius",
         "name_normalised": "Jason Julius",
         "sessions": 5
       },
       {
-        "hours": 30.896,
+        "hours": 23.126,
         "id": "maud",
         "name": "Sinenhlanhla Maud Mthembu",
         "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -3401,11 +3409,11 @@
         "sessions": 4
       },
       {
-        "hours": 48.116,
+        "hours": 39.376,
         "id": "maud",
         "name": "Sinenhlanhla Maud Mthembu",
         "name_normalised": "Sinenhlanhla Maud Mthembu",
-        "sessions": 5
+        "sessions": 6
       },
       {
         "hours": 43.734,
@@ -3443,11 +3451,11 @@
         "sessions": 5
       },
       {
-        "hours": 34.114,
+        "hours": 42.614,
         "id": "jason-julius",
         "name": "Jason Julius",
         "name_normalised": "Jason Julius",
-        "sessions": 4
+        "sessions": 5
       },
       {
         "hours": 35.798,
@@ -3590,11 +3598,11 @@
         "sessions": 4
       },
       {
-        "hours": 35.965,
+        "hours": 35.848,
         "id": "sadiqa-carelse",
         "name": "Sadiqa Carelse",
         "name_normalised": "Sadiqa Carelse",
-        "sessions": 4
+        "sessions": 5
       },
       {
         "hours": 16.485,
@@ -3603,9 +3611,18 @@
         "name_normalised": "Reidhistra Govinder",
         "sessions": 2
       }
+    ],
+    "2026-07-20": [
+      {
+        "hours": 1.88,
+        "id": "tamzin-jacobs",
+        "name": "Tamzin Jacobs",
+        "name_normalised": "Tamzin Jacobs",
+        "sessions": 1
+      }
     ]
   },
-  "generated_at": "2026-07-20T04:30:17.185911+00:00",
+  "generated_at": "2026-07-20T08:03:56.258114+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -3680,11 +3697,11 @@
           "sessions": 57
         },
         {
-          "hours": 492.142,
+          "hours": 494.022,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
-          "sessions": 62
+          "sessions": 63
         },
         {
           "hours": 458.488,
@@ -3813,7 +3830,7 @@
           "sessions": 40
         },
         {
-          "hours": 583.667,
+          "hours": 600.672,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
@@ -3848,11 +3865,11 @@
           "sessions": 54
         },
         {
-          "hours": 394.001,
+          "hours": 384.864,
           "id": "sadiqa-carelse",
           "name": "Sadiqa Carelse",
           "name_normalised": "Sadiqa Carelse",
-          "sessions": 46
+          "sessions": 47
         },
         {
           "hours": 463.479,
@@ -3960,11 +3977,11 @@
           "sessions": 18
         },
         {
-          "hours": 145.895,
+          "hours": 145.847,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 18
+          "sessions": 19
         },
         {
           "hours": 146.306,
@@ -3974,11 +3991,11 @@
           "sessions": 17
         },
         {
-          "hours": 141.172,
+          "hours": 124.662,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
-          "sessions": 22
+          "sessions": 23
         },
         {
           "hours": 29.604,
@@ -4092,11 +4109,11 @@
           "sessions": 18
         },
         {
-          "hours": 145.895,
+          "hours": 145.847,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 18
+          "sessions": 19
         },
         {
           "hours": 21.242,
@@ -4106,11 +4123,11 @@
           "sessions": 3
         },
         {
-          "hours": 128.68,
+          "hours": 119.543,
           "id": "sadiqa-carelse",
           "name": "Sadiqa Carelse",
           "name_normalised": "Sadiqa Carelse",
-          "sessions": 16
+          "sessions": 17
         },
         {
           "hours": 173.198,
@@ -4155,11 +4172,11 @@
           "sessions": 20
         },
         {
-          "hours": 152.159,
+          "hours": 154.039,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
-          "sessions": 23
+          "sessions": 24
         },
         {
           "hours": 180.413,
@@ -4225,11 +4242,11 @@
           "sessions": 19
         },
         {
-          "hours": 141.172,
+          "hours": 124.662,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
-          "sessions": 22
+          "sessions": 23
         },
         {
           "hours": 135.813,
@@ -4288,7 +4305,7 @@
           "sessions": 20
         },
         {
-          "hours": 158.232,
+          "hours": 175.237,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
@@ -4336,7 +4353,7 @@
     "last-90": {
       "agents": [
         {
-          "hours": 574.584,
+          "hours": 591.589,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
@@ -4476,11 +4493,11 @@
           "sessions": 47
         },
         {
-          "hours": 483.142,
+          "hours": 485.022,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
-          "sessions": 61
+          "sessions": 62
         },
         {
           "hours": 100.65,
@@ -4560,11 +4577,11 @@
           "sessions": 35
         },
         {
-          "hours": 394.001,
+          "hours": 384.864,
           "id": "sadiqa-carelse",
           "name": "Sadiqa Carelse",
           "name_normalised": "Sadiqa Carelse",
-          "sessions": 46
+          "sessions": 47
         },
         {
           "hours": 426.494,
@@ -4686,11 +4703,11 @@
           "sessions": 18
         },
         {
-          "hours": 145.895,
+          "hours": 145.847,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 18
+          "sessions": 19
         },
         {
           "hours": 146.306,
@@ -4700,11 +4717,11 @@
           "sessions": 17
         },
         {
-          "hours": 141.172,
+          "hours": 124.662,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
-          "sessions": 22
+          "sessions": 23
         },
         {
           "hours": 29.604,
@@ -4818,11 +4835,11 @@
           "sessions": 4
         },
         {
-          "hours": 48.116,
+          "hours": 39.376,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
-          "sessions": 5
+          "sessions": 6
         },
         {
           "hours": 43.734,
@@ -4860,11 +4877,11 @@
           "sessions": 5
         },
         {
-          "hours": 34.114,
+          "hours": 42.614,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 4
+          "sessions": 5
         },
         {
           "hours": 35.798,
@@ -5007,11 +5024,11 @@
           "sessions": 4
         },
         {
-          "hours": 35.965,
+          "hours": 35.848,
           "id": "sadiqa-carelse",
           "name": "Sadiqa Carelse",
           "name_normalised": "Sadiqa Carelse",
-          "sessions": 4
+          "sessions": 5
         },
         {
           "hours": 16.485,
@@ -5034,11 +5051,11 @@
           "sessions": 15
         },
         {
-          "hours": 107.151,
+          "hours": 109.031,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
-          "sessions": 18
+          "sessions": 19
         },
         {
           "hours": 5.995,
@@ -5062,11 +5079,11 @@
           "sessions": 15
         },
         {
-          "hours": 101.061,
+          "hours": 84.551,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
-          "sessions": 15
+          "sessions": 16
         },
         {
           "hours": 127.275,
@@ -5076,11 +5093,11 @@
           "sessions": 14
         },
         {
-          "hours": 101.733,
+          "hours": 92.596,
           "id": "sadiqa-carelse",
           "name": "Sadiqa Carelse",
           "name_normalised": "Sadiqa Carelse",
-          "sessions": 13
+          "sessions": 14
         },
         {
           "hours": 131.453,
@@ -5237,7 +5254,7 @@
           "sessions": 16
         },
         {
-          "hours": 126.743,
+          "hours": 143.748,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
@@ -5251,11 +5268,11 @@
           "sessions": 15
         },
         {
-          "hours": 103.631,
+          "hours": 103.583,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 13
+          "sessions": 14
         },
         {
           "hours": 137.214,
@@ -5318,7 +5335,15 @@
       "to": "2026-07-26T23:59:59+00:00"
     },
     "this-week": {
-      "agents": [],
+      "agents": [
+        {
+          "hours": 1.88,
+          "id": "tamzin-jacobs",
+          "name": "Tamzin Jacobs",
+          "name_normalised": "Tamzin Jacobs",
+          "sessions": 1
+        }
+      ],
       "from": "2026-07-20T00:00:00+00:00",
       "to": "2026-07-26T23:59:59+00:00"
     }
