@@ -643,8 +643,15 @@
         }
       }
       // Unpaired trailing 'in' = still on the clock at period close — its shift
-      // is excluded from pay (spec §2). Flag it so it can be corrected.
-      if (openIn) anomalies.push({ agentId: staffId, agentName, kind: 'no-clock-out', at: openIn.ts })
+      // is excluded from pay (spec §2). Flag it so it can be corrected — UNLESS
+      // it's today: someone currently clocked in isn't an error, just mid-shift.
+      // (Matches the clock admin's own "still clocked in today" rule and keeps
+      // the last day of an open period from flooding the list with live shifts.)
+      if (openIn) {
+        const sastToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Johannesburg', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
+        const inDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Johannesburg', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(openIn.ts))
+        if (inDay !== sastToday) anomalies.push({ agentId: staffId, agentName, kind: 'no-clock-out', at: openIn.ts })
+      }
     })
 
     shifts.sort((a, b) => {
