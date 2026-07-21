@@ -2036,7 +2036,7 @@
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(connRows), 'Connecteams');
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(allocRows), 'Allocations');
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(divRows), 'Divisions');
-      const periodLbl = (s.period ? s.period.label : '').replace(/[→\-]+/g, 'to').replace(/\s+/g, ' ').trim() || 'period';
+      const periodLbl = (s.period ? s.period.label : '').replace(/→/g, 'to').replace(/\s+/g, ' ').trim() || 'period';
       XLSX.writeFile(wb, `Quay Payroll ${periodLbl}.xlsx`);
     } catch (e) {
       alert('Payroll export failed: ' + (e && e.message || e));
