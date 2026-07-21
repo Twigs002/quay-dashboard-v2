@@ -2041,9 +2041,17 @@
       const isSat = iso => iso && new Intl.DateTimeFormat('en-US', { timeZone: 'Africa/Johannesburg', weekday: 'short' }).format(new Date(iso)) === 'Sat';
       const satByAgent = new Map();
       (s.shifts || []).forEach(sh => { if (sh.shiftHours > 0 && isSat(sh.clockInAt)) satByAgent.set(sh.agentName, (satByAgent.get(sh.agentName) || 0) + sh.shiftHours); });
+      const WORK_DAYS = 21.5, HRS_PER_DAY = 9, EXPECTED = WORK_DAYS * HRS_PER_DAY; // 193.5 full-time hrs/cycle
+      const ymdLocal = d => d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '';
+      const payStartStr = ymdLocal(s.period && s.period.start ? new Date(s.period.start) : null);
+      const payEndStr = ymdLocal(end);
       const acRows = [
-        ['', '', '', 'TIME KEEPING ADMINISTRATION', '', '', '', 'PAYROLL DATA INPUT', '', ''],
-        ['Full Name & Surname', 'Emp. Status', 'Job Title', 'Billable Hours', 'Training Hours', 'Saturday Hours', 'TOTAL BILLABLE HOURS', 'PRO RATA RATE', 'Last changed date', 'Working days per cycle'],
+        // Group-header banner row (matches the source's merged section labels).
+        ['', '', '', 'TIME KEEPING ADMINISTRATION', '', '', '', 'PAYROLL DATA INPUT', '', '', '', '', '', 'PAYROLL ACTIONS & PROCESSING', '', '', '', '', ''],
+        ['Full Name & Surname', 'Emp. Status', 'Job Title', 'Billable Hours', 'Training Hours', 'Saturday Hours',
+          'TOTAL BILLABLE HOURS', 'PRO RATA RATE', 'Last changed date', 'Working days per cycle',
+          'Billable hours per day', 'Dial Fire Hourly Rate', 'PERCENTAGE OF HOURS WORKED',
+          'COST TO COMPANY EXC PAYROLL ADJ', '', 'COST TO COMPANY', 'PAY RUN Start Date', 'PAY RUN End Date', 'PAYROLL NOTES'],
       ];
       const titleOrder = ['Broker Assistant', 'Fancy', 'Relationship Manager', 'LN', 'Broker', 'Assistant', 'Manager'];
       [...ETOT.keys()].sort((a, b) => {
@@ -2056,8 +2064,17 @@
         const total = ETOT.get(agent) || 0;
         const sat = satByAgent.get(agent) || 0;
         const billable = Math.max(0, total - sat);
-        acRows.push([agent, '', jobTitle(meta.designation), round2(billable), '', sat > 0 ? round2(sat) : '',
-          round2(total), meta.salary != null ? round2(meta.salary) : '', '', 21.5]);
+        // Hourly rate: prefer the stored rate (used by Earnings/Invoicing);
+        // fall back to salary ÷ 193.5, the source sheet's derivation.
+        const rate = meta.hourlyRate != null ? meta.hourlyRate : (meta.salary != null ? meta.salary / EXPECTED : null);
+        const cost = rate != null ? total * rate : null; // total billable hrs × rate = earnings
+        acRows.push([
+          agent, '', jobTitle(meta.designation), round2(billable), '', sat > 0 ? round2(sat) : '',
+          round2(total), meta.salary != null ? round2(meta.salary) : '', '', WORK_DAYS,
+          HRS_PER_DAY, rate != null ? round2(rate) : '', round2(total / EXPECTED),
+          cost != null ? round2(cost) : '', '', cost != null ? round2(cost) : '',
+          payStartStr, payEndStr, '',
+        ]);
       });
 
       // ---- Sheet 5: Division Invoicing (FancyLN cost-attribution pivot)
