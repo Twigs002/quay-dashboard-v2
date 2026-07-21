@@ -2065,7 +2065,7 @@
       let maxHeadDC = 1;
       teamEmp.forEach(m => { if (m.size > maxHeadDC) maxHeadDC = m.size; });
       const diHdr = ['', 'DIVISION'];
-      for (let i = 1; i <= maxHeadDC; i++) diHdr.push(`FANCE / LN NAME ${i}`, 'PAYROLL AMOUNT', 'SDL', 'PERCENTAGE', 'DIV CONTRIBUTION');
+      for (let i = 1; i <= maxHeadDC; i++) diHdr.push(`FANCY / LN NAME ${i}`, 'PAYROLL AMOUNT', 'SDL', 'PERCENTAGE', 'DIV CONTRIBUTION');
       diHdr.push('TOTAL FANCY / LN', 'Comments');
       const gtContrib = new Array(maxHeadDC).fill(0);
       const rowForDI = (team, note) => {
