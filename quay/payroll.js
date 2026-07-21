@@ -445,6 +445,56 @@
   }
 
   // ---------------------------------------------------------------------
+  // South African public holidays (Public Holidays Act 36 of 1994). Where a
+  // holiday falls on a Sunday, the following Monday is a holiday (observed);
+  // Saturdays are not moved. Dates are fixed law + Easter-derived, so they
+  // are hard-coded — extend the table each year. Used to flag holidays that
+  // fall inside a pay period on the timesheet.
+  // ---------------------------------------------------------------------
+  const SA_PUBLIC_HOLIDAYS = [
+    ['2025-01-01', "New Year's Day"], ['2025-03-21', 'Human Rights Day'],
+    ['2025-04-18', 'Good Friday'], ['2025-04-21', 'Family Day'],
+    ['2025-04-27', 'Freedom Day'], ['2025-04-28', 'Freedom Day (observed)'],
+    ['2025-05-01', "Workers' Day"], ['2025-06-16', 'Youth Day'],
+    ['2025-08-09', "National Women's Day"], ['2025-09-24', 'Heritage Day'],
+    ['2025-12-16', 'Day of Reconciliation'], ['2025-12-25', 'Christmas Day'],
+    ['2025-12-26', 'Day of Goodwill'],
+    ['2026-01-01', "New Year's Day"], ['2026-03-21', 'Human Rights Day'],
+    ['2026-04-03', 'Good Friday'], ['2026-04-06', 'Family Day'],
+    ['2026-04-27', 'Freedom Day'], ['2026-05-01', "Workers' Day"],
+    ['2026-06-16', 'Youth Day'], ['2026-08-09', "National Women's Day"],
+    ['2026-08-10', "National Women's Day (observed)"], ['2026-09-24', 'Heritage Day'],
+    ['2026-12-16', 'Day of Reconciliation'], ['2026-12-25', 'Christmas Day'],
+    ['2026-12-26', 'Day of Goodwill'],
+    ['2027-01-01', "New Year's Day"], ['2027-03-21', 'Human Rights Day'],
+    ['2027-03-22', 'Human Rights Day (observed)'], ['2027-03-26', 'Good Friday'],
+    ['2027-03-29', 'Family Day'], ['2027-04-27', 'Freedom Day'],
+    ['2027-05-01', "Workers' Day"], ['2027-06-16', 'Youth Day'],
+    ['2027-08-09', "National Women's Day"], ['2027-09-24', 'Heritage Day'],
+    ['2027-12-16', 'Day of Reconciliation'], ['2027-12-25', 'Christmas Day'],
+    ['2027-12-26', 'Day of Goodwill'], ['2027-12-27', 'Day of Goodwill (observed)'],
+  ]
+
+  const _DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const _MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+  // Public holidays whose date falls within a pay-period label
+  // ("yyyy-mm-dd → yyyy-mm-dd"), inclusive. Returns [{date, name, dow, pretty}].
+  function publicHolidaysInPeriod(label) {
+    if (!label) return []
+    const m = String(label).match(/(\d{4}-\d{2}-\d{2})\D+(\d{4}-\d{2}-\d{2})/)
+    if (!m) return []
+    const start = m[1], end = m[2]
+    return SA_PUBLIC_HOLIDAYS
+      .filter(([d]) => d >= start && d <= end)
+      .map(([date, name]) => {
+        const [yy, mm, dd] = date.split('-')
+        const dow = _DOW[new Date(date + 'T12:00:00').getDay()]
+        return { date, name, dow, pretty: `${dd} ${_MON[+mm - 1]} ${yy}` }
+      })
+  }
+
+  // ---------------------------------------------------------------------
   // Time helpers
   // ---------------------------------------------------------------------
 
@@ -940,6 +990,19 @@
       `<button class="${id === activeView ? 'active' : ''}" data-payroll-view="${id}">${label}</button>`
     ).join('')
 
+    // Public-holiday note for the selected pay period. Flags any SA public
+    // holiday (and observed Mondays) falling in the period so payroll can
+    // account for them; shows a muted "none" line otherwise.
+    const holidays = publicHolidaysInPeriod(curLabel)
+    const holidayBanner = holidays.length
+      ? `<div class="card card-pad" style="border-left:4px solid #3D5BA6;background:#EEF2FB">
+          <div style="font-weight:700;color:#2A3F73;margin-bottom:6px">🇿🇦 ${holidays.length} public holiday${holidays.length === 1 ? '' : 's'} in this pay period</div>
+          <ul style="margin:0;padding-left:18px;font-size:13px;color:#2A3F73;line-height:1.6">
+            ${holidays.map(h => `<li><b>${esc(h.dow)} ${esc(h.pretty)}</b> — ${esc(h.name)}</li>`).join('')}
+          </ul>
+        </div>`
+      : `<div class="card card-pad" style="color:var(--muted);font-size:13px">🇿🇦 No South African public holidays fall in this pay period.</div>`
+
     let body = ''
     if (state && state.loading) {
       body = `<div class="card card-pad" style="text-align:center;color:var(--muted);padding:40px">Loading shifts for ${esc(curLabel)}…</div>`
@@ -971,6 +1034,7 @@
           <div class="seg" id="payrollSubNav" style="flex:1 1 auto">${subNav}</div>
         </div>
       </div>
+      <div class="mt">${holidayBanner}</div>
       <div id="payrollBody" class="mt">${body}</div>
     </div>`
   }
