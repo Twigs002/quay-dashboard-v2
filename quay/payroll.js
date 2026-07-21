@@ -303,6 +303,16 @@
   const SUFFIX_RE = /\s+(?:Cm|Na|Va|Nc)$/i
   const TEAM_SPLIT_RE = /\s*(?:\/|&|,|\band\b)\s*/i
 
+  // System-generated clock notes (written automatically when a manager
+  // approves an edited shift, e.g. "Approved shift change by Alan"). These
+  // are NOT team notes and must never become a division — otherwise the
+  // approval text gets title-cased into a phantom team on the By Division /
+  // Division Costs views. Anchored at the start; manager name is ignored.
+  const SYSTEM_NOTE_RE = /^approved\s+shift\s+change\b/i
+  function isSystemNote(note) {
+    return note != null && SYSTEM_NOTE_RE.test(String(note).trim())
+  }
+
   // Outer-punctuation strip — matches the Python `.strip(' \t\n\r.,;:"!()[]{}')`.
   const OUTER_PUNCT_RE = /^[\s.,;:"!()[\]{}]+|[\s.,;:"!()[\]{}]+$/g
 
@@ -363,8 +373,10 @@
     const out = []
     const seen = new Set()
     for (const p of parts) {
+      if (isSystemNote(p)) continue   // approval/system note, not a team
       const n = normalizeTeam(p)
       if (!n) continue
+      if (isSystemNote(n)) continue   // normalised form still a system note
       const key = n.toLowerCase()
       if (seen.has(key)) continue
       seen.add(key)
@@ -627,6 +639,18 @@
             continue
           }
           const hrs = hoursDecimal(openIn.ts, ev.ts)
+          // Team note normally rides the clock-IN punch. But when a shift's
+          // times are edited, the approval overwrites the IN note with a
+          // system note ("Approved shift change by …"), leaving the real team
+          // (if it survived) only on the OUT punch. So when the IN note is a
+          // system note or carries no team, fall back to the OUT punch note.
+          const inNote = openIn.note || ''
+          const outNote = ev.note || ''
+          let note = inNote
+          if ((isSystemNote(inNote) || !parseTeams(inNote).length) &&
+              outNote && !isSystemNote(outNote) && parseTeams(outNote).length) {
+            note = outNote
+          }
           shifts.push({
             agentId: staffId,
             agentName: nameById.get(staffId) || staffId,
@@ -637,7 +661,7 @@
             clockInAt: openIn.ts,
             clockOutAt: ev.ts,
             shiftHours: hrs,
-            note: openIn.note || '',
+            note: note,
           })
           openIn = null
         }
