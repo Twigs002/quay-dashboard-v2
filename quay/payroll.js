@@ -1032,6 +1032,8 @@
             </select>
           </div>
           <div class="seg" id="payrollSubNav" style="flex:1 1 auto">${subNav}</div>
+          <button id="btnPayrollXlsx" class="btn btn-primary" style="flex:none;font-weight:600"
+            title="Download the whole pay period as one Excel workbook — Connecteams (all shifts) + Allocations + Divisions">${(window.ICON && window.ICON.download) || '⬇'} Payroll Export (.xlsx)</button>
         </div>
       </div>
       <div class="mt">${holidayBanner}</div>

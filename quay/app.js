@@ -742,6 +742,9 @@
         shell();
       });
     });
+    // Payroll Export — one multi-sheet .xlsx for the whole pay period.
+    const xlsxBtn = document.getElementById('btnPayrollXlsx');
+    if (xlsxBtn) xlsxBtn.addEventListener('click', payrollExportXlsx);
     // Division Costs — multi-select division picker (present only on that view).
     payrollDivPickerWire();
     // "Edit day →" deep-links (on the no-team / unpaired-punch lists): stash the
@@ -1912,6 +1915,134 @@
     else if (tab === 'teams-report') rows = csvPayroll(); // Division Costs card CSV (SDL hidden)
     else                            rows = csvAgents();
     downloadCSV(filename, rows);
+  }
+
+  // ---- Payroll Export: one multi-sheet .xlsx matching the legacy
+  // "Connect Teams Hours" workbook (Connecteams + Allocations + Divisions).
+  // SheetJS is lazy-loaded from the CDN on first click (same pattern as
+  // html2canvas), so it never slows the initial dashboard load.
+  let _xlsxLibPromise = null;
+  function ensureXlsxLib() {
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    if (_xlsxLibPromise) return _xlsxLibPromise;
+    _xlsxLibPromise = new Promise((res, rej) => {
+      const sc = document.createElement('script');
+      sc.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      sc.onload = () => window.XLSX ? res(window.XLSX) : rej(new Error('Spreadsheet library loaded but XLSX missing'));
+      sc.onerror = () => { _xlsxLibPromise = null; rej(new Error('Could not load the spreadsheet library (offline?)')); };
+      document.head.appendChild(sc);
+    });
+    return _xlsxLibPromise;
+  }
+
+  // Decimal hours → "HH:MM:SS" (Connecteam-style). Negative = bad clock time.
+  function _hhmmss(hrs) {
+    if (hrs == null || !isFinite(hrs)) return '';
+    const neg = hrs < 0;
+    let s = Math.round(Math.abs(hrs) * 3600);
+    const h = Math.floor(s / 3600); s -= h * 3600;
+    const m = Math.floor(s / 60); const sec = s - m * 60;
+    const p = n => String(n).padStart(2, '0');
+    return (neg ? '-' : '') + p(h) + ':' + p(m) + ':' + p(sec);
+  }
+  function _splitName(name) {
+    const parts = String(name || '').trim().split(/\s+/);
+    const ln = parts.length > 1 ? parts[parts.length - 1] : '';
+    const fn = parts.length > 1 ? parts.slice(0, -1).join(' ') : (parts[0] || '');
+    return [fn, ln];
+  }
+
+  async function payrollExportXlsx() {
+    const s = payrollState || {};
+    if (!s.shifts || !s.allocations) { alert('Payroll data is still loading — give it a moment and try again.'); return; }
+    const btn = document.getElementById('btnPayrollXlsx');
+    const orig = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Preparing…'; }
+    try {
+      const XLSX = await ensureXlsxLib();
+      const PR = window.PAYROLL;
+      const fmtD = iso => iso ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Johannesburg', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso)) : '';
+      const fmtTs = iso => iso ? new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Johannesburg', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).format(new Date(iso)) : '';
+      const round2 = n => Math.round((n || 0) * 100) / 100;
+      const byBase = (a, b) => String(a).localeCompare(String(b), undefined, { sensitivity: 'base' });
+
+      // ---- Sheet 1: Connecteams (all shifts), grouped by employee, newest first
+      const connHdr = ['First name', 'Last name', 'Type', 'Sub-job', 'Start Date', 'In', 'Start - location',
+        'End Date', 'Out', 'End - location', 'Employee notes', 'Manager notes', 'Shift hours', 'Daily total hours',
+        'Weekly total hours', 'Total work hours', 'Total paid time off hours', 'Total Paid Hours', 'Total Regular',
+        'Total overtime', 'Total unpaid time off hours'];
+      const byAgent = new Map();
+      (s.shifts || []).forEach(sh => { if (!byAgent.has(sh.agentName)) byAgent.set(sh.agentName, []); byAgent.get(sh.agentName).push(sh); });
+      const connRows = [connHdr];
+      [...byAgent.keys()].sort(byBase).forEach(agent => {
+        const list = byAgent.get(agent).slice().sort((a, b) => String(b.clockInAt || '').localeCompare(String(a.clockInAt || '')));
+        const [fn, ln] = _splitName(agent);
+        const totDec = list.reduce((t, x) => t + (x.shiftHours > 0 ? x.shiftHours : 0), 0);
+        const totHHMMSS = _hhmmss(totDec);
+        list.forEach((sh, idx) => {
+          const bad = sh.shiftHours < 0;
+          const shHrs = bad ? 'BAD TIME' : _hhmmss(sh.shiftHours);
+          connRows.push([fn, ln, 'All staff', 'No sub-job', fmtD(sh.clockInAt), fmtTs(sh.clockInAt), '',
+            fmtD(sh.clockOutAt), fmtTs(sh.clockOutAt), '', sh.note || '', '', shHrs, shHrs,
+            '', idx === 0 ? totHHMMSS : '', '', idx === 0 ? totHHMMSS : '', idx === 0 ? totHHMMSS : '', '', '']);
+        });
+      });
+
+      // ---- Sheet 2: Allocations (per-agent team split + TOTAL + blank separator)
+      const ETH = s.allocations.empTeamHours, ETOT = s.allocations.empTotalHours;
+      const allocRows = [['Employee', 'Team', 'Hours (HH:MM)', 'Hours (Decimal)', "% of Employee's Time"]];
+      [...ETH.keys()].sort(byBase).forEach(agent => {
+        const teams = [...ETH.get(agent).entries()].sort((a, b) => b[1] - a[1]);
+        const total = ETOT.get(agent) || 0;
+        teams.forEach(([t, hrs]) => {
+          const pct = total > 0 ? (hrs / total) * 100 : 0;
+          allocRows.push([agent, t, PR.decimalToHHMM(hrs), round2(hrs), pct.toFixed(1) + '%']);
+        });
+        allocRows.push([agent + ' — TOTAL', '', PR.decimalToHHMM(total), round2(total), '100.0%']);
+        allocRows.push([]);
+      });
+
+      // ---- Sheet 3: Divisions (wide pivot; percentages as decimal fractions)
+      const teamEmp = new Map();
+      ETH.forEach((teams, emp) => teams.forEach((hrs, t) => {
+        if (!teamEmp.has(t)) teamEmp.set(t, new Map());
+        teamEmp.get(t).set(emp, hrs);
+      }));
+      let maxHead = 1;
+      teamEmp.forEach(m => { if (m.size > maxHead) maxHead = m.size; });
+      const divHdr = ['DIVISION'];
+      for (let i = 1; i <= maxHead; i++) { divHdr.push(`F NAME / LN NAME ${i}`); divHdr.push('PERCENTAGE'); }
+      divHdr.push('NOTES');
+      const rowFor = (team, note) => {
+        const members = teamEmp.get(team) || new Map();
+        const sorted = [...members.entries()].map(([emp, hrs]) => ({ emp, pct: (ETOT.get(emp) || 0) > 0 ? hrs / ETOT.get(emp) : 0 })).sort((a, b) => b.pct - a.pct);
+        const row = [team];
+        for (let i = 0; i < maxHead; i++) {
+          if (i < sorted.length) { row.push(sorted[i].emp); row.push(round2(sorted[i].pct)); }
+          else { row.push(''); row.push(''); }
+        }
+        row.push(note);
+        return row;
+      };
+      const divRows = [divHdr];
+      PR.CANONICAL_TEAMS.forEach(t => { const m = teamEmp.get(t); divRows.push(rowFor(t, (m && m.size) ? '' : 'no agents this period')); });
+      const nonCanon = [];
+      teamEmp.forEach((_m, t) => { if (!PR.CANONICAL_SET.has(t) && t !== '(No team noted)') nonCanon.push(t); });
+      nonCanon.sort(byBase);
+      nonCanon.forEach(t => divRows.push(rowFor(t, 'Not in master list')));
+      if (teamEmp.has('(No team noted)')) divRows.push(rowFor('(No team noted)', 'Shifts where the Employee notes field was blank'));
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(connRows), 'Connecteams');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(allocRows), 'Allocations');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(divRows), 'Divisions');
+      const periodLbl = (s.period ? s.period.label : '').replace(/[→\-]+/g, 'to').replace(/\s+/g, ' ').trim() || 'period';
+      XLSX.writeFile(wb, `Quay Payroll ${periodLbl}.xlsx`);
+    } catch (e) {
+      alert('Payroll export failed: ' + (e && e.message || e));
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = orig; }
+    }
   }
 
   function csvAgents() {
