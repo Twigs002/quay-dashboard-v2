@@ -1989,7 +1989,7 @@
       });
 
       // ---- Sheet 2: Allocations (per-agent team split + TOTAL + blank separator)
-      const ETH = s.allocations.empTeamHours, ETOT = s.allocations.empTotalHours;
+      const ETH = s.allocations.empTeamHours, ETOT = s.allocations.empTotalHours, EMETA = s.allocations.empMeta || new Map();
       const allocRows = [['Employee', 'Team', 'Hours (HH:MM)', 'Hours (Decimal)', "% of Employee's Time"]];
       [...ETH.keys()].sort(byBase).forEach(agent => {
         const teams = [...ETH.get(agent).entries()].sort((a, b) => b[1] - a[1]);
@@ -2032,10 +2032,79 @@
       nonCanon.forEach(t => divRows.push(rowFor(t, 'Not in master list')));
       if (teamEmp.has('(No team noted)')) divRows.push(rowFor('(No team noted)', 'Shifts where the Employee notes field was blank'));
 
+      // ---- Sheet 4: Agents & Callers Payroll (Aqua per-agent payroll input)
+      const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const end = s.period && s.period.end ? new Date(s.period.end) : null;
+      const monthLabel = end ? `${MONTHS[end.getMonth()]} ${end.getFullYear()}` : 'Period';
+      const TITLE = { admin_assistant: 'Broker Assistant', assistant: 'Assistant', fancy: 'Fancy', rm: 'Relationship Manager', ln: 'LN', broker: 'Broker', manager: 'Manager', super_admin: 'Admin', payroll: 'Payroll' };
+      const jobTitle = d => TITLE[d] || (d ? String(d).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '');
+      const isSat = iso => iso && new Intl.DateTimeFormat('en-US', { timeZone: 'Africa/Johannesburg', weekday: 'short' }).format(new Date(iso)) === 'Sat';
+      const satByAgent = new Map();
+      (s.shifts || []).forEach(sh => { if (sh.shiftHours > 0 && isSat(sh.clockInAt)) satByAgent.set(sh.agentName, (satByAgent.get(sh.agentName) || 0) + sh.shiftHours); });
+      const acRows = [
+        ['', '', '', 'TIME KEEPING ADMINISTRATION', '', '', '', 'PAYROLL DATA INPUT', '', ''],
+        ['Full Name & Surname', 'Emp. Status', 'Job Title', 'Billable Hours', 'Training Hours', 'Saturday Hours', 'TOTAL BILLABLE HOURS', 'PRO RATA RATE', 'Last changed date', 'Working days per cycle'],
+      ];
+      const titleOrder = ['Broker Assistant', 'Fancy', 'Relationship Manager', 'LN', 'Broker', 'Assistant', 'Manager'];
+      [...ETOT.keys()].sort((a, b) => {
+        const ta = jobTitle((EMETA.get(a) || {}).designation), tb = jobTitle((EMETA.get(b) || {}).designation);
+        const ia = titleOrder.indexOf(ta), ib = titleOrder.indexOf(tb);
+        const oa = ia < 0 ? 99 : ia, ob = ib < 0 ? 99 : ib;
+        return oa !== ob ? oa - ob : byBase(a, b);
+      }).forEach(agent => {
+        const meta = EMETA.get(agent) || {};
+        const total = ETOT.get(agent) || 0;
+        const sat = satByAgent.get(agent) || 0;
+        const billable = Math.max(0, total - sat);
+        acRows.push([agent, '', jobTitle(meta.designation), round2(billable), '', sat > 0 ? round2(sat) : '',
+          round2(total), meta.salary != null ? round2(meta.salary) : '', '', 21.5]);
+      });
+
+      // ---- Sheet 5: Division Invoicing (FancyLN cost-attribution pivot)
+      const SDL_RATE = 0.011;
+      let maxHeadDC = 1;
+      teamEmp.forEach(m => { if (m.size > maxHeadDC) maxHeadDC = m.size; });
+      const diHdr = ['', 'DIVISION'];
+      for (let i = 1; i <= maxHeadDC; i++) diHdr.push(`FANCE / LN NAME ${i}`, 'PAYROLL AMOUNT', 'SDL', 'PERCENTAGE', 'DIV CONTRIBUTION');
+      diHdr.push('TOTAL FANCY / LN', 'Comments');
+      const gtContrib = new Array(maxHeadDC).fill(0);
+      const rowForDI = (team, note) => {
+        const members = teamEmp.get(team) || new Map();
+        const enriched = [...members.entries()].map(([emp, hrs]) => {
+          const meta = EMETA.get(emp) || {}; const rate = meta.hourlyRate; const tot = ETOT.get(emp) || 0;
+          const payroll = rate != null ? tot * rate : 0; const sdl = payroll * SDL_RATE;
+          const pct = tot > 0 ? hrs / tot : 0; const contrib = (payroll * pct) / 2 + sdl * pct;
+          return { emp, payroll, sdl, pct, contrib };
+        }).sort((a, b) => b.contrib - a.contrib);
+        const row = ['', team]; let rowTotal = 0;
+        for (let i = 0; i < maxHeadDC; i++) {
+          if (i < enriched.length) {
+            const x = enriched[i];
+            row.push(x.emp, round2(x.payroll), round2(x.sdl), round2(x.pct), round2(x.contrib));
+            gtContrib[i] += x.contrib; rowTotal += x.contrib;
+          } else row.push('', '', '', '', '');
+        }
+        row.push(round2(rowTotal), note || '');
+        return row;
+      };
+      const diRows = [diHdr];
+      PR.CANONICAL_TEAMS.forEach(t => { const m = teamEmp.get(t); diRows.push(rowForDI(t, (m && m.size) ? '' : 'no agents this period')); });
+      nonCanon.forEach(t => diRows.push(rowForDI(t, 'Not in master list')));
+      if (teamEmp.has('(No team noted)')) diRows.push(rowForDI('(No team noted)', 'Shifts where the Employee notes field was blank'));
+      const gtRow = ['', 'GRAND TOTAL'];
+      for (let i = 0; i < maxHeadDC; i++) gtRow.push('', '', '', '', round2(gtContrib[i]));
+      gtRow.push(round2(gtContrib.reduce((a, b) => a + b, 0)), '');
+      diRows.push(gtRow);
+
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(connRows), 'Connecteams');
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(allocRows), 'Allocations');
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(divRows), 'Divisions');
+      // Excel caps sheet names at 31 chars. Sheets 1-3 fit with the month
+      // prefix; the long descriptive names for 4-5 do not, so they stay
+      // un-prefixed (the month lives in the filename + the sibling tabs).
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(connRows), `${monthLabel} Connecteams`.slice(0, 31));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(allocRows), `${monthLabel} Allocations`.slice(0, 31));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(divRows), `${monthLabel} Divisions`.slice(0, 31));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(acRows), 'Agents & Callers Payroll');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(diRows), 'Division Invoicing');
       const periodLbl = (s.period ? s.period.label : '').replace(/→/g, 'to').replace(/\s+/g, ' ').trim() || 'period';
       XLSX.writeFile(wb, `Quay Payroll ${periodLbl}.xlsx`);
     } catch (e) {
