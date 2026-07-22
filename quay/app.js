@@ -6775,10 +6775,10 @@
         <div class="tbl-wrap"><table class="tbl">
           <thead><tr>
             <th>Name</th><th>ID</th><th>Start</th><th>Remuneration</th>
-            <th>Status</th><th>Created</th><th class="r"></th>
+            <th>Status</th><th>FICA</th><th>Created</th><th class="r"></th>
           </tr></thead>
           <tbody id="aquaListBody">
-            <tr><td colspan="7" class="muted" style="text-align:center;padding:30px">Loading…</td></tr>
+            <tr><td colspan="8" class="muted" style="text-align:center;padding:30px">Loading…</td></tr>
           </tbody>
         </table></div>
       </div>
@@ -6796,7 +6796,7 @@
         ? `<div style="padding:12px 14px;border-radius:10px;font-size:14px;margin:0 0 14px;background:${bg};color:${fg};border:1px solid ${bd}">${escapeHtml(text)}</div>`
         : '';
     };
-    const errRow = (e) => `<tr><td colspan="7" class="muted" style="text-align:center;padding:24px;color:#B42318">Error: ${escapeHtml(String(e))}</td></tr>`;
+    const errRow = (e) => `<tr><td colspan="8" class="muted" style="text-align:center;padding:24px;color:#B42318">Error: ${escapeHtml(String(e))}</td></tr>`;
 
     function statusPill(s) {
       if (s === 'Signed')     return '<span class="pill ok" style="font-size:11px;padding:3px 9px">Signed</span>';
@@ -6804,12 +6804,22 @@
       return `<span class="pill" style="font-size:11px;padding:3px 9px;background:#EEF2F1;color:#3C4A48">${escapeHtml(s || 'Generated')}</span>`;
     }
 
+    // FICA docs cell: a green "Received" pill (click to undo) or a "Mark received" action.
+    function ficaCell(r) {
+      if (r.fica === 'Received') {
+        return `<span class="pill ok" style="font-size:11px;padding:3px 9px">FICA received</span>`
+          + ` <a href="#" data-aqua-fica="${escapeHtml(r.folderId)}" data-fica-to="Pending" class="muted" style="font-size:11px;margin-left:6px">undo</a>`;
+      }
+      return `<span class="pill" style="font-size:11px;padding:3px 9px;background:#FFF8E6;color:#8A6D1B">Pending</span>`
+        + ` <a href="#" data-aqua-fica="${escapeHtml(r.folderId)}" data-fica-to="Received" style="font-size:11.5px;margin-left:6px">Mark received</a>`;
+    }
+
     function renderRows(rows) {
       const count = document.getElementById('aquaCount');
       if (count) count.textContent = rows.length + (rows.length === 1 ? ' contract' : ' contracts');
       const body = document.getElementById('aquaListBody');
       if (!body) return;
-      if (!rows.length) { body.innerHTML = '<tr><td colspan="7" class="muted" style="text-align:center;padding:30px">No contracts yet.</td></tr>'; return; }
+      if (!rows.length) { body.innerHTML = '<tr><td colspan="8" class="muted" style="text-align:center;padding:30px">No contracts yet.</td></tr>'; return; }
       body.innerHTML = rows.map(r => {
         const actions = [];
         if (r.pdfUrl) actions.push(`<a href="${escapeHtml(r.pdfUrl)}" target="_blank" rel="noopener">PDF</a>`);
@@ -6821,6 +6831,7 @@
           <td style="font-size:12.5px">${escapeHtml(r.start_date)}</td>
           <td style="font-size:12.5px">${escapeHtml(r.remuneration)}</td>
           <td>${statusPill(r.status)}</td>
+          <td style="white-space:nowrap">${ficaCell(r)}</td>
           <td class="muted tnum" style="font-size:12px">${escapeHtml(r.created)}</td>
           <td class="r" style="white-space:nowrap;font-size:12.5px">${actions.join(' · ')}</td>
         </tr>`;
@@ -6831,6 +6842,17 @@
           if (!confirm('Mark this contract as signed?')) return;
           try {
             const res = await _aquaFetch({ kind: 'mark_signed', folderId: a.getAttribute('data-aqua-sign') });
+            if (res.ok) loadList(); else msg('err', 'Error: ' + (res.error || 'unknown'));
+          } catch (e) { msg('err', 'Network error: ' + e); }
+        });
+      });
+      body.querySelectorAll('a[data-aqua-fica]').forEach(a => {
+        a.addEventListener('click', async (ev) => {
+          ev.preventDefault();
+          const to = a.getAttribute('data-fica-to');
+          if (to === 'Received' && !confirm('Mark FICA docs as received for this contractor?')) return;
+          try {
+            const res = await _aquaFetch({ kind: 'mark_fica', folderId: a.getAttribute('data-aqua-fica'), received: to === 'Received' });
             if (res.ok) loadList(); else msg('err', 'Error: ' + (res.error || 'unknown'));
           } catch (e) { msg('err', 'Network error: ' + e); }
         });
