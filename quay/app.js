@@ -6738,10 +6738,10 @@
   }
 
   function renderAquaContracts(subToggle = '') {
-    const teal = '#0F766E';
+    const gold = '#F4B400';
     return `<div class="tab-view">
       ${subToggle}
-      <div class="card card-pad" style="border-left:4px solid ${teal}">
+      <div class="card card-pad" style="border-left:4px solid ${gold}">
         <h3 style="margin:0;font-family:var(--serif);font-size:15px">Aqua Promotions contracts</h3>
         <div class="muted" style="font-size:12.5px;margin-top:4px">Generate a Memorandum of Agreement for Aqua Promotions (Pty) Ltd. Kept completely separate from the Quay 1 broker contracts.</div>
       </div>
@@ -6763,7 +6763,7 @@
             <input id="aqEmail" type="email" autocomplete="off" placeholder="Leave blank to only file the PDF"></label>
         </div>
         <div class="muted" style="font-size:12px;margin:-4px 0 12px">Entered as a rand amount (formatted R8,000.00 on a pro-rata basis). If an email is given, the contractor is emailed their agreement with Aqua Promotions branding.</div>
-        <button class="btn btn-primary" id="aquaGenBtn" style="background:${teal}">Generate agreement</button>
+        <button class="btn btn-primary" id="aquaGenBtn" style="background:${gold};color:#2A2100">Generate agreement</button>
       </div>
 
       <div class="card mt">
@@ -6789,9 +6789,9 @@
     const msg = (kind, text) => {
       const m = document.getElementById('aquaFormMsg');
       if (!m) return;
-      const bg = kind === 'err' ? '#FDECEA' : '#E6F4F1';
-      const fg = kind === 'err' ? '#B42318' : '#0B5A54';
-      const bd = kind === 'err' ? '#F5C6C0' : '#CDE8E2';
+      const bg = kind === 'err' ? '#FDECEA' : '#FFF6D6';
+      const fg = kind === 'err' ? '#B42318' : '#7A5C00';
+      const bd = kind === 'err' ? '#F5C6C0' : '#F0DFA0';
       m.innerHTML = text
         ? `<div style="padding:12px 14px;border-radius:10px;font-size:14px;margin:0 0 14px;background:${bg};color:${fg};border:1px solid ${bd}">${escapeHtml(text)}</div>`
         : '';
@@ -6800,18 +6800,17 @@
 
     function statusPill(s) {
       if (s === 'Signed')     return '<span class="pill ok" style="font-size:11px;padding:3px 9px">Signed</span>';
-      if (s === 'Draft sent') return '<span class="pill" style="font-size:11px;padding:3px 9px;background:#E6F4F1;color:#0B5A54">Draft sent</span>';
+      if (s === 'Draft sent') return '<span class="pill" style="font-size:11px;padding:3px 9px;background:#FFF6D6;color:#7A5C00">Draft sent</span>';
       return `<span class="pill" style="font-size:11px;padding:3px 9px;background:#EEF2F1;color:#3C4A48">${escapeHtml(s || 'Generated')}</span>`;
     }
 
-    // FICA docs cell: a green "Received" pill (click to undo) or a "Mark received" action.
+    // FICA docs cell: status only. Set automatically when the candidate submits
+    // their FICA via their personal form link — no manual mark-off.
     function ficaCell(r) {
       if (r.fica === 'Received') {
-        return `<span class="pill ok" style="font-size:11px;padding:3px 9px">FICA received</span>`
-          + ` <a href="#" data-aqua-fica="${escapeHtml(r.folderId)}" data-fica-to="Pending" class="muted" style="font-size:11px;margin-left:6px">undo</a>`;
+        return `<span class="pill ok" style="font-size:11px;padding:3px 9px">FICA received</span>`;
       }
-      return `<span class="pill" style="font-size:11px;padding:3px 9px;background:#FFF8E6;color:#8A6D1B">Pending</span>`
-        + ` <a href="#" data-aqua-fica="${escapeHtml(r.folderId)}" data-fica-to="Received" style="font-size:11.5px;margin-left:6px">Mark received</a>`;
+      return `<span class="pill" style="font-size:11px;padding:3px 9px;background:#FFF8E6;color:#8A6D1B">Pending</span>`;
     }
 
     function renderRows(rows) {
@@ -6842,17 +6841,6 @@
           if (!confirm('Mark this contract as signed?')) return;
           try {
             const res = await _aquaFetch({ kind: 'mark_signed', folderId: a.getAttribute('data-aqua-sign') });
-            if (res.ok) loadList(); else msg('err', 'Error: ' + (res.error || 'unknown'));
-          } catch (e) { msg('err', 'Network error: ' + e); }
-        });
-      });
-      body.querySelectorAll('a[data-aqua-fica]').forEach(a => {
-        a.addEventListener('click', async (ev) => {
-          ev.preventDefault();
-          const to = a.getAttribute('data-fica-to');
-          if (to === 'Received' && !confirm('Mark FICA docs as received for this contractor?')) return;
-          try {
-            const res = await _aquaFetch({ kind: 'mark_fica', folderId: a.getAttribute('data-aqua-fica'), received: to === 'Received' });
             if (res.ok) loadList(); else msg('err', 'Error: ' + (res.error || 'unknown'));
           } catch (e) { msg('err', 'Network error: ' + e); }
         });
