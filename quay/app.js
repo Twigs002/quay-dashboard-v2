@@ -5817,16 +5817,14 @@
     }
   }
 
-  // Segmented Staff sub-view toggle shown at the top of the Staff tab for
-  // superusers only: Staff Directory, Brokers (login accounts), and Contracts
-  // (Aqua Promotions agreement generator + progress). Each was/would otherwise
-  // be a separate top-level tab; grouping them keeps the Staff area cohesive.
-  function _staffSubToggle() {
-    const segs = [
-      ['staff',     'Staff Directory'],
-      ['brokers',   'Brokers'],
-      ['contracts', 'Contracts'],
-    ];
+  // Segmented Staff sub-view toggle at the top of the Staff tab: Staff Directory,
+  // Brokers (login accounts, super-only), and Contracts (Aqua Promotions generator,
+  // supers + admins). includeBrokers adds the super-only Brokers segment. Each was/
+  // would otherwise be a separate top-level tab; grouping keeps the Staff area cohesive.
+  function _staffSubToggle(includeBrokers) {
+    const segs = [['staff', 'Staff Directory']];
+    if (includeBrokers) segs.push(['brokers', 'Brokers']);  // Brokers = super-only
+    segs.push(['contracts', 'Contracts']);
     return `<div class="seg" id="staffSubSeg" role="group" aria-label="Staff section" style="margin-bottom:14px">
         ${segs.map(([id, label]) => {
           const on = _teamSubTab === id;
@@ -5839,12 +5837,16 @@
     if (_team == null && !_teamLoading) {
       loadTeam().then(() => { if (tab === 'team') shell(); });
     }
-    // The Brokers + Contracts sub-views are super-only. Non-supers never see the
-    // toggle and are pinned to the staff roster.
-    const canSub = !!(session && session.super);
-    const subToggle = canSub ? _staffSubToggle() : '';
-    if (canSub && _teamSubTab === 'brokers')   return renderBrokersView(subToggle);
-    if (canSub && _teamSubTab === 'contracts') return renderAquaContracts(subToggle);
+    // Brokers (login accounts) stays super-only. Contracts (Aqua) is open to
+    // superusers AND admins (but not payroll-only logins). Managers/payroll who
+    // can see neither are pinned to the staff roster with no toggle.
+    const canSub = !!(session && session.super);                                        // Brokers
+    const canContracts = !!(session && (session.super || (session.admin && !session.payroll))); // Contracts
+    // Defensive: an admin can't reach 'brokers' (no button), but never render it for them.
+    if (_teamSubTab === 'brokers' && !canSub) _teamSubTab = 'staff';
+    const subToggle = (canSub || canContracts) ? _staffSubToggle(canSub) : '';
+    if (canSub && _teamSubTab === 'brokers')        return renderBrokersView(subToggle);
+    if (canContracts && _teamSubTab === 'contracts') return renderAquaContracts(subToggle);
     // The Staff Directory never shows brokers — they live in the Brokers
     // sub-view. Filtering here (for everyone) keeps managers from ever
     // seeing a broker.
@@ -6310,8 +6312,9 @@
     });
     // When the Brokers sub-view is showing, its wiring is entirely separate
     // from the staff roster — delegate and skip the staff handlers below.
+    const canContracts = !!(session && (session.super || (session.admin && !session.payroll)));
     if (session && session.super && _teamSubTab === 'brokers')   { wireBrokersView();  return; }
-    if (session && session.super && _teamSubTab === 'contracts') { wireAquaContracts(); return; }
+    if (canContracts && _teamSubTab === 'contracts') { wireAquaContracts(); return; }
     const search = document.getElementById('teamSearch');
     if (search) search.addEventListener('input', (e) => {
       _teamFilter = e.target.value;
