@@ -6768,7 +6768,9 @@
           <label class="field" style="flex:1;min-width:200px"><span>Contractor email <span class="muted" style="font-weight:400">(optional)</span></span>
             <input id="aqEmail" type="email" autocomplete="off" placeholder="Leave blank to only file the PDF"></label>
         </div>
-        <div class="muted" style="font-size:12px;margin:-4px 0 12px">Entered as a rand amount (formatted R8,000.00 on a pro-rata basis). If an email is given, the contractor is emailed their agreement with Aqua Promotions branding.</div>
+        <label class="field"><span>Work hours <span class="muted" style="font-weight:400">(clause 3.1)</span></span>
+          <input id="aqHours" type="text" autocomplete="off" value="08:00 to 17:00 from Monday to Friday and include a 30 (thirty) minute's lunch break each day, full time"></label>
+        <div class="muted" style="font-size:12px;margin:-4px 0 12px">Entered as a rand amount (formatted R8,000.00 on a pro-rata basis). Work hours default to standard full-time and can be edited per contract. If an email is given, the contractor is emailed their agreement with Aqua Promotions branding.</div>
         <button class="btn btn-primary" id="aquaGenBtn" style="background:${gold};color:#2A2100">Generate agreement</button>
       </div>
 
@@ -6867,7 +6869,7 @@
     if (gen) gen.addEventListener('click', async () => {
       msg('', '');
       const val = (id) => (document.getElementById(id)?.value || '').trim();
-      const fields = { full_name: val('aqName'), id_number: val('aqId'), start_date: val('aqStart'), remuneration: val('aqRem'), email: val('aqEmail') };
+      const fields = { full_name: val('aqName'), id_number: val('aqId'), start_date: val('aqStart'), remuneration: val('aqRem'), email: val('aqEmail'), work_hours: val('aqHours') };
       if (!fields.full_name || !fields.id_number) { msg('err', 'Full name and ID number are required.'); return; }
       gen.disabled = true; const label = gen.textContent; gen.textContent = 'Generating…';
       try {
