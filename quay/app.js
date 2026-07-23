@@ -6763,6 +6763,23 @@
             <input id="aqStart" type="date"></label>
         </div>
         <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <label class="field" style="flex:1;min-width:200px"><span>Agreement type</span>
+            <select id="aqType">
+              <option value="monthly">Month-to-month (default)</option>
+              <option value="fixed">Fixed-term</option>
+              <option value="permanent">Permanent</option>
+            </select></label>
+          <label class="field" id="aqEndWrap" style="flex:1;min-width:200px;display:none"><span>End date <span class="muted" style="font-weight:400">(fixed-term)</span></span>
+            <input id="aqEnd" type="date"></label>
+        </div>
+        <div id="aqPermWrap" style="display:none;gap:16px;flex-wrap:wrap">
+          <label class="field" style="flex:1;min-width:200px"><span>Probation (months)</span>
+            <input id="aqProb" type="number" min="1" step="1" value="3"></label>
+          <label class="field" style="flex:1;min-width:200px"><span>Retirement age</span>
+            <input id="aqRet" type="number" min="1" step="1" value="65"></label>
+        </div>
+        <div id="aqTypeHint" class="muted" style="font-size:12px;margin:-4px 0 12px;display:none"></div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
           <label class="field" style="flex:1;min-width:200px"><span>Remuneration (rand, pro-rata)</span>
             <input id="aqRem" type="text" autocomplete="off" placeholder="e.g. 8000"></label>
           <label class="field" style="flex:1;min-width:200px"><span>Contractor email <span class="muted" style="font-weight:400">(optional)</span></span>
@@ -6865,19 +6882,41 @@
       } catch (e) { if (body) body.innerHTML = errRow(e); }
     }
 
+    // Show/hide the type-specific fields (end date for fixed-term; probation +
+    // retirement for permanent) and a short policy hint.
+    const typeSel = document.getElementById('aqType');
+    function syncType() {
+      const t = typeSel ? typeSel.value : 'monthly';
+      const endWrap = document.getElementById('aqEndWrap');
+      const permWrap = document.getElementById('aqPermWrap');
+      const hint = document.getElementById('aqTypeHint');
+      if (endWrap) endWrap.style.display = (t === 'fixed') ? '' : 'none';
+      if (permWrap) permWrap.style.display = (t === 'permanent') ? 'flex' : 'none';
+      if (hint) {
+        if (t === 'fixed') { hint.style.display = ''; hint.textContent = 'Fixed-term may not exceed 6 months, and is ordinarily renewable only once (a second renewal only where the original term is 3 months or shorter).'; }
+        else if (t === 'permanent') { hint.style.display = ''; hint.textContent = 'Permanent adds a probation clause (1.2) and a retirement clause (1.3) to the agreement.'; }
+        else { hint.style.display = 'none'; hint.textContent = ''; }
+      }
+    }
+    if (typeSel) { typeSel.addEventListener('change', syncType); syncType(); }
+
     const gen = document.getElementById('aquaGenBtn');
     if (gen) gen.addEventListener('click', async () => {
       msg('', '');
       const val = (id) => (document.getElementById(id)?.value || '').trim();
-      const fields = { full_name: val('aqName'), id_number: val('aqId'), start_date: val('aqStart'), remuneration: val('aqRem'), email: val('aqEmail'), work_hours: val('aqHours') };
+      const type = val('aqType') || 'monthly';
+      const fields = { full_name: val('aqName'), id_number: val('aqId'), start_date: val('aqStart'), remuneration: val('aqRem'), email: val('aqEmail'), work_hours: val('aqHours'), agreement_type: type };
+      if (type === 'fixed') fields.end_date = val('aqEnd');
+      if (type === 'permanent') { fields.probation_months = val('aqProb'); fields.retirement_age = val('aqRet'); }
       if (!fields.full_name || !fields.id_number) { msg('err', 'Full name and ID number are required.'); return; }
+      if (type === 'fixed' && !fields.end_date) { msg('err', 'Fixed-term contracts need an end date.'); return; }
       gen.disabled = true; const label = gen.textContent; gen.textContent = 'Generating…';
       try {
         const res = await _aquaFetch({ fields });
         gen.disabled = false; gen.textContent = label;
         if (!res.ok) { msg('err', 'Error: ' + (res.error || 'unknown')); return; }
         msg('ok', 'Agreement generated for ' + fields.full_name + '.' + (res.emailed ? ' Emailed to the contractor.' : ''));
-        ['aqName', 'aqId', 'aqStart', 'aqRem', 'aqEmail'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        ['aqName', 'aqId', 'aqStart', 'aqRem', 'aqEmail', 'aqEnd'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
         loadList();
       } catch (e) {
         gen.disabled = false; gen.textContent = label;
