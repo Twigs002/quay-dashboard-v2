@@ -1936,15 +1936,6 @@
   }
 
   // Decimal hours → "HH:MM:SS" (Connecteam-style). Negative = bad clock time.
-  function _hhmmss(hrs) {
-    if (hrs == null || !isFinite(hrs)) return '';
-    const neg = hrs < 0;
-    let s = Math.round(Math.abs(hrs) * 3600);
-    const h = Math.floor(s / 3600); s -= h * 3600;
-    const m = Math.floor(s / 60); const sec = s - m * 60;
-    const p = n => String(n).padStart(2, '0');
-    return (neg ? '-' : '') + p(h) + ':' + p(m) + ':' + p(sec);
-  }
   function _splitName(name) {
     const parts = String(name || '').trim().split(/\s+/);
     const ln = parts.length > 1 ? parts[parts.length - 1] : '';
@@ -1978,13 +1969,15 @@
         const list = byAgent.get(agent).slice().sort((a, b) => String(b.clockInAt || '').localeCompare(String(a.clockInAt || '')));
         const [fn, ln] = _splitName(agent);
         const totDec = list.reduce((t, x) => t + (x.shiftHours > 0 ? x.shiftHours : 0), 0);
-        const totHHMMSS = _hhmmss(totDec);
+        // Export hours as decimals (e.g. 7.5) rather than hh:mm:ss — payroll
+        // maths off a time string doesn't make sense.
+        const totHrs = round2(totDec);
         list.forEach((sh, idx) => {
           const bad = sh.shiftHours < 0;
-          const shHrs = bad ? 'BAD TIME' : _hhmmss(sh.shiftHours);
+          const shHrs = bad ? 'BAD TIME' : round2(sh.shiftHours);
           connRows.push([fn, ln, 'All staff', 'No sub-job', fmtD(sh.clockInAt), fmtTs(sh.clockInAt), '',
             fmtD(sh.clockOutAt), fmtTs(sh.clockOutAt), '', sh.note || '', '', shHrs, shHrs,
-            '', idx === 0 ? totHHMMSS : '', '', idx === 0 ? totHHMMSS : '', idx === 0 ? totHHMMSS : '', '', '']);
+            '', idx === 0 ? totHrs : '', '', idx === 0 ? totHrs : '', idx === 0 ? totHrs : '', '', '']);
         });
       });
 
