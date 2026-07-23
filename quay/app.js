@@ -1995,20 +1995,13 @@
         allocRows.push([]);
       });
 
-      // ---- Sheet: Per-Agent Breakdown (team split + R-amount for the period)
+      // ---- Sheet: Per-Agent Breakdown (one total row per agent for the period)
       const paRows = [['Agent', 'Team / Division', 'Hours (HH:MM)', 'Hours (Decimal)', 'R-amount']];
       [...ETH.keys()].sort(byBase).forEach(agent => {
-        const teams = [...ETH.get(agent).entries()].sort((a, b) => b[1] - a[1]);
         const total = ETOT.get(agent) || 0;
         const rate = (EMETA.get(agent) || {}).hourlyRate;
-        let sumPay = 0;
-        teams.forEach(([t, hrs]) => {
-          const pay = rate != null ? hrs * rate : null;
-          if (pay != null) sumPay += pay;
-          paRows.push([agent, t, PR.decimalToHHMM(hrs), round2(hrs), pay == null ? '' : round2(pay)]);
-        });
-        paRows.push([agent + ' — TOTAL', '', PR.decimalToHHMM(total), round2(total), rate == null ? '' : round2(sumPay)]);
-        paRows.push([]);
+        const pay = rate != null ? total * rate : null;
+        paRows.push([agent, '', PR.decimalToHHMM(total), round2(total), pay == null ? '' : round2(pay)]);
       });
 
       // ---- Sheet 3: Divisions (wide pivot; percentages as decimal fractions)
