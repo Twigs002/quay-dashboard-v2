@@ -965,7 +965,9 @@
     if (amount == null || !Number.isFinite(Number(amount))) return ''
     return 'R ' + Number(amount).toLocaleString('en-ZA', {
       minimumFractionDigits: 2, maximumFractionDigits: 2,
-    })
+    // en-ZA groups thousands with a space and uses a comma for the decimal;
+    // swap that single comma to a full stop so payroll shows e.g. R 1 234.56
+    }).replace(',', '.')
   }
 
   // Top-level Payroll view: period picker + sub-tab nav + host for the
