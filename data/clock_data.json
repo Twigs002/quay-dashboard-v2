@@ -134,11 +134,11 @@
       "sessions": 2
     },
     {
-      "hours": 27.117,
+      "hours": 36.05,
       "id": "claire",
       "name": "Claire Murch",
       "name_normalised": "Claire Murch",
-      "sessions": 3
+      "sessions": 4
     },
     {
       "hours": 27.057,
@@ -3985,11 +3985,11 @@
         "sessions": 2
       },
       {
-        "hours": 27.117,
+        "hours": 36.05,
         "id": "claire",
         "name": "Claire Murch",
         "name_normalised": "Claire Murch",
-        "sessions": 3
+        "sessions": 4
       },
       {
         "hours": 27.057,
@@ -4119,7 +4119,7 @@
       }
     ]
   },
-  "generated_at": "2026-07-23T18:30:24.482434+00:00",
+  "generated_at": "2026-07-24T04:07:55.562387+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -4460,11 +4460,11 @@
           "sessions": 6
         },
         {
-          "hours": 178.413,
+          "hours": 187.347,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
-          "sessions": 21
+          "sessions": 22
         },
         {
           "hours": 171.736,
@@ -4530,8 +4530,8 @@
           "sessions": 9
         }
       ],
-      "from": "2025-07-24T00:00:00+00:00",
-      "to": "2026-07-23T23:59:59+00:00"
+      "from": "2025-07-25T00:00:00+00:00",
+      "to": "2026-07-24T23:59:59+00:00"
     },
     "billing-period": {
       "agents": [
@@ -4620,11 +4620,11 @@
           "sessions": 3
         },
         {
-          "hours": 18.094,
+          "hours": 27.027,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
-          "sessions": 2
+          "sessions": 3
         },
         {
           "hours": 19.801,
@@ -4808,25 +4808,11 @@
     "last-90": {
       "agents": [
         {
-          "hours": 562.569,
-          "id": "jason-hendricks",
-          "name": "Jason Hendricks",
-          "name_normalised": "Jason Hendricks",
-          "sessions": 65
-        },
-        {
-          "hours": 456.89,
-          "id": "craig-carroll",
-          "name": "Craig Carroll",
-          "name_normalised": "Craig Carroll",
-          "sessions": 54
-        },
-        {
-          "hours": 593.432,
+          "hours": 586.665,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
-          "sessions": 70
+          "sessions": 69
         },
         {
           "hours": 283.619,
@@ -4927,6 +4913,13 @@
           "sessions": 48
         },
         {
+          "hours": 559.069,
+          "id": "jason-hendricks",
+          "name": "Jason Hendricks",
+          "name_normalised": "Jason Hendricks",
+          "sessions": 64
+        },
+        {
           "hours": 354.493,
           "id": "josh-adonis",
           "name": "Josh Adonis",
@@ -5023,6 +5016,13 @@
           "name": "Killarney Mia Jones",
           "name_normalised": "Killarney Mia Jones",
           "sessions": 58
+        },
+        {
+          "hours": 453.623,
+          "id": "craig-carroll",
+          "name": "Craig Carroll",
+          "name_normalised": "Craig Carroll",
+          "sessions": 53
         },
         {
           "hours": 316.207,
@@ -5137,11 +5137,11 @@
           "sessions": 6
         },
         {
-          "hours": 178.413,
+          "hours": 187.347,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
-          "sessions": 21
+          "sessions": 22
         },
         {
           "hours": 171.736,
@@ -5207,8 +5207,8 @@
           "sessions": 9
         }
       ],
-      "from": "2026-04-25T00:00:00+00:00",
-      "to": "2026-07-23T23:59:59+00:00"
+      "from": "2026-04-26T00:00:00+00:00",
+      "to": "2026-07-24T23:59:59+00:00"
     },
     "last-week": {
       "agents": [
@@ -5653,11 +5653,11 @@
           "sessions": 13
         },
         {
-          "hours": 141.64,
+          "hours": 150.574,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
-          "sessions": 17
+          "sessions": 18
         },
         {
           "hours": 153.979,
@@ -5897,11 +5897,11 @@
           "sessions": 2
         },
         {
-          "hours": 27.117,
+          "hours": 36.05,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
-          "sessions": 3
+          "sessions": 4
         },
         {
           "hours": 27.057,
