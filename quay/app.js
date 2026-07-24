@@ -5828,6 +5828,7 @@
     const segs = [['staff', 'Staff Directory']];
     if (includeBrokers) segs.push(['brokers', 'Brokers']);  // Brokers = super-only
     segs.push(['contracts', 'Contracts']);
+    segs.push(['hr', 'Add to HR']);  // Aqua new-hire → HR sheet (same gate as Contracts)
     return `<div class="seg" id="staffSubSeg" role="group" aria-label="Staff section" style="margin-bottom:14px">
         ${segs.map(([id, label]) => {
           const on = _teamSubTab === id;
@@ -5850,6 +5851,7 @@
     const subToggle = (canSub || canContracts) ? _staffSubToggle(canSub) : '';
     if (canSub && _teamSubTab === 'brokers')        return renderBrokersView(subToggle);
     if (canContracts && _teamSubTab === 'contracts') return renderAquaContracts(subToggle);
+    if (canContracts && _teamSubTab === 'hr')        return renderAquaHr(subToggle);
     // The Staff Directory never shows brokers — they live in the Brokers
     // sub-view. Filtering here (for everyone) keeps managers from ever
     // seeing a broker.
@@ -6318,6 +6320,7 @@
     const canContracts = !!(session && (session.super || (session.admin && !session.payroll)));
     if (session && session.super && _teamSubTab === 'brokers')   { wireBrokersView();  return; }
     if (canContracts && _teamSubTab === 'contracts') { wireAquaContracts(); return; }
+    if (canContracts && _teamSubTab === 'hr')        { wireAquaHr(); return; }
     const search = document.getElementById('teamSearch');
     if (search) search.addEventListener('input', (e) => {
       _teamFilter = e.target.value;
@@ -6932,6 +6935,148 @@
     });
 
     loadList();
+  }
+
+  // ---------------------------------------------------- ADD TO HR (Aqua)
+  // Appends a new-hire row to the AQUA EMPLOYEES tab of the QUAY 1 HR
+  // Information Sheet via the Aqua web app (kind:'hr_add'). Append-only.
+  // Aqua Promotions branding, Quay 1 palette (navy + gold), no Quay 1 wording.
+
+  function renderAquaHr(subToggle = '') {
+    const navy = '#3D5BA6', gold = '#FDC503';
+    const txt = (id, ph = '') => `<input id="${id}" type="text" autocomplete="off" placeholder="${ph}">`;
+    return `<div class="tab-view">
+      ${subToggle}
+      <div class="card card-pad" style="border-left:4px solid ${navy}">
+        <h3 style="margin:0;font-family:var(--serif);font-size:15px">Aqua Promotions — add to HR</h3>
+        <div class="muted" style="font-size:12.5px;margin-top:4px">Adds a new hire straight into the <strong>AQUA EMPLOYEES</strong> record on the HR Information Sheet. Only the name is required; fill what you have and HR can complete the rest.</div>
+      </div>
+
+      <div class="card card-pad mt">
+        <div id="hrFormMsg"></div>
+
+        <div class="hr-sec" style="color:${navy}">Identity</div>
+        <label class="field"><span>Full name</span><input id="hrName" type="text" autocomplete="off" placeholder="e.g. Jane Doe"></label>
+        <div class="hr-grid">
+          <label class="field"><span>ID / passport number</span><input id="hrId" type="text" inputmode="numeric" autocomplete="off" placeholder="13-digit SA ID"></label>
+          <label class="field"><span>Nationality</span><input id="hrNationality" type="text" autocomplete="off" value="South African"></label>
+          <label class="field"><span>Birthday</span>${txt('hrBirthday', 'DD/MM/YYYY')}</label>
+          <label class="field"><span>Start date</span><input id="hrStart" type="date"></label>
+        </div>
+
+        <div class="hr-sec" style="color:${navy}">Contact</div>
+        <div class="hr-grid">
+          <label class="field"><span>Personal email</span><input id="hrEmail" type="email" autocomplete="off" placeholder="name@example.com"></label>
+          <label class="field"><span>Contact number</span>${txt('hrContact', 'e.g. 082 123 4567')}</label>
+        </div>
+        <label class="field"><span>Residential address</span><input id="hrAddress" type="text" autocomplete="off" placeholder="Street, suburb, city, postal code"></label>
+
+        <div class="hr-sec" style="color:${navy}">Role</div>
+        <div class="hr-grid">
+          <label class="field"><span>Designation</span>${txt('hrDesignation', 'e.g. Relationship Manager')}</label>
+          <label class="field"><span>Part time / full time RM</span>
+            <select id="hrPtFt"><option value="">—</option><option>Full Time</option><option>Part Time</option></select></label>
+          <label class="field"><span>Who do they work with?</span>${txt('hrWorksWith')}</label>
+        </div>
+
+        <div class="hr-sec" style="color:${navy}">Banking</div>
+        <div class="hr-grid">
+          <label class="field"><span>Bank</span>${txt('hrBank')}</label>
+          <label class="field"><span>Account number</span>${txt('hrAccNo')}</label>
+          <label class="field"><span>Account type</span>
+            <select id="hrAccType"><option value="">—</option><option>Cheque</option><option>Savings</option></select></label>
+          <label class="field"><span>Income tax number</span>${txt('hrTax')}</label>
+        </div>
+
+        <div class="hr-sec" style="color:${navy}">Documents received</div>
+        <div class="hr-checks">
+          <label><input type="checkbox" id="hrIdCopy"> ID / passport copy</label>
+          <label><input type="checkbox" id="hrProofAddr"> Proof of address</label>
+          <label><input type="checkbox" id="hrBankConf"> Bank confirmation</label>
+          <label><input type="checkbox" id="hrNda"> Non-disclosure signed</label>
+          <label><input type="checkbox" id="hrAgreement"> Agreement received</label>
+          <label><input type="checkbox" id="hrIdReceived"> ID received</label>
+          <label><input type="checkbox" id="hrRyanGreeff"> Ryan Greeff signed</label>
+        </div>
+        <div class="hr-grid" style="margin-top:6px">
+          <label class="field"><span>Work permit expiry <span class="muted" style="font-weight:400">(if applicable)</span></span>${txt('hrWorkPermit')}</label>
+          <label class="field"><span>Link to HR file <span class="muted" style="font-weight:400">(optional)</span></span>${txt('hrHrFile')}</label>
+        </div>
+
+        <div class="hr-sec" style="color:${navy}">Next of kin</div>
+        <div class="hr-grid">
+          <label class="field"><span>Name</span>${txt('hrNokName')}</label>
+          <label class="field"><span>Contact number</span>${txt('hrNokContact')}</label>
+          <label class="field"><span>Relationship</span>${txt('hrNokRel')}</label>
+          <label class="field"><span>Email</span>${txt('hrNokEmail')}</label>
+        </div>
+
+        <label class="field" style="margin-top:14px"><span>Comments</span><input id="hrComments" type="text" autocomplete="off" placeholder="Anything HR should know"></label>
+
+        <button class="btn btn-primary" id="hrAddBtn" style="margin-top:16px;background:${gold};color:#1F2A44;border-color:${gold}">Add to HR sheet</button>
+      </div>
+    </div>
+    <style>
+      .hr-sec{font-family:var(--serif);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+      .hr-sec:first-of-type{margin-top:2px}
+      .hr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 16px}
+      .hr-checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px 16px}
+      .hr-checks label{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:500;cursor:pointer;text-transform:none;letter-spacing:0;color:var(--ink)}
+      .hr-checks input{width:auto}
+    </style>`;
+  }
+
+  function wireAquaHr() {
+    const msg = (kind, text) => {
+      const m = document.getElementById('hrFormMsg');
+      if (!m) return;
+      const err = kind === 'err';
+      m.innerHTML = text
+        ? `<div style="padding:12px 14px;border-radius:10px;font-size:14px;margin:0 0 14px;background:${err ? '#FDECEA' : '#EAF0FB'};color:${err ? '#B42318' : '#2E477F'};border:1px solid ${err ? '#F5C6C0' : '#C7D6F0'}">${escapeHtml(text)}</div>`
+        : '';
+    };
+    // Free-text / value fields: input id -> backend field key.
+    const TEXT = {
+      hrName: 'name', hrStart: 'start_date', hrId: 'id_number', hrNationality: 'nationality',
+      hrBirthday: 'birthday', hrEmail: 'email', hrContact: 'contact', hrAddress: 'address',
+      hrDesignation: 'designation', hrPtFt: 'pt_ft', hrWorksWith: 'works_with',
+      hrBank: 'bank', hrAccNo: 'account_number', hrAccType: 'account_type', hrTax: 'tax_number',
+      hrWorkPermit: 'work_permit_expiry', hrHrFile: 'link_hr_file', hrComments: 'comments',
+      hrNokName: 'nok_name', hrNokContact: 'nok_contact', hrNokRel: 'nok_relationship', hrNokEmail: 'nok_email',
+    };
+    // Checkboxes: input id -> backend field key (sends "Yes" when ticked).
+    const CHECK = {
+      hrIdCopy: 'id_copy', hrProofAddr: 'proof_of_address', hrBankConf: 'bank_confirmation',
+      hrNda: 'nda_signed', hrAgreement: 'agreement_received', hrIdReceived: 'id_received',
+      hrRyanGreeff: 'ryan_greeff_signed',
+    };
+
+    const btn = document.getElementById('hrAddBtn');
+    if (btn) btn.addEventListener('click', async () => {
+      msg('', '');
+      const fields = {};
+      Object.keys(TEXT).forEach(id => {
+        const v = (document.getElementById(id)?.value || '').trim();
+        if (v) fields[TEXT[id]] = v;
+      });
+      Object.keys(CHECK).forEach(id => {
+        if (document.getElementById(id)?.checked) fields[CHECK[id]] = 'Yes';
+      });
+      if (!fields.name) { msg('err', 'Full name is required.'); return; }
+      btn.disabled = true; const label = btn.textContent; btn.textContent = 'Adding…';
+      try {
+        const res = await _aquaFetch({ kind: 'hr_add', fields });
+        btn.disabled = false; btn.textContent = label;
+        if (!res.ok) { msg('err', 'Error: ' + (res.error || 'unknown')); return; }
+        msg('ok', `${fields.name} added to the AQUA EMPLOYEES HR record.`);
+        // Reset every field.
+        Object.keys(TEXT).forEach(id => { const el = document.getElementById(id); if (el) el.value = (id === 'hrNationality') ? 'South African' : ''; });
+        Object.keys(CHECK).forEach(id => { const el = document.getElementById(id); if (el) el.checked = false; });
+      } catch (e) {
+        btn.disabled = false; btn.textContent = label;
+        msg('err', 'Network error: ' + e);
+      }
+    });
   }
 
   // ─── Live red-flags badge ────────────────────────────────────────────
