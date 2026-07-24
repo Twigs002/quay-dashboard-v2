@@ -6770,6 +6770,13 @@
         </div>
         <label class="field"><span>Work hours <span class="muted" style="font-weight:400">(clause 3.1)</span></span>
           <input id="aqHours" type="text" autocomplete="off" value="08:00 to 17:00 from Monday to Friday and include a 30 (thirty) minute's lunch break each day, full time"></label>
+        <div class="field"><span>Set up system accounts <span class="muted" style="font-weight:400">(optional)</span></span>
+          <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:2px">
+            <label style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" id="aqSysGoogle" value="google" style="width:auto"> Google account</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" id="aqSysDialfire" value="dialfire" style="width:auto"> Dialfire account</label>
+          </div>
+          <div class="muted" style="font-size:12px;margin-top:6px">Tick only what this contractor needs. A setup request is emailed to whoever provisions accounts; nothing is created automatically.</div>
+        </div>
         <div class="muted" style="font-size:12px;margin:-4px 0 12px">Entered as a rand amount (formatted R8,000.00 on a pro-rata basis). Work hours default to standard full-time and can be edited per contract. If an email is given, the contractor is emailed their agreement with Aqua Promotions branding.</div>
         <button class="btn btn-primary" id="aquaGenBtn" style="background:${gold};color:#2A2100">Generate agreement</button>
       </div>
@@ -6806,6 +6813,16 @@
     };
     const errRow = (e) => `<tr><td colspan="8" class="muted" style="text-align:center;padding:24px;color:#B42318">Error: ${escapeHtml(String(e))}</td></tr>`;
 
+    // Small tags for the system accounts requested on a contract (e.g. Google,
+    // Dialfire). Blank when none were ticked.
+    function systemsTags(s) {
+      const parts = String(s || '').split(',').map(x => x.trim()).filter(Boolean);
+      if (!parts.length) return '';
+      return `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">` + parts.map(p =>
+        `<span class="pill" style="font-size:10px;padding:2px 7px;background:#FFF6D6;color:#7A5C00">${escapeHtml(p.replace(/ account$/i, ''))}</span>`
+      ).join('') + `</div>`;
+    }
+
     function statusPill(s) {
       if (s === 'Signed')     return '<span class="pill ok" style="font-size:11px;padding:3px 9px">Signed</span>';
       if (s === 'Draft sent') return '<span class="pill" style="font-size:11px;padding:3px 9px;background:#FFF6D6;color:#7A5C00">Draft sent</span>';
@@ -6833,7 +6850,7 @@
         if (r.status !== 'Signed') actions.push(`<a href="#" data-aqua-sign="${escapeHtml(r.folderId)}">Mark signed</a>`);
         return `<tr>
           <td><div class="agent-cell"><div class="avatar">${escapeHtml(initialsOf(r.full_name))}</div>
-            <div class="agent-name">${escapeHtml(r.full_name)}${r.email ? `<div class="muted" style="font-size:11.5px;font-weight:400">${escapeHtml(r.email)}</div>` : ''}</div></div></td>
+            <div class="agent-name">${escapeHtml(r.full_name)}${r.email ? `<div class="muted" style="font-size:11.5px;font-weight:400">${escapeHtml(r.email)}</div>` : ''}${systemsTags(r.systems)}</div></div></td>
           <td class="muted tnum" style="font-size:12.5px">${escapeHtml(r.id_number)}</td>
           <td style="font-size:12.5px">${escapeHtml(r.start_date)}</td>
           <td style="font-size:12.5px">${escapeHtml(r.remuneration)}</td>
@@ -6869,15 +6886,22 @@
     if (gen) gen.addEventListener('click', async () => {
       msg('', '');
       const val = (id) => (document.getElementById(id)?.value || '').trim();
-      const fields = { full_name: val('aqName'), id_number: val('aqId'), start_date: val('aqStart'), remuneration: val('aqRem'), email: val('aqEmail'), work_hours: val('aqHours') };
+      const checked = (id) => !!document.getElementById(id)?.checked;
+      const systems = [];
+      if (checked('aqSysGoogle')) systems.push('google');
+      if (checked('aqSysDialfire')) systems.push('dialfire');
+      const fields = { full_name: val('aqName'), id_number: val('aqId'), start_date: val('aqStart'), remuneration: val('aqRem'), email: val('aqEmail'), work_hours: val('aqHours'), systems };
       if (!fields.full_name || !fields.id_number) { msg('err', 'Full name and ID number are required.'); return; }
       gen.disabled = true; const label = gen.textContent; gen.textContent = 'Generating…';
       try {
         const res = await _aquaFetch({ fields });
         gen.disabled = false; gen.textContent = label;
         if (!res.ok) { msg('err', 'Error: ' + (res.error || 'unknown')); return; }
-        msg('ok', 'Agreement generated for ' + fields.full_name + '.' + (res.emailed ? ' Emailed to the contractor.' : ''));
+        msg('ok', 'Agreement generated for ' + fields.full_name + '.'
+          + (res.emailed ? ' Emailed to the contractor.' : '')
+          + (res.provisioned ? ' Account-setup request sent.' : ''));
         ['aqName', 'aqId', 'aqStart', 'aqRem', 'aqEmail'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        ['aqSysGoogle', 'aqSysDialfire'].forEach(id => { const el = document.getElementById(id); if (el) el.checked = false; });
         loadList();
       } catch (e) {
         gen.disabled = false; gen.textContent = label;
