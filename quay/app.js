@@ -6785,7 +6785,8 @@
         <div class="card-pad" style="display:flex;align-items:center;gap:12px;padding-bottom:0">
           <strong style="font-size:14px">Generated contracts</strong>
           <span id="aquaCount" class="muted" style="font-size:12.5px"></span>
-          <button class="btn small" id="aquaRefreshBtn" style="margin-left:auto">Refresh</button>
+          <button class="btn small" id="aquaDigestBtn" style="margin-left:auto" title="Create a Gmail draft of the weekly team digest (it drafts only, never sends)">Draft digest now</button>
+          <button class="btn small" id="aquaRefreshBtn">Refresh</button>
         </div>
         <div class="tbl-wrap"><table class="tbl">
           <thead><tr>
@@ -6911,6 +6912,24 @@
 
     const refresh = document.getElementById('aquaRefreshBtn');
     if (refresh) refresh.addEventListener('click', loadList);
+
+    // Fire-now: create the weekly team digest as a Gmail DRAFT (never sends —
+    // it lands in Pagan's drafts to review and send).
+    const digest = document.getElementById('aquaDigestBtn');
+    if (digest) digest.addEventListener('click', async () => {
+      msg('', '');
+      digest.disabled = true; const label = digest.textContent; digest.textContent = 'Drafting…';
+      try {
+        const res = await _aquaFetch({ kind: 'weekly_digest_draft' });
+        digest.disabled = false; digest.textContent = label;
+        if (!res.ok) { msg('err', 'Error: ' + (res.error || 'unknown')); return; }
+        const c = res.counts || {};
+        msg('ok', `Weekly digest drafted in Gmail (review and send from Pagan's drafts): ${c.awaitingSignature || 0} awaiting signature, ${c.ficaPending || 0} FICA pending.`);
+      } catch (e) {
+        digest.disabled = false; digest.textContent = label;
+        msg('err', 'Network error: ' + e);
+      }
+    });
 
     loadList();
   }
