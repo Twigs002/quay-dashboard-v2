@@ -6747,12 +6747,12 @@
   }
 
   function renderAquaContracts(subToggle = '') {
-    const gold = '#F4B400';
+    const gold = '#FDC503', navy = '#3D5BA6';
     return `<div class="tab-view">
       ${subToggle}
-      <div class="card card-pad" style="border-left:4px solid ${gold}">
+      <div class="card card-pad" style="border-left:4px solid ${navy}">
         <h3 style="margin:0;font-family:var(--serif);font-size:15px">Aqua Promotions contracts</h3>
-        <div class="muted" style="font-size:12.5px;margin-top:4px">Generate a Memorandum of Agreement for Aqua Promotions (Pty) Ltd. Kept completely separate from the Quay 1 broker contracts.</div>
+        <div class="muted" style="font-size:12.5px;margin-top:4px">Generate a Memorandum of Agreement for Aqua Promotions (Pty) Ltd. Kept completely separate from the broker contracts.</div>
       </div>
 
       <div class="card card-pad mt">

@@ -46,7 +46,7 @@
   // (lib.js doesn't reference QUAY, safe to load eagerly.)
   // Bump BUILD on every deploy so browsers/GitHub Pages fetch the new JS
   // instead of serving a stale cached copy.
-  window.QUAY_BUILD = '20260724c';
+  window.QUAY_BUILD = '20260724d';
   window.QUAY_READY.then(() => {
     const load = src => new Promise((res, rej) => {
       const s = document.createElement('script');
