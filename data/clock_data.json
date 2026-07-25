@@ -4119,7 +4119,7 @@
       }
     ]
   },
-  "generated_at": "2026-07-24T18:40:23.265424+00:00",
+  "generated_at": "2026-07-25T07:22:15.360340+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -4530,8 +4530,8 @@
           "sessions": 10
         }
       ],
-      "from": "2025-07-25T00:00:00+00:00",
-      "to": "2026-07-24T23:59:59+00:00"
+      "from": "2025-07-26T00:00:00+00:00",
+      "to": "2026-07-25T23:59:59+00:00"
     },
     "billing-period": {
       "agents": [
@@ -4808,13 +4808,6 @@
     "last-90": {
       "agents": [
         {
-          "hours": 594.579,
-          "id": "jaco",
-          "name": "Jan C (Jaco) Groenewald",
-          "name_normalised": "Jan C (Jaco) Groenewald",
-          "sessions": 70
-        },
-        {
           "hours": 283.619,
           "id": "whitney-malgas",
           "name": "Whitney Malgas",
@@ -4995,6 +4988,13 @@
           "name": "Niel Steenkamp",
           "name_normalised": "Niel Steenkamp",
           "sessions": 31
+        },
+        {
+          "hours": 592.012,
+          "id": "jaco",
+          "name": "Jan C (Jaco) Groenewald",
+          "name_normalised": "Jan C (Jaco) Groenewald",
+          "sessions": 69
         },
         {
           "hours": 609.964,
@@ -5207,8 +5207,8 @@
           "sessions": 10
         }
       ],
-      "from": "2026-04-26T00:00:00+00:00",
-      "to": "2026-07-24T23:59:59+00:00"
+      "from": "2026-04-27T00:00:00+00:00",
+      "to": "2026-07-25T23:59:59+00:00"
     },
     "last-week": {
       "agents": [
