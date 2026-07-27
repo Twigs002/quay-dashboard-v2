@@ -6768,8 +6768,8 @@
         <div style="display:flex;gap:16px;flex-wrap:wrap">
           <label class="field" style="flex:1;min-width:200px"><span>Remuneration (rand, pro-rata)</span>
             <input id="aqRem" type="text" autocomplete="off" placeholder="e.g. 8000"></label>
-          <label class="field" style="flex:1;min-width:200px"><span>Contractor email <span class="muted" style="font-weight:400">(optional)</span></span>
-            <input id="aqEmail" type="email" autocomplete="off" placeholder="Leave blank to only file the PDF"></label>
+          <label class="field" style="flex:1;min-width:200px"><span>Contractor email <span style="color:#B42318">*</span></span>
+            <input id="aqEmail" type="email" required autocomplete="off" placeholder="Required — the agreement is emailed here"></label>
         </div>
         <label class="field"><span>Work hours <span class="muted" style="font-weight:400">(clause 3.1)</span></span>
           <input id="aqHours" type="text" autocomplete="off" value="08:00 to 17:00 from Monday to Friday and include a 30 (thirty) minute's lunch break each day, full time"></label>
@@ -6780,7 +6780,7 @@
           </div>
           <div class="muted" style="font-size:12px;margin-top:6px">Tick only what this contractor needs. A setup request is emailed to whoever provisions accounts; nothing is created automatically.</div>
         </div>
-        <div class="muted" style="font-size:12px;margin:-4px 0 12px">Entered as a rand amount (formatted R8,000.00 on a pro-rata basis). Work hours default to standard full-time and can be edited per contract. If an email is given, the contractor is emailed their agreement with Aqua Promotions branding.</div>
+        <div class="muted" style="font-size:12px;margin:-4px 0 12px">Entered as a rand amount (formatted R8,000.00 on a pro-rata basis). Work hours default to standard full-time and can be edited per contract. The contractor is emailed their agreement with Aqua Promotions branding, copying pagan, kat, alan and lieze.</div>
         <button class="btn btn-primary" id="aquaGenBtn" style="background:${gold};color:#2A2100">Generate agreement</button>
       </div>
 
@@ -6896,6 +6896,8 @@
       if (checked('aqSysDialfire')) systems.push('dialfire');
       const fields = { full_name: val('aqName'), id_number: val('aqId'), start_date: val('aqStart'), remuneration: val('aqRem'), email: val('aqEmail'), work_hours: val('aqHours'), systems };
       if (!fields.full_name || !fields.id_number) { msg('err', 'Full name and ID number are required.'); return; }
+      if (!fields.email) { msg('err', 'Contractor email is required — the agreement is emailed to them.'); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) { msg('err', 'Please enter a valid contractor email address.'); return; }
       gen.disabled = true; const label = gen.textContent; gen.textContent = 'Generating…';
       try {
         const res = await _aquaFetch({ fields });
