@@ -64,6 +64,17 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python scripts/fetch_clock.py
 
+      - name: Refresh ClientHub owner map (HubSpot -> team names)
+        # Rebuilds data/clienthub_owners.json from the live HubSpot owner list so
+        # newly-added / renamed teams stop surfacing as "Unmapped owner <id>".
+        # Needs a HUBSPOT_TOKEN with the crm.objects.owners.read scope; if the
+        # secret is absent or unscoped the script no-ops and the committed
+        # last-good map is used, so this step never breaks the pipeline.
+        env:
+          HUBSPOT_TOKEN: ${{ secrets.HUBSPOT_TOKEN }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: python scripts/refresh_clienthub_owners.py
+
       - name: Fetch ClientHub per-team stats
         env:
           # DIALFIRE_CAMPAIGNS carries id+token+name for every campaign; the
@@ -82,7 +93,7 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name  "github-actions[bot]"
-          git add data/weekly_data.json data/history.json data/clock_data.json data/clienthub_teams.json
+          git add data/weekly_data.json data/history.json data/clock_data.json data/clienthub_teams.json data/clienthub_owners.json
           git diff --staged --quiet && echo "No changes to commit" || \
             git commit -m "auto-update $(date -u +'%Y-%m-%d')"
           git pull --rebase origin main
