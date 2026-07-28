@@ -12,17 +12,34 @@ renamed in HubSpot it rotted: whole teams went missing and their calls surfaced
 in the weekly email as "Unmapped owner <id>". This script rebuilds the map from
 the live HubSpot owners API so that can't happen again.
 
-An owner is treated as a TEAM (and mapped) when it is ACTIVE and either:
-  (a) its name is a doubled pattern  "X X"  -> team "X", or
-  (b) its name canonically matches a known LN team from the roster.
-Everything else (individual agents, blank/junk owners) is skipped.
+There are TWO kinds of mapped owner:
+
+  1. TEAM ACCOUNTS — the dedicated doubled-name owner accounts. An owner is a
+     team account when either (a) its name is a doubled pattern "X X" -> team
+     "X", or (b) its name canonically matches a known LN team from the roster.
+
+  2. INDIVIDUAL AGENTS — real people who belong to a HubSpot Team. A contact
+     owned by an agent still belongs to that agent's team, so the agent's
+     owner_id is mapped to their team's display name too. Membership comes from
+     the HubSpot Settings Teams API (userIds / secondaryUserIds, cross-referenced
+     to owners by userId) with the inline owner.teams field as a fallback. This
+     is what makes "team-owned contacts" attribute to the team even when the
+     contact is owned by a person rather than the team account.
+
+Only owners that are neither a team account nor a member of any team are skipped
+(blank/junk owners, plus people not assigned to a calling team).
 
 When a mapped team canonically matches an LN-team display name we store that
 tidy display name (so "GOAL diggers" -> "Goal Diggers"); otherwise we keep the
 name exactly as HubSpot has it (so "TNT", "Killer_Whales" survive verbatim).
+Agents always inherit the exact display string their team account uses, so both
+merge into one row in fetch_clienthub_teams.py.
 
-Auth (same quay1 token the VA back-fill uses):
+Auth (the "Quay 1 API 2" private-app token, which carries both
+crm.objects.owners.read and settings.users.teams.read):
   env HUBSPOT_TOKEN, else macOS Keychain service=hubspot-api account=quay1.
+If the token lacks settings.users.teams.read the teams fetch just no-ops and the
+map degrades to team accounts only (still correct, just no agent roll-up).
 
 Resilience: if the token is absent or the fetch fails / returns implausibly few
 teams, the existing data/clienthub_owners.json is LEFT UNTOUCHED and the script
@@ -49,6 +66,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "clienthub_owners.json"
 
 HUBSPOT_OWNERS_URL = "https://api.hubapi.com/crm/v3/owners"
+HUBSPOT_TEAMS_URL = "https://api.hubapi.com/settings/v3/users/teams"
 SUPABASE_URL = "https://dqszbqiimbfvmmnpgpsb.supabase.co"
 
 # Below this many mapped teams we assume the fetch was partial and refuse to
@@ -126,6 +144,30 @@ def fetch_owners(token: str) -> list[dict]:
         if not after:
             break
     return owners
+
+
+def fetch_teams(token: str) -> list[dict]:
+    """All HubSpot user teams via the Settings API. Each row carries the team
+    name and its member user ids: {id, name, userIds, secondaryUserIds}.
+
+    Needs settings.users.teams.read. Returns [] on any failure (missing scope,
+    HTTP error, timeout) so agent-to-team mapping simply degrades to the
+    team-account map — the pipeline never breaks on this."""
+    try:
+        req = urllib.request.Request(
+            HUBSPOT_TEAMS_URL,
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=30) as r:
+            data = json.loads(r.read().decode())
+        return data.get("results") or []
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()[:150]
+        print(f"  · teams fetch HTTP {e.code} ({body}) — agent-to-team roll-up skipped.")
+        return []
+    except Exception as e:
+        print(f"  · teams fetch failed ({e}) — agent-to-team roll-up skipped.")
+        return []
 
 
 def load_owners_file(path: Path) -> list[dict]:
@@ -218,27 +260,101 @@ def team_for_owner(name: str, roster_by_canon: dict[str, str]) -> str | None:
     return None
 
 
-def build_map(owners: list[dict], roster: list[str]) -> tuple[dict[str, str], list[str]]:
-    roster_by_canon: dict[str, str] = {}
-    for t in roster:
-        roster_by_canon[canon(t)] = t
+def build_map(owners: list[dict], roster: list[str],
+              teams: list[dict]) -> tuple[dict[str, str], dict[str, int]]:
+    """owner_id -> team display, for team accounts AND individual agents.
+
+    Team accounts are mapped first and are never overwritten. Agents are then
+    mapped to their HubSpot team (Settings Teams API primary members, then
+    secondary, then the inline owner.teams field) so team-owned contacts owned by
+    a person still roll up to the team."""
+    roster_by_canon: dict[str, str] = {canon(t): t for t in roster}
+    # canon(team) -> exact display string, so agents inherit the SAME string
+    # their team account uses and the two merge downstream.
+    canon_to_display: dict[str, str] = dict(roster_by_canon)
+
     mapping: dict[str, str] = {}
-    skipped_active_people: list[str] = []
+    team_account_ids: set[str] = set()
+
+    # Pass 1 — team-account owners (doubled-name / roster match). NB: we
+    # deliberately map archived team owners too — a team account can be archived
+    # in HubSpot while its contacts are still live and getting dialled, and
+    # dropping it would resurface the "Unmapped owner <id>" bug.
     for o in owners:
         if not o.get("id"):
             continue
-        # NB: we deliberately map archived team owners too — a team account can
-        # be archived in HubSpot while its contacts are still live and getting
-        # dialled, and dropping it would resurface the "Unmapped owner <id>" bug.
         name = _owner_name(o)
         if not name or name in (".", "-"):
             continue
         team = team_for_owner(name, roster_by_canon)
         if team:
-            mapping[str(o["id"])] = team
-        elif len(name.split()) >= 2:
-            skipped_active_people.append(name)
-    return mapping, skipped_active_people
+            oid = str(o["id"])
+            mapping[oid] = team
+            team_account_ids.add(oid)
+            canon_to_display.setdefault(canon(team), team)
+
+    # Index owners by HubSpot userId (preferring the active record) so team
+    # membership — which references user ids — can resolve to an owner id.
+    owner_by_userid: dict[str, dict] = {}
+    for o in owners:
+        uid = o.get("userId") or o.get("userIdIncludingInactive")
+        if not uid:
+            continue
+        uid = str(uid)
+        prev = owner_by_userid.get(uid)
+        if prev is None or (o.get("archived") is False and prev.get("archived")):
+            owner_by_userid[uid] = o
+
+    def display_for_team_name(tname: str | None) -> str | None:
+        tname = re.sub(r"\s+", " ", (tname or "").strip())
+        if not tname:
+            return None
+        disp = canon_to_display.get(canon(tname))
+        if disp is None:                      # a team with no account/roster match
+            disp = tname                      # keep its HubSpot name verbatim,
+            canon_to_display[canon(tname)] = disp  # so its agents still group as one
+        return disp
+
+    agents_mapped = 0
+
+    # Pass 2a — Settings Teams API. Primary members (userIds) win over secondary
+    # so a person on multiple teams lands on their primary team.
+    for member_key in ("userIds", "secondaryUserIds"):
+        for t in teams:
+            disp = display_for_team_name(t.get("name"))
+            if not disp:
+                continue
+            for uid in (t.get(member_key) or []):
+                o = owner_by_userid.get(str(uid))
+                if not o:
+                    continue
+                oid = str(o.get("id") or "")
+                if not oid or oid in mapping:
+                    continue
+                mapping[oid] = disp
+                agents_mapped += 1
+
+    # Pass 2b — inline owner.teams fallback for any person still unmapped (covers
+    # portals/tokens where the Settings Teams API returned nothing).
+    for o in owners:
+        oid = str(o.get("id") or "")
+        if not oid or oid in mapping:
+            continue
+        ots = o.get("teams") or []
+        if not ots:
+            continue
+        primary = next((x for x in ots if x.get("primary")), ots[0])
+        disp = display_for_team_name(primary.get("name"))
+        if disp:
+            mapping[oid] = disp
+            agents_mapped += 1
+
+    stats = {
+        "team_accounts": len(team_account_ids),
+        "agents_mapped": agents_mapped,
+        "teams_total": len(set(mapping.values())),
+    }
+    return mapping, stats
 
 
 def main() -> int:
@@ -255,6 +371,7 @@ def main() -> int:
         except Exception:
             old = {}
 
+    teams: list[dict] = []
     if args.owners_file:
         try:
             owners = load_owners_file(Path(args.owners_file))
@@ -277,29 +394,30 @@ def main() -> int:
         except Exception as e:
             print(f"[refresh_clienthub_owners] owner fetch failed: {e} — leaving existing map untouched.")
             return 0
+        teams = fetch_teams(token)
 
     roster = load_roster()
-    mapping, skipped = build_map(owners, roster)
+    mapping, stats = build_map(owners, roster, teams)
 
-    if len(mapping) < MIN_TEAMS:
-        print(f"[refresh_clienthub_owners] only {len(mapping)} teams resolved "
-              f"(< {MIN_TEAMS}) — looks partial, leaving existing map untouched.")
+    # The guard tracks TEAM ACCOUNTS only — a partial owners fetch is what we're
+    # protecting against; agent counts vary and shouldn't gate the write.
+    if stats["team_accounts"] < MIN_TEAMS:
+        print(f"[refresh_clienthub_owners] only {stats['team_accounts']} team accounts "
+              f"resolved (< {MIN_TEAMS}) — looks partial, leaving existing map untouched.")
         return 0
 
-    # Diff vs the previous map for a human-readable summary.
-    added = {k: v for k, v in mapping.items() if k not in old}
-    removed = {k: v for k, v in old.items() if k not in mapping}
-    renamed = {k: (old[k], mapping[k]) for k in mapping
-               if k in old and old[k] != mapping[k]}
-    print(f"[refresh_clienthub_owners] {len(owners)} owners scanned → "
-          f"{len(mapping)} team owners mapped "
-          f"(+{len(added)} new, -{len(removed)} gone, ~{len(renamed)} renamed).")
-    for oid, team in sorted(added.items(), key=lambda kv: kv[1]):
-        print(f"    + {team:<20} ({oid})")
-    for oid, team in sorted(removed.items(), key=lambda kv: kv[1]):
-        print(f"    - {team:<20} ({oid})")
-    for oid, (o_, n_) in sorted(renamed.items(), key=lambda kv: kv[1][1]):
-        print(f"    ~ {o_}  ->  {n_}  ({oid})")
+    # Diff vs the previous map. Owner-id churn is dominated by agents, so the
+    # headline compares the set of TEAM NAMES; agent count is reported separately.
+    old_teams, new_teams = set(old.values()), set(mapping.values())
+    gained = sorted(new_teams - old_teams)
+    lost = sorted(old_teams - new_teams)
+    print(f"[refresh_clienthub_owners] {len(owners)} owners, {len(teams)} HubSpot teams → "
+          f"{stats['team_accounts']} team accounts + {stats['agents_mapped']} agents "
+          f"across {stats['teams_total']} teams (map size {len(mapping)}, was {len(old)}).")
+    if gained:
+        print(f"    + teams: {', '.join(gained)}")
+    if lost:
+        print(f"    - teams: {', '.join(lost)}")
 
     if args.dry_run:
         print("[refresh_clienthub_owners] --dry-run: nothing written.")
