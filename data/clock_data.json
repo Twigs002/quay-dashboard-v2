@@ -1,11 +1,11 @@
 {
   "agents": [
     {
-      "hours": 19.601,
+      "hours": 28.579,
       "id": "jason-hendricks",
       "name": "Jason Hendricks",
       "name_normalised": "Jason Hendricks",
-      "sessions": 3
+      "sessions": 4
     },
     {
       "hours": 20.884,
@@ -57,11 +57,11 @@
       "sessions": 4
     },
     {
-      "hours": 25.535,
+      "hours": 34.15,
       "id": "jason-julius",
       "name": "Jason Julius",
       "name_normalised": "Jason Julius",
-      "sessions": 3
+      "sessions": 4
     },
     {
       "hours": 17.976,
@@ -190,11 +190,11 @@
       "sessions": 4
     },
     {
-      "hours": 27.554,
+      "hours": 36.286,
       "id": "niel",
       "name": "Niel Steenkamp",
       "name_normalised": "Niel Steenkamp",
-      "sessions": 3
+      "sessions": 4
     },
     {
       "hours": 36.274,
@@ -4099,11 +4099,11 @@
     ],
     "2026-07-27": [
       {
-        "hours": 19.601,
+        "hours": 28.579,
         "id": "jason-hendricks",
         "name": "Jason Hendricks",
         "name_normalised": "Jason Hendricks",
-        "sessions": 3
+        "sessions": 4
       },
       {
         "hours": 20.884,
@@ -4155,11 +4155,11 @@
         "sessions": 4
       },
       {
-        "hours": 25.535,
+        "hours": 34.15,
         "id": "jason-julius",
         "name": "Jason Julius",
         "name_normalised": "Jason Julius",
-        "sessions": 3
+        "sessions": 4
       },
       {
         "hours": 17.976,
@@ -4288,11 +4288,11 @@
         "sessions": 4
       },
       {
-        "hours": 27.554,
+        "hours": 36.286,
         "id": "niel",
         "name": "Niel Steenkamp",
         "name_normalised": "Niel Steenkamp",
-        "sessions": 3
+        "sessions": 4
       },
       {
         "hours": 36.274,
@@ -4345,7 +4345,7 @@
       }
     ]
   },
-  "generated_at": "2026-07-30T18:35:21.817659+00:00",
+  "generated_at": "2026-07-31T04:18:28.568975+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -4448,11 +4448,11 @@
           "sessions": 37
         },
         {
-          "hours": 626.024,
+          "hours": 635.002,
           "id": "jason-hendricks",
           "name": "Jason Hendricks",
           "name_normalised": "Jason Hendricks",
-          "sessions": 73
+          "sessions": 74
         },
         {
           "hours": 348.3,
@@ -4693,11 +4693,11 @@
           "sessions": 27
         },
         {
-          "hours": 214.421,
+          "hours": 223.036,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 27
+          "sessions": 28
         },
         {
           "hours": 212.08,
@@ -4742,11 +4742,11 @@
           "sessions": 29
         },
         {
-          "hours": 223.034,
+          "hours": 231.766,
           "id": "niel",
           "name": "Niel Steenkamp",
           "name_normalised": "Niel Steenkamp",
-          "sessions": 25
+          "sessions": 26
         },
         {
           "hours": 113.147,
@@ -4756,8 +4756,8 @@
           "sessions": 14
         }
       ],
-      "from": "2025-07-31T00:00:00+00:00",
-      "to": "2026-07-30T23:59:59+00:00"
+      "from": "2025-08-01T00:00:00+00:00",
+      "to": "2026-07-31T23:59:59+00:00"
     },
     "billing-period": {
       "agents": [
@@ -4804,11 +4804,11 @@
           "sessions": 8
         },
         {
-          "hours": 55.325,
+          "hours": 64.303,
           "id": "jason-hendricks",
           "name": "Jason Hendricks",
           "name_normalised": "Jason Hendricks",
-          "sessions": 7
+          "sessions": 8
         },
         {
           "hours": 60.735,
@@ -4951,11 +4951,11 @@
           "sessions": 8
         },
         {
-          "hours": 59.867,
+          "hours": 68.481,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 7
+          "sessions": 8
         },
         {
           "hours": 58.974,
@@ -4972,11 +4972,11 @@
           "sessions": 8
         },
         {
-          "hours": 64.6,
+          "hours": 73.332,
           "id": "niel",
           "name": "Niel Steenkamp",
           "name_normalised": "Niel Steenkamp",
-          "sessions": 7
+          "sessions": 8
         },
         {
           "hours": 72.328,
@@ -5033,20 +5033,6 @@
     },
     "last-90": {
       "agents": [
-        {
-          "hours": 477.615,
-          "id": "craig-carroll",
-          "name": "Craig Carroll",
-          "name_normalised": "Craig Carroll",
-          "sessions": 56
-        },
-        {
-          "hours": 560.458,
-          "id": "jason-hendricks",
-          "name": "Jason Hendricks",
-          "name_normalised": "Jason Hendricks",
-          "sessions": 65
-        },
         {
           "hours": 527.932,
           "id": "winston",
@@ -5153,11 +5139,25 @@
           "sessions": 70
         },
         {
+          "hours": 472.615,
+          "id": "craig-carroll",
+          "name": "Craig Carroll",
+          "name_normalised": "Craig Carroll",
+          "sessions": 55
+        },
+        {
           "hours": 258.764,
           "id": "naomi-ciza",
           "name": "Naomi Ciza",
           "name_normalised": "Naomi Ciza",
           "sessions": 31
+        },
+        {
+          "hours": 564.436,
+          "id": "jason-hendricks",
+          "name": "Jason Hendricks",
+          "name_normalised": "Jason Hendricks",
+          "sessions": 65
         },
         {
           "hours": 465.166,
@@ -5370,11 +5370,11 @@
           "sessions": 27
         },
         {
-          "hours": 214.421,
+          "hours": 223.036,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 27
+          "sessions": 28
         },
         {
           "hours": 212.08,
@@ -5419,11 +5419,11 @@
           "sessions": 29
         },
         {
-          "hours": 223.034,
+          "hours": 231.766,
           "id": "niel",
           "name": "Niel Steenkamp",
           "name_normalised": "Niel Steenkamp",
-          "sessions": 25
+          "sessions": 26
         },
         {
           "hours": 113.147,
@@ -5433,8 +5433,8 @@
           "sessions": 14
         }
       ],
-      "from": "2026-05-02T00:00:00+00:00",
-      "to": "2026-07-30T23:59:59+00:00"
+      "from": "2026-05-03T00:00:00+00:00",
+      "to": "2026-07-31T23:59:59+00:00"
     },
     "last-week": {
       "agents": [
@@ -5823,11 +5823,11 @@
           "sessions": 20
         },
         {
-          "hours": 152.981,
+          "hours": 161.959,
           "id": "jason-hendricks",
           "name": "Jason Hendricks",
           "name_normalised": "Jason Hendricks",
-          "sessions": 18
+          "sessions": 19
         },
         {
           "hours": 64.277,
@@ -5900,11 +5900,11 @@
           "sessions": 18
         },
         {
-          "hours": 145.384,
+          "hours": 153.998,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 18
+          "sessions": 19
         },
         {
           "hours": 102.141,
@@ -5928,11 +5928,11 @@
           "sessions": 13
         },
         {
-          "hours": 158.027,
+          "hours": 166.759,
           "id": "niel",
           "name": "Niel Steenkamp",
           "name_normalised": "Niel Steenkamp",
-          "sessions": 18
+          "sessions": 19
         },
         {
           "hours": 178.125,
@@ -5990,11 +5990,11 @@
     "this-week": {
       "agents": [
         {
-          "hours": 19.601,
+          "hours": 28.579,
           "id": "jason-hendricks",
           "name": "Jason Hendricks",
           "name_normalised": "Jason Hendricks",
-          "sessions": 3
+          "sessions": 4
         },
         {
           "hours": 20.884,
@@ -6046,11 +6046,11 @@
           "sessions": 4
         },
         {
-          "hours": 25.535,
+          "hours": 34.15,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 3
+          "sessions": 4
         },
         {
           "hours": 17.976,
@@ -6179,11 +6179,11 @@
           "sessions": 4
         },
         {
-          "hours": 27.554,
+          "hours": 36.286,
           "id": "niel",
           "name": "Niel Steenkamp",
           "name_normalised": "Niel Steenkamp",
-          "sessions": 3
+          "sessions": 4
         },
         {
           "hours": 36.274,
