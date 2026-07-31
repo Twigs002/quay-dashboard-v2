@@ -490,6 +490,16 @@
     const so = document.getElementById('signOut');
     if (so) so.addEventListener('click', signOut);
 
+    // Shared cross-app switcher on the sidebar Quay 1 flag (superusers only).
+    // shell() re-renders the logo each time; mount() is idempotent per element.
+    if (window.QuayNav) {
+      window.QuayNav.mount({
+        isSuper: !!(session && session.super),
+        current: 'dashboard',
+        anchor: '.sidebar .brand-logo',
+      });
+    }
+
     const appEl = document.getElementById('app');
     const tbtn = document.getElementById('navToggle');
     const syncNav = () => {
