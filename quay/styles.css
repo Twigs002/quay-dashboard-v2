@@ -297,6 +297,7 @@ button { font-family: inherit; cursor: pointer; }
 .card-head h3 {
   margin: 0; font-family: var(--serif); font-size: 15.5px; font-weight: 700;
   color: var(--ink); letter-spacing: .005em; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
 }
 .card-head .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
 .eyebrow {
@@ -538,7 +539,7 @@ button { font-family: inherit; cursor: pointer; }
   position: relative; overflow: hidden;
 }
 .spot .eyebrow { display: flex; align-items: center; gap: 7px; }
-.spot-name { font-family: var(--serif); font-size: 21px; font-weight: 700; color: var(--ink); margin-top: 10px; line-height: 1.1; white-space: nowrap; }
+.spot-name { font-family: var(--serif); font-size: 21px; font-weight: 700; color: var(--ink); margin-top: 10px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .spot-stat { font-size: 13px; color: var(--slate); margin-top: 4px; }
 .spot-stat b { color: var(--ink); }
 .spot.risk { border-color: #EAD7CF; background: linear-gradient(180deg,#FCF6F3,#fff); }
@@ -1452,7 +1453,6 @@ th[data-sort]:hover { background: rgba(61, 91, 166, .06); }
 /* 3. Mobile polish on existing components */
 @media (max-width: 600px) {
   .topbar { padding: 12px 14px; }
-  .kpis { grid-template-columns: 1fr 1fr; gap: 8px; }
   .modal {
     /* env() keeps the modal title clear of the iOS Safari URL bar / notch. */
     top: max(env(safe-area-inset-top, 0px), 60px);
