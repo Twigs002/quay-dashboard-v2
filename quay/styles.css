@@ -787,7 +787,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 }
 .field input:focus, .field select:focus { outline: none; border-color: var(--blue-800); box-shadow: 0 0 0 3px rgba(61,91,166,.16); }
 
-.seg { display: inline-flex; background: var(--paper-2); border-radius: var(--r-sm); padding: 3px; }
+.seg { display: inline-flex; flex-wrap: wrap; background: var(--paper-2); border-radius: var(--r-sm); padding: 3px; }
 .seg button { border: none; background: none; padding: 7px 14px; border-radius: 5px; font-size: 13px; font-weight: 600; color: var(--slate); }
 .seg button.active { background: var(--card); color: var(--ink); box-shadow: var(--shadow-sm); }
 
@@ -829,6 +829,10 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   .kpis { grid-template-columns: repeat(2, 1fr); }
   .mini-grid { grid-template-columns: repeat(2, 1fr); }
   .g-2-1, .g-3, .g-2 { grid-template-columns: 1fr; }
+  /* Let the now-single-column grid children actually shrink: grid items
+     default to min-width:auto (min-content), which kept cards ~490px wide
+     and overflowed the viewport on phones. */
+  .g-2-1 > *, .g-3 > *, .g-2 > * { min-width: 0; }
 }
 @media (max-width: 860px) {
   .app, .app.nav-collapsed { grid-template-columns: 1fr; }
