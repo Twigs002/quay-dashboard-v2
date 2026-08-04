@@ -64,6 +64,13 @@
       "sessions": 1
     },
     {
+      "hours": 8.61,
+      "id": "niel",
+      "name": "Niel Steenkamp",
+      "name_normalised": "Niel Steenkamp",
+      "sessions": 1
+    },
+    {
       "hours": 8.796,
       "id": "killarney",
       "name": "Killarney Mia Jones",
@@ -236,13 +243,6 @@
       "id": "richard",
       "name": "Richard Du Plessis",
       "name_normalised": "Richard Du Plessis",
-      "sessions": 1
-    },
-    {
-      "hours": 14.619,
-      "id": "niel",
-      "name": "Niel Steenkamp",
-      "name_normalised": "Niel Steenkamp",
       "sessions": 1
     }
   ],
@@ -4288,7 +4288,7 @@
         "sessions": 5
       },
       {
-        "hours": 45.779,
+        "hours": 36.585,
         "id": "niel",
         "name": "Niel Steenkamp",
         "name_normalised": "Niel Steenkamp",
@@ -4406,6 +4406,13 @@
         "id": "simone-vermeulen",
         "name": "Simone Vermeulen",
         "name_normalised": "Simone Vermeulen",
+        "sessions": 1
+      },
+      {
+        "hours": 8.61,
+        "id": "niel",
+        "name": "Niel Steenkamp",
+        "name_normalised": "Niel Steenkamp",
         "sessions": 1
       },
       {
@@ -4582,17 +4589,10 @@
         "name": "Richard Du Plessis",
         "name_normalised": "Richard Du Plessis",
         "sessions": 1
-      },
-      {
-        "hours": 14.619,
-        "id": "niel",
-        "name": "Niel Steenkamp",
-        "name_normalised": "Niel Steenkamp",
-        "sessions": 1
       }
     ]
   },
-  "generated_at": "2026-08-04T03:59:23.284677+00:00",
+  "generated_at": "2026-08-04T07:48:52.193837+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -4989,7 +4989,7 @@
           "sessions": 31
         },
         {
-          "hours": 255.878,
+          "hours": 240.675,
           "id": "niel",
           "name": "Niel Steenkamp",
           "name_normalised": "Niel Steenkamp",
@@ -5219,7 +5219,7 @@
           "sessions": 10
         },
         {
-          "hours": 97.444,
+          "hours": 82.241,
           "id": "niel",
           "name": "Niel Steenkamp",
           "name_normalised": "Niel Steenkamp",
@@ -5666,7 +5666,7 @@
           "sessions": 31
         },
         {
-          "hours": 255.878,
+          "hours": 240.675,
           "id": "niel",
           "name": "Niel Steenkamp",
           "name_normalised": "Niel Steenkamp",
@@ -5875,7 +5875,7 @@
           "sessions": 5
         },
         {
-          "hours": 45.779,
+          "hours": 36.585,
           "id": "niel",
           "name": "Niel Steenkamp",
           "name_normalised": "Niel Steenkamp",
@@ -6140,7 +6140,7 @@
           "sessions": 16
         },
         {
-          "hours": 153.606,
+          "hours": 138.403,
           "id": "niel",
           "name": "Niel Steenkamp",
           "name_normalised": "Niel Steenkamp",
@@ -6269,6 +6269,13 @@
           "id": "simone-vermeulen",
           "name": "Simone Vermeulen",
           "name_normalised": "Simone Vermeulen",
+          "sessions": 1
+        },
+        {
+          "hours": 8.61,
+          "id": "niel",
+          "name": "Niel Steenkamp",
+          "name_normalised": "Niel Steenkamp",
           "sessions": 1
         },
         {
@@ -6444,13 +6451,6 @@
           "id": "richard",
           "name": "Richard Du Plessis",
           "name_normalised": "Richard Du Plessis",
-          "sessions": 1
-        },
-        {
-          "hours": 14.619,
-          "id": "niel",
-          "name": "Niel Steenkamp",
-          "name_normalised": "Niel Steenkamp",
           "sessions": 1
         }
       ],
