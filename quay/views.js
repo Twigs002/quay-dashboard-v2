@@ -905,7 +905,10 @@ window.VIEWS = (function () {
       const nameSuffix = overlap
         ? '<span title="Over-counted: this agent worked multiple campaigns and this row sums their total across all of them" style="margin-left:6px;color:var(--amber);font-weight:700;cursor:help" aria-label="Over-counted row">⚠</span>'
         : '';
-      return `<tr${overlap ? ' style="background:rgba(185,138,2,.04)"' : ''}>
+      return `<tr${overlap ? ' style="background:rgba(185,138,2,.04)"' : ''}`
+        + ` data-name="${String(c.name).replace(/"/g, '&quot;')}" data-agents="${c.agentsCount}"`
+        + ` data-calls="${c.calls}" data-leads="${c.leads}" data-seller="${c.seller}"`
+        + ` data-rental="${c.rental}" data-email="${c.email}" data-conv="${conv}">
         <td class="num" style="font-weight:700;color:var(--muted);width:40px">${i + 1}</td>
         <td><div class="agent-cell">
           <span style="width:11px;height:11px;border-radius:3px;background:${c.color};display:inline-block"></span>
@@ -943,13 +946,18 @@ window.VIEWS = (function () {
           <div class="card-head"><div><h3 id="lead-sources-tbl-h">Campaign performance</h3>
             <div class="sub">Ranked by call volume · ${Q.PERIODS[period || 'this-week'].label} · variants like SURFERS_NA + SURFERS_CM are grouped</div></div>
             <button class="btn js-export">${I.download} Export CSV</button></div>
-          <div class="tbl-wrap"><table class="tbl" aria-labelledby="lead-sources-tbl-h">
+          <div class="tbl-wrap"><table class="tbl tbl-sortable" id="lead-sources-tbl" aria-labelledby="lead-sources-tbl-h">
             <thead><tr>
-              <th class="num">#</th><th>Campaign</th>
-              <th class="num">Agents</th><th class="num">Calls</th>
-              <th class="num">Leads</th><th class="num">Seller</th>
-              <th class="num">Rental</th><th class="num">Email</th>
-              <th class="num">Conv.</th><th class="num">Volume</th>
+              <th class="num">#</th>
+              <th data-sort="name|str">Campaign<span class="sort-ind"></span></th>
+              <th class="num" data-sort="agents|num">Agents<span class="sort-ind"></span></th>
+              <th class="num" data-sort="calls|num">Calls<span class="sort-ind"></span></th>
+              <th class="num" data-sort="leads|num">Leads<span class="sort-ind"></span></th>
+              <th class="num" data-sort="seller|num">Seller<span class="sort-ind"></span></th>
+              <th class="num" data-sort="rental|num">Rental<span class="sort-ind"></span></th>
+              <th class="num" data-sort="email|num">Email<span class="sort-ind"></span></th>
+              <th class="num" data-sort="conv|num">Conv.<span class="sort-ind"></span></th>
+              <th class="num">Volume</th>
             </tr></thead>
             <tbody>${rows}</tbody>
           </table></div>
