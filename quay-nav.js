@@ -7,11 +7,13 @@
  *
  * Each app, once it knows the signed-in user, calls:
  *
- *     QuayNav.mount({ isSuper: <bool>, current: '<site id>' });
+ *     QuayNav.mount({ isSuper: <bool>, allowedSites: ['polar', ...], current: '<site id>' });
  *
  * It turns that app's top-left Quay 1 flag/logo into a click target that drops
- * down a menu of the other apps. It renders ONLY for superusers — for everyone
- * else mount() is a no-op and the logo behaves exactly as before.
+ * down a menu of the other apps. Superusers see every app; a non-super sees only
+ * the sites in `allowedSites` (from staff.allowed_sites). For a user who is
+ * neither a super nor granted any other app, mount() is a no-op and the logo
+ * behaves exactly as before.
  *
  * ADDING A NEW APP  ->  append ONE entry to the SITES array below, redeploy the
  * dashboard-v2 repo, and every app picks it up on the next page load. No edits
@@ -45,6 +47,8 @@ window.QuayNav = (function () {
   let styleEl = null;     // injected <style> (once)
   let openAnchor = null;  // the logo the menu is currently anchored to
   let currentId = null;   // which app we're on (its row is marked "current")
+  let isSuperUser = false;// supers see every site; non-supers only their grants
+  let allowedSet = null;  // Set of site ids a non-super may see (null = none)
 
   const isOpen = () => menuEl && menuEl.classList.contains('is-open');
 
@@ -126,7 +130,12 @@ window.QuayNav = (function () {
 
   function renderItems() {
     const check = '<svg class="qn-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-    const rows = SITES.map((s) => {
+    // Supers see everything; a non-super sees only the sites they've been
+    // granted (plus the current app so its own row is never hidden).
+    const visible = isSuperUser
+      ? SITES
+      : SITES.filter((s) => (allowedSet && allowedSet.has(s.id)) || s.id === currentId);
+    const rows = visible.map((s) => {
       const cur = s.id === currentId;
       const dot = `<span class="qn-dot" style="background:${DOT[s.id] || DEFAULT_DOT}"></span>`;
       const txt = `<span class="qn-txt"><span class="qn-label">${esc(s.label)}</span><span class="qn-sub">${esc(s.sub)}</span></span>`;
@@ -188,14 +197,23 @@ window.QuayNav = (function () {
   /**
    * Wire the switcher onto this app's top-left logo.
    * @param {Object} opts
-   * @param {boolean} opts.isSuper  Only superusers get the switcher; else no-op.
+   * @param {boolean} opts.isSuper  Superusers see every site in the switcher.
+   * @param {string[]} [opts.allowedSites]  For a non-super, the site ids they
+   *        may see (e.g. ['polar']). The switcher renders when the user is a
+   *        super OR has at least one granted site; otherwise mount() is a no-op
+   *        and the logo behaves exactly as before.
    * @param {string}  opts.current  This app's id (marks its own row as current).
    * @param {string|Element} [opts.anchor]  Logo element or selector.
    *        Defaults to 'img.brand-logo'.
    */
   function mount(opts) {
     opts = opts || {};
-    if (!opts.isSuper) return;                 // superusers only
+    isSuperUser = !!opts.isSuper;
+    allowedSet = new Set(Array.isArray(opts.allowedSites) ? opts.allowedSites : []);
+    // Show the switcher to supers, or to anyone granted at least one OTHER app
+    // to switch to. A lone grant matching the current app isn't worth a menu.
+    const hasOther = [...allowedSet].some((id) => id !== opts.current);
+    if (!isSuperUser && !hasOther) return;
     currentId = opts.current || null;
     injectStyles();
 

@@ -264,6 +264,7 @@
       setSession({
         id: staff.id, name: staff.name, role: staff.role || '', team: staff.team || '',
         admin: true, super: !!staff.is_super, payroll: isPayrollLogin(staff),
+        allowed_sites: Array.isArray(staff.allowed_sites) ? staff.allowed_sites : [],
       });
       if (staff.is_super) tab = 'leadership';           // superusers land on Leadership
       else if (isPayrollLogin(staff)) tab = 'payroll';  // payroll role lands on Payroll
@@ -495,6 +496,7 @@
     if (window.QuayNav) {
       window.QuayNav.mount({
         isSuper: !!(session && session.super),
+        allowedSites: (session && session.allowed_sites) || [],
         current: 'dashboard',
         anchor: '.sidebar .brand-logo',
       });
@@ -6228,6 +6230,16 @@
       ['payroll',         'Payroll (dashboard access)'],
     ];
     const MGR_DESIG = ['rm', 'fancy', 'ln', 'assistant', 'admin_assistant'];
+    // Grantable apps for a broker (ids match quay-nav.js SITES + staff.allowed_sites).
+    // Broker-relevant apps first. Boarding is included so a super CAN grant it
+    // deliberately, but it is never a default — it provisions/offboards accounts.
+    const BROKER_SITE_OPTS = [
+      ['polar',     'Polar Push',            'Competition scoreboard'],
+      ['hubspot',   'Team Insights',         'HubSpot deals · division directory'],
+      ['leads',     'Seller Leads',          'Seller-lead pipeline'],
+      ['dashboard', 'Performance Dashboard', 'Live team & caller stats'],
+      ['boarding',  'Boarding Tool',         '⚠ Provisions & offboards staff accounts — grant with care'],
+    ];
     let desigOpts = isSuper ? ALL_DESIG : ALL_DESIG.filter(([v]) => MGR_DESIG.includes(v));
     // Managers may set salary + hourly rate when ADDING staff (adds run
     // through the service-role Edge Function). Editing pay stays super-only.
@@ -6278,6 +6290,21 @@
             <input id="tmEmail" type="email" value="${escapeHtml(f.email || '')}" placeholder="name@quay1.co.za" autocapitalize="off">
             <div class="muted" style="font-size:11px;margin-top:3px">Real @quay1.co.za address — used to match their recruitment candidates on the HubSpot dashboard.</div>
           </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13.5px">
+            <input id="tmSeniorBroker" type="checkbox" ${f.is_senior_broker ? 'checked' : ''}>
+            <span>Senior broker</span>
+          </label>
+          <div class="field">
+            <span>App access</span>
+            <div class="muted" style="font-size:11px;margin:2px 0 6px">Which Quay 1 apps this broker may open. Brokers are never on payroll and get no admin rights — this only controls app access.</div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              ${BROKER_SITE_OPTS.map(([id, label, note]) => `
+              <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px">
+                <input class="tm-site" type="checkbox" value="${id}" ${(f.allowed_sites || []).includes(id) ? 'checked' : ''} style="margin-top:2px">
+                <span>${escapeHtml(label)}${note ? `<span class="muted" style="display:block;font-size:11px">${escapeHtml(note)}</span>` : ''}</span>
+              </label>`).join('')}
+            </div>
+          </div>
           ` : `
           <label class="field"><span>Designation</span>
             <select id="tmDesignation">
@@ -6511,6 +6538,16 @@
     // render for the broker modal), so every lookup is null-guarded.
     const email = document.getElementById('tmEmail');
     if (email) email.addEventListener('input', (e) => { f.email = e.target.value; });
+    const senior = document.getElementById('tmSeniorBroker');
+    if (senior) senior.addEventListener('change', (e) => { f.is_senior_broker = e.target.checked; });
+    document.querySelectorAll('.tm-site').forEach((cb) => {
+      cb.addEventListener('change', (e) => {
+        const id = e.target.value;
+        const set = new Set(f.allowed_sites || []);
+        if (e.target.checked) set.add(id); else set.delete(id);
+        f.allowed_sites = [...set];
+      });
+    });
     const desig = document.getElementById('tmDesignation');
     if (desig) desig.addEventListener('change', (e) => {
       f.designation = e.target.value;
@@ -6586,6 +6623,15 @@
         });
         const body = await res.json().catch(() => ({}));
         if (!res.ok || body.ok === false) throw new Error(body.error || 'Could not create staff');
+        // The create Edge Function doesn't handle broker app-access fields, so
+        // set them in a follow-up PATCH (RLS allows a super to update them).
+        if (isBrokerModal) {
+          const { error: sErr } = await window.sb.from('staff').update({
+            is_senior_broker: !!f.is_senior_broker,
+            allowed_sites: Array.isArray(f.allowed_sites) ? f.allowed_sites : [],
+          }).eq('id', payload.id);
+          if (sErr) throw new Error('Broker created, but app access could not be set: ' + sErr.message);
+        }
       } else {
         // Direct PATCH for non-PIN fields — RLS allows it for admins.
         const patch = isBrokerModal
@@ -6593,6 +6639,8 @@
               name: f.name.trim(),
               designation: 'broker', is_broker: true,
               email: (f.email || '').trim() || null,
+              is_senior_broker: !!f.is_senior_broker,
+              allowed_sites: Array.isArray(f.allowed_sites) ? f.allowed_sites : [],
             }
           : {
               name: f.name.trim(),
@@ -6712,6 +6760,8 @@
         kind: 'broker', mode: 'add',
         name: '', id: '', pin: '', email: '',
         designation: 'broker', is_broker: true,
+        is_senior_broker: false,
+        allowed_sites: ['polar'],   // every broker gets Polar Push by default
         admin: false, super: false,
         busy: false, error: '',
       };
@@ -6725,6 +6775,8 @@
           kind: 'broker', mode: 'edit',
           id: s.id, name: s.name, pin: '', email: s.email || '',
           designation: 'broker', is_broker: true,
+          is_senior_broker: !!s.is_senior_broker,
+          allowed_sites: Array.isArray(s.allowed_sites) ? s.allowed_sites.slice() : [],
           admin: false, super: false,
           busy: false, error: '',
         };
