@@ -1,14 +1,53 @@
 [
   {
     "date": "2026-08-07",
-    "generated": "2026-08-07T00:18:45.090810+00:00",
-    "rm": [],
+    "generated": "2026-08-07T06:03:29.650786+00:00",
+    "rm": [
+      {
+        "name": "Test",
+        "calls": 9,
+        "success": 1,
+        "seller": 0,
+        "rental": 0,
+        "email": 1,
+        "no_answer": 0,
+        "cph": 48.7,
+        "successRate": 11.1,
+        "workTime": 0.1847,
+        "talkTime": 0.0375,
+        "wrapTime": 0.1358,
+        "pauseTime": 0.0028,
+        "waitTime": 0.0086,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB"
+        ],
+        "answered": 9,
+        "talkPct": 20.3,
+        "wrapPct": 73.5,
+        "waitPct": 4.7,
+        "workPct": 98.5
+      }
+    ],
     "fancy": [],
-    "by_agent_campaign": {}
+    "by_agent_campaign": {
+      "Test": {
+        "CLIENTHUB": {
+          "calls": 9,
+          "success": 1,
+          "seller": 0,
+          "rental": 0,
+          "email": 1,
+          "workTime": 0.1847,
+          "talkTime": 0.0375
+        }
+      }
+    }
   },
   {
     "date": "2026-08-06",
-    "generated": "2026-08-07T00:18:45.090810+00:00",
+    "generated": "2026-08-07T06:03:29.650786+00:00",
     "rm": [
       {
         "name": "Test",
@@ -247,32 +286,6 @@
         "workPct": 99.3
       },
       {
-        "name": "LisabellPanze",
-        "calls": 44,
-        "success": 7,
-        "seller": 1,
-        "rental": 0,
-        "email": 6,
-        "no_answer": 0,
-        "cph": 36.4,
-        "successRate": 15.9,
-        "workTime": 1.2094,
-        "talkTime": 0.2891,
-        "wrapTime": 0.6336,
-        "pauseTime": 0.0061,
-        "waitTime": 0.2806,
-        "is_rm": false,
-        "meetsTarget": false,
-        "campaigns": [
-          "PIRATES"
-        ],
-        "answered": 44,
-        "talkPct": 23.9,
-        "wrapPct": 52.4,
-        "waitPct": 23.2,
-        "workPct": 99.5
-      },
-      {
         "name": "KirstenLS",
         "calls": 33,
         "success": 0,
@@ -297,6 +310,32 @@
         "wrapPct": 87.6,
         "waitPct": 5.1,
         "workPct": 99.2
+      },
+      {
+        "name": "LisabellPanze",
+        "calls": 31,
+        "success": 7,
+        "seller": 1,
+        "rental": 0,
+        "email": 6,
+        "no_answer": 0,
+        "cph": 48.6,
+        "successRate": 22.6,
+        "workTime": 0.6375,
+        "talkTime": 0.2644,
+        "wrapTime": 0.1239,
+        "pauseTime": 0.0061,
+        "waitTime": 0.2431,
+        "is_rm": false,
+        "meetsTarget": true,
+        "campaigns": [
+          "PIRATES"
+        ],
+        "answered": 31,
+        "talkPct": 41.5,
+        "wrapPct": 19.4,
+        "waitPct": 38.1,
+        "workPct": 99.1
       },
       {
         "name": "AnneeqaWilliams",
@@ -545,15 +584,6 @@
         }
       },
       "LisabellPanze": {
-        "PIRATES_NA": {
-          "calls": 13,
-          "success": 0,
-          "seller": 0,
-          "rental": 0,
-          "email": 0,
-          "workTime": 0.5719,
-          "talkTime": 0.0247
-        },
         "PIRATES_CM": {
           "calls": 31,
           "success": 7,
@@ -656,7 +686,7 @@
   },
   {
     "date": "2026-08-05",
-    "generated": "2026-08-07T00:18:45.090810+00:00",
+    "generated": "2026-08-07T06:03:29.650786+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -1594,7 +1624,7 @@
   },
   {
     "date": "2026-08-04",
-    "generated": "2026-08-07T00:18:45.090810+00:00",
+    "generated": "2026-08-07T06:03:29.650786+00:00",
     "rm": [
       {
         "name": "Test",
@@ -1782,13 +1812,13 @@
     "fancy": [
       {
         "name": "DeclanT",
-        "calls": 119,
+        "calls": 118,
         "success": 5,
         "seller": 0,
         "rental": 0,
         "email": 5,
         "no_answer": 0,
-        "cph": 15.5,
+        "cph": 15.4,
         "successRate": 4.2,
         "workTime": 7.6742,
         "talkTime": 0.5128,
@@ -1800,7 +1830,7 @@
         "campaigns": [
           "SPARTANS"
         ],
-        "answered": 119,
+        "answered": 118,
         "talkPct": 6.7,
         "wrapPct": 89.9,
         "waitPct": 1.8,
@@ -2290,7 +2320,7 @@
       },
       "DeclanT": {
         "SPARTANS_NA": {
-          "calls": 119,
+          "calls": 118,
           "success": 5,
           "seller": 0,
           "rental": 0,
@@ -2391,7 +2421,7 @@
   },
   {
     "date": "2026-08-03",
-    "generated": "2026-08-07T00:18:45.090810+00:00",
+    "generated": "2026-08-07T06:03:29.650786+00:00",
     "rm": [
       {
         "name": "Test",
@@ -2581,9 +2611,9 @@
         "name": "StaddyMalonga",
         "calls": 100,
         "success": 7,
-        "seller": 1,
+        "seller": 0,
         "rental": 0,
-        "email": 6,
+        "email": 0,
         "no_answer": 0,
         "cph": 66.7,
         "successRate": 7.0,
@@ -2919,9 +2949,9 @@
         "BABES_NA": {
           "calls": 100,
           "success": 7,
-          "seller": 1,
+          "seller": 0,
           "rental": 0,
-          "email": 6,
+          "email": 0,
           "workTime": 1.4997,
           "talkTime": 0.2978
         }
@@ -3171,21 +3201,21 @@
   },
   {
     "date": "2026-08-02",
-    "generated": "2026-08-07T00:18:45.090810+00:00",
+    "generated": "2026-08-07T06:03:29.650786+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-01",
-    "generated": "2026-08-07T00:18:45.090810+00:00",
+    "generated": "2026-08-07T06:03:29.650786+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-07-31",
-    "generated": "2026-08-07T00:18:45.090810+00:00",
+    "generated": "2026-08-07T06:03:29.650786+00:00",
     "rm": [
       {
         "name": "Test",
