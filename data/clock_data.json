@@ -29,6 +29,13 @@
       "sessions": 1
     },
     {
+      "hours": 8.5,
+      "id": "jason-julius",
+      "name": "Jason Julius",
+      "name_normalised": "Jason Julius",
+      "sessions": 1
+    },
+    {
       "hours": 8.999,
       "id": "simone-vermeulen",
       "name": "Simone Vermeulen",
@@ -4656,6 +4663,13 @@
         "sessions": 1
       },
       {
+        "hours": 8.5,
+        "id": "jason-julius",
+        "name": "Jason Julius",
+        "name_normalised": "Jason Julius",
+        "sessions": 1
+      },
+      {
         "hours": 8.999,
         "id": "simone-vermeulen",
         "name": "Simone Vermeulen",
@@ -4874,7 +4888,7 @@
       }
     ]
   },
-  "generated_at": "2026-08-11T18:12:33.542337+00:00",
+  "generated_at": "2026-08-12T03:17:03.451512+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -5222,11 +5236,11 @@
           "sessions": 34
         },
         {
-          "hours": 265.748,
+          "hours": 274.248,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 34
+          "sessions": 35
         },
         {
           "hours": 277.008,
@@ -5292,8 +5306,8 @@
           "sessions": 14
         }
       ],
-      "from": "2025-08-12T00:00:00+00:00",
-      "to": "2026-08-11T23:59:59+00:00"
+      "from": "2025-08-13T00:00:00+00:00",
+      "to": "2026-08-12T23:59:59+00:00"
     },
     "billing-period": {
       "agents": [
@@ -5487,11 +5501,11 @@
           "sessions": 14
         },
         {
-          "hours": 111.193,
+          "hours": 119.693,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 14
+          "sessions": 15
         },
         {
           "hours": 108.812,
@@ -5577,256 +5591,186 @@
     "last-90": {
       "agents": [
         {
-          "hours": 463.196,
-          "id": "declan",
-          "name": "Declan Ryder Tyler",
-          "name_normalised": "Declan Ryder Tyler",
-          "sessions": 64
-        },
-        {
-          "hours": 552.74,
-          "id": "jason-hendricks",
-          "name": "Jason Hendricks",
-          "name_normalised": "Jason Hendricks",
-          "sessions": 65
-        },
-        {
-          "hours": 519.444,
-          "id": "winston",
-          "name": "Winston David Mace",
-          "name_normalised": "Winston David Mace",
-          "sessions": 60
-        },
-        {
-          "hours": 408.774,
-          "id": "geneva-maggie-nela-gomez",
-          "name": "Geneva Gomez",
-          "name_normalised": "Geneva Gomez",
-          "sessions": 49
-        },
-        {
-          "hours": 518.161,
-          "id": "lisabell",
-          "name": "Lisabell Shumirai Panze",
-          "name_normalised": "Lisabell Shumirai Panze",
-          "sessions": 60
-        },
-        {
-          "hours": 495.099,
-          "id": "killarney",
-          "name": "Killarney Mia Jones",
-          "name_normalised": "Killarney Mia Jones",
-          "sessions": 61
-        },
-        {
-          "hours": 468.241,
-          "id": "aqeefah-arendse",
-          "name": "Aqeefah Arendse",
-          "name_normalised": "Aqeefah Arendse",
-          "sessions": 63
-        },
-        {
-          "hours": 410.496,
-          "id": "staddy",
-          "name": "Staddy Victorien Rody Malonga",
-          "name_normalised": "Staddy Victorien Rody Malonga",
-          "sessions": 53
-        },
-        {
-          "hours": 524.292,
-          "id": "shanika",
-          "name": "Shanika Danelle Lotz",
-          "name_normalised": "Shanika Danelle Lotz",
-          "sessions": 60
-        },
-        {
-          "hours": 479.009,
-          "id": "zivana-kriel",
-          "name": "Zivana Kriel",
-          "name_normalised": "Zivana Kriel",
-          "sessions": 66
-        },
-        {
-          "hours": 194.501,
-          "id": "whitney-malgas",
-          "name": "Whitney Malgas",
-          "name_normalised": "Whitney Malgas",
-          "sessions": 23
-        },
-        {
-          "hours": 457.659,
+          "hours": 448.659,
           "id": "anneeqa-williams",
           "name": "Anneeqa Williams",
           "name_normalised": "Anneeqa Williams",
-          "sessions": 71
+          "sessions": 70
         },
         {
-          "hours": 215.0,
-          "id": "claire-murch",
-          "name": "Claire Murch",
-          "name_normalised": "Claire Murch",
-          "sessions": 24
+          "hours": 470.009,
+          "id": "zivana-kriel",
+          "name": "Zivana Kriel",
+          "name_normalised": "Zivana Kriel",
+          "sessions": 65
         },
         {
-          "hours": 453.819,
-          "id": "craig-carroll",
-          "name": "Craig Carroll",
-          "name_normalised": "Craig Carroll",
-          "sessions": 53
-        },
-        {
-          "hours": 190.048,
-          "id": "naomi-ciza",
-          "name": "Naomi Ciza",
-          "name_normalised": "Naomi Ciza",
-          "sessions": 23
-        },
-        {
-          "hours": 531.051,
-          "id": "qhayiya-dayimani",
-          "name": "Qhayiya Dayimani",
-          "name_normalised": "Qhayiya Dayimani",
-          "sessions": 64
-        },
-        {
-          "hours": 353.973,
-          "id": "reidhistra-govinder",
-          "name": "Reidhistra Govinder",
-          "name_normalised": "Reidhistra Govinder",
-          "sessions": 41
-        },
-        {
-          "hours": 397.05,
-          "id": "sadiqa-carelse",
-          "name": "Sadiqa Carelse",
-          "name_normalised": "Sadiqa Carelse",
-          "sessions": 46
-        },
-        {
-          "hours": 395.407,
-          "id": "simone-vermeulen",
-          "name": "Simone Vermeulen",
-          "name_normalised": "Simone Vermeulen",
-          "sessions": 50
-        },
-        {
-          "hours": 452.428,
-          "id": "douglas",
-          "name": "Douglas Mpiana Nkulu",
-          "name_normalised": "Douglas Mpiana Nkulu",
-          "sessions": 55
-        },
-        {
-          "hours": 461.536,
-          "id": "tamzin-jacobs",
-          "name": "Tamzin Jacobs",
-          "name_normalised": "Tamzin Jacobs",
-          "sessions": 64
-        },
-        {
-          "hours": 518.763,
-          "id": "basil-tambwe",
-          "name": "Basil Tambwe",
-          "name_normalised": "Basil Tambwe",
-          "sessions": 61
-        },
-        {
-          "hours": 235.007,
-          "id": "gcisa-sokwaliwa",
-          "name": "Gcisa Sokwaliwa",
-          "name_normalised": "Gcisa Sokwaliwa",
-          "sessions": 28
-        },
-        {
-          "hours": 214.015,
-          "id": "jamie-lee-smith",
-          "name": "Jamie-Lee Smith",
-          "name_normalised": "Jamie-Lee Smith",
-          "sessions": 23
-        },
-        {
-          "hours": 532.653,
-          "id": "kayleigh",
-          "name": "Kayleigh Morgan Ducroq",
-          "name_normalised": "Kayleigh Morgan Ducroq",
-          "sessions": 59
-        },
-        {
-          "hours": 538.76,
-          "id": "bronwyn-botha",
-          "name": "Bronwyn Botha",
-          "name_normalised": "Bronwyn Botha",
-          "sessions": 62
-        },
-        {
-          "hours": 30.884,
-          "id": "lauren-stacey-carolus",
-          "name": "Lauren Stacey Carolus",
-          "name_normalised": "Lauren Stacey Carolus",
-          "sessions": 4
-        },
-        {
-          "hours": 173.953,
-          "id": "janice-janique-esme-boshoff",
-          "name": "Janice Janique Esme Boshoff",
-          "name_normalised": "Janice Janique Esme Boshoff",
-          "sessions": 21
-        },
-        {
-          "hours": 201.102,
-          "id": "sinenhlanhla-maud-mthembu",
-          "name": "Sinenhlanhla Maud Mthembu",
-          "name_normalised": "Sinenhlanhla Maud Mthembu",
-          "sessions": 25
-        },
-        {
-          "hours": 123.817,
-          "id": "corey-nefdt",
-          "name": "Corey Nefdt",
-          "name_normalised": "Corey Nefdt",
-          "sessions": 13
-        },
-        {
-          "hours": 285.693,
-          "id": "leon",
-          "name": "Leon Kudzaishe Salimu",
-          "name_normalised": "Leon Kudzaishe Salimu",
-          "sessions": 40
-        },
-        {
-          "hours": 233.019,
+          "hours": 224.002,
           "id": "nicolette-van-der-berg",
           "name": "Nicolette Van Der Berg",
           "name_normalised": "Nicolette Van Der Berg",
-          "sessions": 26
+          "sessions": 25
         },
         {
-          "hours": 239.083,
+          "hours": 185.501,
+          "id": "whitney-malgas",
+          "name": "Whitney Malgas",
+          "name_normalised": "Whitney Malgas",
+          "sessions": 22
+        },
+        {
+          "hours": 229.533,
           "id": "richard-du-plessis",
           "name": "Richard Du Plessis",
           "name_normalised": "Richard Du Plessis",
-          "sessions": 26
+          "sessions": 25
         },
         {
-          "hours": 596.749,
+          "hours": 510.594,
+          "id": "winston",
+          "name": "Winston David Mace",
+          "name_normalised": "Winston David Mace",
+          "sessions": 59
+        },
+        {
+          "hours": 509.811,
+          "id": "lisabell",
+          "name": "Lisabell Shumirai Panze",
+          "name_normalised": "Lisabell Shumirai Panze",
+          "sessions": 59
+        },
+        {
+          "hours": 386.407,
+          "id": "simone-vermeulen",
+          "name": "Simone Vermeulen",
+          "name_normalised": "Simone Vermeulen",
+          "sessions": 49
+        },
+        {
+          "hours": 529.693,
+          "id": "bronwyn-botha",
+          "name": "Bronwyn Botha",
+          "name_normalised": "Bronwyn Botha",
+          "sessions": 61
+        },
+        {
+          "hours": 401.496,
+          "id": "staddy",
+          "name": "Staddy Victorien Rody Malonga",
+          "name_normalised": "Staddy Victorien Rody Malonga",
+          "sessions": 52
+        },
+        {
+          "hours": 515.342,
+          "id": "shanika",
+          "name": "Shanika Danelle Lotz",
+          "name_normalised": "Shanika Danelle Lotz",
+          "sessions": 59
+        },
+        {
+          "hours": 486.116,
+          "id": "killarney",
+          "name": "Killarney Mia Jones",
+          "name_normalised": "Killarney Mia Jones",
+          "sessions": 60
+        },
+        {
+          "hours": 523.503,
+          "id": "kayleigh",
+          "name": "Kayleigh Morgan Ducroq",
+          "name_normalised": "Kayleigh Morgan Ducroq",
+          "sessions": 58
+        },
+        {
+          "hours": 584.799,
           "id": "anne-mary-marias",
           "name": "Anne-Mary Marais",
           "name_normalised": "Anne-Mary Marais",
-          "sessions": 57
+          "sessions": 56
         },
         {
-          "hours": 599.544,
-          "id": "jaco",
-          "name": "Jan C (Jaco) Groenewald",
-          "name_normalised": "Jan C (Jaco) Groenewald",
-          "sessions": 69
+          "hours": 459.358,
+          "id": "aqeefah-arendse",
+          "name": "Aqeefah Arendse",
+          "name_normalised": "Aqeefah Arendse",
+          "sessions": 62
         },
         {
-          "hours": 209.416,
+          "hours": 206.0,
+          "id": "claire-murch",
+          "name": "Claire Murch",
+          "name_normalised": "Claire Murch",
+          "sessions": 23
+        },
+        {
+          "hours": 444.819,
+          "id": "craig-carroll",
+          "name": "Craig Carroll",
+          "name_normalised": "Craig Carroll",
+          "sessions": 52
+        },
+        {
+          "hours": 204.932,
+          "id": "jamie-lee-smith",
+          "name": "Jamie-Lee Smith",
+          "name_normalised": "Jamie-Lee Smith",
+          "sessions": 22
+        },
+        {
+          "hours": 544.173,
+          "id": "jason-hendricks",
+          "name": "Jason Hendricks",
+          "name_normalised": "Jason Hendricks",
+          "sessions": 64
+        },
+        {
+          "hours": 180.998,
+          "id": "naomi-ciza",
+          "name": "Naomi Ciza",
+          "name_normalised": "Naomi Ciza",
+          "sessions": 22
+        },
+        {
+          "hours": 196.666,
           "id": "niel-steenkamp",
           "name": "Niel Steenkamp",
           "name_normalised": "Niel Steenkamp",
-          "sessions": 20
+          "sessions": 19
+        },
+        {
+          "hours": 522.051,
+          "id": "qhayiya-dayimani",
+          "name": "Qhayiya Dayimani",
+          "name_normalised": "Qhayiya Dayimani",
+          "sessions": 63
+        },
+        {
+          "hours": 344.973,
+          "id": "reidhistra-govinder",
+          "name": "Reidhistra Govinder",
+          "name_normalised": "Reidhistra Govinder",
+          "sessions": 40
+        },
+        {
+          "hours": 388.067,
+          "id": "sadiqa-carelse",
+          "name": "Sadiqa Carelse",
+          "name_normalised": "Sadiqa Carelse",
+          "sessions": 45
+        },
+        {
+          "hours": 192.835,
+          "id": "sinenhlanhla-maud-mthembu",
+          "name": "Sinenhlanhla Maud Mthembu",
+          "name_normalised": "Sinenhlanhla Maud Mthembu",
+          "sessions": 24
+        },
+        {
+          "hours": 452.519,
+          "id": "tamzin-jacobs",
+          "name": "Tamzin Jacobs",
+          "name_normalised": "Tamzin Jacobs",
+          "sessions": 63
         },
         {
           "hours": 474.621,
@@ -5836,11 +5780,74 @@
           "sessions": 55
         },
         {
+          "hours": 400.324,
+          "id": "geneva-maggie-nela-gomez",
+          "name": "Geneva Gomez",
+          "name_normalised": "Geneva Gomez",
+          "sessions": 48
+        },
+        {
           "hours": 487.449,
           "id": "neelam-jameel",
           "name": "Neelam Jameel",
           "name_normalised": "Neelam Jameel",
           "sessions": 58
+        },
+        {
+          "hours": 455.996,
+          "id": "declan",
+          "name": "Declan Ryder Tyler",
+          "name_normalised": "Declan Ryder Tyler",
+          "sessions": 63
+        },
+        {
+          "hours": 226.84,
+          "id": "gcisa-sokwaliwa",
+          "name": "Gcisa Sokwaliwa",
+          "name_normalised": "Gcisa Sokwaliwa",
+          "sessions": 27
+        },
+        {
+          "hours": 114.467,
+          "id": "corey-nefdt",
+          "name": "Corey Nefdt",
+          "name_normalised": "Corey Nefdt",
+          "sessions": 12
+        },
+        {
+          "hours": 443.928,
+          "id": "douglas",
+          "name": "Douglas Mpiana Nkulu",
+          "name_normalised": "Douglas Mpiana Nkulu",
+          "sessions": 54
+        },
+        {
+          "hours": 509.73,
+          "id": "basil-tambwe",
+          "name": "Basil Tambwe",
+          "name_normalised": "Basil Tambwe",
+          "sessions": 60
+        },
+        {
+          "hours": 165.02,
+          "id": "janice-janique-esme-boshoff",
+          "name": "Janice Janique Esme Boshoff",
+          "name_normalised": "Janice Janique Esme Boshoff",
+          "sessions": 20
+        },
+        {
+          "hours": 276.693,
+          "id": "leon",
+          "name": "Leon Kudzaishe Salimu",
+          "name_normalised": "Leon Kudzaishe Salimu",
+          "sessions": 39
+        },
+        {
+          "hours": 588.044,
+          "id": "jaco",
+          "name": "Jan C (Jaco) Groenewald",
+          "name_normalised": "Jan C (Jaco) Groenewald",
+          "sessions": 68
         },
         {
           "hours": 341.819,
@@ -5854,6 +5861,13 @@
           "id": "brandon-lee-ntini",
           "name": "Brandon-Lee Ntini",
           "name_normalised": "Brandon-Lee Ntini",
+          "sessions": 3
+        },
+        {
+          "hours": 21.817,
+          "id": "lauren-stacey-carolus",
+          "name": "Lauren Stacey Carolus",
+          "name_normalised": "Lauren Stacey Carolus",
           "sessions": 3
         },
         {
@@ -5913,11 +5927,11 @@
           "sessions": 34
         },
         {
-          "hours": 265.748,
+          "hours": 274.248,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 34
+          "sessions": 35
         },
         {
           "hours": 277.008,
@@ -5983,8 +5997,8 @@
           "sessions": 14
         }
       ],
-      "from": "2026-05-14T00:00:00+00:00",
-      "to": "2026-08-11T23:59:59+00:00"
+      "from": "2026-05-15T00:00:00+00:00",
+      "to": "2026-08-12T23:59:59+00:00"
     },
     "last-week": {
       "agents": [
@@ -6457,11 +6471,11 @@
           "sessions": 16
         },
         {
-          "hours": 119.876,
+          "hours": 128.376,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 15
+          "sessions": 16
         },
         {
           "hours": 148.923,
@@ -6565,6 +6579,13 @@
           "id": "quinn",
           "name": "Quinn Frazier",
           "name_normalised": "Quinn Frazier",
+          "sessions": 1
+        },
+        {
+          "hours": 8.5,
+          "id": "jason-julius",
+          "name": "Jason Julius",
+          "name_normalised": "Jason Julius",
           "sessions": 1
         },
         {
