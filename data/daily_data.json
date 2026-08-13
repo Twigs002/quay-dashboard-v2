@@ -1,7 +1,202 @@
 [
   {
+    "date": "2026-08-13",
+    "generated": "2026-08-13T06:08:24.291043+00:00",
+    "rm": [
+      {
+        "name": "Test",
+        "calls": 11,
+        "success": 1,
+        "seller": 0,
+        "rental": 0,
+        "email": 1,
+        "no_answer": 0,
+        "cph": 41.5,
+        "successRate": 9.1,
+        "workTime": 0.265,
+        "talkTime": 0.0758,
+        "wrapTime": 0.1733,
+        "pauseTime": 0.0,
+        "waitTime": 0.0158,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB"
+        ],
+        "answered": 11,
+        "talkPct": 28.6,
+        "wrapPct": 65.4,
+        "waitPct": 6.0,
+        "workPct": 100.0
+      },
+      {
+        "name": "Aqeefah Arendse",
+        "calls": 8,
+        "success": 0,
+        "seller": 0,
+        "rental": 0,
+        "email": 0,
+        "no_answer": 0,
+        "cph": 41.6,
+        "successRate": 0.0,
+        "workTime": 0.1922,
+        "talkTime": 0.0153,
+        "wrapTime": 0.1664,
+        "pauseTime": 0.0,
+        "waitTime": 0.0106,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB"
+        ],
+        "answered": 8,
+        "talkPct": 8.0,
+        "wrapPct": 86.6,
+        "waitPct": 5.5,
+        "workPct": 100.0
+      },
+      {
+        "name": "SadiqaCarelse",
+        "calls": 8,
+        "success": 1,
+        "seller": 0,
+        "rental": 0,
+        "email": 1,
+        "no_answer": 0,
+        "cph": 60.9,
+        "successRate": 12.5,
+        "workTime": 0.1314,
+        "talkTime": 0.0517,
+        "wrapTime": 0.0692,
+        "pauseTime": 0.0,
+        "waitTime": 0.0106,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB"
+        ],
+        "answered": 8,
+        "talkPct": 39.3,
+        "wrapPct": 52.7,
+        "waitPct": 8.1,
+        "workPct": 100.0
+      },
+      {
+        "name": "Gio",
+        "calls": 3,
+        "success": 1,
+        "seller": 0,
+        "rental": 0,
+        "email": 1,
+        "no_answer": 0,
+        "cph": 31.4,
+        "successRate": 33.3,
+        "workTime": 0.0956,
+        "talkTime": 0.0167,
+        "wrapTime": 0.0667,
+        "pauseTime": 0.0069,
+        "waitTime": 0.0053,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB"
+        ],
+        "answered": 3,
+        "talkPct": 17.5,
+        "wrapPct": 69.8,
+        "waitPct": 5.5,
+        "workPct": 93.3
+      }
+    ],
+    "fancy": [
+      {
+        "name": "DeclanT",
+        "calls": 3,
+        "success": 0,
+        "seller": 0,
+        "rental": 0,
+        "email": 0,
+        "no_answer": 0,
+        "cph": 28.0,
+        "successRate": 0.0,
+        "workTime": 0.1072,
+        "talkTime": 0.0078,
+        "wrapTime": 0.0953,
+        "pauseTime": 0.0003,
+        "waitTime": 0.0039,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "SPARTANS"
+        ],
+        "answered": 3,
+        "talkPct": 7.3,
+        "wrapPct": 88.9,
+        "waitPct": 3.6,
+        "workPct": 99.7
+      }
+    ],
+    "by_agent_campaign": {
+      "DeclanT": {
+        "SPARTANS_NA": {
+          "calls": 3,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "workTime": 0.1072,
+          "talkTime": 0.0078
+        }
+      },
+      "Aqeefah Arendse": {
+        "CLIENTHUB": {
+          "calls": 8,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "workTime": 0.1922,
+          "talkTime": 0.0153
+        }
+      },
+      "Gio": {
+        "CLIENTHUB": {
+          "calls": 3,
+          "success": 1,
+          "seller": 0,
+          "rental": 0,
+          "email": 1,
+          "workTime": 0.0956,
+          "talkTime": 0.0167
+        }
+      },
+      "SadiqaCarelse": {
+        "CLIENTHUB": {
+          "calls": 8,
+          "success": 1,
+          "seller": 0,
+          "rental": 0,
+          "email": 1,
+          "workTime": 0.1314,
+          "talkTime": 0.0517
+        }
+      },
+      "Test": {
+        "CLIENTHUB": {
+          "calls": 11,
+          "success": 1,
+          "seller": 0,
+          "rental": 0,
+          "email": 1,
+          "workTime": 0.265,
+          "talkTime": 0.0758
+        }
+      }
+    }
+  },
+  {
     "date": "2026-08-12",
-    "generated": "2026-08-12T17:59:48.344660+00:00",
+    "generated": "2026-08-13T06:08:24.291043+00:00",
     "rm": [
       {
         "name": "Test",
@@ -549,7 +744,7 @@
   },
   {
     "date": "2026-08-11",
-    "generated": "2026-08-12T17:59:48.344660+00:00",
+    "generated": "2026-08-13T06:08:24.291043+00:00",
     "rm": [
       {
         "name": "Test",
@@ -1125,28 +1320,28 @@
   },
   {
     "date": "2026-08-10",
-    "generated": "2026-08-12T17:59:48.344660+00:00",
+    "generated": "2026-08-13T06:08:24.291043+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-09",
-    "generated": "2026-08-12T17:59:48.344660+00:00",
+    "generated": "2026-08-13T06:08:24.291043+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-08",
-    "generated": "2026-08-12T17:59:48.344660+00:00",
+    "generated": "2026-08-13T06:08:24.291043+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-07",
-    "generated": "2026-08-12T17:59:48.344660+00:00",
+    "generated": "2026-08-13T06:08:24.291043+00:00",
     "rm": [
       {
         "name": "Test",
@@ -1685,7 +1880,7 @@
   },
   {
     "date": "2026-08-06",
-    "generated": "2026-08-12T17:59:48.344660+00:00",
+    "generated": "2026-08-13T06:08:24.291043+00:00",
     "rm": [
       {
         "name": "Test",
