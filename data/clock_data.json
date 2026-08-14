@@ -29,11 +29,11 @@
       "sessions": 3
     },
     {
-      "hours": 17.04,
+      "hours": 25.54,
       "id": "jason-julius",
       "name": "Jason Julius",
       "name_normalised": "Jason Julius",
-      "sessions": 2
+      "sessions": 3
     },
     {
       "hours": 24.489,
@@ -50,11 +50,11 @@
       "sessions": 3
     },
     {
-      "hours": 17.749,
+      "hours": 26.749,
       "id": "josh-adonis",
       "name": "Josh Adonis",
       "name_normalised": "Josh Adonis",
-      "sessions": 2
+      "sessions": 3
     },
     {
       "hours": 26.938,
@@ -92,11 +92,11 @@
       "sessions": 3
     },
     {
-      "hours": 17.025,
+      "hours": 25.799,
       "id": "giovon-van-wyk",
       "name": "Giovon Van Wyk",
       "name_normalised": "Giovon Van Wyk",
-      "sessions": 2
+      "sessions": 3
     },
     {
       "hours": 27.024,
@@ -239,11 +239,11 @@
       "sessions": 3
     },
     {
-      "hours": 21.592,
+      "hours": 31.458,
       "id": "anne-mary-marias",
       "name": "Anne-Mary Marais",
       "name_normalised": "Anne-Mary Marais",
-      "sessions": 2
+      "sessions": 3
     },
     {
       "hours": 32.788,
@@ -4670,11 +4670,11 @@
         "sessions": 3
       },
       {
-        "hours": 17.04,
+        "hours": 25.54,
         "id": "jason-julius",
         "name": "Jason Julius",
         "name_normalised": "Jason Julius",
-        "sessions": 2
+        "sessions": 3
       },
       {
         "hours": 24.489,
@@ -4691,11 +4691,11 @@
         "sessions": 3
       },
       {
-        "hours": 17.749,
+        "hours": 26.749,
         "id": "josh-adonis",
         "name": "Josh Adonis",
         "name_normalised": "Josh Adonis",
-        "sessions": 2
+        "sessions": 3
       },
       {
         "hours": 26.938,
@@ -4733,11 +4733,11 @@
         "sessions": 3
       },
       {
-        "hours": 17.025,
+        "hours": 25.799,
         "id": "giovon-van-wyk",
         "name": "Giovon Van Wyk",
         "name_normalised": "Giovon Van Wyk",
-        "sessions": 2
+        "sessions": 3
       },
       {
         "hours": 27.024,
@@ -4880,11 +4880,11 @@
         "sessions": 3
       },
       {
-        "hours": 21.592,
+        "hours": 31.458,
         "id": "anne-mary-marias",
         "name": "Anne-Mary Marais",
         "name_normalised": "Anne-Mary Marais",
-        "sessions": 2
+        "sessions": 3
       },
       {
         "hours": 32.788,
@@ -4902,7 +4902,7 @@
       }
     ]
   },
-  "generated_at": "2026-08-13T18:12:43.467168+00:00",
+  "generated_at": "2026-08-14T03:18:00.109899+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -5124,18 +5124,18 @@
           "sessions": 55
         },
         {
-          "hours": 765.575,
+          "hours": 775.441,
           "id": "anne-mary-marias",
           "name": "Anne-Mary Marais",
           "name_normalised": "Anne-Mary Marais",
-          "sessions": 72
+          "sessions": 73
         },
         {
-          "hours": 438.149,
+          "hours": 447.149,
           "id": "josh-adonis",
           "name": "Josh Adonis",
           "name_normalised": "Josh Adonis",
-          "sessions": 63
+          "sessions": 64
         },
         {
           "hours": 562.311,
@@ -5208,11 +5208,11 @@
           "sessions": 58
         },
         {
-          "hours": 445.028,
+          "hours": 453.803,
           "id": "giovon-van-wyk",
           "name": "Giovon Van Wyk",
           "name_normalised": "Giovon Van Wyk",
-          "sessions": 51
+          "sessions": 52
         },
         {
           "hours": 34.15,
@@ -5250,11 +5250,11 @@
           "sessions": 36
         },
         {
-          "hours": 274.216,
+          "hours": 282.716,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 36
+          "sessions": 37
         },
         {
           "hours": 295.159,
@@ -5320,8 +5320,8 @@
           "sessions": 16
         }
       ],
-      "from": "2025-08-14T00:00:00+00:00",
-      "to": "2026-08-13T23:59:59+00:00"
+      "from": "2025-08-15T00:00:00+00:00",
+      "to": "2026-08-14T23:59:59+00:00"
     },
     "billing-period": {
       "agents": [
@@ -5347,11 +5347,11 @@
           "sessions": 1
         },
         {
-          "hours": 83.99,
+          "hours": 92.99,
           "id": "josh-adonis",
           "name": "Josh Adonis",
           "name_normalised": "Josh Adonis",
-          "sessions": 13
+          "sessions": 14
         },
         {
           "hours": 137.348,
@@ -5396,11 +5396,11 @@
           "sessions": 14
         },
         {
-          "hours": 110.699,
+          "hours": 119.473,
           "id": "giovon-van-wyk",
           "name": "Giovon Van Wyk",
           "name_normalised": "Giovon Van Wyk",
-          "sessions": 13
+          "sessions": 14
         },
         {
           "hours": 156.293,
@@ -5410,11 +5410,11 @@
           "sessions": 17
         },
         {
-          "hours": 148.803,
+          "hours": 158.669,
           "id": "anne-mary-marias",
           "name": "Anne-Mary Marais",
           "name_normalised": "Anne-Mary Marais",
-          "sessions": 15
+          "sessions": 16
         },
         {
           "hours": 105.185,
@@ -5515,11 +5515,11 @@
           "sessions": 16
         },
         {
-          "hours": 119.662,
+          "hours": 128.161,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 16
+          "sessions": 17
         },
         {
           "hours": 126.231,
@@ -5605,20 +5605,6 @@
     "last-90": {
       "agents": [
         {
-          "hours": 453.549,
-          "id": "craig-carroll",
-          "name": "Craig Carroll",
-          "name_normalised": "Craig Carroll",
-          "sessions": 53
-        },
-        {
-          "hours": 552.575,
-          "id": "jason-hendricks",
-          "name": "Jason Hendricks",
-          "name_normalised": "Jason Hendricks",
-          "sessions": 65
-        },
-        {
           "hours": 461.992,
           "id": "anneeqa-williams",
           "name": "Anneeqa Williams",
@@ -5696,6 +5682,13 @@
           "sessions": 22
         },
         {
+          "hours": 449.166,
+          "id": "craig-carroll",
+          "name": "Craig Carroll",
+          "name_normalised": "Craig Carroll",
+          "sessions": 52
+        },
+        {
           "hours": 195.699,
           "id": "jamie-lee-smith",
           "name": "Jamie-Lee Smith",
@@ -5703,11 +5696,11 @@
           "sessions": 21
         },
         {
-          "hours": 350.633,
+          "hours": 359.633,
           "id": "josh-adonis",
           "name": "Josh Adonis",
           "name_normalised": "Josh Adonis",
-          "sessions": 51
+          "sessions": 52
         },
         {
           "hours": 172.098,
@@ -5794,6 +5787,13 @@
           "sessions": 26
         },
         {
+          "hours": 547.192,
+          "id": "jason-hendricks",
+          "name": "Jason Hendricks",
+          "name_normalised": "Jason Hendricks",
+          "sessions": 64
+        },
+        {
           "hours": 221.666,
           "id": "richard-du-plessis",
           "name": "Richard Du Plessis",
@@ -5857,11 +5857,11 @@
           "sessions": 69
         },
         {
-          "hours": 584.659,
+          "hours": 594.525,
           "id": "anne-mary-marias",
           "name": "Anne-Mary Marais",
           "name_normalised": "Anne-Mary Marais",
-          "sessions": 56
+          "sessions": 57
         },
         {
           "hours": 523.46,
@@ -5892,11 +5892,11 @@
           "sessions": 58
         },
         {
-          "hours": 445.028,
+          "hours": 453.803,
           "id": "giovon-van-wyk",
           "name": "Giovon Van Wyk",
           "name_normalised": "Giovon Van Wyk",
-          "sessions": 51
+          "sessions": 52
         },
         {
           "hours": 399.865,
@@ -5941,11 +5941,11 @@
           "sessions": 36
         },
         {
-          "hours": 274.216,
+          "hours": 282.716,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 36
+          "sessions": 37
         },
         {
           "hours": 295.159,
@@ -6011,8 +6011,8 @@
           "sessions": 16
         }
       ],
-      "from": "2026-05-16T00:00:00+00:00",
-      "to": "2026-08-13T23:59:59+00:00"
+      "from": "2026-05-17T00:00:00+00:00",
+      "to": "2026-08-14T23:59:59+00:00"
     },
     "last-week": {
       "agents": [
@@ -6338,11 +6338,11 @@
           "sessions": 2
         },
         {
-          "hours": 119.133,
+          "hours": 127.907,
           "id": "giovon-van-wyk",
           "name": "Giovon Van Wyk",
           "name_normalised": "Giovon Van Wyk",
-          "sessions": 14
+          "sessions": 15
         },
         {
           "hours": 152.23,
@@ -6366,11 +6366,11 @@
           "sessions": 13
         },
         {
-          "hours": 91.04,
+          "hours": 100.04,
           "id": "josh-adonis",
           "name": "Josh Adonis",
           "name_normalised": "Josh Adonis",
-          "sessions": 14
+          "sessions": 15
         },
         {
           "hours": 166.995,
@@ -6485,18 +6485,18 @@
           "sessions": 18
         },
         {
-          "hours": 128.345,
+          "hours": 136.845,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 17
+          "sessions": 18
         },
         {
-          "hours": 158.816,
+          "hours": 168.682,
           "id": "anne-mary-marias",
           "name": "Anne-Mary Marais",
           "name_normalised": "Anne-Mary Marais",
-          "sessions": 16
+          "sessions": 17
         },
         {
           "hours": 135.61,
@@ -6596,11 +6596,11 @@
           "sessions": 3
         },
         {
-          "hours": 17.04,
+          "hours": 25.54,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 2
+          "sessions": 3
         },
         {
           "hours": 24.489,
@@ -6617,11 +6617,11 @@
           "sessions": 3
         },
         {
-          "hours": 17.749,
+          "hours": 26.749,
           "id": "josh-adonis",
           "name": "Josh Adonis",
           "name_normalised": "Josh Adonis",
-          "sessions": 2
+          "sessions": 3
         },
         {
           "hours": 26.938,
@@ -6659,11 +6659,11 @@
           "sessions": 3
         },
         {
-          "hours": 17.025,
+          "hours": 25.799,
           "id": "giovon-van-wyk",
           "name": "Giovon Van Wyk",
           "name_normalised": "Giovon Van Wyk",
-          "sessions": 2
+          "sessions": 3
         },
         {
           "hours": 27.024,
@@ -6806,11 +6806,11 @@
           "sessions": 3
         },
         {
-          "hours": 21.592,
+          "hours": 31.458,
           "id": "anne-mary-marias",
           "name": "Anne-Mary Marais",
           "name_normalised": "Anne-Mary Marais",
-          "sessions": 2
+          "sessions": 3
         },
         {
           "hours": 32.788,
