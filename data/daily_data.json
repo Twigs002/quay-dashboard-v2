@@ -1,14 +1,21 @@
 [
   {
+    "date": "2026-08-16",
+    "generated": "2026-08-16T05:17:25.528640+00:00",
+    "rm": [],
+    "fancy": [],
+    "by_agent_campaign": {}
+  },
+  {
     "date": "2026-08-15",
-    "generated": "2026-08-15T17:25:12.960546+00:00",
+    "generated": "2026-08-16T05:17:25.528640+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-14",
-    "generated": "2026-08-15T17:25:12.960546+00:00",
+    "generated": "2026-08-16T05:17:25.528640+00:00",
     "rm": [
       {
         "name": "Test",
@@ -649,7 +656,7 @@
   },
   {
     "date": "2026-08-13",
-    "generated": "2026-08-15T17:25:12.960546+00:00",
+    "generated": "2026-08-16T05:17:25.528640+00:00",
     "rm": [
       {
         "name": "Test",
@@ -1151,7 +1158,7 @@
   },
   {
     "date": "2026-08-12",
-    "generated": "2026-08-15T17:25:12.960546+00:00",
+    "generated": "2026-08-16T05:17:25.528640+00:00",
     "rm": [
       {
         "name": "Test",
@@ -1340,32 +1347,6 @@
         "workPct": 99.2
       },
       {
-        "name": "AnneeqaWilliams",
-        "calls": 34,
-        "success": 10,
-        "seller": 2,
-        "rental": 0,
-        "email": 8,
-        "no_answer": 0,
-        "cph": 30.5,
-        "successRate": 29.4,
-        "workTime": 1.115,
-        "talkTime": 0.5519,
-        "wrapTime": 0.1567,
-        "pauseTime": 0.0053,
-        "waitTime": 0.4011,
-        "is_rm": false,
-        "meetsTarget": false,
-        "campaigns": [
-          "DRAGONS"
-        ],
-        "answered": 34,
-        "talkPct": 49.5,
-        "wrapPct": 14.1,
-        "waitPct": 36.0,
-        "workPct": 99.5
-      },
-      {
         "name": "ZivanaKriel",
         "calls": 30,
         "success": 10,
@@ -1534,17 +1515,6 @@
           "talkTime": 0.5256
         }
       },
-      "AnneeqaWilliams": {
-        "DRAGONS_CM": {
-          "calls": 34,
-          "success": 10,
-          "seller": 2,
-          "rental": 0,
-          "email": 8,
-          "workTime": 1.115,
-          "talkTime": 0.5519
-        }
-      },
       "BronwynBotha": {
         "DUTCHMEN_CM": {
           "calls": 43,
@@ -1699,7 +1669,7 @@
   },
   {
     "date": "2026-08-11",
-    "generated": "2026-08-15T17:25:12.960546+00:00",
+    "generated": "2026-08-16T05:17:25.528640+00:00",
     "rm": [
       {
         "name": "Test",
@@ -2275,14 +2245,14 @@
   },
   {
     "date": "2026-08-10",
-    "generated": "2026-08-15T17:25:12.960546+00:00",
+    "generated": "2026-08-16T05:17:25.528640+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-09",
-    "generated": "2026-08-15T17:25:12.960546+00:00",
+    "generated": "2026-08-16T05:17:25.528640+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
