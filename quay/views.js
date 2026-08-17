@@ -879,40 +879,67 @@ window.VIEWS = (function () {
 
   // ---------------------------------------------------- LEAD SOURCES (now: Campaigns)
   function leadSources(period) {
-    const camps = Q.campaignsFor(period || 'this-week');
-    if (!camps.length) {
+    const pk = period || 'this-week';
+    // Combined Dialfire dialling + Engine Room (ClientHub) calling, one row per
+    // team, each expandable into its CM / NA / New sources.
+    const teams = Q.leadSourceRows(pk);
+    if (!teams.length) {
       return `<div class="tab-view"><div class="card card-pad">
-        <h3 style="font-family:var(--serif);margin:0 0 8px">No campaign data</h3>
-        <div class="sub">No campaigns found for this period.</div></div></div>`;
+        <h3 style="font-family:var(--serif);margin:0 0 8px">No lead-source data</h3>
+        <div class="sub">No teams found for this period.</div></div></div>`;
     }
-    const totalCalls = camps.reduce((s, c) => s + c.calls, 0);
-    const totalLeads = camps.reduce((s, c) => s + c.leads, 0);
-    const totalEmails = camps.reduce((s, c) => s + c.email, 0);
-    const totalSeller = camps.reduce((s, c) => s + c.seller, 0);
-    const totalRental = camps.reduce((s, c) => s + c.rental, 0);
-    const maxCalls = camps[0].calls || 1;
-    const best = camps.slice().sort((a, b) => b.conv - a.conv)[0];
+    const totalCalls = teams.reduce((s, c) => s + c.calls, 0);
+    const totalLeads = teams.reduce((s, c) => s + c.leads, 0);
+    const totalEmails = teams.reduce((s, c) => s + c.email, 0);
+    const totalSeller = teams.reduce((s, c) => s + c.seller, 0);
+    const totalRental = teams.reduce((s, c) => s + c.rental, 0);
+    const totalER = teams.reduce((s, c) => s + (c.engineRoom ? c.engineRoom.calls : 0), 0);
+    const maxCalls = teams[0].calls || 1;
+    const best = teams.slice().sort((a, b) => b.conv - a.conv)[0];
 
-    const rows = camps.map((c, i) => {
+    // A team's drill-down: its Dialfire CM/NA/New + Engine Room CM/NA/New.
+    const sourceRows = (t) => {
+      if (!t.sources || !t.sources.length) {
+        return `<tr><td colspan="7" class="muted" style="padding:12px 16px;font-size:12.5px">
+          No per-source breakdown for this period yet.</td></tr>`;
+      }
+      return t.sources.map((s) => {
+        const dot = s.group === 'Engine Room' ? '#B98A02' : '#3D5BA6';
+        return `<tr>
+          <td style="padding-left:20px">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${dot};margin-right:8px"></span>
+            <span class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em">${s.group}</span>
+            <b style="margin-left:6px">${s.label}</b></td>
+          <td class="num tnum">${fmt(s.calls)}</td>
+          <td class="num tnum">${fmt(s.leads)}</td>
+          <td class="num tnum">${fmt(s.seller)}</td>
+          <td class="num tnum">${fmt(s.rental)}</td>
+          <td class="num tnum">${fmt(s.email)}</td>
+          <td class="num muted tnum">${s.conv}%</td>
+        </tr>`;
+      }).join('');
+    };
+
+    const rows = teams.map((c, i) => {
       const conv = c.conv;
       const pill = conv >= 12 ? 'ok' : conv >= 7 ? 'warn' : 'bad';
       const bar = (c.calls / maxCalls) * 100;
-      // Per-row overlap marker for historical weeks where per-campaign
-      // attribution wasn't yet stored. Previously the warning lived only
-      // in the per-campaign drill-down modal, so users glanced at this
-      // table and trusted numbers that could over-count.
       const overlap = c.exact === false;
       const nameSuffix = overlap
-        ? '<span title="Over-counted: this agent worked multiple campaigns and this row sums their total across all of them" style="margin-left:6px;color:var(--amber);font-weight:700;cursor:help" aria-label="Over-counted row">⚠</span>'
+        ? '<span title="Over-counted: a legacy week where an agent worked multiple campaigns and this row sums their total across all of them" style="margin-left:6px;color:var(--amber);font-weight:700;cursor:help" aria-label="Over-counted row">⚠</span>'
         : '';
-      return `<tr${overlap ? ' style="background:rgba(185,138,2,.04)"' : ''}`
-        + ` data-name="${String(c.name).replace(/"/g, '&quot;')}" data-agents="${c.agentsCount}"`
-        + ` data-calls="${c.calls}" data-leads="${c.leads}" data-seller="${c.seller}"`
-        + ` data-rental="${c.rental}" data-email="${c.email}" data-conv="${conv}">
+      const erBadge = c.engineRoom && c.engineRoom.calls
+        ? `<span class="pill" style="font-size:10px;padding:2px 7px;margin-left:8px;background:rgba(185,138,2,.12);color:#8a6a02" title="Includes Engine Room (ClientHub) calling">+ Engine Room</span>`
+        : '';
+      const head = `<tr class="ls-row"${overlap ? ' style="background:rgba(185,138,2,.04)"' : ''}`
+        + ` data-ls-key="${i}" data-name="${String(c.name).replace(/"/g, '&quot;')}"`
+        + ` data-agents="${c.agentsCount}" data-calls="${c.calls}" data-leads="${c.leads}"`
+        + ` data-seller="${c.seller}" data-rental="${c.rental}" data-email="${c.email}" data-conv="${conv}">
         <td class="num" style="font-weight:700;color:var(--muted);width:40px">${i + 1}</td>
-        <td><div class="agent-cell">
-          <span style="width:11px;height:11px;border-radius:3px;background:${c.color};display:inline-block"></span>
-          <span class="agent-name">${c.name}${nameSuffix}</span></div></td>
+        <td><a href="#" class="ls-link" data-ls-key="${i}" style="text-decoration:none;color:inherit">
+          <span class="ls-caret" aria-hidden="true" style="display:inline-block;width:12px;color:var(--muted)">▸</span>
+          <span style="width:11px;height:11px;border-radius:3px;background:${c.color};display:inline-block;vertical-align:middle;margin:0 6px"></span>
+          <span class="agent-name">${c.name}${nameSuffix}</span>${erBadge}</a></td>
         <td class="num tnum">${c.agentsCount}</td>
         <td class="num tnum">${fmt(c.calls)}</td>
         <td class="num tnum">${fmt(c.leads)}</td>
@@ -922,56 +949,62 @@ window.VIEWS = (function () {
         <td class="num"><span class="pill ${pill}${overlap ? '" style="opacity:.65' : ''}" title="${overlap ? 'Approximate — overlap-based aggregation' : ''}">${conv}%</span></td>
         <td class="num"><div class="cell-bar"><div class="track"><span style="width:${bar}%;background:${c.color}"></span></div></div></td>
       </tr>`;
+      const detail = `<tr class="ls-detail" data-ls-detail="${i}" style="display:none;background:#FAFBFC">
+        <td></td>
+        <td colspan="9" style="padding:0 10px 10px">
+          <table class="tbl" style="margin:0;width:100%;box-shadow:none">
+            <thead><tr>
+              <th style="padding-left:20px">Source</th>
+              <th class="num">Calls</th><th class="num">Leads</th><th class="num">Seller</th>
+              <th class="num">Rental</th><th class="num">Email</th><th class="num">Conv.</th>
+            </tr></thead>
+            <tbody>${sourceRows(c)}</tbody>
+          </table>
+        </td>
+      </tr>`;
+      return head + detail;
     }).join('');
 
     return `
     <div class="tab-view">
-      <div class="construction-banner" role="note">
-        <svg class="cb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
-        <div>
-          <b>Still under construction</b> — historical weeks still over-count when agents work multiple campaigns.
-          <div class="cb-sub">Once the Dialfire per-campaign backfill lands, conversion rates and lead splits will be exact across all periods.</div>
-        </div>
-      </div>
       <div class="row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
         ${miniStat('Best converter', best.name, best.conv + '% (' + fmt(best.leads) + ' / ' + fmt(best.calls) + ' calls)', I.star)}
-        ${miniStat('Seller leads', fmt(totalSeller), 'across all campaigns', I.medal)}
-        ${miniStat('Rental leads', fmt(totalRental), 'across all campaigns', I.home)}
-        ${miniStat('Email leads',  fmt(totalEmails), 'across all campaigns', I.mail)}
-        ${miniStat('Campaigns running', camps.length + '', best.agentsCount + ' agents on top campaign', I.layers)}
+        ${miniStat('Seller leads', fmt(totalSeller), 'Dialfire + Engine Room', I.medal)}
+        ${miniStat('Rental leads', fmt(totalRental), 'Dialfire + Engine Room', I.home)}
+        ${miniStat('Engine Room calls', fmt(totalER), 'of ' + fmt(totalCalls) + ' total', I.phone || I.layers)}
+        ${miniStat('Teams', teams.length + '', best.agentsCount + ' agents on top team', I.layers)}
       </div>
 
       <div class="mt">
         <div class="card">
-          <div class="card-head"><div><h3 id="lead-sources-tbl-h">Campaign performance</h3>
-            <div class="sub">Ranked by call volume · ${Q.PERIODS[period || 'this-week'].label} · variants like SURFERS_NA + SURFERS_CM are grouped</div></div>
+          <div class="card-head"><div><h3 id="lead-sources-tbl-h">Lead sources by team</h3>
+            <div class="sub">Combined Dialfire + Engine Room · ${(Q.PERIODS[pk] || {}).label || pk} · click a team to see its CM / NA / New sources</div></div>
             <button class="btn js-export">${I.download} Export CSV</button></div>
-          <div class="tbl-wrap"><table class="tbl tbl-sortable" id="lead-sources-tbl" aria-labelledby="lead-sources-tbl-h">
+          <div class="tbl-wrap"><table class="tbl" id="lead-sources-tbl" aria-labelledby="lead-sources-tbl-h">
             <thead><tr>
               <th class="num">#</th>
-              <th data-sort="name|str">Campaign<span class="sort-ind"></span></th>
-              <th class="num" data-sort="agents|num">Agents<span class="sort-ind"></span></th>
-              <th class="num" data-sort="calls|num">Calls<span class="sort-ind"></span></th>
-              <th class="num" data-sort="leads|num">Leads<span class="sort-ind"></span></th>
-              <th class="num" data-sort="seller|num">Seller<span class="sort-ind"></span></th>
-              <th class="num" data-sort="rental|num">Rental<span class="sort-ind"></span></th>
-              <th class="num" data-sort="email|num">Email<span class="sort-ind"></span></th>
-              <th class="num" data-sort="conv|num">Conv.<span class="sort-ind"></span></th>
+              <th>Team</th>
+              <th class="num">Agents</th>
+              <th class="num">Calls</th>
+              <th class="num">Leads</th>
+              <th class="num">Seller</th>
+              <th class="num">Rental</th>
+              <th class="num">Email</th>
+              <th class="num">Conv.</th>
               <th class="num">Volume</th>
             </tr></thead>
             <tbody>${rows}</tbody>
           </table></div>
           <details class="card-explainer">
-            <summary>${camps[0].exact ? I.check : I.alert} About these numbers · period totals: ${fmt(totalCalls)} calls · ${fmt(totalLeads)} leads · ${fmt(totalEmails)} emails</summary>
-            ${camps[0].exact ? `
-              <p><b style="color:var(--green)">Exact attribution.</b>
-                The Dialfire fetcher now stores per-agent stats per campaign, so
-                when an agent works multiple campaigns each row reflects only
-                the calls/leads they made on that specific campaign.</p>` : `
-              <p>Each agent's call/lead/email totals appear under <b>every campaign they're tagged on</b>.
-                When agents work multiple campaigns, the per-campaign rows
-                <b>over-count</b>. (Historical week — pre-dates the per-campaign breakdown.)</p>`}
-            <p>Variants like <code>SURFERS_NA</code>, <code>SURFERS_CM</code> and <code>SURFERS</code> are merged into one <b>SURFERS</b> row.</p>
+            <summary>${I.check} About these numbers · period totals: ${fmt(totalCalls)} calls · ${fmt(totalLeads)} leads · ${fmt(totalEmails)} emails</summary>
+            <p>Each team row combines <b>Dialfire</b> dialling with the team's <b>Engine Room</b> (ClientHub) calling
+              for the period. Expand a team to see where its calls come from: the Dialfire
+              <code>CM</code>/<code>NA</code>/<code>New</code> variants and the Engine Room
+              <code>CM</code>/<code>NA</code>/<code>New</code> campaigns.</p>
+            <p>Engine Room's per-source (CM/NA/New) split populates on the next scheduled
+              data refresh after this change ships; until then a team's Engine Room calls show as a single line.</p>
+            <p class="muted">Rows marked <span style="color:var(--amber)">⚠</span> are legacy weeks that
+              pre-date exact per-campaign attribution and may over-count on the Dialfire side.</p>
           </details>
         </div>
       </div>

@@ -114,30 +114,60 @@ def fetch_owner_leads(cid, token, ts):
     return out
 
 
-def aggregate(owner_calls, owner_leads, owner_map):
-    """owner-id -> per-team rows {team, owner_ids, calls, seller, rental, email}
-    (owners sharing a team name merge)."""
-    by_team = {}
-    owner_ids = set(owner_calls) | set(owner_leads)
-    for oid in owner_ids:
+def aggregate(per_campaign, owner_map):
+    """per_campaign: list of (label, owner_calls, owner_leads) — one entry per
+    ClientHub campaign (master/new/na). Returns per-team rows keeping both the
+    combined totals AND a `by_campaign` split so the dashboard's Lead Sources
+    drill-down can show Engine Room CM / NA / New per team.
+    (owners sharing a team name merge.)"""
+    def team_for(oid):
         # Dialfire returns a small "error" bucket for calls it can't attribute
         # to an owner — keep it as "Unassigned" (honest in the totals). A
         # numeric owner id missing from the map means the map needs a refresh.
-        team = owner_map.get(oid) or ("Unassigned" if not oid.isdigit() else f"Unmapped owner {oid}")
-        lead = owner_leads.get(oid) or {}
-        row = by_team.setdefault(team, {"team": team, "owner_ids": [], "calls": 0.0, "seller": 0, "rental": 0, "email": 0})
-        row["owner_ids"].append(oid)
-        row["calls"] += owner_calls.get(oid, 0.0)
-        row["seller"] += int(lead.get("seller", 0))
-        row["rental"] += int(lead.get("rental", 0))
-        row["email"] += int(lead.get("email", 0))
+        return owner_map.get(oid) or ("Unassigned" if not oid.isdigit() else f"Unmapped owner {oid}")
+
+    by_team = {}
+    for lbl, owner_calls, owner_leads in per_campaign:
+        owner_ids = set(owner_calls) | set(owner_leads)
+        for oid in owner_ids:
+            team = team_for(oid)
+            lead = owner_leads.get(oid) or {}
+            row = by_team.setdefault(team, {
+                "team": team, "owner_ids": set(),
+                "calls": 0.0, "seller": 0, "rental": 0, "email": 0,
+                "by_campaign": {},
+            })
+            row["owner_ids"].add(oid)
+            c = owner_calls.get(oid, 0.0)
+            s = int(lead.get("seller", 0))
+            r = int(lead.get("rental", 0))
+            em = int(lead.get("email", 0))
+            row["calls"] += c
+            row["seller"] += s
+            row["rental"] += r
+            row["email"] += em
+            bc = row["by_campaign"].setdefault(lbl, {"calls": 0.0, "seller": 0, "rental": 0, "email": 0})
+            bc["calls"] += c
+            bc["seller"] += s
+            bc["rental"] += r
+            bc["email"] += em
+
     rows = [{
         "team": r["team"],
-        "owner_ids": sorted(set(r["owner_ids"])),
+        "owner_ids": sorted(r["owner_ids"]),
         "calls": int(round(r["calls"])),
         "seller": r["seller"],
         "rental": r["rental"],
         "email": r["email"],
+        "by_campaign": {
+            lbl: {
+                "calls": int(round(v["calls"])),
+                "seller": v["seller"],
+                "rental": v["rental"],
+                "email": v["email"],
+            }
+            for lbl, v in sorted(r["by_campaign"].items(), key=lambda kv: _LABEL_ORDER.get(kv[0], 9))
+        },
     } for r in by_team.values()]
     rows.sort(key=lambda r: -r["calls"])
     return rows
@@ -229,8 +259,9 @@ def main():
     windows = {}
     for key, (frm, to) in windows_for(today).items():
         ts = dates_to_timespan(frm, to)
-        # Sum per-owner calls + seller/email across all present campaigns.
-        owner_calls, owner_leads, contributors = {}, {}, []
+        # Keep per-campaign owner calls + seller/rental/email so aggregate() can
+        # emit a per-team by_campaign split (Engine Room CM / NA / New).
+        per_campaign, contributors = [], []
         for cid, tok, lbl in campaigns:
             calls = fetch_owner_calls(cid, tok, ts)
             if calls is None:
@@ -243,14 +274,8 @@ def main():
                 continue
             leads = fetch_owner_leads(cid, tok, ts)
             contributors.append(lbl)
-            for oid, c in calls.items():
-                owner_calls[oid] = owner_calls.get(oid, 0.0) + c
-            for oid, lv in leads.items():
-                agg = owner_leads.setdefault(oid, {"seller": 0, "rental": 0, "email": 0})
-                agg["seller"] += lv.get("seller", 0)
-                agg["rental"] += lv.get("rental", 0)
-                agg["email"] += lv.get("email", 0)
-        teams = aggregate(owner_calls, owner_leads, owner_map)
+            per_campaign.append((lbl, calls, leads))
+        teams = aggregate(per_campaign, owner_map)
         windows[key] = {
             "from": frm.isoformat(), "to": to.isoformat(),
             "campaigns": contributors,

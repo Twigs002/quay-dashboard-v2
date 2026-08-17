@@ -949,6 +949,17 @@ window.QUAY_READY = (async function () {
     return n || raw;
   }
 
+  // The trailing source tag on a raw Dialfire campaign (AVENGERS_CM -> 'CM').
+  // Only CM / NA / NEW are meaningful sources; anything else buckets as 'BASE'
+  // so a stray suffix never invents a phantom source row in the drill-down.
+  const VARIANT_LABELS = { CM: 'CM', NA: 'NA', NEW: 'New' };
+  function campaignVariant(raw) {
+    const m = String(raw || '').trim().match(/_([A-Za-z0-9]{1,6})$/);
+    if (!m) return 'BASE';
+    const s = m[1].toUpperCase();
+    return (s === 'CM' || s === 'NA' || s === 'NEW') ? s : 'BASE';
+  }
+
   function campaignsFor(periodKey) {
     // Live current week: build the slice from daily snapshots (Mon → today)
     // instead of weeks[]. Daily entries carry the same by_agent_campaign /
@@ -976,7 +987,7 @@ window.QUAY_READY = (async function () {
             const camp = normalizeCampaignName(rawCamp);
             const cur = byCamp.get(camp) || {
               name: camp, calls: 0, leads: 0, seller: 0, rental: 0, email: 0,
-              _agents: new Set(), _exact: true,
+              _agents: new Set(), _exact: true, _variants: {},
             };
             cur.calls  += stats.calls   || 0;
             // 'leads' = seller leads only (per business definition).
@@ -986,6 +997,16 @@ window.QUAY_READY = (async function () {
             cur.rental += stats.rental  || 0;
             cur.email  += stats.email   || 0;
             cur._agents.add(agentName);
+            // Keep the CM / NA / New split so the Lead Sources drill-down can
+            // show where a team's calls come from (only exact weeks carry it).
+            const vk = campaignVariant(rawCamp);
+            const v = cur._variants[vk] || { calls: 0, leads: 0, seller: 0, rental: 0, email: 0 };
+            v.calls  += stats.calls  || 0;
+            v.leads  += stats.seller || 0;
+            v.seller += stats.seller || 0;
+            v.rental += stats.rental || 0;
+            v.email  += stats.email  || 0;
+            cur._variants[vk] = v;
             byCamp.set(camp, cur);
           });
         });
@@ -1022,6 +1043,7 @@ window.QUAY_READY = (async function () {
       agentsCount: c._agents.size,
       conv: c.calls ? +((c.leads / c.calls) * 100).toFixed(1) : 0,
       exact: !!c._exact,
+      variants: c._variants || {},   // { CM|NA|NEW|BASE: {calls,leads,seller,rental,email} }
     })).sort((a, b) => b.calls - a.calls);
     list.forEach((c, i) => { c.color = CAMP_PALETTE[i % CAMP_PALETTE.length]; });
     return list;
@@ -1049,6 +1071,142 @@ window.QUAY_READY = (async function () {
   const SOURCES = _topSourcesFor('this-week');
   // Public alias so the Overview donut can re-compute as the period changes.
   const sourcesFor = _topSourcesFor;
+
+  // ---- Lead Sources drill-down (Dialfire team + Engine Room, per source) ----
+  // The Lead Sources tab period keys (current-week/this-week/last-week/…) map
+  // onto the four ClientHub windows the Engine Room fetcher publishes. Periods
+  // with no matching window (billing-period, last-90, all-time) simply carry no
+  // Engine Room contribution.
+  function _clienthubWindowKey(periodKey) {
+    if (periodKey === 'current-week' || periodKey === 'this-week') return 'this-week';
+    if (periodKey === 'last-week')  return 'last-week';
+    if (periodKey === 'this-month') return 'this-month';
+    if (periodKey === 'last-month') return 'last-month';
+    return null;
+  }
+
+  // canonicalKey -> ClientHub team row {team, calls, seller, rental, email,
+  // by_campaign:{master,new,na}} for the period. Empty map if no window.
+  function engineRoomByTeam(periodKey) {
+    const out = new Map();
+    const wk = _clienthubWindowKey(periodKey);
+    const win = wk && clienthubData && clienthubData.windows && clienthubData.windows[wk];
+    if (!win || !Array.isArray(win.teams)) return out;
+    win.teams.forEach(t => { if (t && t.team) out.set(teamCanonical(t.team), t); });
+    return out;
+  }
+
+  // ClientHub campaign label -> Lead Sources source label. Mirrors the
+  // Dialfire CM/NA/New tags so a team's drill-down reads uniformly.
+  const ER_LABELS = { master: 'CM', new: 'New', na: 'NA' };
+  const ER_ORDER  = { master: 0, new: 1, na: 2 };
+
+  function _emptyStat() { return { calls: 0, leads: 0, seller: 0, rental: 0, email: 0 }; }
+  function _withConv(s) { s.conv = s.calls ? +((s.leads / s.calls) * 100).toFixed(1) : 0; return s; }
+
+  // One row per team, combining Dialfire dialling + Engine Room (ClientHub)
+  // calling for the period. `sources` is the drill-down: the team's Dialfire
+  // CM/NA/New variants followed by its Engine Room CM/NA/New. Headline totals
+  // are the COMBINED figure. Teams that only appear on one side still show.
+  function leadSourceRows(periodKey) {
+    const camps = campaignsFor(periodKey);
+    const er = engineRoomByTeam(periodKey);
+    const erSeen = new Set();
+    const rows = [];
+
+    const buildSources = (df, erTeam) => {
+      const sources = [];
+      const variants = df && df.variants;
+      // Dialfire side: CM, NA, New (skip absent / all-zero).
+      let dfAdded = 0;
+      ['CM', 'NA', 'NEW'].forEach(vk => {
+        const v = variants && variants[vk];
+        if (!v || (!v.calls && !v.seller && !v.rental && !v.email)) return;
+        dfAdded++;
+        sources.push(_withConv({
+          group: 'Dialfire', variant: VARIANT_LABELS[vk],
+          label: VARIANT_LABELS[vk],
+          calls: v.calls, leads: v.leads != null ? v.leads : v.seller,
+          seller: v.seller, rental: v.rental, email: v.email,
+        }));
+      });
+      // Base campaign with no CM/NA/New tag (e.g. a plain 'SURFERS' feed) or a
+      // legacy week with no variant split: show one combined Dialfire line so
+      // the drill-down is never blank when there are Dialfire calls.
+      if (!dfAdded && df && (df.calls || df.seller || df.rental || df.email)) {
+        sources.push(_withConv({
+          group: 'Dialfire', variant: 'All', label: 'All',
+          calls: df.calls, leads: df.leads != null ? df.leads : df.seller,
+          seller: df.seller, rental: df.rental, email: df.email,
+        }));
+      }
+      // Engine Room side: master(CM), new(New), na(NA).
+      const bc = erTeam && erTeam.by_campaign;
+      if (bc) {
+        Object.keys(bc).sort((a, b) => (ER_ORDER[a] ?? 9) - (ER_ORDER[b] ?? 9)).forEach(lbl => {
+          const v = bc[lbl] || {};
+          if (!v.calls && !v.seller && !v.rental && !v.email) return;
+          sources.push(_withConv({
+            group: 'Engine Room', variant: ER_LABELS[lbl] || lbl,
+            label: ER_LABELS[lbl] || lbl,
+            calls: v.calls || 0, leads: v.seller || 0,
+            seller: v.seller || 0, rental: v.rental || 0, email: v.email || 0,
+          }));
+        });
+      } else if (erTeam && (erTeam.calls || erTeam.seller || erTeam.rental || erTeam.email)) {
+        // Older clienthub_teams.json (pre per-campaign split): show one line.
+        sources.push(_withConv({
+          group: 'Engine Room', variant: 'All', label: 'All',
+          calls: erTeam.calls || 0, leads: erTeam.seller || 0,
+          seller: erTeam.seller || 0, rental: erTeam.rental || 0, email: erTeam.email || 0,
+        }));
+      }
+      return sources;
+    };
+
+    const combine = (name, df, erTeam) => {
+      const total = _emptyStat();
+      ['calls', 'leads', 'seller', 'rental', 'email'].forEach(k => {
+        total[k] = (df ? df[k] || 0 : 0)
+          + (erTeam ? (k === 'leads' ? (erTeam.seller || 0) : (erTeam[k] || 0)) : 0);
+      });
+      _withConv(total);
+      return {
+        name,
+        calls: total.calls, leads: total.leads,
+        seller: total.seller, rental: total.rental, email: total.email, conv: total.conv,
+        agentsCount: df ? df.agentsCount : 0,
+        exact: df ? df.exact : true,
+        dialfire: df
+          ? { calls: df.calls, leads: df.leads, seller: df.seller, rental: df.rental, email: df.email }
+          : _emptyStat(),
+        engineRoom: erTeam
+          ? { calls: erTeam.calls || 0, leads: erTeam.seller || 0, seller: erTeam.seller || 0,
+              rental: erTeam.rental || 0, email: erTeam.email || 0 }
+          : _emptyStat(),
+        sources: buildSources(df, erTeam),
+      };
+    };
+
+    camps.forEach(c => {
+      const key = teamCanonical(c.name);
+      const erTeam = er.get(key);
+      if (erTeam) erSeen.add(key);
+      rows.push(combine(c.name, c, erTeam));
+    });
+
+    // Engine-Room-only teams (calling floor teams with no Dialfire campaign
+    // this period) still deserve a row so the picture is complete.
+    er.forEach((erTeam, key) => {
+      if (erSeen.has(key)) return;
+      rows.push(combine(erTeam.team, null, erTeam));
+    });
+
+    rows.sort((a, b) => b.calls - a.calls);
+    const palette = CAMP_PALETTE;
+    rows.forEach((r, i) => { r.color = palette[i % palette.length]; });
+    return rows;
+  }
 
   // ---- Expose ---------------------------------------------------------------
   // ---- Forecasting / pace projection ---------------------------------------
@@ -1353,6 +1511,7 @@ window.QUAY_READY = (async function () {
     AGENTS: agentsForWeek(weeks[0]),  // current week, sorted natural
     WEEKS, WEEK_CALLS, WEEK_SUCCESS, WEEK_LEADS, WEEK_ACTIVE, trendSeriesFor,
     SOURCES, sourcesFor, campaignsFor,
+    leadSourceRows, engineRoomByTeam,
     monthlyBreakdown, weeksBreakdown,
     dailyDates, dailyFor, latestDailyDate,
     MONTHS, MONTH_CALLS, MONTH_LEADS, MONTH_EMAILS, MONTH_RENTALS, MONTH_DFHOURS,
