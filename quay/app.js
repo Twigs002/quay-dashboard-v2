@@ -2074,11 +2074,12 @@
       const payEndStr = ymdLocal(end);
       const acRows = [
         // Group-header banner row (matches the source's merged section labels).
-        ['', '', '', 'TIME KEEPING ADMINISTRATION', '', '', '', 'PAYROLL DATA INPUT', '', '', '', '', '', 'PAYROLL ACTIONS & PROCESSING', '', '', '', '', ''],
+        ['', '', '', 'TIME KEEPING ADMINISTRATION', '', '', '', 'PAYROLL DATA INPUT', '', '', '', '', '', 'PAYROLL ACTIONS & PROCESSING', '', '', '', '', '', 'ENGINE ROOM SALARY', ''],
         ['Full Name & Surname', 'Emp. Status', 'Job Title', 'Billable Hours', 'Training Hours', 'Saturday Hours',
           'TOTAL BILLABLE HOURS', 'PRO RATA RATE', 'Last changed date', 'Working days per cycle',
           'Billable hours per day', 'Dial Fire Hourly Rate', 'PERCENTAGE OF HOURS WORKED',
-          'COST TO COMPANY EXC PAYROLL ADJ', '', 'COST TO COMPANY', 'PAY RUN Start Date', 'PAY RUN End Date', 'PAYROLL NOTES'],
+          'COST TO COMPANY EXC PAYROLL ADJ', '', 'COST TO COMPANY', 'PAY RUN Start Date', 'PAY RUN End Date', 'PAYROLL NOTES',
+          'FIXED SALARY', 'PRORATA SALARY'],
       ];
       const titleOrder = ['Broker Assistant', 'Fancy', 'Relationship Manager', 'LN', 'Broker', 'Assistant', 'Manager'];
       [...ETOT.keys()].sort((a, b) => {
@@ -2095,12 +2096,17 @@
         // fall back to salary ÷ 193.5, the source sheet's derivation.
         const rate = meta.hourlyRate != null ? meta.hourlyRate : (meta.salary != null ? meta.salary / EXPECTED : null);
         const cost = rate != null ? total * rate : null; // total billable hrs × rate = earnings
+        // Engine Room staff are salaried: surface the full fixed salary and the
+        // pro-rata amount (= COST TO COMPANY, salary × hours-worked ÷ 193.5).
+        const isEngineRoom = /engine\s*room/i.test(meta.division || '');
         acRows.push([
           agent, '', jobTitle(meta.designation), round2(billable), '', sat > 0 ? round2(sat) : '',
           round2(total), meta.salary != null ? round2(meta.salary) : '', '', WORK_DAYS,
           HRS_PER_DAY, rate != null ? round2(rate) : '', round2(total / EXPECTED),
           cost != null ? round2(cost) : '', '', cost != null ? round2(cost) : '',
           payStartStr, payEndStr, '',
+          isEngineRoom && meta.salary != null ? round2(meta.salary) : '',
+          isEngineRoom && cost != null ? round2(cost) : '',
         ]);
       });
 
