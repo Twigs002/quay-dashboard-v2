@@ -654,7 +654,7 @@
     else if (tab === 'monthly')  { host.innerHTML = V.monthly(); monthlyWire(); }
     else if (tab === 'manager')  { host.innerHTML = V.manager(period); managerWire(); }
     else if (tab === 'ln')       { host.innerHTML = renderLnLeaderboard(); wireLnLeaderboard(); }
-    else if (tab === 'sources')  { host.innerHTML = V.leadSources(period); sortableWire(document.getElementById('lead-sources-tbl')); }
+    else if (tab === 'sources')  { host.innerHTML = V.leadSources(period); leadSourcesWire(); }
     else if (tab === 'clienthub'){ host.innerHTML = renderClientHubTeams(); wireClientHubTeams(); }
     else if (tab === 'payroll')  { payrollState.hideSdl = false; host.innerHTML = V.payroll(payrollState); payrollWire(); }
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
@@ -1218,6 +1218,23 @@
         }
         detail.style.display = '';
         if (caret) caret.textContent = '▾';
+      });
+    });
+  }
+
+  // Lead Sources: click a team to inline-expand its per-source (CM / NA / New,
+  // Dialfire + Engine Room) breakdown. Mirrors monthlyWire's caret toggle.
+  function leadSourcesWire() {
+    document.querySelectorAll('a.ls-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const key = link.dataset.lsKey;
+        const detail = document.querySelector(`tr[data-ls-detail="${key}"]`);
+        const caret = link.querySelector('.ls-caret');
+        if (!detail) return;
+        const isOpen = detail.style.display !== 'none';
+        detail.style.display = isOpen ? 'none' : '';
+        if (caret) caret.textContent = isOpen ? '▸' : '▾';
       });
     });
   }
@@ -2164,14 +2181,20 @@
     return out;
   }
   function csvCampaigns() {
-    const camps = Q.campaignsFor(period);
-    const header = ['Campaign', 'Agents', 'Calls', 'Leads', 'Seller', 'Rental',
+    const teams = Q.leadSourceRows(period);
+    const header = ['Team', 'Source', 'Agents', 'Calls', 'Leads', 'Seller', 'Rental',
       'Email', 'Conversion %', 'Attribution'];
     const out = [header];
-    camps.forEach(c => out.push([
-      c.name, c.agentsCount, c.calls, c.leads, c.seller, c.rental, c.email,
-      c.conv, c.exact ? 'exact' : 'overlap',
-    ]));
+    teams.forEach(c => {
+      out.push([
+        c.name, 'TOTAL (Dialfire + Engine Room)', c.agentsCount, c.calls, c.leads,
+        c.seller, c.rental, c.email, c.conv, c.exact ? 'exact' : 'overlap',
+      ]);
+      (c.sources || []).forEach(s => out.push([
+        c.name, `${s.group} · ${s.label}`, '', s.calls, s.leads,
+        s.seller, s.rental, s.email, s.conv, '',
+      ]));
+    });
     return out;
   }
   function csvDaily() {
