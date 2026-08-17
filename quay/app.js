@@ -76,7 +76,6 @@
   // today/historical, not period-based, so it gets these instead of the chips).
   const DESIG_OPTS = [['all', 'All'], ['rm', 'RM'], ['ln', 'LN'], ['fancy', 'Fancy']];
   let liveDesig = 'all';       // Live Floor role filter: all | rm | ln | fancy
-  let chWindow = 'last-week';  // ClientHub Teams tab window: last-week | this-month | last-month
   // Active segment on the All Staff tab: 'overall' | 'per' | 'ln'. Persisted
   // across re-renders (e.g. period change) so users don't get bounced back
   // to Callers · Overall every time the page rebuilds.
@@ -160,7 +159,6 @@
     { id: 'monthly',    section: 'Time',        label: 'Monthly',        icon: I.cal2,     title: 'Monthly Breakdown',    sub: 'Month-by-month roll-up across every week of data' },
     { id: 'compare',    section: 'Time',        label: 'Compare',        icon: I.scale,    title: 'Period Comparison',    sub: 'Week vs week · month vs month' },
     { id: 'sources',    section: 'Strategy',    label: 'Lead Sources',   icon: I.target,   title: 'Lead Source Efficacy', sub: 'Which source converts best' },
-    { id: 'clienthub',  section: 'Strategy',    label: 'Engine Room',    icon: I.phone,   title: 'Engine Room calling',  sub: 'Per-team calls, seller leads, rental leads & emails across the ClientHub campaigns' },
     { id: 'clocks',     section: 'Admin',       label: 'Clocks',         icon: I.clock,    title: 'Clocks',               sub: 'Staff hours, requests & team — manage everything in one place' },
     { id: 'team',       section: 'Admin',       label: 'Staff',          icon: I.users,    title: 'Staff Directory',      sub: 'Roster · clock-in status · forgot-to-clock-out · mark absent · broker logins' },
     { id: 'payroll',    section: 'Admin',       label: 'Payroll',        icon: I.cal2,     title: 'Payroll · Divisions Allocations', sub: 'Pay-period hours by division — 21st → 20th' },
@@ -550,14 +548,13 @@
   //   ln           — end-of-day report From/To picker
   //   teams-report — per-team From/To picker
   //   compare      — week/month/agent sub-views + their own agent A/B range
-  //   clienthub    — Engine Room window selector (last-week/this-month/last-month)
   //   clocks       — embeds the quay-clock admin, which has its own pills
   //   team         — Staff Directory roster: no date dimension at all
   //   monthly      — all-time month-by-month roll-up: ignores period entirely
   // Payroll (own Billing Period) and Live Floor (own consolidated bar) are
   // handled explicitly in globalDateBar().
   const OWN_DATE_CONTROL = new Set([
-    'leadership', 'ln', 'teams-report', 'compare', 'clienthub', 'clocks', 'team', 'monthly',
+    'leadership', 'ln', 'teams-report', 'compare', 'clocks', 'team', 'monthly',
   ]);
 
   // Live Floor's header bar — the role filter (All/RM/LN/Fancy) plus its own
@@ -655,7 +652,6 @@
     else if (tab === 'manager')  { host.innerHTML = V.manager(period); managerWire(); }
     else if (tab === 'ln')       { host.innerHTML = renderLnLeaderboard(); wireLnLeaderboard(); }
     else if (tab === 'sources')  { host.innerHTML = V.leadSources(period); leadSourcesWire(); }
-    else if (tab === 'clienthub'){ host.innerHTML = renderClientHubTeams(); wireClientHubTeams(); }
     else if (tab === 'payroll')  { payrollState.hideSdl = false; host.innerHTML = V.payroll(payrollState); payrollWire(); }
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
     else if (tab === 'team')     { host.innerHTML = renderTeamView(); wireTeamView(); }
@@ -5032,101 +5028,6 @@
     if (!schedule) jobs.push(loadScheduleData());
     jobs.push(loadLiveStats());
     Promise.allSettled(jobs).then(() => { if (tab === 'live') render(); });
-  }
-
-  // ---------------------------------------------------- CLIENTHUB · BY TEAM
-  // Per-team calls / talk-time / leads on the ClientHub Master campaign.
-  // Each hubspot_owner_id is a team; data from fetch_clienthub_teams.py.
-  const CH_WINDOWS = [
-    ['this-week',  'This Week'],   // current week-to-date (live)
-    ['last-week',  'Last Week'],   // last completed Mon-Sun
-    ['this-month', 'This Month'],  // month-to-date
-    ['last-month', 'Last Month'],  // full previous calendar month
-  ];
-  function renderClientHubTeams() {
-    const ch = Q.CLIENTHUB;
-    if (!ch || !ch.windows) {
-      return `<div class="tab-view"><div class="card card-pad" style="text-align:center;color:var(--muted);padding:60px 20px">
-        ClientHub team stats aren't available yet. They populate on the next scheduled data refresh (<code>fetch_clienthub_teams.py</code>).
-      </div></div>`;
-    }
-    if (!ch.windows[chWindow]) chWindow = 'last-week';
-    const w = ch.windows[chWindow] || { teams: [], totals: {} };
-    const teams = (w.teams || []).slice().sort((a, b) => b.calls - a.calls);
-    const tot = w.totals || {};
-    const maxCalls = teams.length ? teams[0].calls : 1;
-
-    const toggle = CH_WINDOWS.map(([k, lbl]) =>
-      `<button class="qf-chip ${chWindow === k ? 'active' : ''}" data-chwin="${k}" type="button" aria-pressed="${chWindow === k}">${lbl}</button>`).join('');
-
-    const kpi = (icon, label, val, foot) => `<div class="card kpi">
-      <div class="kpi-top"><div class="kpi-ic">${icon}</div></div>
-      <div class="kpi-label">${label}</div>
-      <div class="kpi-val tnum">${val}</div>
-      <div class="kpi-foot">${foot}</div>
-    </div>`;
-
-    const rows = teams.map((t, i) => {
-      const bar = Math.min(100, (t.calls / (maxCalls || 1)) * 100);
-      const flag = t.team === 'Unassigned' ? ' style="color:var(--muted)"' : '';
-      return `<tr${flag}>
-        <td class="num tnum">${i + 1}</td>
-        <td>${escapeHtml(t.team)}</td>
-        <td class="num tnum">${fmt(t.calls)}</td>
-        <td class="num tnum">${fmt(t.seller || 0)}</td>
-        <td class="num tnum">${fmt(t.rental || 0)}</td>
-        <td class="num tnum">${fmt(t.email || 0)}</td>
-        <td class="num"><div class="cell-bar"><div class="track"><span style="width:${bar}%"></span></div></div></td>
-      </tr>`;
-    }).join('');
-
-    const camps = (w.campaigns || []).length ? (w.campaigns || []).join(' + ') : 'ClientHub';
-    return `<div class="tab-view">
-      <div class="card ov-filterbar">
-        <div class="qf-chips">${toggle}</div>
-        <div class="live-range-label">${escapeHtml(w.from || '')} → ${escapeHtml(w.to || '')} SAST</div>
-      </div>
-      <div class="row kpis mt">
-        ${kpi(I.phone,  'Total Calls',  fmt(tot.calls || 0), (tot.teams || teams.length) + ' teams')}
-        ${kpi(I.target, 'Seller Leads', fmt(tot.seller || 0), 'LEAD outcomes')}
-        ${kpi(I.target, 'Rental Leads', fmt(tot.rental || 0), 'RENTAL_LEAD outcomes')}
-        ${kpi(I.mail || I.target, 'Emails', fmt(tot.email || 0), 'GOT_EMAIL outcomes')}
-      </div>
-      <div class="card mt">
-        <div class="card-head">
-          <div><h3>Engine Room calling</h3><div class="sub">${escapeHtml(camps)} campaigns · calls · seller leads · rental leads · emails, by team</div></div>
-          <button class="btn" id="chExport" type="button">${I.download} Export CSV</button>
-        </div>
-        <div class="tbl-wrap"><table class="tbl">
-          <thead><tr>
-            <th class="num">#</th><th>Team</th>
-            <th class="num">Total Calls</th><th class="num">Seller Leads</th>
-            <th class="num">Rental Leads</th>
-            <th class="num">Emails</th><th class="num">Volume</th>
-          </tr></thead>
-          <tbody>${rows || '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">No team data for this window.</td></tr>'}</tbody>
-        </table></div>
-      </div>
-    </div>`;
-  }
-  function wireClientHubTeams() {
-    document.querySelectorAll('[data-chwin]').forEach(b =>
-      b.addEventListener('click', () => { chWindow = b.dataset.chwin; shell(); }));
-    const exp = document.getElementById('chExport');
-    if (exp) exp.addEventListener('click', () => {
-      const ch = Q.CLIENTHUB; const w = ch && ch.windows && ch.windows[chWindow];
-      if (!w) return;
-      const head = ['Team', 'TotalCalls', 'SellerLeads', 'RentalLeads', 'Emails', 'OwnerIDs'];
-      const lines = [head.join(',')].concat((w.teams || []).map(t => [
-        `"${(t.team || '').replace(/"/g, '""')}"`, t.calls, t.seller || 0, t.rental || 0, t.email || 0,
-        `"${(t.owner_ids || []).join(' ')}"`,
-      ].join(',')));
-      const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `engine_room_${chWindow}_${(w.to || '').replace(/-/g, '')}.csv`;
-      a.click(); URL.revokeObjectURL(url);
-    });
   }
 
   // Build a deterministic avatar background for a name. Same Quay-blue palette
