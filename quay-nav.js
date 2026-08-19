@@ -33,13 +33,14 @@ window.QuayNav = (function () {
     { id: 'hubspot',   label: 'Team Insights',         sub: 'HubSpot deals · division directory', url: 'https://twigs002.github.io/quay-hubspot/' },
     { id: 'boarding',  label: 'Boarding Tool',         sub: 'Onboard · provision · offboard',  url: 'https://twigs002.github.io/quay-1-boarding-tool/' },
     { id: 'polar',     label: 'Polar Push',            sub: 'Competition scoreboard',          url: 'https://twigs002.github.io/polar-push/' },
+    { id: 'invoicing', label: 'Broker Invoicing',      sub: 'SAGE → broker tax invoices',      url: 'https://twigs002.github.io/broker-invoicing/' },
     // { id: 'newapp', label: '…', sub: '…', url: 'https://…' },   <-- add new apps here
   ];
 
   // A small colour swatch per app so rows are quick to tell apart. Uses the
   // Quay 1 palette (blue / sky / yellow / red).
   const DOT = {
-    dashboard: '#3D5BA6', leads: '#FDC503', hubspot: '#98C5ED', boarding: '#D20A03', polar: '#1E2E59',
+    dashboard: '#3D5BA6', leads: '#FDC503', hubspot: '#98C5ED', boarding: '#D20A03', polar: '#1E2E59', invoicing: '#0E7C86',
   };
   const DEFAULT_DOT = '#3D5BA6';
 
