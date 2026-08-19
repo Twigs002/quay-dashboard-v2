@@ -2074,7 +2074,7 @@
       const payEndStr = ymdLocal(end);
       const acRows = [
         // Group-header banner row (matches the source's merged section labels).
-        ['', '', '', 'TIME KEEPING ADMINISTRATION', '', '', '', 'PAYROLL DATA INPUT', '', '', '', '', '', 'PAYROLL ACTIONS & PROCESSING', '', '', '', '', '', 'ENGINE ROOM SALARY', ''],
+        ['', '', '', 'TIME KEEPING ADMINISTRATION', '', '', '', 'PAYROLL DATA INPUT', '', '', '', '', '', 'PAYROLL ACTIONS & PROCESSING', '', '', '', '', '', 'SALARY BASIS', ''],
         ['Full Name & Surname', 'Emp. Status', 'Job Title', 'Billable Hours', 'Training Hours', 'Saturday Hours',
           'TOTAL BILLABLE HOURS', 'PRO RATA RATE', 'Last changed date', 'Working days per cycle',
           'Billable hours per day', 'Dial Fire Hourly Rate', 'PERCENTAGE OF HOURS WORKED',
@@ -2095,18 +2095,19 @@
         // Hourly rate: prefer the stored rate (used by Earnings/Invoicing);
         // fall back to salary ÷ 193.5, the source sheet's derivation.
         const rate = meta.hourlyRate != null ? meta.hourlyRate : (meta.salary != null ? meta.salary / EXPECTED : null);
-        const cost = rate != null ? total * rate : null; // total billable hrs × rate = earnings
-        // Engine Room staff are salaried: surface the full fixed salary and the
-        // pro-rata amount (= COST TO COMPANY, salary × hours-worked ÷ 193.5).
-        const isEngineRoom = /engine\s*room/i.test(meta.division || '');
+        // Salary basis (set per-staff in the Staff editor, default 'prorata'):
+        //   fixed   → COST TO COMPANY is the full monthly salary, hours ignored.
+        //   prorata → COST TO COMPANY = billable hrs × rate (salary ÷ 193.5).
+        const isFixedSalary = meta.salaryType === 'fixed' && meta.salary != null;
+        const cost = isFixedSalary ? meta.salary : (rate != null ? total * rate : null);
         acRows.push([
           agent, '', jobTitle(meta.designation), round2(billable), '', sat > 0 ? round2(sat) : '',
           round2(total), meta.salary != null ? round2(meta.salary) : '', '', WORK_DAYS,
           HRS_PER_DAY, rate != null ? round2(rate) : '', round2(total / EXPECTED),
           cost != null ? round2(cost) : '', '', cost != null ? round2(cost) : '',
           payStartStr, payEndStr, '',
-          isEngineRoom && meta.salary != null ? round2(meta.salary) : '',
-          isEngineRoom && cost != null ? round2(cost) : '',
+          isFixedSalary ? round2(meta.salary) : '',
+          !isFixedSalary && meta.salary != null && cost != null ? round2(cost) : '',
         ]);
       });
 
@@ -6250,9 +6251,17 @@
               <input id="tmHours" type="number" step="0.5" min="0" max="80" value="${escapeHtml(f.weekly_hours)}" placeholder="e.g. 40">
             </label>
           </div>
-          <label class="field"><span>Monthly salary (R)</span>
-            <input id="tmSalary" type="number" step="0.01" min="0" value="${escapeHtml(f.salary)}" placeholder="e.g. 12000.00">
-          </label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <label class="field"><span>Monthly salary (R)</span>
+              <input id="tmSalary" type="number" step="0.01" min="0" value="${escapeHtml(f.salary)}" placeholder="e.g. 12000.00">
+            </label>
+            <label class="field"><span>Salary type</span>
+              <select id="tmSalaryType">
+                <option value="prorata" ${f.salary_type !== 'fixed' ? 'selected' : ''}>Pro-rata (by hours)</option>
+                <option value="fixed" ${f.salary_type === 'fixed' ? 'selected' : ''}>Fixed (full salary)</option>
+              </select>
+            </label>
+          </div>
           ` : ''}
           ${isSuper ? `
           <label style="display:flex;align-items:center;gap:8px;font-size:13.5px">
@@ -6322,7 +6331,7 @@
         // Managers pick from RM/Fancy/LN/Assistant/Admin Assistant; default
         // them to RM. Supers keep the wider default of Fancy Caller.
         designation: (session && session.super) ? 'fancy' : 'rm',
-        hourly_rate: '', weekly_hours: '', salary: '',
+        hourly_rate: '', weekly_hours: '', salary: '', salary_type: 'prorata',
         admin: false, super: false,
         busy: false, error: '',
       };
@@ -6339,6 +6348,7 @@
           hourly_rate:  s.hourly_rate  != null ? String(s.hourly_rate)  : '',
           weekly_hours: s.weekly_hours != null ? String(s.weekly_hours) : '',
           salary:       s.salary       != null ? String(s.salary)       : '',
+          salary_type:  s.salary_type === 'fixed' ? 'fixed' : 'prorata',
           admin: !!s.is_admin, super: !!s.is_super,
           busy: false, error: '',
         };
@@ -6502,6 +6512,8 @@
     if (hours) hours.addEventListener('input', (e) => { f.weekly_hours = e.target.value; });
     const salary = document.getElementById('tmSalary');
     if (salary) salary.addEventListener('input', (e) => { f.salary = e.target.value; });
+    const salaryType = document.getElementById('tmSalaryType');
+    if (salaryType) salaryType.addEventListener('change', (e) => { f.salary_type = e.target.value; });
     const adm2 = document.getElementById('tmAdmin');
     if (adm2) adm2.addEventListener('change',(e) => { f.admin = e.target.checked; });
     const sup2 = document.getElementById('tmSuper');
@@ -6540,6 +6552,7 @@
           payload.hourly_rate  = f.hourly_rate  === '' ? null : Number(f.hourly_rate);
           payload.weekly_hours = f.weekly_hours === '' ? null : Number(f.weekly_hours);
           payload.salary       = f.salary       === '' ? null : Number(f.salary);
+          payload.salary_type  = f.salary_type === 'fixed' ? 'fixed' : 'prorata';
           payload.designation  = f.designation || null;
         }
         const res = await fetch(`${CFG.SUPABASE_URL}/functions/v1/admin-create-staff`, {
@@ -6561,6 +6574,12 @@
             allowed_sites: Array.isArray(f.allowed_sites) ? f.allowed_sites : [],
           }).eq('id', payload.id);
           if (sErr) throw new Error('Broker created, but app access could not be set: ' + sErr.message);
+        } else {
+          // The create Edge Function may not persist salary_type; set it in a
+          // follow-up PATCH (RLS allows a super/admin to update). Non-fatal.
+          const { error: stErr } = await window.sb.from('staff')
+            .update({ salary_type: payload.salary_type }).eq('id', payload.id);
+          if (stErr) console.warn('Staff created, but salary type could not be set:', stErr.message);
         }
       } else {
         // Direct PATCH for non-PIN fields — RLS allows it for admins.
@@ -6579,6 +6598,7 @@
               hourly_rate:  f.hourly_rate  === '' ? null : Number(f.hourly_rate),
               weekly_hours: f.weekly_hours === '' ? null : Number(f.weekly_hours),
               salary:       f.salary       === '' ? null : Number(f.salary),
+              salary_type:  f.salary_type === 'fixed' ? 'fixed' : 'prorata',
             };
         const { error } = await window.sb.from('staff').update(patch).eq('id', f.id);
         if (error) throw new Error(error.message);

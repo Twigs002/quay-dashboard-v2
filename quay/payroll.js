@@ -626,7 +626,7 @@
     // period unpaired and the view empty. _fetchAllEvents paginates.
     const [staffRes, events] = await Promise.all([
       window.sb.from('staff')
-        .select('id, name, designation, division, active, hourly_rate, salary, is_broker')
+        .select('id, name, designation, division, active, hourly_rate, salary, salary_type, is_broker')
         .order('name', { ascending: true }),
       _fetchAllEvents(fromISO, toISO),
     ])
@@ -638,6 +638,7 @@
     const divisionById = new Map()
     const rateById = new Map()
     const salaryById = new Map()
+    const salaryTypeById = new Map()
     // Brokers are login-only accounts (no clock-in, no payroll). They should
     // never produce clock events, but exclude them defensively so a stray
     // event can never surface a broker in the pay run.
@@ -648,6 +649,7 @@
       divisionById.set(s.id, s.division || '')
       rateById.set(s.id, s.hourly_rate == null ? null : Number(s.hourly_rate))
       salaryById.set(s.id, s.salary == null ? null : Number(s.salary))
+      salaryTypeById.set(s.id, s.salary_type === 'fixed' ? 'fixed' : 'prorata')
       if (s.is_broker === true || String(s.designation || '').toLowerCase() === 'broker') brokerIds.add(s.id)
     })
 
@@ -708,6 +710,7 @@
             division: divisionById.get(staffId) || '',
             hourlyRate: rateById.get(staffId),
             salary: salaryById.get(staffId),
+            salaryType: salaryTypeById.get(staffId) || 'prorata',
             clockInAt: openIn.ts,
             clockOutAt: ev.ts,
             shiftHours: hrs,
@@ -774,6 +777,7 @@
         empMeta.set(emp, {
           hourlyRate: sh.hourlyRate == null ? null : Number(sh.hourlyRate),
           salary: sh.salary == null ? null : Number(sh.salary),
+          salaryType: sh.salaryType || 'prorata',
           designation: sh.designation || '',
           division: sh.division || '',
         })
