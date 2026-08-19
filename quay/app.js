@@ -5978,11 +5978,18 @@
                         : (s.status === 'in' ? 'in ' + rel(s.lastIn) : (s.lastOut ? 'out ' + rel(s.lastOut) : '—')));
                 // Action buttons. Login-detail editing lives in the
                 // Clocks tab (the quay-clock admin iframe). On Staff
-                // Directory we only surface absence-related actions:
+                // Directory we surface absence-related actions plus, for
+                // superusers, an "Edit details" button that opens the staff
+                // editor (name, designation, pay, salary type):
                 //   - absent today: Unmark + Edit (edits the absence)
                 //   - clocked out: Mark absent
-                //   - on the clock / exempt: no buttons
-                const actionBtn = exempt
+                //   - on the clock / exempt: no absence buttons
+                //   - superuser (any status): Edit details
+                const canEditStaff = !!(session && session.super);
+                const editDetailsBtn = canEditStaff
+                  ? `<button class="btn small" data-edit-staff-id="${escapeHtml(s.id)}" title="Edit staff details — designation, pay, salary type">Edit details</button>`
+                  : '';
+                const absenceBtn = exempt
                   ? ''
                   : (ab
                       ? `<button class="btn small" data-unmark-absent-id="${escapeHtml(s.id)}" title="Unmark absent">Unmark</button>
@@ -5990,6 +5997,7 @@
                       : (s.status === 'in'
                           ? ''
                           : `<button class="btn small" data-mark-absent-id="${escapeHtml(s.id)}" data-mark-absent-name="${escapeHtml(s.name)}" title="Mark absent today">Mark absent</button>`));
+                const actionBtn = absenceBtn + editDetailsBtn;
                 return `<tr>
                 <td><div class="agent-cell"><div class="avatar">${escapeHtml(initialsOf(s.name))}</div>
                   <div class="agent-name">${escapeHtml(s.name)}</div></div></td>
