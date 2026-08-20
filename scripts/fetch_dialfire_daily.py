@@ -92,9 +92,12 @@ def fetch_campaign_week(campaign, ts):
         if isinstance(item, dict):
             ag = str(item.get("value", "")).strip()
             if ag in lead_counts:
-                item["seller"] = lead_counts[ag]["seller"]
-                item["rental"] = lead_counts[ag]["rental"]
-                item["email"]  = lead_counts[ag]["email"]
+                item["seller"]    = lead_counts[ag]["seller"]
+                item["rental"]    = lead_counts[ag]["rental"]
+                item["email"]     = lead_counts[ag]["email"]
+                # Keep NO_ANSWER so current-week (built from these daily
+                # snapshots) can report Answered / Connect% per team.
+                item["no_answer"] = lead_counts[ag]["no_answer"]
     return grp
 
 
@@ -254,14 +257,18 @@ def main():
                 ag_name = parsed["name"]
                 if ag_name not in by_agent_campaign:
                     by_agent_campaign[ag_name] = {}
+                _na  = int(parsed.get("no_answer", 0) or 0)
+                _ans = max(int(parsed.get("calls", 0) or 0) - _na, 0)
                 by_agent_campaign[ag_name][raw_name] = {
-                    "calls":    parsed["calls"],
-                    "success":  parsed["success"],
-                    "seller":   parsed["seller"],
-                    "rental":   parsed["rental"],
-                    "email":    parsed["email"],
-                    "workTime": parsed["workTime"],
-                    "talkTime": parsed["talkTime"],
+                    "calls":     parsed["calls"],
+                    "success":   parsed["success"],
+                    "seller":    parsed["seller"],
+                    "rental":    parsed["rental"],
+                    "email":     parsed["email"],
+                    "no_answer": _na,
+                    "answered":  _ans,
+                    "workTime":  parsed["workTime"],
+                    "talkTime":  parsed["talkTime"],
                 }
 
         finalize(agents)

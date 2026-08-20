@@ -2185,16 +2185,17 @@
   }
   function csvCampaigns() {
     const teams = Q.leadSourceRows(period);
-    const header = ['Team', 'Source', 'Agents', 'Calls', 'Leads', 'Seller', 'Rental',
-      'Email', 'Conversion %', 'Attribution'];
+    const header = ['Team', 'Source', 'Agents', 'Attempts', 'Answered', 'Connect %',
+      'Leads', 'Seller', 'Rental', 'Email', 'Conversion %', 'Attribution'];
     const out = [header];
     teams.forEach(c => {
       out.push([
-        c.name, 'TOTAL (Dialfire + Engine Room)', c.agentsCount, c.calls, c.leads,
-        c.seller, c.rental, c.email, c.conv, c.exact ? 'exact' : 'overlap',
+        c.name, 'TOTAL (Dialfire + Engine Room)', c.agentsCount, c.calls,
+        c.answered != null ? c.answered : '', c.connect != null ? c.connect : '',
+        c.leads, c.seller, c.rental, c.email, c.conv, c.exact ? 'exact' : 'overlap',
       ]);
       (c.sources || []).forEach(s => out.push([
-        c.name, `${s.group} · ${s.label}`, '', s.calls, s.leads,
+        c.name, `${s.group} · ${s.label}`, '', s.calls, '', '', s.leads,
         s.seller, s.rental, s.email, s.conv, '',
       ]));
     });
