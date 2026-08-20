@@ -932,6 +932,12 @@ window.VIEWS = (function () {
       const conv = c.conv;
       const pill = conv >= 12 ? 'ok' : conv >= 7 ? 'warn' : 'bad';
       const bar = (c.calls / maxCalls) * 100;
+      // Answered/Connect are measured on Dialfire auto-dials only. When a team
+      // also has manual Engine Room calls, `calls` (total attempts) exceeds the
+      // measured base — surface that so e.g. "4,300 attempts / 15 answered /
+      // 75%" reads as "75% of the 20 auto-dials", not a broken number.
+      const dialAtt = c.answeredCalls != null ? c.answeredCalls : (c.answered != null ? c.calls : 0);
+      const manualCalls = (c.answered != null && dialAtt) ? Math.max(c.calls - dialAtt, 0) : 0;
       const overlap = c.exact === false;
       const nameSuffix = overlap
         ? '<span title="Over-counted: a legacy week where an agent worked multiple campaigns and this row sums their total across all of them" style="margin-left:6px;color:var(--amber);font-weight:700;cursor:help" aria-label="Over-counted row">⚠</span>'
@@ -949,9 +955,13 @@ window.VIEWS = (function () {
           <span style="width:11px;height:11px;border-radius:3px;background:${c.color};display:inline-block;vertical-align:middle;margin:0 6px"></span>
           <span class="agent-name">${c.name}${nameSuffix}</span>${erBadge}</a></td>
         <td class="num tnum">${c.agentsCount}</td>
-        <td class="num tnum">${fmt(c.calls)}</td>
-        <td class="num tnum">${c.answered != null ? fmt(c.answered) : '<span class="muted" title="No per-team answered data for this period yet">—</span>'}</td>
-        <td class="num tnum">${c.connect != null ? c.connect + '%' : '<span class="muted">—</span>'}</td>
+        <td class="num tnum"${manualCalls ? ` title="${fmt(dialAtt)} auto-dial attempts + ${fmt(manualCalls)} manual Engine Room calls"` : ''}>${fmt(c.calls)}${manualCalls ? '<span class="muted" style="font-size:10px"> †</span>' : ''}</td>
+        <td class="num tnum">${c.answered != null
+            ? fmt(c.answered) + (manualCalls ? `<span class="muted" style="font-size:10px" title="Answered is measured on the ${fmt(dialAtt)} auto-dial attempts only. The ${fmt(manualCalls)} manual Engine Room calls have no pick-up signal.">/${fmt(dialAtt)}</span>` : '')
+            : '<span class="muted" title="No per-team answered data for this period yet">—</span>'}</td>
+        <td class="num tnum">${c.connect != null
+            ? `<span title="Connect = ${fmt(c.answered)} answered ÷ ${fmt(dialAtt)} auto-dial attempts${manualCalls ? ` (excludes ${fmt(manualCalls)} manual Engine Room calls with no pick-up data)` : ''}">${c.connect}%${manualCalls ? ' †' : ''}</span>`
+            : '<span class="muted">—</span>'}</td>
         <td class="num tnum">${fmt(c.leads)}</td>
         <td class="num tnum">${fmt(c.seller)}</td>
         <td class="num tnum">${fmt(c.rental)}</td>
@@ -1021,6 +1031,10 @@ window.VIEWS = (function () {
               Connect rate, so it counts wrong numbers and voicemail as answered. Answered/Connect are
               Dialfire-only (Engine Room has no pick-up signal) and show <b>—</b> for weeks that pre-date the
               2026-08-20 fetcher change until those weeks are backfilled.</p>
+            <p class="muted">A <b>†</b> marks teams that also do manual Engine Room (ClientHub)
+              calling. Those manual calls count in <b>Attempts</b> but have no pick-up signal, so
+              <b>Answered</b> and <b>Connect</b> are measured only on the team's Dialfire auto-dials
+              (shown as <code>answered/dials</code> and in the Connect tooltip).</p>
             <p>Engine Room's per-source (CM/NA/New) split populates on the next scheduled
               data refresh after this change ships; until then a team's Engine Room calls show as a single line.</p>
             <p class="muted">Rows marked <span style="color:var(--amber)">⚠</span> are legacy weeks that
