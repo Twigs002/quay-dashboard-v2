@@ -639,9 +639,9 @@
     const rateById = new Map()
     const salaryById = new Map()
     const salaryTypeById = new Map()
-    // Brokers are login-only accounts (no clock-in, no payroll). They should
-    // never produce clock events, but exclude them defensively so a stray
-    // event can never surface a broker in the pay run.
+    // Brokers & Senior Brokers are non-clocking roles (no clock-in, no
+    // payroll). They should never produce clock events, but exclude them
+    // defensively so a stray event can never surface one in the pay run.
     const brokerIds = new Set();
     (staff || []).forEach(s => {
       nameById.set(s.id, s.name || s.id)
@@ -650,7 +650,8 @@
       rateById.set(s.id, s.hourly_rate == null ? null : Number(s.hourly_rate))
       salaryById.set(s.id, s.salary == null ? null : Number(s.salary))
       salaryTypeById.set(s.id, s.salary_type === 'fixed' ? 'fixed' : 'prorata')
-      if (s.is_broker === true || String(s.designation || '').toLowerCase() === 'broker') brokerIds.add(s.id)
+      const desig = String(s.designation || '').toLowerCase()
+      if (s.is_broker === true || desig === 'broker' || desig === 'senior_broker') brokerIds.add(s.id)
     })
 
     // Group events by staff_id, sort each group by ts asc (the order-by

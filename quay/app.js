@@ -2063,7 +2063,7 @@
       const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       const end = s.period && s.period.end ? new Date(s.period.end) : null;
       const monthLabel = end ? `${MONTHS[end.getMonth()]} ${end.getFullYear()}` : 'Period';
-      const TITLE = { admin_assistant: 'Broker Assistant', assistant: 'Assistant', fancy: 'Fancy', rm: 'Relationship Manager', ln: 'LN', broker: 'Broker', manager: 'Manager', super_admin: 'Admin', payroll: 'Payroll' };
+      const TITLE = { admin_assistant: 'Broker Assistant', assistant: 'Assistant', fancy: 'Fancy', rm: 'Relationship Manager', ln: 'LN', broker: 'Broker', senior_broker: 'Senior Broker', manager: 'Manager', super_admin: 'Admin', payroll: 'Payroll' };
       const jobTitle = d => TITLE[d] || (d ? String(d).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '');
       const isSat = iso => iso && new Intl.DateTimeFormat('en-US', { timeZone: 'Africa/Johannesburg', weekday: 'short' }).format(new Date(iso)) === 'Sat';
       const satByAgent = new Map();
@@ -5277,7 +5277,7 @@
           .eq('active', true)
           .eq('is_admin', false)
           .eq('is_super', false)
-          .not('designation', 'in', '(manager,super_admin)'),
+          .not('designation', 'in', '(manager,super_admin,broker,senior_broker)'),
         window.sb.from('events').select('staff_id, ts, dir')
           .gte('ts', monday.toISOString()).lte('ts', weekEnd.toISOString())
           .order('ts', { ascending: true }),
@@ -5491,6 +5491,7 @@
           setSession({
             id: staff.id, name: staff.name, role: staff.role || '', team: staff.team || '',
             admin: true, super: !!staff.is_super, payroll: isPayrollLogin(staff),
+            allowed_sites: Array.isArray(staff.allowed_sites) ? staff.allowed_sites : [],
           });
           if (staff.is_super) tab = 'leadership';
           else if (isPayrollLogin(staff)) tab = 'payroll';
@@ -5672,27 +5673,59 @@
   let _absencesToday = new Map(); // staff_id -> {reason, reason_note, marked_by, marked_at}
   let _absenceModal = null;     // { staffId, name, reason, note, busy, error } when open
 
-  // Admin / Manager / Super Admin are exempt from clock-in expectations —
-  // they're not callers, so we don't count them in 'on the clock' stats,
-  // don't track forgot-to-clock-out for them, and skip schedule-adherence
-  // checks. Designation-based so it survives a manager not having
-  // is_admin set.
+  // ─── App access by designation (single source of truth) ────────────────
+  // Which Quay 1 apps (ids mirror quay-nav.js SITES + staff.allowed_sites)
+  // each designation may open. App access is LOCKED to the designation — the
+  // Staff modal writes staff.allowed_sites from this map on every save, and
+  // every Quay 1 app reads that column. Super admins additionally see every
+  // app via the switcher's isSuper path, but we store the full set too so the
+  // column is correct even for apps that don't special-case supers.
+  const APP_ACCESS_BY_DESIGNATION = {
+    super_admin:   ['dashboard', 'leads', 'hubspot', 'boarding', 'polar', 'invoicing'],
+    manager:       ['dashboard', 'boarding'],   // Admin: dashboard + on/off-boarding
+    payroll:       ['dashboard', 'invoicing'],  // Payroll: dashboard + broker invoicing
+    broker:        ['polar'],                    // Broker: Polar Push only
+    senior_broker: ['polar', 'boarding'],        // Senior Broker: Polar Push + boarding
+  };
+  // Everyone else (rm, fancy, ln, assistant, admin_assistant, rental_support)
+  // only ever opens the dashboard.
+  const DEFAULT_APP_ACCESS = ['dashboard'];
+  function appAccessFor(designation) {
+    const d = String(designation || '').toLowerCase();
+    return (APP_ACCESS_BY_DESIGNATION[d] || DEFAULT_APP_ACCESS).slice();
+  }
+  // Broker / Senior Broker are a role, not a clocking staff member: they never
+  // clock in, are never on payroll, and have locked app access. Detected by
+  // designation so a row added via the normal Staff flow behaves the same as
+  // any other staff member.
+  function isBrokerDesignation(designation) {
+    const d = String(designation || '').toLowerCase();
+    return d === 'broker' || d === 'senior_broker';
+  }
+
+  // Admin / Manager / Super Admin / Payroll — and Broker / Senior Broker — are
+  // exempt from clock-in expectations. They're not callers, so we don't count
+  // them in 'on the clock' stats, don't track forgot-to-clock-out for them,
+  // and skip schedule-adherence checks. Designation-based so it survives a
+  // manager not having is_admin set.
   function isExemptStaff(s) {
     if (!s) return false;
     if (s.is_super || s.is_admin) return true;
     const d = String(s.designation || '').toLowerCase();
-    return d === 'super_admin' || d === 'manager' || d === 'payroll';
+    return d === 'super_admin' || d === 'manager' || d === 'payroll'
+        || d === 'broker' || d === 'senior_broker';
   }
 
-  // Brokers are a separate class of account: they never clock in and only
-  // exist so they can log into the HubSpot marketing dashboard. We treat a
-  // row as a broker if the is_broker flag is set OR (legacy) its designation
-  // is 'broker'. Brokers are shown ONLY on the super-only Brokers tab — never
-  // in the Staff Directory — so managers never see them.
+  // A dedicated broker LOGIN (is_broker=true) is a separate class of account,
+  // managed on the super-only Brokers sub-tab: it never clocks in and exists
+  // only to log into other Quay 1 apps (e.g. HubSpot). Those rows are hidden
+  // from the Staff Directory. Note: this is distinct from a staff member whose
+  // *designation* is Broker/Senior Broker (added via the normal Staff flow) —
+  // those DO appear in the Directory (as clock-exempt) and are keyed off the
+  // designation, not this flag.
   function isBrokerRow(s) {
     if (!s) return false;
-    return s.is_broker === true
-        || String(s.designation || '').toLowerCase() === 'broker';
+    return s.is_broker === true;
   }
 
   async function loadTeam() {
@@ -5813,6 +5846,7 @@
       assistant:       'Assistant',
       admin_assistant: 'Admin Assistant',
       broker:          'Broker',
+      senior_broker:   'Senior Broker',
       rental_support:  'Rental Support',
       payroll:         'Payroll',
     }[d] || (d || '—'));
@@ -6159,6 +6193,8 @@
       ['admin_assistant', 'Admin Assistant'],
       ['rental_support',  'Rental Support'],
       ['payroll',         'Payroll (dashboard access)'],
+      ['broker',          'Broker'],
+      ['senior_broker',   'Senior Broker'],
     ];
     const MGR_DESIG = ['rm', 'fancy', 'ln', 'assistant', 'admin_assistant'];
     // Grantable apps for a broker (ids match quay-nav.js SITES + staff.allowed_sites).
@@ -6174,7 +6210,17 @@
     let desigOpts = isSuper ? ALL_DESIG : ALL_DESIG.filter(([v]) => MGR_DESIG.includes(v));
     // Managers may set salary + hourly rate when ADDING staff (adds run
     // through the service-role Edge Function). Editing pay stays super-only.
-    const showPay = !isBrokerModal && (isSuper || f.mode === 'add');
+    // Broker / Senior Broker are never on payroll, so no pay fields for them.
+    const isBrokerDesig = isBrokerDesignation(f.designation);
+    const showPay = !isBrokerModal && !isBrokerDesig && (isSuper || f.mode === 'add');
+    // Read-only summary of which apps the chosen designation unlocks. App
+    // access is LOCKED to the designation (APP_ACCESS_BY_DESIGNATION); labels
+    // come from the shared switcher so they never drift.
+    const _siteLabels = (window.QuayNav && Array.isArray(window.QuayNav.SITES))
+      ? window.QuayNav.SITES.reduce((m, s) => (m[s.id] = s.label, m), {})
+      : { dashboard: 'Performance Dashboard', leads: 'Seller Leads', hubspot: 'Team Insights',
+          boarding: 'Boarding Tool', polar: 'Polar Push', invoicing: 'Broker Invoicing' };
+    const appAccessSummary = appAccessFor(f.designation).map(id => _siteLabels[id] || id).join(' · ');
     // Edit-mode safety net: if we're editing someone whose current designation
     // is outside the manager-allowed set, keep it in the list so saving does
     // not silently change it (the value stays disabled-in-spirit — the DB
@@ -6242,6 +6288,11 @@
               ${desigOpts.map(([v, l]) => `<option value="${v}" ${f.designation === v ? 'selected' : ''}>${l}</option>`).join('')}
             </select>
           </label>
+          <div class="field"><span>App access</span>
+            <div class="muted" style="font-size:11.5px;margin-top:2px">
+              Locked to designation — this person may open: <b>${escapeHtml(appAccessSummary)}</b>${isBrokerDesig ? ' · never clocks in · no payroll' : ''}
+            </div>
+          </div>
           ${showPay ? `
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
             <label class="field"><span>Hourly rate (R)</span>
@@ -6263,7 +6314,7 @@
             </label>
           </div>
           ` : ''}
-          ${isSuper ? `
+          ${isSuper && !isBrokerDesig ? `
           <label style="display:flex;align-items:center;gap:8px;font-size:13.5px">
             <input id="tmAdmin" type="checkbox" ${f.admin ? 'checked' : ''}>
             <span>Admin — can open the manager dashboard</span>
@@ -6491,20 +6542,19 @@
     const desig = document.getElementById('tmDesignation');
     if (desig) desig.addEventListener('change', (e) => {
       f.designation = e.target.value;
-      // Sync Admin + Super checkboxes to match the chosen role so users
-      // don't have to remember to also untick a stale 'Super' from when
-      // the person used to be super_admin.
-      //   super_admin → Admin + Super
-      //   manager     → Admin only
-      //   anything else → neither
-      const isSuper = f.designation === 'super_admin';
-      const isAdmin = isSuper || f.designation === 'manager';
-      f.super = isSuper;
-      f.admin = isAdmin;
-      const adm = document.getElementById('tmAdmin');
-      const sup = document.getElementById('tmSuper');
-      if (adm) adm.checked = isAdmin;
-      if (sup) sup.checked = isSuper;
+      // Sync Admin + Super to match the chosen role so users don't have to
+      // remember to also untick a stale flag from a previous role.
+      //   super_admin              → Admin + Super
+      //   manager                  → Admin only
+      //   broker / senior_broker   → neither (never admin, never on payroll)
+      //   anything else            → neither
+      const wantSuper = f.designation === 'super_admin';
+      const wantAdmin = wantSuper || f.designation === 'manager';
+      f.super = wantSuper;
+      f.admin = wantAdmin;
+      // Re-render so the pay fields, Admin/Super toggles and the App-access
+      // summary all reflect the new designation (they're computed at render).
+      shell();
     });
     const rate  = document.getElementById('tmRate');
     if (rate)  rate.addEventListener('input',  (e) => { f.hourly_rate  = e.target.value; });
@@ -6547,11 +6597,13 @@
           payload.is_super    = false;
           payload.email       = (f.email || '').trim() || null;
         } else {
-          payload.admin        = !!f.admin;
-          payload.is_super     = !!f.super;
-          payload.hourly_rate  = f.hourly_rate  === '' ? null : Number(f.hourly_rate);
-          payload.weekly_hours = f.weekly_hours === '' ? null : Number(f.weekly_hours);
-          payload.salary       = f.salary       === '' ? null : Number(f.salary);
+          // Broker / Senior Broker are never admins and never on payroll.
+          const brokerRole = isBrokerDesignation(f.designation);
+          payload.admin        = brokerRole ? false : !!f.admin;
+          payload.is_super     = brokerRole ? false : !!f.super;
+          payload.hourly_rate  = brokerRole ? null : (f.hourly_rate  === '' ? null : Number(f.hourly_rate));
+          payload.weekly_hours = brokerRole ? null : (f.weekly_hours === '' ? null : Number(f.weekly_hours));
+          payload.salary       = brokerRole ? null : (f.salary       === '' ? null : Number(f.salary));
           payload.salary_type  = f.salary_type === 'fixed' ? 'fixed' : 'prorata';
           payload.designation  = f.designation || null;
         }
@@ -6575,11 +6627,16 @@
           }).eq('id', payload.id);
           if (sErr) throw new Error('Broker created, but app access could not be set: ' + sErr.message);
         } else {
-          // The create Edge Function may not persist salary_type; set it in a
-          // follow-up PATCH (RLS allows a super/admin to update). Non-fatal.
+          // The create Edge Function may not persist salary_type or the
+          // designation-derived app access; set them in a follow-up PATCH.
+          // allowed_sites is written only by a super (the designations whose
+          // access is non-default — broker/senior_broker/manager/payroll — are
+          // all super-only picks anyway). Non-fatal: the row exists either way.
+          const followUp = { salary_type: payload.salary_type };
+          if (session && session.super) followUp.allowed_sites = appAccessFor(f.designation);
           const { error: stErr } = await window.sb.from('staff')
-            .update({ salary_type: payload.salary_type }).eq('id', payload.id);
-          if (stErr) console.warn('Staff created, but salary type could not be set:', stErr.message);
+            .update(followUp).eq('id', payload.id);
+          if (stErr) console.warn('Staff created, but app access / salary type could not be set:', stErr.message);
         }
       } else {
         // Direct PATCH for non-PIN fields — RLS allows it for admins.
@@ -6591,15 +6648,25 @@
               is_senior_broker: !!f.is_senior_broker,
               allowed_sites: Array.isArray(f.allowed_sites) ? f.allowed_sites : [],
             }
-          : {
-              name: f.name.trim(),
-              is_admin: !!f.admin, is_super: !!f.super,
-              designation: f.designation || null,
-              hourly_rate:  f.hourly_rate  === '' ? null : Number(f.hourly_rate),
-              weekly_hours: f.weekly_hours === '' ? null : Number(f.weekly_hours),
-              salary:       f.salary       === '' ? null : Number(f.salary),
-              salary_type:  f.salary_type === 'fixed' ? 'fixed' : 'prorata',
-            };
+          : (() => {
+              // Broker / Senior Broker are never admins and never on payroll.
+              const brokerRole = isBrokerDesignation(f.designation);
+              const p = {
+                name: f.name.trim(),
+                is_admin: brokerRole ? false : !!f.admin,
+                is_super: brokerRole ? false : !!f.super,
+                designation: f.designation || null,
+                hourly_rate:  brokerRole ? null : (f.hourly_rate  === '' ? null : Number(f.hourly_rate)),
+                weekly_hours: brokerRole ? null : (f.weekly_hours === '' ? null : Number(f.weekly_hours)),
+                salary:       brokerRole ? null : (f.salary       === '' ? null : Number(f.salary)),
+                salary_type:  f.salary_type === 'fixed' ? 'fixed' : 'prorata',
+              };
+              // App access is locked to the designation. Only a super writes it
+              // (non-default designations are super-only picks); a manager
+              // editing a caller leaves the column untouched.
+              if (session && session.super) p.allowed_sites = appAccessFor(f.designation);
+              return p;
+            })();
         const { error } = await window.sb.from('staff').update(patch).eq('id', f.id);
         if (error) throw new Error(error.message);
 
