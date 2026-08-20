@@ -9,16 +9,23 @@
    fall back to the historical `workTime / 0.85` estimate. */
 
 window.QUAY_READY = (async function () {
+  // `cache: 'no-cache'` forces the browser to REVALIDATE these data files with
+  // the server on every load (conditional request via ETag). Without it the
+  // browser serves a stale cached copy, so cron data refreshes (which don't
+  // bump QUAY_BUILD) stay invisible for hours. Revalidation is cheap — the CDN
+  // returns 304 when the file is unchanged, and the full body only when it
+  // actually changed.
+  const NC = { cache: 'no-cache' };
   const [weekly, history, clockData, dailyData, clienthubData] = await Promise.all([
-    fetch('data/weekly_data.json').then(r => r.json()),
-    fetch('data/history.json').then(r => r.json()),
-    fetch('data/clock_data.json').then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch('data/weekly_data.json', NC).then(r => r.json()),
+    fetch('data/history.json', NC).then(r => r.json()),
+    fetch('data/clock_data.json', NC).then(r => r.ok ? r.json() : null).catch(() => null),
     // Per-day stats from fetch_dialfire_daily.py — file may not exist yet
     // if the workflow hasn't run successfully. Treat as empty in that case.
-    fetch('data/daily_data.json').then(r => r.ok ? r.json() : []).catch(() => []),
+    fetch('data/daily_data.json', NC).then(r => r.ok ? r.json() : []).catch(() => []),
     // ClientHub Master per-team stats (fetch_clienthub_teams.py). Null until
     // the workflow has run; the tab renders a friendly empty state then.
-    fetch('data/clienthub_teams.json').then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch('data/clienthub_teams.json', NC).then(r => r.ok ? r.json() : null).catch(() => null),
   ]);
 
   // Build a name → clocked hours map from the quay-clock fetcher output.
