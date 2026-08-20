@@ -232,7 +232,8 @@ window.VIEWS = (function () {
     const designationPill = (d) => {
       const lc = (d || '').toLowerCase();
       const cls = lc === 'ln' ? 'rm' : (lc === 'assistant' ? 'fancy' : '');
-      const label = lc === 'ln' ? 'LN' : (lc === 'assistant' ? 'Assistant' : (d || '—'));
+      const NICE = { ln: 'LN', assistant: 'Assistant', broker: 'Broker', senior_broker: 'Senior Broker' };
+      const label = NICE[lc] || (d || '—');
       return `<span class="pill ${cls}" style="font-size:10.5px;padding:2px 8px">${label}</span>`;
     };
 
