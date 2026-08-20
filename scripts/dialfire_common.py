@@ -30,6 +30,21 @@ SELLER_STATUSES = {"LEAD"}
 RENTAL_STATUSES = {"RENTAL_LEAD"}
 EMAIL_STATUSES  = {"GOT_EMAIL"}
 
+# Dialfire $status_detail values that mean the call was NOT picked up by anyone
+# (no human, no machine) — used to derive "Answered" = completed − not-picked-up.
+# Verified 2026-08-20 against the live editsDef_v2 Lead_Status report: every
+# completed dial carries exactly one status_detail and the buckets sum to
+# `completed`, so subtracting these gives an exact connected/answered count.
+# "Answered" here = Connect Rate (line picked up, incl. wrong-number / voicemail /
+# not-engaging). To switch to a stricter Contact rate, also list statuses like
+# WRONG_NUMBER / NOT_ENGAGING below.
+NO_PICKUP_STATUSES = {
+    "NO_ANSWER",              # rang out, nobody answered
+    "NUMBERS_NOT_IN_SERVICE", # dead / disconnected line
+    "BUSY", "CONGESTION",     # network could not connect the call
+    "FAILED", "NO_DIAL",      # dial never completed
+}
+
 # Agents who ONLY work these campaigns are classified as "RM" (relationship
 # manager). Anyone working a ClientHub variant plus a non-ClientHub campaign
 # is "Fancy" (Fancy Caller). Stored lowercase for case-insensitive matching
@@ -221,7 +236,7 @@ def fetch_lead_counts(cid, token, ts, label):
         if   status_val in {s.upper() for s in SELLER_STATUSES}: bucket = "seller"
         elif status_val in {s.upper() for s in RENTAL_STATUSES}: bucket = "rental"
         elif status_val in {s.upper() for s in EMAIL_STATUSES}:  bucket = "email"
-        elif status_val == "NO_ANSWER":                          bucket = "no_answer"
+        elif status_val in {s.upper() for s in NO_PICKUP_STATUSES}: bucket = "no_answer"
         if bucket is None:
             continue
         for u in sgrp.get("groups", sgrp.get("children", [])):
@@ -284,8 +299,9 @@ def parse_row(row):
         "seller":      int(row.get("seller_lead") or row.get("seller") or 0),
         "rental":      int(row.get("rental_lead") or row.get("rental") or 0),
         "email":       int(row.get("got_email")   or row.get("email")  or 0),
-        # hs_lead_status == NO_ANSWER count (mixed in by the live daemon). Used
-        # to derive "Answered" = calls - no_answer in finalize().
+        # Count of NOT-picked-up calls (Dialfire dispositions in
+        # NO_PICKUP_STATUSES — no answer, dead line, busy, etc.), populated by
+        # fetch_lead_counts. Used to derive "Answered" = calls - no_answer.
         "no_answer":   int(row.get("no_answer") or 0),
         "cph":         cph,
         "successRate": sr,
@@ -347,9 +363,10 @@ def finalize(agents):
     for a in agents.values():
         a["cph"] = round(a["calls"] / a["workTime"], 1) if a["workTime"] > 0 else 0.0
         a["successRate"] = round(a["success"] / a["calls"] * 100, 1) if a["calls"] > 0 else 0.0
-        # "Answered" = every reached/dispositioned call, i.e. all completed
-        # calls except those left at hs_lead_status = NO_ANSWER. Includes
-        # "Declined" outcomes (NOT_ENGAGING, DO_NOT_CONTACT). Clamped >= 0.
+        # "Answered" = Connect Rate numerator = every completed call whose line
+        # was picked up, i.e. all completed dials except those in
+        # NO_PICKUP_STATUSES (NO_ANSWER, NUMBERS_NOT_IN_SERVICE, BUSY, …).
+        # Includes wrong-number / not-engaging / declined pickups. Clamped >= 0.
         a["answered"] = max(int(a.get("calls", 0)) - int(a.get("no_answer", 0)), 0)
 
         wt = a.get("workTime", 0) or 0

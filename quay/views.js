@@ -998,7 +998,7 @@ window.VIEWS = (function () {
               <th>Team</th>
               <th class="num">Agents</th>
               <th class="num" title="Call attempts — every dial the team completed (Dialfire + Engine Room)">Attempts</th>
-              <th class="num" title="Answered — attempts where someone was reached (Dialfire completed minus No Answer). Dialfire only.">Answered</th>
+              <th class="num" title="Answered — calls where the line was picked up (completed dials minus No Answer / not-in-service / busy). Dialfire only; includes wrong numbers &amp; voicemail.">Answered</th>
               <th class="num" title="Connect rate = Answered ÷ Dialfire attempts">Connect</th>
               <th class="num">Leads</th>
               <th class="num">Seller</th>
@@ -1015,10 +1015,12 @@ window.VIEWS = (function () {
               for the period. Expand a team to see where its calls come from: the Dialfire
               <code>CM</code>/<code>NA</code>/<code>New</code> variants and the Engine Room
               <code>CM</code>/<code>NA</code>/<code>New</code> campaigns.</p>
-            <p><b>Attempts</b> = every completed dial. <b>Answered</b> = attempts where someone
-              was reached (Dialfire completed minus <code>No Answer</code>); <b>Connect</b> = Answered ÷ Dialfire
-              attempts. Answered/Connect are Dialfire-only — Engine Room has no reached-call signal — and show
-              <b>—</b> for weeks that pre-date the 2026-08-20 fetcher change until those weeks are backfilled.</p>
+            <p><b>Attempts</b> = every completed dial. <b>Answered</b> = calls where the line was
+              picked up (completed dials minus <code>No Answer</code>, <code>Not in service</code> and
+              <code>Busy</code>); <b>Connect</b> = Answered ÷ Dialfire attempts. This is the telephony
+              Connect rate, so it counts wrong numbers and voicemail as answered. Answered/Connect are
+              Dialfire-only (Engine Room has no pick-up signal) and show <b>—</b> for weeks that pre-date the
+              2026-08-20 fetcher change until those weeks are backfilled.</p>
             <p>Engine Room's per-source (CM/NA/New) split populates on the next scheduled
               data refresh after this change ships; until then a team's Engine Room calls show as a single line.</p>
             <p class="muted">Rows marked <span style="color:var(--amber)">⚠</span> are legacy weeks that
