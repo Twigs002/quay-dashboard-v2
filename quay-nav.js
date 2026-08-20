@@ -31,7 +31,7 @@ window.QuayNav = (function () {
     { id: 'dashboard', label: 'Performance Dashboard', sub: 'Live team & caller stats',        url: 'https://twigs002.github.io/quay-dashboard-v2/' },
     { id: 'leads',     label: 'Seller Leads',          sub: 'Seller-lead pipeline',            url: 'https://twigs002.github.io/quay-leads/' },
     { id: 'hubspot',   label: 'Team Insights',         sub: 'HubSpot deals · division directory', url: 'https://twigs002.github.io/quay-hubspot/' },
-    { id: 'boarding',  label: 'Boarding Tool',         sub: 'Onboard · provision · offboard',  url: 'https://twigs002.github.io/quay-1-boarding-tool/' },
+    { id: 'boarding',  label: 'On/Offboarding Tool',   sub: 'Onboard · provision · offboard',  url: 'https://twigs002.github.io/quay-1-onoff-boarding-tool/' },
     { id: 'polar',     label: 'Polar Push',            sub: 'Competition scoreboard',          url: 'https://twigs002.github.io/polar-push/' },
     { id: 'invoicing', label: 'Broker Invoicing',      sub: 'SAGE → broker tax invoices',      url: 'https://twigs002.github.io/broker-invoicing/' },
     // { id: 'newapp', label: '…', sub: '…', url: 'https://…' },   <-- add new apps here
