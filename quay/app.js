@@ -4748,7 +4748,7 @@
     // hover tooltips AND the always-visible legend below the summary, so the
     // two can never drift. (Em dashes stripped per house style.)
     const CALLS_DEF    = "Total dial attempts (Dialfire's 'completed' column).";
-    const ANSWERED_DEF = "Calls where the person was reached — every completed call except No Answer (includes Declined outcomes).";
+    const ANSWERED_DEF = "Calls where the line was picked up (Connect rate): every completed dial except No Answer, not-in-service and busy. Includes wrong numbers and voicemail.";
 
     // Per-agent today's calls/leads. PRIMARY source is the live_stats table
     // (Mac daemon polls Dialfire every ~90s, pushes via Supabase realtime).
