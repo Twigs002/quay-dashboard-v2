@@ -149,9 +149,12 @@ def fetch_campaign_week(campaign, date_from, date_to):
                 if isinstance(item, dict):
                     ag_name = str(item.get("value","")).strip()
                     if ag_name in lead_counts:
-                        item["seller"] = lead_counts[ag_name]["seller"]
-                        item["rental"] = lead_counts[ag_name]["rental"]
-                        item["email"]  = lead_counts[ag_name]["email"]
+                        item["seller"]    = lead_counts[ag_name]["seller"]
+                        item["rental"]    = lead_counts[ag_name]["rental"]
+                        item["email"]     = lead_counts[ag_name]["email"]
+                        # NO_ANSWER retained so a re-run backfills Answered /
+                        # Connect% per team into historical weeks too.
+                        item["no_answer"] = lead_counts[ag_name]["no_answer"]
         return grp
 
     print(f"  [{label}] editsDef_v2 -> empty groups")
@@ -222,6 +225,7 @@ def main():
                 print(f"  [{raw_name}] skipped (fetch failure) — leaving any prior value untouched")
                 continue
             tot = {"calls":0, "success":0, "seller":0, "rental":0, "email":0,
+                   "no_answer":0, "answered":0,
                    "workTime":0.0, "talkTime":0.0, "wrapTime":0.0,
                    "pauseTime":0.0, "waitTime":0.0}
             seen_agents = set()
@@ -235,15 +239,21 @@ def main():
                 merge_agent_row(agents, parsed, cname)
                 if n not in by_agent_campaign:
                     by_agent_campaign[n] = {}
+                _na  = int(parsed.get("no_answer", 0) or 0)
+                _ans = max(int(parsed.get("calls", 0) or 0) - _na, 0)
                 by_agent_campaign[n][raw_name] = {
-                    "calls":    parsed["calls"],
-                    "success":  parsed["success"],
-                    "seller":   parsed["seller"],
-                    "rental":   parsed["rental"],
-                    "email":    parsed["email"],
-                    "workTime": parsed["workTime"],
-                    "talkTime": parsed["talkTime"],
+                    "calls":     parsed["calls"],
+                    "success":   parsed["success"],
+                    "seller":    parsed["seller"],
+                    "rental":    parsed["rental"],
+                    "email":     parsed["email"],
+                    "no_answer": _na,
+                    "answered":  _ans,
+                    "workTime":  parsed["workTime"],
+                    "talkTime":  parsed["talkTime"],
                 }
+                tot["no_answer"] += _na
+                tot["answered"]  += _ans
                 tot["calls"]    += parsed.get("calls", 0)
                 tot["success"]  += parsed.get("success", 0)
                 tot["seller"]   += parsed.get("seller", 0)

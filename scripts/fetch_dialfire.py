@@ -116,9 +116,13 @@ def fetch_campaign_week(campaign, ts):
         if isinstance(item, dict):
             ag = str(item.get("value", "")).strip()
             if ag in lead_counts:
-                item["seller"] = lead_counts[ag]["seller"]
-                item["rental"] = lead_counts[ag]["rental"]
-                item["email"]  = lead_counts[ag]["email"]
+                item["seller"]    = lead_counts[ag]["seller"]
+                item["rental"]    = lead_counts[ag]["rental"]
+                item["email"]     = lead_counts[ag]["email"]
+                # NO_ANSWER count for this (agent, campaign). Previously dropped,
+                # which forced answered == calls everywhere. Kept now so we can
+                # derive Answered / Connect% per team downstream.
+                item["no_answer"] = lead_counts[ag]["no_answer"]
     return grp
 
 
@@ -211,6 +215,7 @@ def main():
             fetch_failures.append(raw_name)
             continue
         tot = {"calls":0, "success":0, "seller":0, "rental":0, "email":0,
+               "no_answer":0, "answered":0,
                "workTime":0.0, "talkTime":0.0, "wrapTime":0.0,
                "pauseTime":0.0, "waitTime":0.0}
         seen_agents = set()
@@ -226,20 +231,29 @@ def main():
             ag_name = parsed["name"]
             if ag_name not in by_agent_campaign:
                 by_agent_campaign[ag_name] = {}
+            # Answered = reached calls = completed − NO_ANSWER (clamped >= 0),
+            # mirroring dialfire_common.finalize()'s per-agent definition but
+            # kept here at the per-campaign grain for team Connect% reporting.
+            _na  = int(parsed.get("no_answer", 0) or 0)
+            _ans = max(int(parsed.get("calls", 0) or 0) - _na, 0)
             by_agent_campaign[ag_name][raw_name] = {
-                "calls":    parsed["calls"],
-                "success":  parsed["success"],
-                "seller":   parsed["seller"],
-                "rental":   parsed["rental"],
-                "email":    parsed["email"],
-                "workTime": parsed["workTime"],
-                "talkTime": parsed["talkTime"],
+                "calls":     parsed["calls"],
+                "success":   parsed["success"],
+                "seller":    parsed["seller"],
+                "rental":    parsed["rental"],
+                "email":     parsed["email"],
+                "no_answer": _na,
+                "answered":  _ans,
+                "workTime":  parsed["workTime"],
+                "talkTime":  parsed["talkTime"],
             }
-            tot["calls"]    += parsed.get("calls", 0)
-            tot["success"]  += parsed.get("success", 0)
-            tot["seller"]   += parsed.get("seller", 0)
-            tot["rental"]   += parsed.get("rental", 0)
-            tot["email"]    += parsed.get("email", 0)
+            tot["calls"]     += parsed.get("calls", 0)
+            tot["success"]   += parsed.get("success", 0)
+            tot["seller"]    += parsed.get("seller", 0)
+            tot["rental"]    += parsed.get("rental", 0)
+            tot["email"]     += parsed.get("email", 0)
+            tot["no_answer"] += _na
+            tot["answered"]  += _ans
             tot["workTime"] += parsed.get("workTime", 0.0)
             tot["talkTime"] += parsed.get("talkTime", 0.0)
             tot["wrapTime"] += parsed.get("wrapTime", 0.0)

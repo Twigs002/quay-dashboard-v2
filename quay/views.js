@@ -895,6 +895,13 @@ window.VIEWS = (function () {
     const totalSeller = teams.reduce((s, c) => s + c.seller, 0);
     const totalRental = teams.reduce((s, c) => s + c.rental, 0);
     const totalER = teams.reduce((s, c) => s + (c.engineRoom ? c.engineRoom.calls : 0), 0);
+    // Floor-wide Connect% = total answered ÷ the Dialfire attempts those
+    // answered figures cover (null when no team has answered data this period).
+    const totalAnswered = teams.reduce((s, c) => s + (c.answered || 0), 0);
+    const totalAnsCalls = teams.reduce((s, c) => s + (c.answeredCalls || 0), 0);
+    const anyAnswered   = teams.some(c => c.answered != null);
+    const floorConnect  = anyAnswered && totalAnsCalls
+      ? +((totalAnswered / totalAnsCalls) * 100).toFixed(1) : null;
     const maxCalls = teams[0].calls || 1;
     const best = teams.slice().sort((a, b) => b.conv - a.conv)[0];
 
@@ -943,6 +950,8 @@ window.VIEWS = (function () {
           <span class="agent-name">${c.name}${nameSuffix}</span>${erBadge}</a></td>
         <td class="num tnum">${c.agentsCount}</td>
         <td class="num tnum">${fmt(c.calls)}</td>
+        <td class="num tnum">${c.answered != null ? fmt(c.answered) : '<span class="muted" title="No per-team answered data for this period yet">—</span>'}</td>
+        <td class="num tnum">${c.connect != null ? c.connect + '%' : '<span class="muted">—</span>'}</td>
         <td class="num tnum">${fmt(c.leads)}</td>
         <td class="num tnum">${fmt(c.seller)}</td>
         <td class="num tnum">${fmt(c.rental)}</td>
@@ -952,7 +961,7 @@ window.VIEWS = (function () {
       </tr>`;
       const detail = `<tr class="ls-detail" data-ls-detail="${i}" style="display:none;background:#FAFBFC">
         <td></td>
-        <td colspan="9" style="padding:0 10px 10px">
+        <td colspan="11" style="padding:0 10px 10px">
           <table class="tbl" style="margin:0;width:100%;box-shadow:none">
             <thead><tr>
               <th style="padding-left:20px">Source</th>
@@ -970,6 +979,8 @@ window.VIEWS = (function () {
     <div class="tab-view">
       <div class="row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
         ${miniStat('Best converter', best.name, best.conv + '% (' + fmt(best.leads) + ' / ' + fmt(best.calls) + ' calls)', I.star)}
+        ${miniStat('Connect rate', floorConnect != null ? floorConnect + '%' : '—',
+          floorConnect != null ? fmt(totalAnswered) + ' answered / ' + fmt(totalAnsCalls) + ' attempts' : 'awaiting per-team answered data', I.phone || I.medal)}
         ${miniStat('Seller leads', fmt(totalSeller), 'Dialfire + Engine Room', I.medal)}
         ${miniStat('Rental leads', fmt(totalRental), 'Dialfire + Engine Room', I.home)}
         ${miniStat('Engine Room calls', fmt(totalER), 'of ' + fmt(totalCalls) + ' total', I.phone || I.layers)}
@@ -986,7 +997,9 @@ window.VIEWS = (function () {
               <th class="num">#</th>
               <th>Team</th>
               <th class="num">Agents</th>
-              <th class="num">Calls</th>
+              <th class="num" title="Call attempts — every dial the team completed (Dialfire + Engine Room)">Attempts</th>
+              <th class="num" title="Answered — attempts where someone was reached (Dialfire completed minus No Answer). Dialfire only.">Answered</th>
+              <th class="num" title="Connect rate = Answered ÷ Dialfire attempts">Connect</th>
               <th class="num">Leads</th>
               <th class="num">Seller</th>
               <th class="num">Rental</th>
@@ -1002,6 +1015,10 @@ window.VIEWS = (function () {
               for the period. Expand a team to see where its calls come from: the Dialfire
               <code>CM</code>/<code>NA</code>/<code>New</code> variants and the Engine Room
               <code>CM</code>/<code>NA</code>/<code>New</code> campaigns.</p>
+            <p><b>Attempts</b> = every completed dial. <b>Answered</b> = attempts where someone
+              was reached (Dialfire completed minus <code>No Answer</code>); <b>Connect</b> = Answered ÷ Dialfire
+              attempts. Answered/Connect are Dialfire-only — Engine Room has no reached-call signal — and show
+              <b>—</b> for weeks that pre-date the 2026-08-20 fetcher change until those weeks are backfilled.</p>
             <p>Engine Room's per-source (CM/NA/New) split populates on the next scheduled
               data refresh after this change ships; until then a team's Engine Room calls show as a single line.</p>
             <p class="muted">Rows marked <span style="color:var(--amber)">⚠</span> are legacy weeks that

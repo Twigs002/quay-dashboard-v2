@@ -987,9 +987,21 @@ window.QUAY_READY = (async function () {
             const camp = normalizeCampaignName(rawCamp);
             const cur = byCamp.get(camp) || {
               name: camp, calls: 0, leads: 0, seller: 0, rental: 0, email: 0,
+              answered: 0, _ansCalls: 0, _hasAns: false,
               _agents: new Set(), _exact: true, _variants: {},
             };
             cur.calls  += stats.calls   || 0;
+            // Answered = reached calls. Only accumulate from records that
+            // actually carry the field (weeks fetched after 2026-08-20);
+            // _ansCalls is the matching call denominator so Connect% stays
+            // accurate even in mixed multi-week periods.
+            if (stats.answered != null || stats.no_answer != null) {
+              cur.answered  += stats.answered != null
+                ? stats.answered
+                : Math.max((stats.calls || 0) - (stats.no_answer || 0), 0);
+              cur._ansCalls += stats.calls || 0;
+              cur._hasAns = true;
+            }
             // 'leads' = seller leads only (per business definition).
             // Rental + email stay as their own columns.
             cur.leads  += stats.seller  || 0;
@@ -1040,6 +1052,11 @@ window.QUAY_READY = (async function () {
       name: c.name,
       calls: c.calls, leads: c.leads,
       seller: c.seller, rental: c.rental, email: c.email,
+      // Answered / Connect% — null when the period has no per-campaign answered
+      // data yet (legacy weeks pre-dating the 2026-08-20 fetcher change).
+      answered: c._hasAns ? c.answered : null,
+      connect: c._hasAns && c._ansCalls
+        ? +((c.answered / c._ansCalls) * 100).toFixed(1) : null,
       agentsCount: c._agents.size,
       conv: c.calls ? +((c.leads / c.calls) * 100).toFixed(1) : 0,
       exact: !!c._exact,
@@ -1175,6 +1192,11 @@ window.QUAY_READY = (async function () {
         name,
         calls: total.calls, leads: total.leads,
         seller: total.seller, rental: total.rental, email: total.email, conv: total.conv,
+        // Answered / Connect% are Dialfire-only (Engine Room has no reached-call
+        // concept). Attempts here = the Dialfire dial count that Connect% is over.
+        answered: df ? df.answered : null,
+        answeredCalls: df ? (df.answered != null ? df.calls : null) : null,
+        connect: df ? df.connect : null,
         agentsCount: df ? df.agentsCount : 0,
         exact: df ? df.exact : true,
         dialfire: df
