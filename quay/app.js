@@ -2074,12 +2074,12 @@
       const payEndStr = ymdLocal(end);
       const acRows = [
         // Group-header banner row (matches the source's merged section labels).
-        ['', '', '', 'TIME KEEPING ADMINISTRATION', '', '', '', 'PAYROLL DATA INPUT', '', '', '', '', '', 'PAYROLL ACTIONS & PROCESSING', '', '', '', '', '', 'SALARY BASIS', ''],
+        ['', '', '', 'TIME KEEPING ADMINISTRATION', '', '', '', 'PAYROLL DATA INPUT', '', '', '', '', '', 'PAYROLL ACTIONS & PROCESSING', '', '', '', '', '', 'SALARY BASIS', '', ''],
         ['Full Name & Surname', 'Emp. Status', 'Job Title', 'Billable Hours', 'Training Hours', 'Saturday Hours',
           'TOTAL BILLABLE HOURS', 'PRO RATA RATE', 'Last changed date', 'Working days per cycle',
           'Billable hours per day', 'Dial Fire Hourly Rate', 'PERCENTAGE OF HOURS WORKED',
           'COST TO COMPANY EXC PAYROLL ADJ', '', 'COST TO COMPANY', 'PAY RUN Start Date', 'PAY RUN End Date', 'PAYROLL NOTES',
-          'FIXED SALARY', 'PRORATA SALARY'],
+          'SALARY TYPE', 'FIXED SALARY', 'PRORATA SALARY'],
       ];
       const titleOrder = ['Broker Assistant', 'Fancy', 'Relationship Manager', 'LN', 'Broker', 'Assistant', 'Manager'];
       [...ETOT.keys()].sort((a, b) => {
@@ -2106,6 +2106,7 @@
           HRS_PER_DAY, rate != null ? round2(rate) : '', round2(total / EXPECTED),
           cost != null ? round2(cost) : '', '', cost != null ? round2(cost) : '',
           payStartStr, payEndStr, '',
+          meta.salaryType === 'fixed' ? 'Fixed' : 'Pro-rata',
           isFixedSalary ? round2(meta.salary) : '',
           !isFixedSalary && meta.salary != null && cost != null ? round2(cost) : '',
         ]);
