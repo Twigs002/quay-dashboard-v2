@@ -2021,12 +2021,13 @@
       });
 
       // ---- Sheet: Per-Agent Breakdown (one total row per agent for the period)
-      const paRows = [['Agent', 'Team / Division', 'Hours (HH:MM)', 'Hours (Decimal)', 'R-amount']];
+      const paRows = [['Agent', 'Salary Basis', 'Hours (HH:MM)', 'Hours (Decimal)', 'R-amount']];
       [...ETH.keys()].sort(byBase).forEach(agent => {
+        const meta = EMETA.get(agent) || {};
         const total = ETOT.get(agent) || 0;
-        const rate = (EMETA.get(agent) || {}).hourlyRate;
+        const rate = meta.hourlyRate;
         const pay = rate != null ? total * rate : null;
-        paRows.push([agent, '', PR.decimalToHHMM(total), round2(total), pay == null ? '' : round2(pay)]);
+        paRows.push([agent, meta.salaryType === 'fixed' ? 'Fixed' : 'Pro-rata', PR.decimalToHHMM(total), round2(total), pay == null ? '' : round2(pay)]);
       });
 
       // ---- Sheet 3: Divisions (wide pivot; percentages as decimal fractions)
