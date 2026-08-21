@@ -2343,7 +2343,7 @@
     }
     if (view === 'earnings') {
       const out = [['First name', 'Last name', 'Designation', 'Division',
-        'Hours (HH:MM)', 'Hours (Decimal)', 'Hourly Rate', 'Total Pay']];
+        'Hours (HH:MM)', 'Hours (Decimal)', 'Hourly Rate', 'Total Pay', 'Salary Type']];
       if (s.allocations) {
         const ETOT = s.allocations.empTotalHours;
         const EMETA = s.allocations.empMeta || new Map();
@@ -2362,16 +2362,17 @@
           out.push([fn, ln, meta.designation || '', meta.division || '',
             window.PAYROLL.decimalToHHMM(total), total.toFixed(2),
             rate == null ? '' : rate.toFixed(2),
-            pay == null ? '' : pay.toFixed(2)]);
+            pay == null ? '' : pay.toFixed(2),
+            meta.salaryType === 'fixed' ? 'Fixed' : 'Pro-rata']);
         });
         out.push(['TOTAL', '', '', '',
-          window.PAYROLL.decimalToHHMM(gHrs), gHrs.toFixed(2), '', gPay.toFixed(2)]);
+          window.PAYROLL.decimalToHHMM(gHrs), gHrs.toFixed(2), '', gPay.toFixed(2), '']);
       }
       return out;
     }
     if (view === 'comparison') {
       const out = [['First name', 'Last name', 'Designation', 'Division',
-        'Hours (Decimal)', 'Earned', 'Full Salary', '% of Salary', 'Shortfall']];
+        'Hours (Decimal)', 'Earned', 'Full Salary', '% of Salary', 'Shortfall', 'Salary Type']];
       if (s.allocations) {
         const ETOT = s.allocations.empTotalHours;
         const EMETA = s.allocations.empMeta || new Map();
@@ -2397,12 +2398,13 @@
             earned == null ? '' : earned.toFixed(2),
             salary == null ? '' : salary.toFixed(2),
             pct == null ? '' : pct.toFixed(0),
-            diff == null ? '' : diff.toFixed(2)]);
+            diff == null ? '' : diff.toFixed(2),
+            meta.salaryType === 'fixed' ? 'Fixed' : 'Pro-rata']);
         });
         const gPct = gSal > 0 ? (gEarn / gSal) * 100 : null;
         out.push(['TOTAL', '', '', '', '',
           gEarn.toFixed(2), gSal.toFixed(2),
-          gPct == null ? '' : gPct.toFixed(0), gDiff.toFixed(2)]);
+          gPct == null ? '' : gPct.toFixed(0), gDiff.toFixed(2), '']);
       }
       return out;
     }
