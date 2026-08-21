@@ -1,7 +1,14 @@
 [
   {
+    "date": "2026-08-21",
+    "generated": "2026-08-21T05:22:06.532254+00:00",
+    "rm": [],
+    "fancy": [],
+    "by_agent_campaign": {}
+  },
+  {
     "date": "2026-08-20",
-    "generated": "2026-08-20T17:35:16.848722+00:00",
+    "generated": "2026-08-21T05:22:06.532254+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -569,7 +576,7 @@
   },
   {
     "date": "2026-08-19",
-    "generated": "2026-08-20T17:35:16.848722+00:00",
+    "generated": "2026-08-21T05:22:06.532254+00:00",
     "rm": [
       {
         "name": "SadiqaCarelse",
@@ -656,7 +663,7 @@
         "seller": 0,
         "rental": 0,
         "email": 0,
-        "no_answer": 5,
+        "no_answer": 0,
         "cph": 781.2,
         "successRate": 0.0,
         "workTime": 0.0064,
@@ -669,7 +676,7 @@
         "campaigns": [
           "CLIENTHUB_NO_ANSWER"
         ],
-        "answered": 0,
+        "answered": 5,
         "talkPct": 0.0,
         "wrapPct": 68.8,
         "waitPct": 0.0,
@@ -1240,8 +1247,8 @@
           "seller": 0,
           "rental": 0,
           "email": 0,
-          "no_answer": 5,
-          "answered": 0,
+          "no_answer": 0,
+          "answered": 5,
           "workTime": 0.0064,
           "talkTime": 0.0
         }
@@ -1250,7 +1257,7 @@
   },
   {
     "date": "2026-08-18",
-    "generated": "2026-08-20T17:35:16.848722+00:00",
+    "generated": "2026-08-21T05:22:06.532254+00:00",
     "rm": [
       {
         "name": "SadiqaCarelse",
@@ -1830,7 +1837,7 @@
   },
   {
     "date": "2026-08-17",
-    "generated": "2026-08-20T17:35:16.848722+00:00",
+    "generated": "2026-08-21T05:22:06.532254+00:00",
     "rm": [
       {
         "name": "Test",
@@ -2433,21 +2440,21 @@
   },
   {
     "date": "2026-08-16",
-    "generated": "2026-08-20T17:35:16.848722+00:00",
+    "generated": "2026-08-21T05:22:06.532254+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-15",
-    "generated": "2026-08-20T17:35:16.848722+00:00",
+    "generated": "2026-08-21T05:22:06.532254+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-14",
-    "generated": "2026-08-20T17:35:16.848722+00:00",
+    "generated": "2026-08-21T05:22:06.532254+00:00",
     "rm": [
       {
         "name": "Test",
