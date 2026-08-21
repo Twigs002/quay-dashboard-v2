@@ -2074,12 +2074,12 @@
       const payEndStr = ymdLocal(end);
       const acRows = [
         // Group-header banner row (matches the source's merged section labels).
-        ['', '', '', 'TIME KEEPING ADMINISTRATION', '', '', '', 'PAYROLL DATA INPUT', '', '', '', '', '', 'PAYROLL ACTIONS & PROCESSING', '', '', '', '', '', 'SALARY BASIS', ''],
+        ['', '', '', 'TIME KEEPING ADMINISTRATION', '', '', '', 'PAYROLL DATA INPUT', '', '', '', '', '', 'PAYROLL ACTIONS & PROCESSING', '', '', '', '', '', 'SALARY BASIS', '', ''],
         ['Full Name & Surname', 'Emp. Status', 'Job Title', 'Billable Hours', 'Training Hours', 'Saturday Hours',
           'TOTAL BILLABLE HOURS', 'PRO RATA RATE', 'Last changed date', 'Working days per cycle',
           'Billable hours per day', 'Dial Fire Hourly Rate', 'PERCENTAGE OF HOURS WORKED',
           'COST TO COMPANY EXC PAYROLL ADJ', '', 'COST TO COMPANY', 'PAY RUN Start Date', 'PAY RUN End Date', 'PAYROLL NOTES',
-          'FIXED SALARY', 'PRORATA SALARY'],
+          'SALARY TYPE', 'FIXED SALARY', 'PRORATA SALARY'],
       ];
       const titleOrder = ['Broker Assistant', 'Fancy', 'Relationship Manager', 'LN', 'Broker', 'Assistant', 'Manager'];
       [...ETOT.keys()].sort((a, b) => {
@@ -2106,6 +2106,7 @@
           HRS_PER_DAY, rate != null ? round2(rate) : '', round2(total / EXPECTED),
           cost != null ? round2(cost) : '', '', cost != null ? round2(cost) : '',
           payStartStr, payEndStr, '',
+          meta.salaryType === 'fixed' ? 'Fixed' : 'Pro-rata',
           isFixedSalary ? round2(meta.salary) : '',
           !isFixedSalary && meta.salary != null && cost != null ? round2(cost) : '',
         ]);
@@ -2342,7 +2343,7 @@
     }
     if (view === 'earnings') {
       const out = [['First name', 'Last name', 'Designation', 'Division',
-        'Hours (HH:MM)', 'Hours (Decimal)', 'Hourly Rate', 'Total Pay']];
+        'Hours (HH:MM)', 'Hours (Decimal)', 'Hourly Rate', 'Total Pay', 'Salary Type']];
       if (s.allocations) {
         const ETOT = s.allocations.empTotalHours;
         const EMETA = s.allocations.empMeta || new Map();
@@ -2361,16 +2362,17 @@
           out.push([fn, ln, meta.designation || '', meta.division || '',
             window.PAYROLL.decimalToHHMM(total), total.toFixed(2),
             rate == null ? '' : rate.toFixed(2),
-            pay == null ? '' : pay.toFixed(2)]);
+            pay == null ? '' : pay.toFixed(2),
+            meta.salaryType === 'fixed' ? 'Fixed' : 'Pro-rata']);
         });
         out.push(['TOTAL', '', '', '',
-          window.PAYROLL.decimalToHHMM(gHrs), gHrs.toFixed(2), '', gPay.toFixed(2)]);
+          window.PAYROLL.decimalToHHMM(gHrs), gHrs.toFixed(2), '', gPay.toFixed(2), '']);
       }
       return out;
     }
     if (view === 'comparison') {
       const out = [['First name', 'Last name', 'Designation', 'Division',
-        'Hours (Decimal)', 'Earned', 'Full Salary', '% of Salary', 'Shortfall']];
+        'Hours (Decimal)', 'Earned', 'Full Salary', '% of Salary', 'Shortfall', 'Salary Type']];
       if (s.allocations) {
         const ETOT = s.allocations.empTotalHours;
         const EMETA = s.allocations.empMeta || new Map();
@@ -2396,12 +2398,13 @@
             earned == null ? '' : earned.toFixed(2),
             salary == null ? '' : salary.toFixed(2),
             pct == null ? '' : pct.toFixed(0),
-            diff == null ? '' : diff.toFixed(2)]);
+            diff == null ? '' : diff.toFixed(2),
+            meta.salaryType === 'fixed' ? 'Fixed' : 'Pro-rata']);
         });
         const gPct = gSal > 0 ? (gEarn / gSal) * 100 : null;
         out.push(['TOTAL', '', '', '', '',
           gEarn.toFixed(2), gSal.toFixed(2),
-          gPct == null ? '' : gPct.toFixed(0), gDiff.toFixed(2)]);
+          gPct == null ? '' : gPct.toFixed(0), gDiff.toFixed(2), '']);
       }
       return out;
     }
