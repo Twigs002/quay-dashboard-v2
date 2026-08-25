@@ -2756,7 +2756,7 @@
         </div>
       </div>` : `
       <div class="card mt" style="text-align:center;padding:26px">
-        <div class="muted">No agent activity for <b>${escapeHtml((Q.PERIODS[period] || {}).label || period)}</b> yet — top performer, best source and at-risk spotlights appear once the first calls of the period come in.</div>
+        <div class="muted">No agent activity for <b>${escapeHtml((Q.PERIODS[period] || {}).label || period)}</b> yet. Top performer, best source and at-risk spotlights appear once the first calls of the period come in.</div>
       </div>`}`}
 
       <!-- schedule adherence (real clock-in data) + LN daily recap -->
@@ -2777,7 +2777,7 @@
         </div>
         ${ovRange ? '' : `<div class="card">
           <div class="card-head"><div><h3>Insights</h3><div class="sub">Auto-generated · ${Q.PERIODS[period].label}</div></div></div>
-          <div class="insights">${hasSpot ? insights(t, d, top, bestSrc, risk, src) : '<div class="muted" style="padding:8px 2px">No activity for this period yet — insights appear once calls come in.</div>'}</div>
+          <div class="insights">${hasSpot ? insights(t, d, top, bestSrc, risk, src) : '<div class="muted" style="padding:8px 2px">No activity for this period yet. Insights appear once calls come in.</div>'}</div>
         </div>`}
       </div>
 
