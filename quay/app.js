@@ -6228,6 +6228,11 @@
     // Broker / Senior Broker are never on payroll, so no pay fields for them.
     const isBrokerDesig = isBrokerDesignation(f.designation);
     const showPay = !isBrokerModal && !isBrokerDesig && (isSuper || f.mode === 'add');
+    // Managers may reassign a caller/support role among the MGR_DESIG set (the
+    // quay-clock trigger permits it), but the designation stays locked when a
+    // manager edits someone whose current role is outside that set (a manager,
+    // super_admin, broker or payroll record) — those are superuser-only.
+    const desigLocked = !isSuper && isEdit && !MGR_DESIG.includes(f.designation);
     // Read-only summary of which apps the chosen designation unlocks. App
     // access is LOCKED to the designation (APP_ACCESS_BY_DESIGNATION); labels
     // come from the shared switcher so they never drift.
@@ -6299,10 +6304,12 @@
           </div>
           ` : `
           <label class="field"><span>Designation</span>
-            <select id="tmDesignation" ${(!isSuper && isEdit) ? 'disabled' : ''}>
+            <select id="tmDesignation" ${desigLocked ? 'disabled' : ''}>
               ${desigOpts.map(([v, l]) => `<option value="${v}" ${f.designation === v ? 'selected' : ''}>${l}</option>`).join('')}
             </select>
-            ${(!isSuper && isEdit) ? `<div class="muted" style="font-size:11px;margin-top:3px">Role, pay and app access are set by a superuser. You can update the name here.</div>` : ''}
+            ${desigLocked
+              ? `<div class="muted" style="font-size:11px;margin-top:3px">This person's role, pay and app access are set by a superuser.</div>`
+              : ((!isSuper && isEdit) ? `<div class="muted" style="font-size:11px;margin-top:3px">Pay and app access are set by a superuser. You can update the name and role.</div>` : '')}
           </label>
           <div class="field"><span>App access</span>
             <div class="muted" style="font-size:11.5px;margin-top:2px">
@@ -6670,13 +6677,16 @@
           : (() => {
               // Broker / Senior Broker are never admins and never on payroll.
               const brokerRole = isBrokerDesignation(f.designation);
-              // The staff table's DB trigger reserves designation, hourly_rate,
-              // weekly_hours, allowed_sites and the privilege flags to supers —
-              // it rejects the WHOLE update if a non-super includes ANY of them
-              // (even re-sending an unchanged value). So a manager's edit PATCH
-              // must carry only the columns they're allowed to write: the name.
-              // (PIN changes go through the admin-set-pin Edge Function below.)
-              if (!(session && session.super)) return { name: f.name.trim() };
+              // The staff table's DB trigger reserves hourly_rate, weekly_hours,
+              // allowed_sites and the privilege flags to supers, and rejects the
+              // WHOLE update if a non-super includes any of them. A manager's
+              // edit therefore carries only name + designation — the trigger
+              // permits a designation change within the caller/support roles
+              // (rm/fancy/ln/assistant/admin_assistant) and treats an unchanged
+              // designation as a no-op. (PIN goes through admin-set-pin below.)
+              if (!(session && session.super)) {
+                return { name: f.name.trim(), designation: f.designation || null };
+              }
               const p = {
                 name: f.name.trim(),
                 designation: f.designation || null,
