@@ -6604,8 +6604,11 @@
         } else {
           // Broker / Senior Broker are never admins and never on payroll.
           const brokerRole = isBrokerDesignation(f.designation);
-          payload.admin        = brokerRole ? false : !!f.admin;
-          payload.is_super     = brokerRole ? false : !!f.super;
+          // Only a superuser may grant admin / superuser rights. A manager's
+          // add never elevates — the new account is always a plain staffer.
+          const canGrantPriv = !!(session && session.super) && !brokerRole;
+          payload.admin        = canGrantPriv ? !!f.admin : false;
+          payload.is_super     = canGrantPriv ? !!f.super : false;
           payload.hourly_rate  = brokerRole ? null : (f.hourly_rate  === '' ? null : Number(f.hourly_rate));
           payload.weekly_hours = brokerRole ? null : (f.weekly_hours === '' ? null : Number(f.weekly_hours));
           payload.salary       = brokerRole ? null : (f.salary       === '' ? null : Number(f.salary));
@@ -6658,14 +6661,19 @@
               const brokerRole = isBrokerDesignation(f.designation);
               const p = {
                 name: f.name.trim(),
-                is_admin: brokerRole ? false : !!f.admin,
-                is_super: brokerRole ? false : !!f.super,
                 designation: f.designation || null,
                 hourly_rate:  brokerRole ? null : (f.hourly_rate  === '' ? null : Number(f.hourly_rate)),
                 weekly_hours: brokerRole ? null : (f.weekly_hours === '' ? null : Number(f.weekly_hours)),
                 salary:       brokerRole ? null : (f.salary       === '' ? null : Number(f.salary)),
                 salary_type:  f.salary_type === 'fixed' ? 'fixed' : 'prorata',
               };
+              // Only a superuser may write the admin / superuser flags. A
+              // manager's edit never touches them — they can update staff
+              // details only, never grant (or revoke) privileges.
+              if (session && session.super) {
+                p.is_admin = brokerRole ? false : !!f.admin;
+                p.is_super = brokerRole ? false : !!f.super;
+              }
               // App access is locked to the designation. Only a super writes it
               // (non-default designations are super-only picks); a manager
               // editing a caller leaves the column untouched.
