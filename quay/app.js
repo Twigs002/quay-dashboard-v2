@@ -2619,6 +2619,12 @@
     const src = Q.SOURCES.slice().sort((a, b) => b.conv - a.conv);
     const bestSrc = src[0];
     const risk = agents.slice().sort((a, b) => a.success - b.success)[0];
+    // Guard: when the selected period has no agent data yet (e.g. the current
+    // week before its first fetch of the week), agents/top/risk are empty and
+    // bestSrc may be too. The spotlight + insights cards below dereference
+    // top/risk/bestSrc (.name etc.), so gate them on real data and render a
+    // neutral empty-state instead of crashing with "reading 'name'".
+    const hasSpot = agents.length > 0 && src.length > 0;
 
     // Delta units explicit — was inferring from the label string, which
     // misclassified "Active Callers" (a raw head count) as a percent.
@@ -2721,6 +2727,7 @@
         </div>
       </div>
 
+      ${hasSpot ? `
       <!-- spotlights -->
       <div class="row g-3 mt">
         <div class="card spot win">
@@ -2747,7 +2754,10 @@
           </div>
           <div class="spot-stat" style="margin-top:14px"><b>${risk.success}%</b> success · target <b>${(CFG.BENCHMARKS && CFG.BENCHMARKS.rm_success_rate) || 17}%</b> · ${fmt(risk.calls)} calls</div>
         </div>
-      </div>`}
+      </div>` : `
+      <div class="card mt" style="text-align:center;padding:26px">
+        <div class="muted">No agent activity for <b>${escapeHtml((Q.PERIODS[period] || {}).label || period)}</b> yet — top performer, best source and at-risk spotlights appear once the first calls of the period come in.</div>
+      </div>`}`}
 
       <!-- schedule adherence (real clock-in data) + LN daily recap -->
       <div class="mt">
@@ -2767,7 +2777,7 @@
         </div>
         ${ovRange ? '' : `<div class="card">
           <div class="card-head"><div><h3>Insights</h3><div class="sub">Auto-generated · ${Q.PERIODS[period].label}</div></div></div>
-          <div class="insights">${insights(t, d, top, bestSrc, risk, src)}</div>
+          <div class="insights">${hasSpot ? insights(t, d, top, bestSrc, risk, src) : '<div class="muted" style="padding:8px 2px">No activity for this period yet — insights appear once calls come in.</div>'}</div>
         </div>`}
       </div>
 
@@ -6289,9 +6299,10 @@
           </div>
           ` : `
           <label class="field"><span>Designation</span>
-            <select id="tmDesignation">
+            <select id="tmDesignation" ${(!isSuper && isEdit) ? 'disabled' : ''}>
               ${desigOpts.map(([v, l]) => `<option value="${v}" ${f.designation === v ? 'selected' : ''}>${l}</option>`).join('')}
             </select>
+            ${(!isSuper && isEdit) ? `<div class="muted" style="font-size:11px;margin-top:3px">Role, pay and app access are set by a superuser. You can update the name here.</div>` : ''}
           </label>
           <div class="field"><span>App access</span>
             <div class="muted" style="font-size:11.5px;margin-top:2px">
@@ -6659,6 +6670,13 @@
           : (() => {
               // Broker / Senior Broker are never admins and never on payroll.
               const brokerRole = isBrokerDesignation(f.designation);
+              // The staff table's DB trigger reserves designation, hourly_rate,
+              // weekly_hours, allowed_sites and the privilege flags to supers —
+              // it rejects the WHOLE update if a non-super includes ANY of them
+              // (even re-sending an unchanged value). So a manager's edit PATCH
+              // must carry only the columns they're allowed to write: the name.
+              // (PIN changes go through the admin-set-pin Edge Function below.)
+              if (!(session && session.super)) return { name: f.name.trim() };
               const p = {
                 name: f.name.trim(),
                 designation: f.designation || null,
@@ -6666,18 +6684,11 @@
                 weekly_hours: brokerRole ? null : (f.weekly_hours === '' ? null : Number(f.weekly_hours)),
                 salary:       brokerRole ? null : (f.salary       === '' ? null : Number(f.salary)),
                 salary_type:  f.salary_type === 'fixed' ? 'fixed' : 'prorata',
+                is_admin:     brokerRole ? false : !!f.admin,
+                is_super:     brokerRole ? false : !!f.super,
+                // App access is locked to the designation.
+                allowed_sites: appAccessFor(f.designation),
               };
-              // Only a superuser may write the admin / superuser flags. A
-              // manager's edit never touches them — they can update staff
-              // details only, never grant (or revoke) privileges.
-              if (session && session.super) {
-                p.is_admin = brokerRole ? false : !!f.admin;
-                p.is_super = brokerRole ? false : !!f.super;
-              }
-              // App access is locked to the designation. Only a super writes it
-              // (non-default designations are super-only picks); a manager
-              // editing a caller leaves the column untouched.
-              if (session && session.super) p.allowed_sites = appAccessFor(f.designation);
               return p;
             })();
         const { error } = await window.sb.from('staff').update(patch).eq('id', f.id);
