@@ -1217,8 +1217,18 @@ window.QUAY_READY = (async function () {
       };
     };
 
+    // The CLIENTHUB / CLIENTHUB_NO Dialfire campaigns (raw CLIENTHUB,
+    // CLIENTHUB_NEW, CLIENTHUB_NO_ANSWER) are the ClientHub Master list grouped
+    // by *calling agent*. The exact same calls are already attributed to each
+    // *contact's* team (Contact_Owner = hubspot_owner_id) by the Engine Room
+    // data below — that's the same campaigns, same 'completed' column, grouped
+    // by owner instead of agent (see fetch_clienthub_teams.py). Rendering the
+    // agent-grouped bucket as its own "team" row too would double-count and
+    // isn't a real team, so skip it: ClientHub calls show under the owning team.
+    const CLIENTHUB_PSEUDO = new Set(['CLIENTHUB', 'CLIENTHUBNO']);
     camps.forEach(c => {
       const key = teamCanonical(c.name);
+      if (CLIENTHUB_PSEUDO.has(key)) return;
       const erTeam = er.get(key);
       if (erTeam) erSeen.add(key);
       rows.push(combine(c.name, c, erTeam));
