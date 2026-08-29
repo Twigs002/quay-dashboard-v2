@@ -1,14 +1,14 @@
 [
   {
     "date": "2026-08-29",
-    "generated": "2026-08-29T11:33:33.472519+00:00",
+    "generated": "2026-08-29T19:37:15.157346+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-28",
-    "generated": "2026-08-29T11:33:33.472519+00:00",
+    "generated": "2026-08-29T19:37:15.157346+00:00",
     "rm": [
       {
         "name": "SadiqaCarelse",
@@ -404,7 +404,7 @@
   },
   {
     "date": "2026-08-27",
-    "generated": "2026-08-29T11:33:33.472519+00:00",
+    "generated": "2026-08-29T19:37:15.157346+00:00",
     "rm": [
       {
         "name": "SadiqaCarelse",
@@ -843,7 +843,7 @@
   },
   {
     "date": "2026-08-26",
-    "generated": "2026-08-29T11:33:33.472519+00:00",
+    "generated": "2026-08-29T19:37:15.157346+00:00",
     "rm": [
       {
         "name": "NeelamJameel",
@@ -1215,7 +1215,7 @@
   },
   {
     "date": "2026-08-25",
-    "generated": "2026-08-29T11:33:33.472519+00:00",
+    "generated": "2026-08-29T19:37:15.157346+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -1600,7 +1600,7 @@
   },
   {
     "date": "2026-08-24",
-    "generated": "2026-08-29T11:33:33.472519+00:00",
+    "generated": "2026-08-29T19:37:15.157346+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -1894,29 +1894,30 @@
       },
       {
         "name": "QhayiyaDayimani",
-        "calls": 4,
+        "calls": 6,
         "success": 0,
         "seller": 0,
         "rental": 0,
         "email": 0,
-        "no_answer": 1,
-        "cph": 19.6,
+        "no_answer": 2,
+        "cph": 11.6,
         "successRate": 0.0,
-        "workTime": 0.2039,
-        "talkTime": 0.0703,
-        "wrapTime": 0.0411,
-        "pauseTime": 0.0,
-        "waitTime": 0.0925,
+        "workTime": 0.5153,
+        "talkTime": 0.0728,
+        "wrapTime": 0.3261,
+        "pauseTime": 0.0011,
+        "waitTime": 0.1153,
         "is_rm": false,
         "meetsTarget": false,
         "campaigns": [
-          "ASSASSINS"
+          "ASSASSINS",
+          "HOUT_BAES"
         ],
-        "answered": 3,
-        "talkPct": 34.5,
-        "wrapPct": 20.2,
-        "waitPct": 45.4,
-        "workPct": 100.0
+        "answered": 4,
+        "talkPct": 14.1,
+        "wrapPct": 63.3,
+        "waitPct": 22.4,
+        "workPct": 99.8
       },
       {
         "name": "DouglasNkulu",
@@ -1957,6 +1958,17 @@
           "answered": 3,
           "workTime": 0.2039,
           "talkTime": 0.0703
+        },
+        "HOUT_BAES_CM": {
+          "calls": 2,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 1,
+          "answered": 1,
+          "workTime": 0.3114,
+          "talkTime": 0.0025
         }
       },
       "StaddyMalonga": {
@@ -2152,14 +2164,14 @@
   },
   {
     "date": "2026-08-23",
-    "generated": "2026-08-29T11:33:33.472519+00:00",
+    "generated": "2026-08-29T19:37:15.157346+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-22",
-    "generated": "2026-08-29T11:33:33.472519+00:00",
+    "generated": "2026-08-29T19:37:15.157346+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
