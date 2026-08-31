@@ -1,5 +1,13 @@
 {
-  "agents": [],
+  "agents": [
+    {
+      "hours": 5.104,
+      "id": "craig-carroll",
+      "name": "Craig Carroll",
+      "name_normalised": "Craig Carroll",
+      "sessions": 2
+    }
+  ],
   "by_week": {
     "2026-04-20": [
       {
@@ -4692,7 +4700,7 @@
         "sessions": 5
       },
       {
-        "hours": 44.743,
+        "hours": 35.749,
         "id": "aqeefah-arendse",
         "name": "Aqeefah Arendse",
         "name_normalised": "Aqeefah Arendse",
@@ -4706,14 +4714,14 @@
         "sessions": 6
       },
       {
-        "hours": 17.016,
+        "hours": 25.523,
         "id": "jason-julius",
         "name": "Jason Julius",
         "name_normalised": "Jason Julius",
         "sessions": 5
       },
       {
-        "hours": 44.858,
+        "hours": 35.711,
         "id": "claire",
         "name": "Claire Murch",
         "name_normalised": "Claire Murch",
@@ -4960,7 +4968,7 @@
         "sessions": 5
       },
       {
-        "hours": 29.007,
+        "hours": 24.726,
         "id": "maud",
         "name": "Sinenhlanhla Maud Mthembu",
         "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -4995,7 +5003,7 @@
         "sessions": 5
       },
       {
-        "hours": 41.729,
+        "hours": 40.85,
         "id": "aqeefah-arendse",
         "name": "Aqeefah Arendse",
         "name_normalised": "Aqeefah Arendse",
@@ -5149,7 +5157,7 @@
         "sessions": 5
       },
       {
-        "hours": 58.38,
+        "hours": 60.835,
         "id": "jaco",
         "name": "Jan C (Jaco) Groenewald",
         "name_normalised": "Jan C (Jaco) Groenewald",
@@ -5169,9 +5177,18 @@
         "name_normalised": "Sadiqa Carelse",
         "sessions": 3
       }
+    ],
+    "2026-08-31": [
+      {
+        "hours": 5.104,
+        "id": "craig-carroll",
+        "name": "Craig Carroll",
+        "name_normalised": "Craig Carroll",
+        "sessions": 2
+      }
     ]
   },
-  "generated_at": "2026-08-31T06:04:50.351185+00:00",
+  "generated_at": "2026-08-31T11:48:29.861222+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -5288,7 +5305,7 @@
           "sessions": 37
         },
         {
-          "hours": 685.264,
+          "hours": 675.39,
           "id": "aqeefah-arendse",
           "name": "Aqeefah Arendse",
           "name_normalised": "Aqeefah Arendse",
@@ -5309,11 +5326,11 @@
           "sessions": 38
         },
         {
-          "hours": 659.399,
+          "hours": 664.503,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
-          "sessions": 79
+          "sessions": 81
         },
         {
           "hours": 670.006,
@@ -5379,7 +5396,7 @@
           "sessions": 40
         },
         {
-          "hours": 884.452,
+          "hours": 886.907,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
@@ -5512,14 +5529,14 @@
           "sessions": 6
         },
         {
-          "hours": 415.376,
+          "hours": 406.229,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
           "sessions": 47
         },
         {
-          "hours": 350.748,
+          "hours": 359.255,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
@@ -5533,7 +5550,7 @@
           "sessions": 41
         },
         {
-          "hours": 291.54,
+          "hours": 287.259,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -5630,7 +5647,7 @@
           "sessions": 5
         },
         {
-          "hours": 29.037,
+          "hours": 24.756,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -5672,14 +5689,14 @@
           "sessions": 1
         },
         {
-          "hours": 42.514,
+          "hours": 51.021,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
           "sessions": 6
         },
         {
-          "hours": 53.88,
+          "hours": 44.733,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
@@ -5756,11 +5773,11 @@
           "sessions": 5
         },
         {
-          "hours": 36.112,
+          "hours": 41.216,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
-          "sessions": 5
+          "sessions": 7
         },
         {
           "hours": 47.799,
@@ -5777,7 +5794,7 @@
           "sessions": 6
         },
         {
-          "hours": 50.723,
+          "hours": 40.85,
           "id": "aqeefah-arendse",
           "name": "Aqeefah Arendse",
           "name_normalised": "Aqeefah Arendse",
@@ -5826,7 +5843,7 @@
           "sessions": 6
         },
         {
-          "hours": 67.501,
+          "hours": 69.956,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
@@ -5916,7 +5933,7 @@
           "sessions": 60
         },
         {
-          "hours": 484.513,
+          "hours": 474.64,
           "id": "aqeefah-arendse",
           "name": "Aqeefah Arendse",
           "name_normalised": "Aqeefah Arendse",
@@ -5958,11 +5975,11 @@
           "sessions": 10
         },
         {
-          "hours": 418.816,
+          "hours": 423.92,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
-          "sessions": 50
+          "sessions": 52
         },
         {
           "hours": 123.474,
@@ -6119,7 +6136,7 @@
           "sessions": 12
         },
         {
-          "hours": 588.35,
+          "hours": 590.805,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
@@ -6189,14 +6206,14 @@
           "sessions": 6
         },
         {
-          "hours": 415.376,
+          "hours": 406.229,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
           "sessions": 47
         },
         {
-          "hours": 350.748,
+          "hours": 359.255,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
@@ -6210,7 +6227,7 @@
           "sessions": 41
         },
         {
-          "hours": 291.54,
+          "hours": 287.259,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -6328,7 +6345,7 @@
           "sessions": 5
         },
         {
-          "hours": 29.007,
+          "hours": 24.726,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -6363,7 +6380,7 @@
           "sessions": 5
         },
         {
-          "hours": 41.729,
+          "hours": 40.85,
           "id": "aqeefah-arendse",
           "name": "Aqeefah Arendse",
           "name_normalised": "Aqeefah Arendse",
@@ -6517,7 +6534,7 @@
           "sessions": 5
         },
         {
-          "hours": 58.38,
+          "hours": 60.835,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
@@ -6572,7 +6589,7 @@
           "sessions": 14
         },
         {
-          "hours": 93.572,
+          "hours": 102.079,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
@@ -6600,7 +6617,7 @@
           "sessions": 17
         },
         {
-          "hours": 122.408,
+          "hours": 112.535,
           "id": "aqeefah-arendse",
           "name": "Aqeefah Arendse",
           "name_normalised": "Aqeefah Arendse",
@@ -6621,11 +6638,11 @@
           "sessions": 20
         },
         {
-          "hours": 89.188,
+          "hours": 94.292,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
-          "sessions": 12
+          "sessions": 14
         },
         {
           "hours": 123.07,
@@ -6740,7 +6757,7 @@
           "sessions": 13
         },
         {
-          "hours": 85.586,
+          "hours": 81.305,
           "id": "maud",
           "name": "Sinenhlanhla Maud Mthembu",
           "name_normalised": "Sinenhlanhla Maud Mthembu",
@@ -6754,7 +6771,7 @@
           "sessions": 14
         },
         {
-          "hours": 127.282,
+          "hours": 118.135,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
@@ -6789,7 +6806,7 @@
           "sessions": 14
         },
         {
-          "hours": 143.534,
+          "hours": 145.989,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
@@ -6821,7 +6838,15 @@
       "to": "2026-09-06T23:59:59+00:00"
     },
     "this-week": {
-      "agents": [],
+      "agents": [
+        {
+          "hours": 5.104,
+          "id": "craig-carroll",
+          "name": "Craig Carroll",
+          "name_normalised": "Craig Carroll",
+          "sessions": 2
+        }
+      ],
       "from": "2026-08-31T00:00:00+00:00",
       "to": "2026-09-06T23:59:59+00:00"
     }
