@@ -879,15 +879,89 @@ window.VIEWS = (function () {
   }
 
   // ---------------------------------------------------- LEAD SOURCES (now: Campaigns)
-  function leadSources(period) {
+  // Brand palette mirror of data.js CAMP_PALETTE - keeps custom-range team
+  // rows colour-consistent with the preset (Q.leadSourceRows) view.
+  const _LS_PALETTE = ['#3D5BA6', '#FDC503', '#98C5ED', '#2E4582',
+                       '#D20A03', '#4C6BB8', '#B98A02', '#9AA3AD',
+                       '#2E6FB0', '#6E7C8E', '#5A4FCF', '#21847B'];
+
+  // Per-team lead-source rows for a custom date range. Reuses the SAME
+  // Dialfire range aggregation the Teams Reporting tab uses
+  // (Q.perAgentPerTeamRange - strict whole Mon-Sun weeks fully inside the
+  // range), rolled up per team, so the two tabs agree to the call for any
+  // given range. It does NOT re-implement or alter any aggregation.
+  //
+  // Engine Room (ClientHub) is deliberately omitted for custom ranges: its
+  // fetcher only publishes fixed windows (this/last week, this/last month),
+  // so there is no arbitrary-range figure to combine. Custom ranges are
+  // therefore Dialfire dialling only; preset chips keep the combined view.
+  // Rows carry the same shape leadSources() already renders, with
+  // answered/connect/engineRoom null and an empty CM/NA/New drill-down, which
+  // the existing markup renders as a clean muted-dash / no-breakdown state.
+  function leadSourceRangeRows(fromYmd, toYmd) {
+    const agents = Q.perAgentPerTeamRange(fromYmd, toYmd);
+    const byTeam = new Map();   // canonicalKey -> accumulator
+    agents.forEach(a => a.byTeam.forEach((s, key) => {
+      let row = byTeam.get(key);
+      if (!row) {
+        row = { name: s.team, calls: 0, seller: 0, rental: 0, email: 0, _agents: new Set() };
+        byTeam.set(key, row);
+      }
+      row.calls  += s.calls  || 0;
+      row.seller += s.seller || 0;
+      row.rental += s.rental || 0;
+      row.email  += s.email  || 0;
+      row._agents.add(a.name);
+    }));
+    const rows = Array.from(byTeam.values()).map(r => ({
+      name: r.name,
+      calls: r.calls,
+      leads: r.seller,          // seller-only definition, matches campaignsFor
+      seller: r.seller, rental: r.rental, email: r.email,
+      conv: r.calls ? +((r.seller / r.calls) * 100).toFixed(1) : 0,
+      agentsCount: r._agents.size,
+      answered: null, answeredCalls: null, connect: null,  // no Dialfire pick-up data in the per-team range source
+      engineRoom: null,         // ClientHub has no arbitrary-range window
+      exact: true,
+      sources: [],              // no CM/NA/New split for custom ranges
+    }));
+    rows.sort((a, b) => b.calls - a.calls);
+    rows.forEach((r, i) => { r.color = _LS_PALETTE[i % _LS_PALETTE.length]; });
+    rows._range = agents._range || null;
+    return rows;
+  }
+
+  function leadSources(period, range) {
     const pk = period || 'this-week';
+    const isRange = !!(range && range.from && range.to);
     // Combined Dialfire dialling + Engine Room (ClientHub) calling, one row per
-    // team, each expandable into its CM / NA / New sources.
-    const teams = Q.leadSourceRows(pk);
+    // team, each expandable into its CM / NA / New sources. A custom header
+    // range switches to the Dialfire-only per-team rollup (see
+    // leadSourceRangeRows); the preset chips keep the combined view.
+    const teams = isRange ? leadSourceRangeRows(range.from, range.to) : Q.leadSourceRows(pk);
+    const rangeMeta = isRange ? (teams._range || null) : null;
+    // Active-window label + its " · " suffix, shared by the header note, the
+    // card caption and the explainer. Presets read the frozen PERIODS label;
+    // a custom range reads the effective whole weeks it actually covered.
+    const presetLabel = (Q.PERIODS[pk] || {}).label || pk;
+    // YYYY-MM-DD -> SA day-before-month copy (e.g. "3 Aug 2026").
+    const _ymdSA = (ymd) => {
+      if (!ymd) return '';
+      const [y, m, d] = ymd.split('-').map(Number);
+      return new Date(y, m - 1, d).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+    const rangeCovers = (rangeMeta && rangeMeta.weeksIncluded > 0)
+      ? `custom range · Dialfire dialling only · covers ${_ymdSA(rangeMeta.effectiveFrom)} to ${_ymdSA(rangeMeta.effectiveTo)}`
+        + ` · ${rangeMeta.weeksIncluded} complete week${rangeMeta.weeksIncluded === 1 ? '' : 's'}`
+      : 'custom range · Dialfire dialling only';
+    const windowLabel = isRange ? rangeCovers : presetLabel;
     if (!teams.length) {
+      const empty = isRange
+        ? 'No complete Mon-Sun weeks fall inside this range yet. Widen the dates, or use the preset chips.'
+        : 'No teams found for this period.';
       return `<div class="tab-view"><div class="card card-pad">
         <h3 style="font-family:var(--serif);margin:0 0 8px">No lead-source data</h3>
-        <div class="sub">No teams found for this period.</div></div></div>`;
+        <div class="sub">${empty}</div></div></div>`;
     }
     const totalCalls = teams.reduce((s, c) => s + c.calls, 0);
     const totalLeads = teams.reduce((s, c) => s + c.leads, 0);
@@ -990,17 +1064,20 @@ window.VIEWS = (function () {
       <div class="row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
         ${miniStat('Best converter', best.name, best.conv + '% (' + fmt(best.leads) + ' / ' + fmt(best.calls) + ' calls)', I.star)}
         ${miniStat('Connect rate', floorConnect != null ? floorConnect + '%' : '—',
-          floorConnect != null ? fmt(totalAnswered) + ' answered / ' + fmt(totalAnsCalls) + ' attempts' : 'awaiting per-team answered data', I.phone || I.medal)}
-        ${miniStat('Seller leads', fmt(totalSeller), 'Dialfire + Engine Room', I.medal)}
-        ${miniStat('Rental leads', fmt(totalRental), 'Dialfire + Engine Room', I.home)}
-        ${miniStat('Engine Room calls', fmt(totalER), 'of ' + fmt(totalCalls) + ' total', I.phone || I.layers)}
+          floorConnect != null ? fmt(totalAnswered) + ' answered / ' + fmt(totalAnsCalls) + ' attempts'
+            : (isRange ? 'not measured for custom ranges' : 'awaiting per-team answered data'), I.phone || I.medal)}
+        ${miniStat('Seller leads', fmt(totalSeller), isRange ? 'Dialfire dialling' : 'Dialfire + Engine Room', I.medal)}
+        ${miniStat('Rental leads', fmt(totalRental), isRange ? 'Dialfire dialling' : 'Dialfire + Engine Room', I.home)}
+        ${isRange
+          ? miniStat('Engine Room calls', '—', 'preset periods only', I.phone || I.layers)
+          : miniStat('Engine Room calls', fmt(totalER), 'of ' + fmt(totalCalls) + ' total', I.phone || I.layers)}
         ${miniStat('Teams', teams.length + '', best.agentsCount + ' agents on top team', I.layers)}
       </div>
 
       <div class="mt">
         <div class="card">
           <div class="card-head"><div><h3 id="lead-sources-tbl-h">Lead sources by team</h3>
-            <div class="sub">Combined Dialfire + Engine Room · ${(Q.PERIODS[pk] || {}).label || pk} · click a team to see its CM / NA / New sources</div></div>
+            <div class="sub">${isRange ? 'Dialfire dialling' : 'Combined Dialfire + Engine Room'} · ${windowLabel}${isRange ? '' : ' · click a team to see its CM / NA / New sources'}</div></div>
             <button class="btn js-export">${I.download} Export CSV</button></div>
           <div class="tbl-wrap"><table class="tbl" id="lead-sources-tbl" aria-labelledby="lead-sources-tbl-h">
             <thead><tr>
@@ -1150,5 +1227,5 @@ window.VIEWS = (function () {
   // ad-hoc thresholds. Single source of truth = sucClass/effClass/cphClass.
   window.QUAY_PILLS = { sucClass, effClass, cphClass };
 
-  return { allStaff, lnReports, compare, daily, manager, leadSources, monthly, renderMonthCompare, renderWeekCompare, renderAgentCompare, monthWeeksTable };
+  return { allStaff, lnReports, compare, daily, manager, leadSources, leadSourceRangeRows, monthly, renderMonthCompare, renderWeekCompare, renderAgentCompare, monthWeeksTable };
 })();

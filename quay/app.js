@@ -52,7 +52,7 @@
   // these the header owns the range and the tab no longer draws its own bar.
   // Non-migrated data tabs still show the header chips (which set `period`) and
   // keep their own in-page range picker until migrated.
-  const GLOBAL_RANGE_TABS = new Set(['overview', 'staff']);
+  const GLOBAL_RANGE_TABS = new Set(['overview', 'staff', 'sources']);
   // Quick chips shown in the header on every tab except Payroll. Keys are
   // Q.PERIODS keys; labels match the picker the user signed off on.
   const GLOBAL_QUICK = [
@@ -162,7 +162,7 @@
     { id: 'clocks',     section: 'Admin',       label: 'Clocks',         icon: I.clock,    title: 'Clocks',               sub: 'Staff hours, requests & team — manage everything in one place' },
     { id: 'team',       section: 'Admin',       label: 'Staff',          icon: I.users,    title: 'Staff Directory',      sub: 'Roster · clock-in status · forgot-to-clock-out · mark absent · broker logins' },
     { id: 'payroll',    section: 'Admin',       label: 'Payroll',        icon: I.cal2,     title: 'Payroll · Divisions Allocations', sub: 'Pay-period hours by division — 21st → 20th' },
-    { id: 'teams-report', section: 'Admin',     label: 'Teams Reporting', icon: I.medal,   title: 'Teams Reporting',      sub: 'Pick teams · see who called for them (incl. cross-team) · division cost-attribution · export PDF/PNG' },
+    { id: 'teams-report', section: 'Performance', label: 'Teams Reporting', icon: I.medal,   title: 'Teams Reporting',      sub: 'Pick teams · see who called for them (incl. cross-team) · division cost-attribution · export PDF/PNG' },
   ];
 
   // The dedicated Payroll role sees only these tabs: Clocks, Staff (Directory)
@@ -322,29 +322,70 @@
     renderLogin();
   }
 
-  // Human-readable date range for a given period key — e.g. "16–22 Jun 2026".
+  // Human-readable date range for a given period key - e.g. "16-22 Jun 2026".
   // Anchors numbers to a concrete window so labels stay interpretable (the
   // quick-period LABELS like "This Week" are colloquial; the concrete range
   // resolves any ambiguity about exactly which week/month is meant).
+  //
+  // This is a LABEL formatter only. It deliberately does NOT drive any data
+  // filter - the underlying window comes from Q.periodDateRange (which also
+  // feeds the LN report Supabase query), so we read it, then correct two
+  // display-only defects it can't fix on its own:
+  //   1. `current-week` ("This Week") has an empty weeks[] slice, so
+  //      periodDateRange falls back to a bogus rolling 30-day window. The
+  //      live filter for this period is Mon -> today, so we label it as the
+  //      actual current calendar week (Mon -> Sun) instead.
+  //   2. The trailing in-progress week projects its end to the coming Sunday,
+  //      which is usually still in the future. We cap the shown end at today
+  //      so a label never claims data that doesn't exist yet.
+  // Everything is anchored to the SAST calendar day so an off-shore viewer's
+  // browser timezone never shifts the range by a day.
   function formatPeriodRange(key) {
     try {
       if (!Q.periodDateRange) return '';
-      const r = Q.periodDateRange(key);
-      if (!r || !r.fromISO || !r.toISO) return '';
-      const from = new Date(r.fromISO);
-      const to   = new Date(new Date(r.toISO).getTime() - 86400 * 1000); // inclusive end
-      const monthYear = d => d.toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' });
+      const todayYmd = sastDateStr(new Date());          // 'YYYY-MM-DD' in SAST
+      const [ty, tm, td] = todayYmd.split('-').map(Number);
+      const today = new Date(ty, tm - 1, td);            // local midnight of that SAST day
+      let from, to;
+      if (key === 'current-week') {
+        const dow = (today.getDay() + 6) % 7;            // Monday = 0
+        from = new Date(ty, tm - 1, td - dow);           // this week's Monday
+        to   = new Date(ty, tm - 1, td - dow + 6);       // this week's Sunday (shown in full)
+      } else {
+        const r = Q.periodDateRange(key);
+        if (!r || !r.fromISO || !r.toISO) return '';
+        from = new Date(r.fromISO);
+        to   = new Date(new Date(r.toISO).getTime() - 86400 * 1000); // inclusive end
+        if (to > today) to = today;                      // never label past today
+      }
+      const shortMonth = d => d.toLocaleDateString('en-ZA', { month: 'short' });
+      const monthYear  = d => d.toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' });
       const day = d => d.getDate();
       const sameMonth = from.getFullYear() === to.getFullYear() && from.getMonth() === to.getMonth();
-      return sameMonth
-        ? `${day(from)}–${day(to)} ${monthYear(to)}`
-        : `${day(from)} ${from.toLocaleDateString('en-ZA',{month:'short'})} – ${day(to)} ${monthYear(to)}`;
+      if (sameMonth) return `${day(from)}-${day(to)} ${monthYear(to)}`;      // e.g. 24-30 Aug 2026
+      const sameYear = from.getFullYear() === to.getFullYear();
+      // Cross-year spans (e.g. All Time) show the start year too so the range
+      // isn't ambiguous; same-year spans drop the redundant start year.
+      const fromLabel = sameYear ? `${day(from)} ${shortMonth(from)}` : `${day(from)} ${monthYear(from)}`;
+      return `${fromLabel} to ${day(to)} ${monthYear(to)}`;                  // e.g. 31 Aug to 6 Sept 2026
     } catch { return ''; }
   }
   // Active-period range as a " · <range>" subtitle suffix.
   function periodRangeSuffix() {
     const l = formatPeriodRange(period);
     return l ? ` · ${l}` : '';
+  }
+  // A YYYY-MM-DD pair rendered as SA day-before-month copy, e.g.
+  // "1 Aug 2026 to 31 Aug 2026". Used for the Lead Sources custom-range
+  // subtitle + table caption. Spaced " to " separator (no en/em dashes).
+  function prettyRangeLabel(fromYmd, toYmd) {
+    if (!fromYmd || !toYmd) return '';
+    const [a, b] = fromYmd <= toYmd ? [fromYmd, toYmd] : [toYmd, fromYmd];
+    const one = (ymd) => {
+      const [y, m, d] = ymd.split('-').map(Number);
+      return new Date(y, m - 1, d).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+    return `${one(a)} to ${one(b)}`;
   }
 
   // The effective date window for a tab's subtitle + print header — matches
@@ -357,6 +398,10 @@
       const s = periodRangeSuffix();
       return s ? s.replace(/^ · /, '') : periodLabelFor(period);
     };
+    // Lead Sources shows its active custom range in SA day-before-month copy
+    // (e.g. "1 Aug 2026 to 31 Aug 2026"), not the raw ISO pair the other
+    // migrated tabs render - it's a broker-facing tab.
+    if (tab === 'sources') return (gDateFrom && gDateTo) ? prettyRangeLabel(gDateFrom, gDateTo) : periodLabel();
     if (GLOBAL_RANGE_TABS.has(tab)) return (gDateFrom && gDateTo) ? rng(gDateFrom, gDateTo) : periodLabel();
     switch (tab) {
       case 'live':         return (liveDateFrom && liveDateTo) ? rng(liveDateFrom, liveDateTo) : 'today';
@@ -651,7 +696,10 @@
     else if (tab === 'monthly')  { host.innerHTML = V.monthly(); monthlyWire(); }
     else if (tab === 'manager')  { host.innerHTML = V.manager(period); managerWire(); }
     else if (tab === 'ln')       { host.innerHTML = renderLnLeaderboard(); wireLnLeaderboard(); }
-    else if (tab === 'sources')  { host.innerHTML = V.leadSources(period); leadSourcesWire(); }
+    else if (tab === 'sources')  {
+      const lsRange = (gDateFrom && gDateTo) ? { from: gDateFrom, to: gDateTo } : null;
+      host.innerHTML = V.leadSources(period, lsRange); leadSourcesWire();
+    }
     else if (tab === 'payroll')  { payrollState.hideSdl = false; host.innerHTML = V.payroll(payrollState); payrollWire(); }
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
     else if (tab === 'team')     { host.innerHTML = renderTeamView(); wireTeamView(); }
@@ -2186,13 +2234,21 @@
     return out;
   }
   function csvCampaigns() {
-    const teams = Q.leadSourceRows(period);
+    // Mirror whatever the Lead Sources tab is showing: a custom header range
+    // (Dialfire dialling only, per-team) when both dates are set, else the
+    // preset period's combined Dialfire + Engine Room rows.
+    const lsRange = (gDateFrom && gDateTo) ? { from: gDateFrom, to: gDateTo } : null;
+    const teams = lsRange
+      ? V.leadSourceRangeRows(lsRange.from, lsRange.to)
+      : Q.leadSourceRows(period);
     const header = ['Team', 'Source', 'Agents', 'Attempts', 'Answered', 'Connect %',
       'Leads', 'Seller', 'Rental', 'Email', 'Conversion %', 'Attribution'];
     const out = [header];
     teams.forEach(c => {
+      // Range rows carry no Engine Room side (ClientHub only publishes preset
+      // windows), so label the total honestly per row.
       out.push([
-        c.name, 'TOTAL (Dialfire + Engine Room)', c.agentsCount, c.calls,
+        c.name, c.engineRoom ? 'TOTAL (Dialfire + Engine Room)' : 'TOTAL (Dialfire)', c.agentsCount, c.calls,
         c.answered != null ? c.answered : '', c.connect != null ? c.connect : '',
         c.leads, c.seller, c.rental, c.email, c.conv, c.exact ? 'exact' : 'overlap',
       ]);
