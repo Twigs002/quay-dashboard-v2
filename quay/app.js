@@ -197,7 +197,7 @@
     loading: false,
     error: null,
     divCostTeams: [], // Division Costs view: [] = all, else selected division names
-    hideSdl: false,   // true while the Division Costs card is shown inside Teams Reporting
+    hideSdl: false,   // Payroll tab's Division Costs view hides the SDL column via its own opts; kept false here
   };
 
   // ---------------------------------------------------- LOGIN
@@ -712,7 +712,7 @@
     else if (tab === 'clocks')   { host.innerHTML = clocksIframe(); wireClocks(); }
     else if (tab === 'team')     { host.innerHTML = renderTeamView(); wireTeamView(); }
     else if (tab === 'live')     { host.innerHTML = renderLiveFloor(); liveFloorWire(); }
-    else if (tab === 'teams-report') { payrollState.hideSdl = true; host.innerHTML = renderTeamsReporting(); wireTeamsReporting(); }
+    else if (tab === 'teams-report') { host.innerHTML = renderTeamsReporting(); wireTeamsReporting(); }
     // Any per-card "Export CSV" button shares the topbar export handler.
     document.querySelectorAll('#content .js-export').forEach(b => {
       if (b.__exportWired) return; b.__exportWired = true;
@@ -1993,7 +1993,7 @@
     else if (tab === 'manager')    rows = csvManager();
     else if (tab === 'monthly')    rows = csvMonthly();
     else if (tab === 'payroll')    rows = csvPayroll();
-    else if (tab === 'teams-report') rows = session.super ? csvPayroll() : csvTeamsReportCallers(); // super: Division Costs; allow-listed non-super: per-caller table (no cost data)
+    else if (tab === 'teams-report') rows = csvTeamsReportCallers(); // per-caller calling stats only - no cost data (Division Costs lives on the Payroll tab)
     else                            rows = csvAgents();
     downloadCSV(filename, rows);
   }
@@ -4553,8 +4553,6 @@
         </table></div>
       </div>
 
-      ${session.super ? V.divCostsSection(payrollState) : ''}
-
       ${session.super ? _trSubscribersCard() : ''}
     </div>`;
   }
@@ -4713,31 +4711,10 @@
       })
     );
 
-    // ── Division Costs section (embedded, SDL hidden) ─────────────────────
-    // Super-only: it renders wage-cost attribution and pulls the payroll
-    // shifts pipeline (RLS-gated). Allow-listed non-super viewers (e.g. Alan)
-    // get the calling stats above but never this panel, so we skip its mount
-    // and its Supabase fetch entirely for them.
-    // Shares the Payroll data pipeline via payrollState. Pay-period picker
-    // re-fetches; the division multi-select re-renders in place; first mount
-    // kicks off the fetch (payrollFetchAndRender re-renders teams-report when
-    // the shifts land — see its tab guards).
-    if (session.super) {
-      const dcPeriod = document.getElementById('payrollPeriod');
-      if (dcPeriod) dcPeriod.addEventListener('change', () => {
-        const all = window.PAYROLL.payPeriodsForPicker(12);
-        const next = all.find(p => p.label === dcPeriod.value);
-        if (!next) return;
-        payrollState.period = next;
-        payrollState.shifts = null;
-        payrollState.allocations = null;
-        payrollFetchAndRender();
-      });
-      payrollDivPickerWire();
-      if (window.PAYROLL && payrollState.shifts === null && !payrollState.loading) {
-        payrollFetchAndRender();
-      }
-    }
+    // Division Costs used to be embedded here, but it exposed wage-cost
+    // attribution that could be screenshotted / printed / exported and sent
+    // by mistake from this broker-facing tab. It now lives only on the
+    // Payroll tab (its proper home); no payroll data is loaded here.
   }
 
   // Snapshot the Teams Reporting view as a PNG and trigger a download.
