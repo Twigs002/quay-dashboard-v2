@@ -4242,7 +4242,7 @@
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
             <h3 style="margin:0;font-family:var(--serif);font-size:15px">Email subscribers · weekly Monday-morning report</h3>
-            <div class="sub" style="margin-top:2px">Who gets the auto-emailed team stats every Monday 08:00 SAST. Draft-only until you flip the send switch.</div>
+            <div class="sub" style="margin-top:2px">Who gets the auto-drafted team stats every Monday 08:00 SAST. Drafts land in Pagan's Gmail; she sends them manually after eyeballing.</div>
           </div>
           <div class="muted" style="font-size:16px">${chevron}</div>
         </div>
@@ -4295,7 +4295,7 @@
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
             <h3 style="margin:0;font-family:var(--serif);font-size:15px">Email subscribers · weekly Monday-morning report</h3>
-            <div class="sub" style="margin-top:2px">Who gets the auto-DRAFTED team stats every Monday 08:00 SAST. Drafts land in Pagan's Gmail; he sends them manually after eyeballing.</div>
+            <div class="sub" style="margin-top:2px">Who gets the auto-drafted team stats every Monday 08:00 SAST. Drafts land in Pagan's Gmail; she sends them manually after eyeballing.</div>
           </div>
           <div class="muted" style="font-size:16px">${chevron}</div>
         </div>
