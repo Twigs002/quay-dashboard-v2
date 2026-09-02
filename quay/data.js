@@ -1540,7 +1540,7 @@ window.QUAY_READY = (async function () {
     AGENTS: agentsForWeek(weeks[0]),  // current week, sorted natural
     WEEKS, WEEK_CALLS, WEEK_SUCCESS, WEEK_LEADS, WEEK_ACTIVE, trendSeriesFor,
     SOURCES, sourcesFor, campaignsFor,
-    leadSourceRows, engineRoomByTeam,
+    leadSourceRows, engineRoomByTeam, clienthubWindowKey: _clienthubWindowKey,
     monthlyBreakdown, weeksBreakdown,
     dailyDates, dailyFor, latestDailyDate,
     MONTHS, MONTH_CALLS, MONTH_LEADS, MONTH_EMAILS, MONTH_RENTALS, MONTH_DFHOURS,
