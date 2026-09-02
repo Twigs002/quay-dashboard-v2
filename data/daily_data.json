@@ -296,7 +296,7 @@
   },
   {
     "date": "2026-09-01",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "NeelamJameel",
@@ -375,32 +375,6 @@
         "wrapPct": 15.8,
         "waitPct": 35.1,
         "workPct": 99.1
-      },
-      {
-        "name": "DeclanT",
-        "calls": 120,
-        "success": 17,
-        "seller": 2,
-        "rental": 1,
-        "email": 14,
-        "no_answer": 11,
-        "cph": 21.8,
-        "successRate": 14.2,
-        "workTime": 5.5161,
-        "talkTime": 1.4958,
-        "wrapTime": 2.7467,
-        "pauseTime": 0.1333,
-        "waitTime": 1.1403,
-        "is_rm": true,
-        "meetsTarget": false,
-        "campaigns": [
-          "CLIENTHUB"
-        ],
-        "answered": 109,
-        "talkPct": 27.1,
-        "wrapPct": 49.8,
-        "waitPct": 20.7,
-        "workPct": 97.6
       }
     ],
     "fancy": [
@@ -429,6 +403,33 @@
         "wrapPct": 72.9,
         "waitPct": 6.9,
         "workPct": 99.5
+      },
+      {
+        "name": "DeclanT",
+        "calls": 120,
+        "success": 17,
+        "seller": 2,
+        "rental": 1,
+        "email": 14,
+        "no_answer": 11,
+        "cph": 19.3,
+        "successRate": 14.2,
+        "workTime": 6.2283,
+        "talkTime": 1.5894,
+        "wrapTime": 3.1286,
+        "pauseTime": 0.1583,
+        "waitTime": 1.352,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB",
+          "CONQUERORS"
+        ],
+        "answered": 109,
+        "talkPct": 25.5,
+        "wrapPct": 50.2,
+        "waitPct": 21.7,
+        "workPct": 97.5
       },
       {
         "name": "ShanikaLotz",
@@ -869,6 +870,17 @@
           "answered": 109,
           "workTime": 5.5161,
           "talkTime": 1.4958
+        },
+        "CONQUERORS_CM": {
+          "calls": 0,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 0,
+          "answered": 0,
+          "workTime": 0.7122,
+          "talkTime": 0.0936
         }
       },
       "Gio": {
@@ -914,7 +926,7 @@
   },
   {
     "date": "2026-08-31",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "NeelamJameel",
@@ -1285,6 +1297,32 @@
         "wrapPct": 72.2,
         "waitPct": 13.3,
         "workPct": 99.9
+      },
+      {
+        "name": "DeclanT",
+        "calls": 0,
+        "success": 0,
+        "seller": 0,
+        "rental": 0,
+        "email": 0,
+        "no_answer": 0,
+        "cph": 0.0,
+        "successRate": 0.0,
+        "workTime": 7.3275,
+        "talkTime": 0.7428,
+        "wrapTime": 5.6322,
+        "pauseTime": 0.1497,
+        "waitTime": 0.8028,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "CONQUERORS"
+        ],
+        "answered": 0,
+        "talkPct": 10.1,
+        "wrapPct": 76.9,
+        "waitPct": 11.0,
+        "workPct": 98.0
       }
     ],
     "by_agent_campaign": {
@@ -1524,26 +1562,39 @@
           "workTime": 1.7897,
           "talkTime": 0.8542
         }
+      },
+      "DeclanT": {
+        "CONQUERORS_CM": {
+          "calls": 0,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 0,
+          "answered": 0,
+          "workTime": 7.3275,
+          "talkTime": 0.7428
+        }
       }
     }
   },
   {
     "date": "2026-08-30",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-29",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-28",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "SadiqaCarelse",
@@ -1622,33 +1673,6 @@
         "wrapPct": 17.4,
         "waitPct": 34.9,
         "workPct": 98.7
-      },
-      {
-        "name": "DeclanT",
-        "calls": 34,
-        "success": 4,
-        "seller": 1,
-        "rental": 0,
-        "email": 3,
-        "no_answer": 1,
-        "cph": 21.5,
-        "successRate": 11.8,
-        "workTime": 1.5811,
-        "talkTime": 0.4325,
-        "wrapTime": 0.7992,
-        "pauseTime": 0.0148,
-        "waitTime": 0.3347,
-        "is_rm": true,
-        "meetsTarget": false,
-        "campaigns": [
-          "CLIENTHUB",
-          "CLIENTHUB_NEW"
-        ],
-        "answered": 33,
-        "talkPct": 27.4,
-        "wrapPct": 50.5,
-        "waitPct": 21.2,
-        "workPct": 99.1
       }
     ],
     "fancy": [
@@ -1677,6 +1701,34 @@
         "wrapPct": 33.7,
         "waitPct": 34.6,
         "workPct": 99.1
+      },
+      {
+        "name": "DeclanT",
+        "calls": 86,
+        "success": 10,
+        "seller": 3,
+        "rental": 0,
+        "email": 7,
+        "no_answer": 32,
+        "cph": 18.9,
+        "successRate": 11.6,
+        "workTime": 4.5467,
+        "talkTime": 0.8617,
+        "wrapTime": 2.8323,
+        "pauseTime": 0.0826,
+        "waitTime": 0.7703,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB",
+          "CLIENTHUB_NEW",
+          "CONQUERORS"
+        ],
+        "answered": 54,
+        "talkPct": 19.0,
+        "wrapPct": 62.3,
+        "waitPct": 16.9,
+        "workPct": 98.2
       },
       {
         "name": "Aqeefah Arendse",
@@ -1894,6 +1946,17 @@
           "answered": 6,
           "workTime": 0.1292,
           "talkTime": 0.0658
+        },
+        "CONQUERORS_CM": {
+          "calls": 52,
+          "success": 6,
+          "seller": 2,
+          "rental": 0,
+          "email": 4,
+          "no_answer": 31,
+          "answered": 21,
+          "workTime": 2.9656,
+          "talkTime": 0.4292
         }
       },
       "Gio": {
@@ -1939,7 +2002,7 @@
   },
   {
     "date": "2026-08-27",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "SadiqaCarelse",
@@ -2378,7 +2441,7 @@
   },
   {
     "date": "2026-08-26",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "NeelamJameel",
@@ -2750,7 +2813,7 @@
   },
   {
     "date": "2026-08-25",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -2778,32 +2841,6 @@
         "wrapPct": 70.5,
         "waitPct": 10.3,
         "workPct": 99.5
-      },
-      {
-        "name": "DeclanT",
-        "calls": 22,
-        "success": 0,
-        "seller": 0,
-        "rental": 0,
-        "email": 0,
-        "no_answer": 19,
-        "cph": 38.8,
-        "successRate": 0.0,
-        "workTime": 0.5664,
-        "talkTime": 0.0483,
-        "wrapTime": 0.4914,
-        "pauseTime": 0.0161,
-        "waitTime": 0.0106,
-        "is_rm": true,
-        "meetsTarget": false,
-        "campaigns": [
-          "CLIENTHUB"
-        ],
-        "answered": 3,
-        "talkPct": 8.5,
-        "wrapPct": 86.8,
-        "waitPct": 1.9,
-        "workPct": 97.2
       }
     ],
     "fancy": [
@@ -2858,6 +2895,33 @@
         "wrapPct": 71.9,
         "waitPct": 5.0,
         "workPct": 99.1
+      },
+      {
+        "name": "DeclanT",
+        "calls": 63,
+        "success": 1,
+        "seller": 0,
+        "rental": 0,
+        "email": 1,
+        "no_answer": 50,
+        "cph": 21.8,
+        "successRate": 1.6,
+        "workTime": 2.8939,
+        "talkTime": 0.2014,
+        "wrapTime": 2.4239,
+        "pauseTime": 0.0536,
+        "waitTime": 0.215,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB",
+          "CONQUERORS"
+        ],
+        "answered": 13,
+        "talkPct": 7.0,
+        "wrapPct": 83.8,
+        "waitPct": 7.4,
+        "workPct": 98.2
       },
       {
         "name": "AnneeqaWilliams",
@@ -3105,6 +3169,17 @@
           "answered": 3,
           "workTime": 0.5664,
           "talkTime": 0.0483
+        },
+        "CONQUERORS_CM": {
+          "calls": 41,
+          "success": 1,
+          "seller": 0,
+          "rental": 0,
+          "email": 1,
+          "no_answer": 31,
+          "answered": 10,
+          "workTime": 2.3275,
+          "talkTime": 0.1531
         }
       },
       "Gio": {
@@ -3135,7 +3210,7 @@
   },
   {
     "date": "2026-08-24",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -3699,21 +3774,21 @@
   },
   {
     "date": "2026-08-23",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-22",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-21",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -4269,7 +4344,7 @@
   },
   {
     "date": "2026-08-20",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -4837,7 +4912,7 @@
   },
   {
     "date": "2026-08-19",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "SadiqaCarelse",
@@ -5518,7 +5593,7 @@
   },
   {
     "date": "2026-08-18",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "SadiqaCarelse",
@@ -5626,6 +5701,33 @@
       }
     ],
     "fancy": [
+      {
+        "name": "DeclanT",
+        "calls": 155,
+        "success": 8,
+        "seller": 1,
+        "rental": 0,
+        "email": 7,
+        "no_answer": 131,
+        "cph": 22.5,
+        "successRate": 5.2,
+        "workTime": 6.8908,
+        "talkTime": 0.6914,
+        "wrapTime": 5.7344,
+        "pauseTime": 0.1858,
+        "waitTime": 0.2792,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "SPARTANS",
+          "CONQUERORS"
+        ],
+        "answered": 24,
+        "talkPct": 10.0,
+        "wrapPct": 83.2,
+        "waitPct": 4.1,
+        "workPct": 97.4
+      },
       {
         "name": "NeelamJameel",
         "calls": 142,
@@ -5836,32 +5938,6 @@
         "workPct": 100.0
       },
       {
-        "name": "DeclanT",
-        "calls": 15,
-        "success": 3,
-        "seller": 0,
-        "rental": 0,
-        "email": 3,
-        "no_answer": 8,
-        "cph": 13.8,
-        "successRate": 20.0,
-        "workTime": 1.085,
-        "talkTime": 0.1542,
-        "wrapTime": 0.7647,
-        "pauseTime": 0.0161,
-        "waitTime": 0.15,
-        "is_rm": false,
-        "meetsTarget": false,
-        "campaigns": [
-          "SPARTANS"
-        ],
-        "answered": 7,
-        "talkPct": 14.2,
-        "wrapPct": 70.5,
-        "waitPct": 13.8,
-        "workPct": 98.5
-      },
-      {
         "name": "QhayiyaDayimani",
         "calls": 5,
         "success": 0,
@@ -6027,6 +6103,17 @@
           "answered": 7,
           "workTime": 1.085,
           "talkTime": 0.1542
+        },
+        "CONQUERORS_NA": {
+          "calls": 140,
+          "success": 5,
+          "seller": 1,
+          "rental": 0,
+          "email": 4,
+          "no_answer": 123,
+          "answered": 17,
+          "workTime": 5.8058,
+          "talkTime": 0.5372
         }
       },
       "KayleighDucroq": {
@@ -6098,7 +6185,7 @@
   },
   {
     "date": "2026-08-17",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "Test",
@@ -6701,21 +6788,21 @@
   },
   {
     "date": "2026-08-16",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-15",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-14",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "Test",
@@ -6875,6 +6962,32 @@
         "wrapPct": 63.6,
         "waitPct": 7.6,
         "workPct": 99.6
+      },
+      {
+        "name": "DeclanT",
+        "calls": 102,
+        "success": 2,
+        "seller": 0,
+        "rental": 0,
+        "email": 2,
+        "no_answer": 85,
+        "cph": 13.4,
+        "successRate": 2.0,
+        "workTime": 7.5844,
+        "talkTime": 0.3658,
+        "wrapTime": 6.8608,
+        "pauseTime": 0.0964,
+        "waitTime": 0.2614,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "CONQUERORS"
+        ],
+        "answered": 17,
+        "talkPct": 4.8,
+        "wrapPct": 90.5,
+        "waitPct": 3.4,
+        "workPct": 98.7
       },
       {
         "name": "StaddyMalonga",
@@ -7391,12 +7504,25 @@
           "workTime": 6.5803,
           "talkTime": 2.0208
         }
+      },
+      "DeclanT": {
+        "CONQUERORS_CM": {
+          "calls": 102,
+          "success": 2,
+          "seller": 0,
+          "rental": 0,
+          "email": 2,
+          "no_answer": 85,
+          "answered": 17,
+          "workTime": 7.5844,
+          "talkTime": 0.3658
+        }
       }
     }
   },
   {
     "date": "2026-08-13",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "Test",
@@ -7537,7 +7663,7 @@
         "success": 14,
         "seller": 0,
         "rental": 0,
-        "email": 14,
+        "email": 13,
         "no_answer": 95,
         "cph": 29.6,
         "successRate": 8.9,
@@ -7758,7 +7884,7 @@
           "success": 11,
           "seller": 0,
           "rental": 0,
-          "email": 11,
+          "email": 10,
           "no_answer": 93,
           "answered": 35,
           "workTime": 3.5461,
@@ -7932,7 +8058,7 @@
   },
   {
     "date": "2026-08-12",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "Test",
@@ -8067,6 +8193,32 @@
       }
     ],
     "fancy": [
+      {
+        "name": "DeclanT",
+        "calls": 125,
+        "success": 1,
+        "seller": 0,
+        "rental": 0,
+        "email": 1,
+        "no_answer": 105,
+        "cph": 16.8,
+        "successRate": 0.8,
+        "workTime": 7.4556,
+        "talkTime": 0.4194,
+        "wrapTime": 6.6311,
+        "pauseTime": 0.1067,
+        "waitTime": 0.2983,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "CONQUERORS"
+        ],
+        "answered": 20,
+        "talkPct": 5.6,
+        "wrapPct": 88.9,
+        "waitPct": 4.0,
+        "workPct": 98.6
+      },
       {
         "name": "Aqeefah Arendse",
         "calls": 51,
@@ -8507,12 +8659,25 @@
           "workTime": 6.5972,
           "talkTime": 1.57
         }
+      },
+      "DeclanT": {
+        "CONQUERORS_CM": {
+          "calls": 125,
+          "success": 1,
+          "seller": 0,
+          "rental": 0,
+          "email": 1,
+          "no_answer": 105,
+          "answered": 20,
+          "workTime": 7.4556,
+          "talkTime": 0.4194
+        }
       }
     }
   },
   {
     "date": "2026-08-11",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "Test",
@@ -9126,28 +9291,28 @@
   },
   {
     "date": "2026-08-10",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-09",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-08",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-07",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "Test",
@@ -9306,6 +9471,32 @@
         "wrapPct": 81.8,
         "waitPct": 11.8,
         "workPct": 99.6
+      },
+      {
+        "name": "DeclanT",
+        "calls": 132,
+        "success": 4,
+        "seller": 0,
+        "rental": 0,
+        "email": 4,
+        "no_answer": 100,
+        "cph": 18.1,
+        "successRate": 3.0,
+        "workTime": 7.2981,
+        "talkTime": 0.4669,
+        "wrapTime": 6.3986,
+        "pauseTime": 0.1442,
+        "waitTime": 0.2883,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "CONQUERORS"
+        ],
+        "answered": 32,
+        "talkPct": 6.4,
+        "wrapPct": 87.7,
+        "waitPct": 4.0,
+        "workPct": 98.1
       },
       {
         "name": "TamzinJacobs",
@@ -9717,12 +9908,25 @@
           "workTime": 6.9522,
           "talkTime": 1.8481
         }
+      },
+      "DeclanT": {
+        "CONQUERORS_CM": {
+          "calls": 132,
+          "success": 4,
+          "seller": 0,
+          "rental": 0,
+          "email": 4,
+          "no_answer": 100,
+          "answered": 32,
+          "workTime": 7.2981,
+          "talkTime": 0.4669
+        }
       }
     }
   },
   {
     "date": "2026-08-06",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "Test",
@@ -10406,7 +10610,7 @@
   },
   {
     "date": "2026-08-05",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -10441,7 +10645,7 @@
         "seller": 1,
         "rental": 0,
         "email": 13,
-        "no_answer": 182,
+        "no_answer": 181,
         "cph": 46.0,
         "successRate": 5.4,
         "workTime": 5.6114,
@@ -10454,7 +10658,7 @@
         "campaigns": [
           "CLIENTHUB"
         ],
-        "answered": 76,
+        "answered": 77,
         "talkPct": 24.4,
         "wrapPct": 72.0,
         "waitPct": 3.2,
@@ -10617,6 +10821,32 @@
         "wrapPct": 82.3,
         "waitPct": 8.4,
         "workPct": 100.0
+      },
+      {
+        "name": "DeclanT",
+        "calls": 137,
+        "success": 2,
+        "seller": 1,
+        "rental": 0,
+        "email": 1,
+        "no_answer": 107,
+        "cph": 18.3,
+        "successRate": 1.5,
+        "workTime": 7.4664,
+        "talkTime": 0.4506,
+        "wrapTime": 6.6242,
+        "pauseTime": 0.1292,
+        "waitTime": 0.2625,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "CONQUERORS"
+        ],
+        "answered": 30,
+        "talkPct": 6.0,
+        "wrapPct": 88.7,
+        "waitPct": 3.5,
+        "workPct": 98.3
       },
       {
         "name": "StaddyMalonga",
@@ -11357,8 +11587,8 @@
           "seller": 1,
           "rental": 0,
           "email": 13,
-          "no_answer": 182,
-          "answered": 76,
+          "no_answer": 181,
+          "answered": 77,
           "workTime": 5.6114,
           "talkTime": 1.3675
         }
@@ -11401,12 +11631,25 @@
           "workTime": 2.8061,
           "talkTime": 0.2675
         }
+      },
+      "DeclanT": {
+        "CONQUERORS_CM": {
+          "calls": 137,
+          "success": 2,
+          "seller": 1,
+          "rental": 0,
+          "email": 1,
+          "no_answer": 107,
+          "answered": 30,
+          "workTime": 7.4664,
+          "talkTime": 0.4506
+        }
       }
     }
   },
   {
     "date": "2026-08-04",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "Test",
@@ -11415,7 +11658,7 @@
         "seller": 4,
         "rental": 0,
         "email": 23,
-        "no_answer": 203,
+        "no_answer": 202,
         "cph": 46.1,
         "successRate": 8.7,
         "workTime": 6.7483,
@@ -11428,7 +11671,7 @@
         "campaigns": [
           "CLIENTHUB"
         ],
-        "answered": 108,
+        "answered": 109,
         "talkPct": 25.8,
         "wrapPct": 70.9,
         "waitPct": 2.7,
@@ -11467,7 +11710,7 @@
         "seller": 1,
         "rental": 0,
         "email": 15,
-        "no_answer": 132,
+        "no_answer": 131,
         "cph": 29.1,
         "successRate": 6.9,
         "workTime": 7.9261,
@@ -11480,7 +11723,7 @@
         "campaigns": [
           "CLIENTHUB"
         ],
-        "answered": 99,
+        "answered": 100,
         "talkPct": 18.1,
         "wrapPct": 79.9,
         "waitPct": 1.8,
@@ -12165,8 +12408,8 @@
           "seller": 1,
           "rental": 0,
           "email": 15,
-          "no_answer": 132,
-          "answered": 99,
+          "no_answer": 131,
+          "answered": 100,
           "workTime": 7.9261,
           "talkTime": 1.4322
         }
@@ -12217,8 +12460,8 @@
           "seller": 4,
           "rental": 0,
           "email": 23,
-          "no_answer": 203,
-          "answered": 108,
+          "no_answer": 202,
+          "answered": 109,
           "workTime": 6.7483,
           "talkTime": 1.7439
         }
@@ -12253,7 +12496,7 @@
   },
   {
     "date": "2026-08-03",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [
       {
         "name": "Test",
@@ -13085,7 +13328,7 @@
   },
   {
     "date": "2026-08-02",
-    "generated": "2026-09-02T10:14:37.427666+00:00",
+    "generated": "2026-09-02T13:24:44.179754+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
