@@ -296,7 +296,7 @@
   },
   {
     "date": "2026-09-01",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "NeelamJameel",
@@ -403,6 +403,32 @@
         "wrapPct": 72.9,
         "waitPct": 6.9,
         "workPct": 99.5
+      },
+      {
+        "name": "TamzinJacobs",
+        "calls": 122,
+        "success": 1,
+        "seller": 0,
+        "rental": 0,
+        "email": 1,
+        "no_answer": 94,
+        "cph": 35.4,
+        "successRate": 0.8,
+        "workTime": 3.4436,
+        "talkTime": 0.2531,
+        "wrapTime": 2.6447,
+        "pauseTime": 0.0069,
+        "waitTime": 0.5389,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "HOEKERS"
+        ],
+        "answered": 28,
+        "talkPct": 7.3,
+        "wrapPct": 76.8,
+        "waitPct": 15.6,
+        "workPct": 99.8
       },
       {
         "name": "DeclanT",
@@ -921,12 +947,25 @@
           "workTime": 3.9894,
           "talkTime": 2.0678
         }
+      },
+      "TamzinJacobs": {
+        "HOEKERS_NA": {
+          "calls": 122,
+          "success": 1,
+          "seller": 0,
+          "rental": 0,
+          "email": 1,
+          "no_answer": 94,
+          "answered": 28,
+          "workTime": 3.4436,
+          "talkTime": 0.2531
+        }
       }
     }
   },
   {
     "date": "2026-08-31",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "NeelamJameel",
@@ -1035,6 +1074,32 @@
         "wrapPct": 44.4,
         "waitPct": 26.7,
         "workPct": 98.9
+      },
+      {
+        "name": "TamzinJacobs",
+        "calls": 122,
+        "success": 3,
+        "seller": 2,
+        "rental": 0,
+        "email": 1,
+        "no_answer": 90,
+        "cph": 27.8,
+        "successRate": 2.5,
+        "workTime": 4.3842,
+        "talkTime": 0.3306,
+        "wrapTime": 3.3406,
+        "pauseTime": 0.0047,
+        "waitTime": 0.7083,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "HOEKERS"
+        ],
+        "answered": 32,
+        "talkPct": 7.5,
+        "wrapPct": 76.2,
+        "waitPct": 16.2,
+        "workPct": 99.9
       },
       {
         "name": "StaddyMalonga",
@@ -1575,26 +1640,39 @@
           "workTime": 7.3275,
           "talkTime": 0.7428
         }
+      },
+      "TamzinJacobs": {
+        "HOEKERS_NA": {
+          "calls": 122,
+          "success": 3,
+          "seller": 2,
+          "rental": 0,
+          "email": 1,
+          "no_answer": 90,
+          "answered": 32,
+          "workTime": 4.3842,
+          "talkTime": 0.3306
+        }
       }
     }
   },
   {
     "date": "2026-08-30",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-29",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-28",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "SadiqaCarelse",
@@ -1678,28 +1756,29 @@
     "fancy": [
       {
         "name": "KirstenLS",
-        "calls": 162,
+        "calls": 164,
         "success": 2,
         "seller": 1,
         "rental": 0,
         "email": 1,
-        "no_answer": 49,
-        "cph": 35.8,
+        "no_answer": 51,
+        "cph": 36.2,
         "successRate": 1.2,
-        "workTime": 4.5225,
+        "workTime": 4.5292,
         "talkTime": 1.3928,
-        "wrapTime": 1.5261,
-        "pauseTime": 0.0391,
+        "wrapTime": 1.5319,
+        "pauseTime": 0.0399,
         "waitTime": 1.5645,
         "is_rm": false,
         "meetsTarget": false,
         "campaigns": [
-          "FARMERS"
+          "FARMERS",
+          "HOEKERS"
         ],
         "answered": 113,
         "talkPct": 30.8,
-        "wrapPct": 33.7,
-        "waitPct": 34.6,
+        "wrapPct": 33.8,
+        "waitPct": 34.5,
         "workPct": 99.1
       },
       {
@@ -1909,6 +1988,17 @@
           "answered": 16,
           "workTime": 1.0608,
           "talkTime": 0.2461
+        },
+        "HOEKERS_NA": {
+          "calls": 2,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 2,
+          "answered": 0,
+          "workTime": 0.0067,
+          "talkTime": 0.0
         }
       },
       "ShanikaLotz": {
@@ -2002,7 +2092,7 @@
   },
   {
     "date": "2026-08-27",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "SadiqaCarelse",
@@ -2084,6 +2174,32 @@
       }
     ],
     "fancy": [
+      {
+        "name": "TamzinJacobs",
+        "calls": 151,
+        "success": 6,
+        "seller": 1,
+        "rental": 0,
+        "email": 5,
+        "no_answer": 117,
+        "cph": 36.1,
+        "successRate": 4.0,
+        "workTime": 4.1867,
+        "talkTime": 0.4544,
+        "wrapTime": 3.2617,
+        "pauseTime": 0.0103,
+        "waitTime": 0.4603,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "HOEKERS"
+        ],
+        "answered": 34,
+        "talkPct": 10.9,
+        "wrapPct": 77.9,
+        "waitPct": 11.0,
+        "workPct": 99.8
+      },
       {
         "name": "DeclanT",
         "calls": 111,
@@ -2436,12 +2552,25 @@
           "workTime": 4.9647,
           "talkTime": 2.6067
         }
+      },
+      "TamzinJacobs": {
+        "HOEKERS_NA": {
+          "calls": 151,
+          "success": 6,
+          "seller": 1,
+          "rental": 0,
+          "email": 5,
+          "no_answer": 117,
+          "answered": 34,
+          "workTime": 4.1867,
+          "talkTime": 0.4544
+        }
       }
     }
   },
   {
     "date": "2026-08-26",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "NeelamJameel",
@@ -2628,6 +2757,32 @@
         "workPct": 97.7
       },
       {
+        "name": "TamzinJacobs",
+        "calls": 60,
+        "success": 0,
+        "seller": 0,
+        "rental": 0,
+        "email": 0,
+        "no_answer": 44,
+        "cph": 43.1,
+        "successRate": 0.0,
+        "workTime": 1.3931,
+        "talkTime": 0.2325,
+        "wrapTime": 1.0233,
+        "pauseTime": 0.0,
+        "waitTime": 0.1372,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "HOEKERS"
+        ],
+        "answered": 16,
+        "talkPct": 16.7,
+        "wrapPct": 73.5,
+        "waitPct": 9.8,
+        "workPct": 100.0
+      },
+      {
         "name": "LukevanWyk",
         "calls": 26,
         "success": 6,
@@ -2808,12 +2963,25 @@
           "workTime": 0.0689,
           "talkTime": 0.0147
         }
+      },
+      "TamzinJacobs": {
+        "HOEKERS_NA": {
+          "calls": 60,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 44,
+          "answered": 16,
+          "workTime": 1.3931,
+          "talkTime": 0.2325
+        }
       }
     }
   },
   {
     "date": "2026-08-25",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -3210,7 +3378,7 @@
   },
   {
     "date": "2026-08-24",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -3774,21 +3942,21 @@
   },
   {
     "date": "2026-08-23",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-22",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-21",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -4344,7 +4512,7 @@
   },
   {
     "date": "2026-08-20",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -4912,7 +5080,7 @@
   },
   {
     "date": "2026-08-19",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "SadiqaCarelse",
@@ -5311,28 +5479,29 @@
       },
       {
         "name": "JaredBrooks",
-        "calls": 2,
+        "calls": 3,
         "success": 0,
         "seller": 0,
         "rental": 0,
         "email": 0,
-        "no_answer": 0,
-        "cph": 38.3,
+        "no_answer": 1,
+        "cph": 19.0,
         "successRate": 0.0,
-        "workTime": 0.0522,
-        "talkTime": 0.0181,
-        "wrapTime": 0.0228,
+        "workTime": 0.1575,
+        "talkTime": 0.0339,
+        "wrapTime": 0.1109,
         "pauseTime": 0.0,
-        "waitTime": 0.0114,
+        "waitTime": 0.0128,
         "is_rm": false,
         "meetsTarget": false,
         "campaigns": [
-          "RACOONS"
+          "RACOONS",
+          "RACCOONS"
         ],
         "answered": 2,
-        "talkPct": 34.7,
-        "wrapPct": 43.7,
-        "waitPct": 21.8,
+        "talkPct": 21.5,
+        "wrapPct": 70.4,
+        "waitPct": 8.1,
         "workPct": 100.0
       }
     ],
@@ -5485,6 +5654,17 @@
           "answered": 2,
           "workTime": 0.0522,
           "talkTime": 0.0181
+        },
+        "RACCOONS_NA": {
+          "calls": 1,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 1,
+          "answered": 0,
+          "workTime": 0.1053,
+          "talkTime": 0.0158
         }
       },
       "ZivanaKriel": {
@@ -5593,7 +5773,7 @@
   },
   {
     "date": "2026-08-18",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "SadiqaCarelse",
@@ -6185,7 +6365,7 @@
   },
   {
     "date": "2026-08-17",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "Test",
@@ -6373,28 +6553,29 @@
       },
       {
         "name": "TamzinJacobs",
-        "calls": 124,
+        "calls": 125,
         "success": 17,
         "seller": 0,
         "rental": 0,
         "email": 17,
-        "no_answer": 62,
-        "cph": 24.9,
-        "successRate": 13.7,
-        "workTime": 4.9789,
+        "no_answer": 63,
+        "cph": 25.0,
+        "successRate": 13.6,
+        "workTime": 5.0033,
         "talkTime": 0.435,
-        "wrapTime": 3.6939,
-        "pauseTime": 0.0231,
-        "waitTime": 0.8269,
+        "wrapTime": 3.7056,
+        "pauseTime": 0.0264,
+        "waitTime": 0.8363,
         "is_rm": false,
         "meetsTarget": false,
         "campaigns": [
-          "VIPERS"
+          "VIPERS",
+          "HOEKERS"
         ],
         "answered": 62,
         "talkPct": 8.7,
-        "wrapPct": 74.2,
-        "waitPct": 16.6,
+        "wrapPct": 74.1,
+        "waitPct": 16.7,
         "workPct": 99.5
       },
       {
@@ -6704,6 +6885,17 @@
           "answered": 62,
           "workTime": 4.9789,
           "talkTime": 0.435
+        },
+        "HOEKERS_NA": {
+          "calls": 1,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 1,
+          "answered": 0,
+          "workTime": 0.0244,
+          "talkTime": 0.0
         }
       },
       "JoshAdonis": {
@@ -6788,21 +6980,21 @@
   },
   {
     "date": "2026-08-16",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-15",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-14",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "Test",
@@ -7522,7 +7714,7 @@
   },
   {
     "date": "2026-08-13",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "Test",
@@ -8058,7 +8250,7 @@
   },
   {
     "date": "2026-08-12",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "Test",
@@ -8677,7 +8869,7 @@
   },
   {
     "date": "2026-08-11",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "Test",
@@ -9291,28 +9483,28 @@
   },
   {
     "date": "2026-08-10",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-09",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-08",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-07",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "Test",
@@ -9473,6 +9665,33 @@
         "workPct": 99.6
       },
       {
+        "name": "TamzinJacobs",
+        "calls": 138,
+        "success": 20,
+        "seller": 3,
+        "rental": 0,
+        "email": 17,
+        "no_answer": 13,
+        "cph": 24.1,
+        "successRate": 14.5,
+        "workTime": 5.7158,
+        "talkTime": 1.385,
+        "wrapTime": 1.8836,
+        "pauseTime": 0.012,
+        "waitTime": 2.4353,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "HOEKERS",
+          "VIPERS"
+        ],
+        "answered": 125,
+        "talkPct": 24.2,
+        "wrapPct": 33.0,
+        "waitPct": 42.6,
+        "workPct": 99.8
+      },
+      {
         "name": "DeclanT",
         "calls": 132,
         "success": 4,
@@ -9497,33 +9716,6 @@
         "wrapPct": 87.7,
         "waitPct": 4.0,
         "workPct": 98.1
-      },
-      {
-        "name": "TamzinJacobs",
-        "calls": 126,
-        "success": 20,
-        "seller": 3,
-        "rental": 0,
-        "email": 17,
-        "no_answer": 5,
-        "cph": 32.2,
-        "successRate": 15.9,
-        "workTime": 3.9116,
-        "talkTime": 1.3542,
-        "wrapTime": 0.2442,
-        "pauseTime": 0.012,
-        "waitTime": 2.3014,
-        "is_rm": false,
-        "meetsTarget": false,
-        "campaigns": [
-          "HOEKERS",
-          "VIPERS"
-        ],
-        "answered": 121,
-        "talkPct": 34.6,
-        "wrapPct": 6.2,
-        "waitPct": 58.8,
-        "workPct": 99.7
       },
       {
         "name": "KirstenLS",
@@ -9829,6 +10021,17 @@
           "answered": 81,
           "workTime": 2.2219,
           "talkTime": 0.8842
+        },
+        "HOEKERS_NA": {
+          "calls": 12,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 8,
+          "answered": 4,
+          "workTime": 1.8042,
+          "talkTime": 0.0308
         }
       },
       "ShanikaLotz": {
@@ -9926,7 +10129,7 @@
   },
   {
     "date": "2026-08-06",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "Test",
@@ -10059,6 +10262,32 @@
         "wrapPct": 88.7,
         "waitPct": 2.4,
         "workPct": 97.4
+      },
+      {
+        "name": "TamzinJacobs",
+        "calls": 107,
+        "success": 10,
+        "seller": 0,
+        "rental": 0,
+        "email": 10,
+        "no_answer": 72,
+        "cph": 17.0,
+        "successRate": 9.3,
+        "workTime": 6.2998,
+        "talkTime": 0.3353,
+        "wrapTime": 5.1823,
+        "pauseTime": 0.0172,
+        "waitTime": 0.765,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "HOEKERS"
+        ],
+        "answered": 35,
+        "talkPct": 5.3,
+        "wrapPct": 82.3,
+        "waitPct": 12.1,
+        "workPct": 99.7
       },
       {
         "name": "StaddyMalonga",
@@ -10295,32 +10524,6 @@
         "workPct": 100.0
       },
       {
-        "name": "TamzinJacobs",
-        "calls": 4,
-        "success": 2,
-        "seller": 0,
-        "rental": 0,
-        "email": 2,
-        "no_answer": 0,
-        "cph": 26.6,
-        "successRate": 50.0,
-        "workTime": 0.1506,
-        "talkTime": 0.0461,
-        "wrapTime": 0.0056,
-        "pauseTime": 0.0022,
-        "waitTime": 0.0967,
-        "is_rm": false,
-        "meetsTarget": false,
-        "campaigns": [
-          "HOEKERS"
-        ],
-        "answered": 4,
-        "talkPct": 30.6,
-        "wrapPct": 3.7,
-        "waitPct": 64.2,
-        "workPct": 98.6
-      },
-      {
         "name": "quinn",
         "calls": 3,
         "success": 0,
@@ -10437,6 +10640,17 @@
           "answered": 4,
           "workTime": 0.1506,
           "talkTime": 0.0461
+        },
+        "HOEKERS_NA": {
+          "calls": 103,
+          "success": 8,
+          "seller": 0,
+          "rental": 0,
+          "email": 8,
+          "no_answer": 72,
+          "answered": 31,
+          "workTime": 6.1492,
+          "talkTime": 0.2892
         }
       },
       "QhayiyaDayimani": {
@@ -10610,7 +10824,7 @@
   },
   {
     "date": "2026-08-05",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -10795,6 +11009,32 @@
         "wrapPct": 68.0,
         "waitPct": 12.2,
         "workPct": 97.4
+      },
+      {
+        "name": "TamzinJacobs",
+        "calls": 185,
+        "success": 9,
+        "seller": 2,
+        "rental": 0,
+        "email": 7,
+        "no_answer": 119,
+        "cph": 26.2,
+        "successRate": 4.9,
+        "workTime": 7.0636,
+        "talkTime": 0.7353,
+        "wrapTime": 5.5711,
+        "pauseTime": 0.0125,
+        "waitTime": 0.7447,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "HOEKERS"
+        ],
+        "answered": 66,
+        "talkPct": 10.4,
+        "wrapPct": 78.9,
+        "waitPct": 10.5,
+        "workPct": 99.8
       },
       {
         "name": "QhayiyaDayimani",
@@ -11030,32 +11270,6 @@
         "wrapPct": 47.1,
         "waitPct": 14.8,
         "workPct": 99.4
-      },
-      {
-        "name": "TamzinJacobs",
-        "calls": 30,
-        "success": 5,
-        "seller": 1,
-        "rental": 0,
-        "email": 4,
-        "no_answer": 0,
-        "cph": 44.4,
-        "successRate": 16.7,
-        "workTime": 0.6753,
-        "talkTime": 0.2811,
-        "wrapTime": 0.0717,
-        "pauseTime": 0.0047,
-        "waitTime": 0.3178,
-        "is_rm": false,
-        "meetsTarget": false,
-        "campaigns": [
-          "HOEKERS"
-        ],
-        "answered": 30,
-        "talkPct": 41.6,
-        "wrapPct": 10.6,
-        "waitPct": 47.1,
-        "workPct": 99.3
       },
       {
         "name": "ZivanaKriel",
@@ -11402,6 +11616,17 @@
           "answered": 30,
           "workTime": 0.6753,
           "talkTime": 0.2811
+        },
+        "HOEKERS_NA": {
+          "calls": 155,
+          "success": 4,
+          "seller": 1,
+          "rental": 0,
+          "email": 3,
+          "no_answer": 119,
+          "answered": 36,
+          "workTime": 6.3883,
+          "talkTime": 0.4542
         }
       },
       "ShanikaLotz": {
@@ -11649,7 +11874,7 @@
   },
   {
     "date": "2026-08-04",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "Test",
@@ -11836,6 +12061,32 @@
     ],
     "fancy": [
       {
+        "name": "TamzinJacobs",
+        "calls": 119,
+        "success": 17,
+        "seller": 1,
+        "rental": 0,
+        "email": 16,
+        "no_answer": 51,
+        "cph": 16.3,
+        "successRate": 14.3,
+        "workTime": 7.3219,
+        "talkTime": 0.8327,
+        "wrapTime": 5.8478,
+        "pauseTime": 0.0209,
+        "waitTime": 0.6206,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "HOEKERS"
+        ],
+        "answered": 68,
+        "talkPct": 11.4,
+        "wrapPct": 79.9,
+        "waitPct": 8.5,
+        "workPct": 99.7
+      },
+      {
         "name": "DeclanT",
         "calls": 118,
         "success": 5,
@@ -12017,32 +12268,6 @@
         "wrapPct": 4.4,
         "waitPct": 56.9,
         "workPct": 99.6
-      },
-      {
-        "name": "TamzinJacobs",
-        "calls": 48,
-        "success": 12,
-        "seller": 1,
-        "rental": 0,
-        "email": 11,
-        "no_answer": 1,
-        "cph": 39.7,
-        "successRate": 25.0,
-        "workTime": 1.2083,
-        "talkTime": 0.5658,
-        "wrapTime": 0.1517,
-        "pauseTime": 0.0192,
-        "waitTime": 0.4717,
-        "is_rm": false,
-        "meetsTarget": false,
-        "campaigns": [
-          "HOEKERS"
-        ],
-        "answered": 47,
-        "talkPct": 46.8,
-        "wrapPct": 12.6,
-        "waitPct": 39.0,
-        "workPct": 98.4
       },
       {
         "name": "AnneeqaWilliams",
@@ -12275,6 +12500,17 @@
           "answered": 47,
           "workTime": 1.2083,
           "talkTime": 0.5658
+        },
+        "HOEKERS_NA": {
+          "calls": 71,
+          "success": 5,
+          "seller": 0,
+          "rental": 0,
+          "email": 5,
+          "no_answer": 50,
+          "answered": 21,
+          "workTime": 6.1136,
+          "talkTime": 0.2669
         }
       },
       "QhayiyaDayimani": {
@@ -12496,7 +12732,7 @@
   },
   {
     "date": "2026-08-03",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [
       {
         "name": "Test",
@@ -12683,6 +12919,33 @@
         "workPct": 99.9
       },
       {
+        "name": "TamzinJacobs",
+        "calls": 110,
+        "success": 17,
+        "seller": 1,
+        "rental": 0,
+        "email": 17,
+        "no_answer": 33,
+        "cph": 17.1,
+        "successRate": 15.5,
+        "workTime": 6.4427,
+        "talkTime": 0.8636,
+        "wrapTime": 4.8147,
+        "pauseTime": 0.0097,
+        "waitTime": 0.7547,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "HOEKERS",
+          "VIPERS"
+        ],
+        "answered": 77,
+        "talkPct": 13.4,
+        "wrapPct": 74.7,
+        "waitPct": 11.7,
+        "workPct": 99.8
+      },
+      {
         "name": "StaddyMalonga",
         "calls": 100,
         "success": 7,
@@ -12733,33 +12996,6 @@
         "wrapPct": 4.5,
         "waitPct": 51.3,
         "workPct": 99.3
-      },
-      {
-        "name": "TamzinJacobs",
-        "calls": 68,
-        "success": 15,
-        "seller": 1,
-        "rental": 0,
-        "email": 15,
-        "no_answer": 5,
-        "cph": 41.8,
-        "successRate": 22.1,
-        "workTime": 1.6266,
-        "talkTime": 0.7367,
-        "wrapTime": 0.2139,
-        "pauseTime": 0.0097,
-        "waitTime": 0.6664,
-        "is_rm": false,
-        "meetsTarget": false,
-        "campaigns": [
-          "HOEKERS",
-          "VIPERS"
-        ],
-        "answered": 63,
-        "talkPct": 45.3,
-        "wrapPct": 13.2,
-        "waitPct": 41.0,
-        "workPct": 99.4
       },
       {
         "name": "LukevanWyk",
@@ -13133,6 +13369,17 @@
           "answered": 50,
           "workTime": 1.2269,
           "talkTime": 0.5792
+        },
+        "HOEKERS_NA": {
+          "calls": 42,
+          "success": 2,
+          "seller": 0,
+          "rental": 0,
+          "email": 2,
+          "no_answer": 28,
+          "answered": 14,
+          "workTime": 4.8161,
+          "talkTime": 0.1269
         }
       },
       "ShanikaLotz": {
@@ -13328,14 +13575,14 @@
   },
   {
     "date": "2026-08-02",
-    "generated": "2026-09-02T13:24:44.179754+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-01",
-    "generated": "2026-08-08T17:35:58.784137+00:00",
+    "generated": "2026-09-02T14:57:32.407182+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
