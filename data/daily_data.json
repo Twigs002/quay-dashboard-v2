@@ -1,7 +1,302 @@
 [
   {
+    "date": "2026-09-02",
+    "generated": "2026-09-02T09:26:07.632461+00:00",
+    "rm": [
+      {
+        "name": "Gio",
+        "calls": 82,
+        "success": 16,
+        "seller": 4,
+        "rental": 0,
+        "email": 12,
+        "no_answer": 5,
+        "cph": 37.1,
+        "successRate": 19.5,
+        "workTime": 2.2122,
+        "talkTime": 1.0561,
+        "wrapTime": 0.2283,
+        "pauseTime": 0.035,
+        "waitTime": 0.8928,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB"
+        ],
+        "answered": 77,
+        "talkPct": 47.7,
+        "wrapPct": 10.3,
+        "waitPct": 40.4,
+        "workPct": 98.4
+      },
+      {
+        "name": "DeclanT",
+        "calls": 65,
+        "success": 16,
+        "seller": 4,
+        "rental": 0,
+        "email": 12,
+        "no_answer": 6,
+        "cph": 21.5,
+        "successRate": 24.6,
+        "workTime": 3.0206,
+        "talkTime": 0.8981,
+        "wrapTime": 1.3844,
+        "pauseTime": 0.1003,
+        "waitTime": 0.6378,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB"
+        ],
+        "answered": 59,
+        "talkPct": 29.7,
+        "wrapPct": 45.8,
+        "waitPct": 21.1,
+        "workPct": 96.8
+      },
+      {
+        "name": "SadiqaCarelse",
+        "calls": 35,
+        "success": 5,
+        "seller": 0,
+        "rental": 0,
+        "email": 5,
+        "no_answer": 1,
+        "cph": 35.4,
+        "successRate": 14.3,
+        "workTime": 0.9875,
+        "talkTime": 0.5986,
+        "wrapTime": 0.0331,
+        "pauseTime": 0.0092,
+        "waitTime": 0.3467,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB"
+        ],
+        "answered": 34,
+        "talkPct": 60.6,
+        "wrapPct": 3.4,
+        "waitPct": 35.1,
+        "workPct": 99.1
+      }
+    ],
+    "fancy": [
+      {
+        "name": "GenevaGomes",
+        "calls": 35,
+        "success": 1,
+        "seller": 1,
+        "rental": 0,
+        "email": 0,
+        "no_answer": 1,
+        "cph": 38.5,
+        "successRate": 2.9,
+        "workTime": 0.9083,
+        "talkTime": 0.4328,
+        "wrapTime": 0.0367,
+        "pauseTime": 0.0,
+        "waitTime": 0.4389,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "WEASELS"
+        ],
+        "answered": 34,
+        "talkPct": 47.6,
+        "wrapPct": 4.0,
+        "waitPct": 48.3,
+        "workPct": 100.0
+      },
+      {
+        "name": "BronwynBotha",
+        "calls": 13,
+        "success": 0,
+        "seller": 0,
+        "rental": 0,
+        "email": 0,
+        "no_answer": 6,
+        "cph": 24.7,
+        "successRate": 0.0,
+        "workTime": 0.5264,
+        "talkTime": 0.0458,
+        "wrapTime": 0.4136,
+        "pauseTime": 0.0069,
+        "waitTime": 0.06,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "DUTCHMEN",
+          "SURFERS"
+        ],
+        "answered": 7,
+        "talkPct": 8.7,
+        "wrapPct": 78.6,
+        "waitPct": 11.4,
+        "workPct": 98.7
+      },
+      {
+        "name": "NeelamJameel",
+        "calls": 0,
+        "success": 0,
+        "seller": 0,
+        "rental": 0,
+        "email": 0,
+        "no_answer": 0,
+        "cph": 0.0,
+        "successRate": 0.0,
+        "workTime": 2.5278,
+        "talkTime": 0.3253,
+        "wrapTime": 1.6242,
+        "pauseTime": 0.0183,
+        "waitTime": 0.56,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "PROM_QUEENS"
+        ],
+        "answered": 0,
+        "talkPct": 12.9,
+        "wrapPct": 64.3,
+        "waitPct": 22.2,
+        "workPct": 99.3
+      },
+      {
+        "name": "quinn",
+        "calls": 0,
+        "success": 0,
+        "seller": 0,
+        "rental": 0,
+        "email": 0,
+        "no_answer": 0,
+        "cph": 0.0,
+        "successRate": 0.0,
+        "workTime": 0.2031,
+        "talkTime": 0.0656,
+        "wrapTime": 0.0108,
+        "pauseTime": 0.0,
+        "waitTime": 0.1267,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "TNT"
+        ],
+        "answered": 0,
+        "talkPct": 32.3,
+        "wrapPct": 5.3,
+        "waitPct": 62.4,
+        "workPct": 100.0
+      }
+    ],
+    "by_agent_campaign": {
+      "BronwynBotha": {
+        "DUTCHMEN_CM": {
+          "calls": 12,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 6,
+          "answered": 6,
+          "workTime": 0.4286,
+          "talkTime": 0.0386
+        },
+        "SURFERS_CM": {
+          "calls": 1,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 0,
+          "answered": 1,
+          "workTime": 0.0978,
+          "talkTime": 0.0072
+        }
+      },
+      "NeelamJameel": {
+        "PROM_QUEENS_CM": {
+          "calls": 0,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 0,
+          "answered": 0,
+          "workTime": 2.5278,
+          "talkTime": 0.3253
+        }
+      },
+      "quinn": {
+        "TNT_NA": {
+          "calls": 0,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 0,
+          "answered": 0,
+          "workTime": 0.2031,
+          "talkTime": 0.0656
+        }
+      },
+      "GenevaGomes": {
+        "WEASELS_CM": {
+          "calls": 35,
+          "success": 1,
+          "seller": 1,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 1,
+          "answered": 34,
+          "workTime": 0.9083,
+          "talkTime": 0.4328
+        }
+      },
+      "DeclanT": {
+        "CLIENTHUB": {
+          "calls": 65,
+          "success": 16,
+          "seller": 4,
+          "rental": 0,
+          "email": 12,
+          "no_answer": 6,
+          "answered": 59,
+          "workTime": 3.0206,
+          "talkTime": 0.8981
+        }
+      },
+      "Gio": {
+        "CLIENTHUB": {
+          "calls": 82,
+          "success": 16,
+          "seller": 4,
+          "rental": 0,
+          "email": 12,
+          "no_answer": 5,
+          "answered": 77,
+          "workTime": 2.2122,
+          "talkTime": 1.0561
+        }
+      },
+      "SadiqaCarelse": {
+        "CLIENTHUB": {
+          "calls": 35,
+          "success": 5,
+          "seller": 0,
+          "rental": 0,
+          "email": 5,
+          "no_answer": 1,
+          "answered": 34,
+          "workTime": 0.9875,
+          "talkTime": 0.5986
+        }
+      }
+    }
+  },
+  {
     "date": "2026-09-01",
-    "generated": "2026-09-01T19:45:17.845899+00:00",
+    "generated": "2026-09-02T09:26:07.632461+00:00",
     "rm": [
       {
         "name": "NeelamJameel",
@@ -619,7 +914,7 @@
   },
   {
     "date": "2026-08-31",
-    "generated": "2026-09-01T19:45:17.845899+00:00",
+    "generated": "2026-09-02T09:26:07.632461+00:00",
     "rm": [
       {
         "name": "NeelamJameel",
@@ -1234,21 +1529,21 @@
   },
   {
     "date": "2026-08-30",
-    "generated": "2026-09-01T19:45:17.845899+00:00",
+    "generated": "2026-09-02T09:26:07.632461+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-29",
-    "generated": "2026-09-01T19:45:17.845899+00:00",
+    "generated": "2026-09-02T09:26:07.632461+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-28",
-    "generated": "2026-09-01T19:45:17.845899+00:00",
+    "generated": "2026-09-02T09:26:07.632461+00:00",
     "rm": [
       {
         "name": "SadiqaCarelse",
@@ -1644,7 +1939,7 @@
   },
   {
     "date": "2026-08-27",
-    "generated": "2026-09-01T19:45:17.845899+00:00",
+    "generated": "2026-09-02T09:26:07.632461+00:00",
     "rm": [
       {
         "name": "SadiqaCarelse",
@@ -2083,7 +2378,7 @@
   },
   {
     "date": "2026-08-26",
-    "generated": "2026-09-01T19:45:17.845899+00:00",
+    "generated": "2026-09-02T09:26:07.632461+00:00",
     "rm": [
       {
         "name": "NeelamJameel",
