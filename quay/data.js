@@ -16,7 +16,7 @@ window.QUAY_READY = (async function () {
   // returns 304 when the file is unchanged, and the full body only when it
   // actually changed.
   const NC = { cache: 'no-cache' };
-  const [weekly, history, clockData, dailyData, clienthubData] = await Promise.all([
+  const [weekly, history, clockData, dailyData, clienthubData, clienthubDaily] = await Promise.all([
     fetch('data/weekly_data.json', NC).then(r => r.json()),
     fetch('data/history.json', NC).then(r => r.json()),
     fetch('data/clock_data.json', NC).then(r => r.ok ? r.json() : null).catch(() => null),
@@ -26,6 +26,10 @@ window.QUAY_READY = (async function () {
     // ClientHub Master per-team stats (fetch_clienthub_teams.py). Null until
     // the workflow has run; the tab renders a friendly empty state then.
     fetch('data/clienthub_teams.json', NC).then(r => r.ok ? r.json() : null).catch(() => null),
+    // Per-DAY ClientHub per-team stats (fetch_clienthub_daily.py) so an
+    // arbitrary custom range can be summed client-side (Teams Reporting's
+    // Engine Room block). Null/absent until that fetcher has run + backfilled.
+    fetch('data/clienthub_daily.json', NC).then(r => r.ok ? r.json() : null).catch(() => null),
   ]);
 
   // Build a name → clocked hours map from the quay-clock fetcher output.
@@ -1120,6 +1124,47 @@ window.QUAY_READY = (async function () {
     return out;
   }
 
+  // Per-day ClientHub feed (fetch_clienthub_daily.py) — lets an arbitrary
+  // custom range be summed, unlike the four fixed windows above. Absent until
+  // that fetcher has run + backfilled.
+  const _clienthubDays = (clienthubDaily && Array.isArray(clienthubDaily.days)) ? clienthubDaily.days : [];
+
+  // canonicalKey -> {team, calls, seller, rental, email} summed over every
+  // published ClientHub day within [fromYmd, toYmd] inclusive. Empty map when
+  // the daily feed is absent or no covered days fall in the range — pair with
+  // engineRoomRangeCoverage() to tell "no calls" from "no data yet".
+  function engineRoomByTeamRange(fromYmd, toYmd) {
+    const out = new Map();
+    if (!fromYmd || !toYmd || !_clienthubDays.length) return out;
+    const [lo, hi] = fromYmd <= toYmd ? [fromYmd, toYmd] : [toYmd, fromYmd];
+    _clienthubDays.forEach(day => {
+      const d = day && day.date;
+      if (!d || d < lo || d > hi) return;
+      (day.teams || []).forEach(t => {
+        if (!t || !t.team) return;
+        const k = teamCanonical(t.team);
+        const row = out.get(k) || { team: t.team, calls: 0, seller: 0, rental: 0, email: 0 };
+        row.calls += t.calls || 0; row.seller += t.seller || 0;
+        row.rental += t.rental || 0; row.email += t.email || 0;
+        out.set(k, row);
+      });
+    });
+    return out;
+  }
+
+  // How many of the requested days actually have a published ClientHub entry,
+  // and the covered date span. `total` is the feed's overall day count (0 when
+  // the feed is absent) so the UI can say "no data yet" vs "no calls logged".
+  function engineRoomRangeCoverage(fromYmd, toYmd) {
+    if (!fromYmd || !toYmd || !_clienthubDays.length) {
+      return { count: 0, from: null, to: null, total: _clienthubDays.length };
+    }
+    const [lo, hi] = fromYmd <= toYmd ? [fromYmd, toYmd] : [toYmd, fromYmd];
+    const inRange = _clienthubDays.map(d => d && d.date).filter(d => d && d >= lo && d <= hi).sort();
+    return { count: inRange.length, from: inRange[0] || null,
+             to: inRange[inRange.length - 1] || null, total: _clienthubDays.length };
+  }
+
   // ClientHub campaign label -> Lead Sources source label. Mirrors the
   // Dialfire CM/NA/New tags so a team's drill-down reads uniformly.
   const ER_LABELS = { master: 'CM', new: 'New', na: 'NA' };
@@ -1541,6 +1586,7 @@ window.QUAY_READY = (async function () {
     WEEKS, WEEK_CALLS, WEEK_SUCCESS, WEEK_LEADS, WEEK_ACTIVE, trendSeriesFor,
     SOURCES, sourcesFor, campaignsFor,
     leadSourceRows, engineRoomByTeam, clienthubWindowKey: _clienthubWindowKey,
+    engineRoomByTeamRange, engineRoomRangeCoverage,
     monthlyBreakdown, weeksBreakdown,
     dailyDates, dailyFor, latestDailyDate,
     MONTHS, MONTH_CALLS, MONTH_LEADS, MONTH_EMAILS, MONTH_RENTALS, MONTH_DFHOURS,

@@ -4488,18 +4488,18 @@
           </tr>`).join('');
 
     // ── Engine Room (ClientHub manual dialling) breakdown, per selected team.
-    // ClientHub calling is team-level (no per-agent split) and is only published
-    // for the four preset windows (this/last week, this/last month), so it lives
-    // in its own block below the per-caller table rather than being folded into
-    // it. Custom ranges and unsupported presets (billing-period, last-90,
-    // all-time) carry no Engine Room figure — the block says so instead of
-    // silently showing zeros.
-    const erWindowKey = usingCustomRange ? null : Q.clienthubWindowKey(period);
-    const erWin = erWindowKey ? Q.clienthubTeams(erWindowKey) : null;
+    // ClientHub calling is team-level (no per-agent split), so it lives in its
+    // own block below the per-caller table rather than being folded into it.
+    // Presets use the four fixed windows (fetch_clienthub_teams); custom ranges
+    // sum the per-day feed (fetch_clienthub_daily) so any range works. Unsupported
+    // presets (billing-period, last-90, all-time) have no fixed window — the note
+    // points the user at a custom range, which now does work.
+    const erBaseSub = 'ClientHub calling floor · team-level (no per-caller split)';
     let erRows = [];
     const erTot = { calls: 0, seller: 0, rental: 0, email: 0 };
-    if (pickedCount && erWindowKey) {
-      const erMap = Q.engineRoomByTeam(period);
+    let erSub = erBaseSub;
+    let erNote = null;
+    const _collectER = (erMap) => {
       pickedCanon.forEach(k => {
         const row = erMap.get(k);
         if (!row) return;
@@ -4509,26 +4509,44 @@
         erTot.calls += r.calls; erTot.seller += r.seller; erTot.rental += r.rental; erTot.email += r.email;
       });
       erRows.sort((a, b) => b.calls - a.calls);
+    };
+    if (pickedCount) {
+      if (usingCustomRange) {
+        const [a, b] = _trDateFrom <= _trDateTo ? [_trDateFrom, _trDateTo] : [_trDateTo, _trDateFrom];
+        const cov = Q.engineRoomRangeCoverage(a, b);
+        if (cov.total === 0) {
+          erNote = 'Engine Room daily data has not been published yet. The per-day ClientHub feed needs to run and backfill before custom ranges populate here; preset periods (This Week, Last Week, This Month) work in the meantime.';
+        } else if (cov.count === 0) {
+          erNote = `No Engine Room days have been published inside ${a} → ${b} yet.`;
+        } else {
+          _collectER(Q.engineRoomByTeamRange(a, b));
+          const reqDays = Math.round((Date.parse(b) - Date.parse(a)) / 86400000) + 1;
+          const partial = cov.count < reqDays ? ` · ${cov.count} of ${reqDays} days published so far` : '';
+          erSub = `${erBaseSub} · ${cov.from} → ${cov.to}${partial}`;
+          if (erRows.length === 0) erNote = 'No Engine Room calls logged for the selected team(s) over the covered days.';
+        }
+      } else {
+        const erWindowKey = Q.clienthubWindowKey(period);
+        if (!erWindowKey) {
+          erNote = 'Engine Room figures for this period are not published as a fixed window. Pick This Week, Last Week or This Month, or set a custom date range, to see them.';
+        } else {
+          const erWin = Q.clienthubTeams(erWindowKey);
+          _collectER(Q.engineRoomByTeam(period));
+          if (erWin && erWin.from && erWin.to) erSub = `${erBaseSub} · ${erWin.from} → ${erWin.to}`;
+          if (erRows.length === 0) erNote = 'No Engine Room calls logged for the selected team(s) in this period.';
+        }
+      }
     }
     const erBlock = pickedCount === 0 ? '' : (() => {
-      const erCard = (bodyHtml, sub) => `<div class="card mt">
+      const erCard = (bodyHtml) => `<div class="card mt">
         <div class="card-head" style="padding:14px 16px 6px">
           <h3 style="margin:0;font-family:var(--serif);font-size:15px">Engine Room · manual dialling</h3>
-          <div class="sub">${sub}</div>
+          <div class="sub">${erSub}</div>
         </div>
         ${bodyHtml}
       </div>`;
-      const note = m => `<div class="card-pad muted" style="padding-top:0">${m}</div>`;
-      if (!erWindowKey) {
-        return erCard(
-          note(`Engine Room figures are published for preset week and month periods only (This Week, Last Week, This Month). ${usingCustomRange ? 'Clear the custom range' : 'Pick one of those periods in the topbar'} to see them.`),
-          'ClientHub calling floor · team-level (no per-caller split)');
-      }
-      const winSuffix = erWin && erWin.from && erWin.to ? ` · ${erWin.from} → ${erWin.to}` : '';
-      if (erRows.length === 0) {
-        return erCard(
-          note('No Engine Room calls logged for the selected team(s) in this period.'),
-          `ClientHub calling floor · team-level (no per-caller split)${winSuffix}`);
+      if (erNote) {
+        return erCard(`<div class="card-pad muted" style="padding-top:0">${erNote}</div>`);
       }
       const erBodyRows = erRows.map(r => `<tr>
           <td data-label="Team"><b>${escapeHtml(r.team)}</b></td>
@@ -4554,7 +4572,7 @@
         </tr></thead>
         <tbody>${erBodyRows}${erTotalRow}</tbody>
       </table></div>`;
-      return erCard(body, `ClientHub calling floor · team-level (no per-caller split)${winSuffix}`);
+      return erCard(body);
     })();
 
     const todaySast = sastDateStr(new Date());
