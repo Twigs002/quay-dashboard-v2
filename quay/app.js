@@ -4487,6 +4487,76 @@
             <td class="num tnum" data-label="Talk time">${fmtHrs(r.talkTime)}</td>
           </tr>`).join('');
 
+    // ── Engine Room (ClientHub manual dialling) breakdown, per selected team.
+    // ClientHub calling is team-level (no per-agent split) and is only published
+    // for the four preset windows (this/last week, this/last month), so it lives
+    // in its own block below the per-caller table rather than being folded into
+    // it. Custom ranges and unsupported presets (billing-period, last-90,
+    // all-time) carry no Engine Room figure — the block says so instead of
+    // silently showing zeros.
+    const erWindowKey = usingCustomRange ? null : Q.clienthubWindowKey(period);
+    const erWin = erWindowKey ? Q.clienthubTeams(erWindowKey) : null;
+    let erRows = [];
+    const erTot = { calls: 0, seller: 0, rental: 0, email: 0 };
+    if (pickedCount && erWindowKey) {
+      const erMap = Q.engineRoomByTeam(period);
+      pickedCanon.forEach(k => {
+        const row = erMap.get(k);
+        if (!row) return;
+        const r = { team: canonToPretty.get(k) || row.team,
+          calls: row.calls || 0, seller: row.seller || 0, rental: row.rental || 0, email: row.email || 0 };
+        erRows.push(r);
+        erTot.calls += r.calls; erTot.seller += r.seller; erTot.rental += r.rental; erTot.email += r.email;
+      });
+      erRows.sort((a, b) => b.calls - a.calls);
+    }
+    const erBlock = pickedCount === 0 ? '' : (() => {
+      const erCard = (bodyHtml, sub) => `<div class="card mt">
+        <div class="card-head" style="padding:14px 16px 6px">
+          <h3 style="margin:0;font-family:var(--serif);font-size:15px">Engine Room · manual dialling</h3>
+          <div class="sub">${sub}</div>
+        </div>
+        ${bodyHtml}
+      </div>`;
+      const note = m => `<div class="card-pad muted" style="padding-top:0">${m}</div>`;
+      if (!erWindowKey) {
+        return erCard(
+          note(`Engine Room figures are published for preset week and month periods only (This Week, Last Week, This Month). ${usingCustomRange ? 'Clear the custom range' : 'Pick one of those periods in the topbar'} to see them.`),
+          'ClientHub calling floor · team-level (no per-caller split)');
+      }
+      const winSuffix = erWin && erWin.from && erWin.to ? ` · ${erWin.from} → ${erWin.to}` : '';
+      if (erRows.length === 0) {
+        return erCard(
+          note('No Engine Room calls logged for the selected team(s) in this period.'),
+          `ClientHub calling floor · team-level (no per-caller split)${winSuffix}`);
+      }
+      const erBodyRows = erRows.map(r => `<tr>
+          <td data-label="Team"><b>${escapeHtml(r.team)}</b></td>
+          <td class="num tnum" data-label="Calls">${fmt2(r.calls)}</td>
+          <td class="num tnum" data-label="Seller">${r.seller ? fmt2(r.seller) : '<span class="muted">—</span>'}</td>
+          <td class="num tnum" data-label="Rental">${r.rental ? fmt2(r.rental) : '<span class="muted">—</span>'}</td>
+          <td class="num tnum" data-label="Email">${r.email ? fmt2(r.email) : '<span class="muted">—</span>'}</td>
+        </tr>`).join('');
+      const erTotalRow = erRows.length > 1 ? `<tr style="font-weight:600;border-top:2px solid var(--line)">
+          <td data-label="Team">Total</td>
+          <td class="num tnum" data-label="Calls">${fmt2(erTot.calls)}</td>
+          <td class="num tnum" data-label="Seller">${erTot.seller ? fmt2(erTot.seller) : '<span class="muted">—</span>'}</td>
+          <td class="num tnum" data-label="Rental">${erTot.rental ? fmt2(erTot.rental) : '<span class="muted">—</span>'}</td>
+          <td class="num tnum" data-label="Email">${erTot.email ? fmt2(erTot.email) : '<span class="muted">—</span>'}</td>
+        </tr>` : '';
+      const body = `<div class="tbl-wrap"><table class="tbl">
+        <thead><tr>
+          <th style="text-align:left">Team</th>
+          <th class="num">Calls</th>
+          <th class="num">Seller</th>
+          <th class="num">Rental</th>
+          <th class="num">Email</th>
+        </tr></thead>
+        <tbody>${erBodyRows}${erTotalRow}</tbody>
+      </table></div>`;
+      return erCard(body, `ClientHub calling floor · team-level (no per-caller split)${winSuffix}`);
+    })();
+
     const todaySast = sastDateStr(new Date());
     return `<div class="tab-view" id="trPrintable">
       <div class="card card-pad">
@@ -4552,6 +4622,8 @@
           <tbody>${tableRows}</tbody>
         </table></div>
       </div>
+
+      ${erBlock}
 
       ${session.super ? _trSubscribersCard() : ''}
     </div>`;
