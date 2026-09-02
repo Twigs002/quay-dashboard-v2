@@ -169,6 +169,14 @@
   // and Payroll. Super wins over Payroll, so a superuser who also carries the
   // payroll marker keeps full access.
   const PAYROLL_TAB_IDS = new Set(['clocks', 'team', 'payroll']);
+  // Teams Reporting is otherwise superuser-only, but a few named non-super
+  // staff (e.g. senior brokers who own team calling) are granted it directly
+  // by staff id. This is a deliberate allow-list, not a role: it opens ONLY
+  // Teams Reporting, never Leadership or any other super-gated surface. Add a
+  // staff id here to grant; there is no data/DB change involved.
+  const TEAMS_REPORT_EXTRA_IDS = new Set(['alan']);   // staff ids, lowercase
+  const canSeeTeamsReport = () =>
+    !!session && (session.super || TEAMS_REPORT_EXTRA_IDS.has(String(session.id || '').toLowerCase()));
   // A login is a Payroll login when its designation is 'payroll' (settable in
   // the Add-Staff form, no DB migration needed) OR the optional is_payroll flag
   // is set (if that column ever gets added). Designation is the primary path.
@@ -428,7 +436,7 @@
     const visibleTabs = TABS.filter(t => {
       if (PAYROLL_ONLY) return PAYROLL_TAB_IDS.has(t.id);
       return (t.id !== 'leadership'   || session.super) &&
-             (t.id !== 'teams-report' || session.super);
+             (t.id !== 'teams-report' || canSeeTeamsReport());
     });
     // If someone lands on a hidden tab (e.g. via deep link), bounce to their
     // role's home tab (Payroll -> Payroll; everyone else -> Overview).
@@ -681,7 +689,7 @@
   function render() {
     const host = document.getElementById('content');
     if (tab === 'leadership'   && !session?.super) { tab = 'overview'; }
-    if (tab === 'teams-report' && !session?.super) { tab = 'overview'; }
+    if (tab === 'teams-report' && !canSeeTeamsReport()) { tab = 'overview'; }
     if (tab === 'leadership')    { host.innerHTML = leadership(); afterLeadership(); }
     else if (tab === 'overview') { host.innerHTML = overview(); afterOverview(); }
     else if (tab === 'staff')    {
@@ -1985,7 +1993,7 @@
     else if (tab === 'manager')    rows = csvManager();
     else if (tab === 'monthly')    rows = csvMonthly();
     else if (tab === 'payroll')    rows = csvPayroll();
-    else if (tab === 'teams-report') rows = csvPayroll(); // Division Costs card CSV (SDL hidden)
+    else if (tab === 'teams-report') rows = session.super ? csvPayroll() : csvTeamsReportCallers(); // super: Division Costs; allow-listed non-super: per-caller table (no cost data)
     else                            rows = csvAgents();
     downloadCSV(filename, rows);
   }
@@ -2258,6 +2266,41 @@
       ]));
     });
     return out;
+  }
+  // Per-caller CSV for the Teams Reporting tab, scoped to the picked teams and
+  // the active period/range - the same table an allow-listed non-super viewer
+  // (e.g. Alan) sees. Deliberately Dialfire calling stats only: no wage/cost
+  // data, so it is the safe export for non-supers (supers still get the
+  // Division Costs workbook via csvPayroll).
+  function csvTeamsReportCallers() {
+    const usingRange = !!(_trDateFrom && _trDateTo);
+    let rows;
+    if (usingRange) {
+      const [a, b] = _trDateFrom <= _trDateTo ? [_trDateFrom, _trDateTo] : [_trDateTo, _trDateFrom];
+      rows = Q.perAgentPerTeamRange(a, b);
+    } else {
+      rows = Q.perAgentPerTeam(period);
+    }
+    const pickedCanon = new Set(Array.from(_trTeamsPicked).map(Q.teamCanonical));
+    const header = ['Caller', 'Teams worked', 'Calls', 'Seller', 'Rental', 'Email', 'Talk hours'];
+    const out = [header];
+    if (!pickedCanon.size) return out;
+    const body = [];
+    rows.forEach(r => {
+      let calls = 0, seller = 0, rental = 0, email = 0, talk = 0;
+      const worked = [];
+      let has = false;
+      r.byTeam.forEach((s, key) => {
+        if (!pickedCanon.has(key)) return;
+        has = true;
+        calls += s.calls; seller += s.seller; rental += s.rental; email += s.email; talk += s.talkTime;
+        worked.push(s.team);
+      });
+      if (!has) return;
+      body.push([r.name, worked.join(', '), calls, seller, rental, email, +talk.toFixed(2)]);
+    });
+    body.sort((a, b) => b[2] - a[2]);   // calls desc, matches the default view
+    return out.concat(body);
   }
   function csvDaily() {
     const date = dailyPicked || (Q.latestDailyDate && Q.latestDailyDate()) || null;
@@ -4284,7 +4327,7 @@
   }
 
   function renderTeamsReporting() {
-    if (!session?.super) return `<div class="tab-view"><div class="card card-pad"><p class="muted">This tab is available to superusers only.</p></div></div>`;
+    if (!canSeeTeamsReport()) return `<div class="tab-view"><div class="card card-pad"><p class="muted">This tab is available to superusers only.</p></div></div>`;
     // Data source: custom range wins if both dates are set; otherwise the
     // global period button up in the topbar drives it.
     const usingCustomRange = !!(_trDateFrom && _trDateTo);
@@ -4510,9 +4553,9 @@
         </table></div>
       </div>
 
-      ${V.divCostsSection(payrollState)}
+      ${session.super ? V.divCostsSection(payrollState) : ''}
 
-      ${_trSubscribersCard()}
+      ${session.super ? _trSubscribersCard() : ''}
     </div>`;
   }
 
@@ -4671,23 +4714,29 @@
     );
 
     // ── Division Costs section (embedded, SDL hidden) ─────────────────────
+    // Super-only: it renders wage-cost attribution and pulls the payroll
+    // shifts pipeline (RLS-gated). Allow-listed non-super viewers (e.g. Alan)
+    // get the calling stats above but never this panel, so we skip its mount
+    // and its Supabase fetch entirely for them.
     // Shares the Payroll data pipeline via payrollState. Pay-period picker
     // re-fetches; the division multi-select re-renders in place; first mount
     // kicks off the fetch (payrollFetchAndRender re-renders teams-report when
     // the shifts land — see its tab guards).
-    const dcPeriod = document.getElementById('payrollPeriod');
-    if (dcPeriod) dcPeriod.addEventListener('change', () => {
-      const all = window.PAYROLL.payPeriodsForPicker(12);
-      const next = all.find(p => p.label === dcPeriod.value);
-      if (!next) return;
-      payrollState.period = next;
-      payrollState.shifts = null;
-      payrollState.allocations = null;
-      payrollFetchAndRender();
-    });
-    payrollDivPickerWire();
-    if (window.PAYROLL && payrollState.shifts === null && !payrollState.loading) {
-      payrollFetchAndRender();
+    if (session.super) {
+      const dcPeriod = document.getElementById('payrollPeriod');
+      if (dcPeriod) dcPeriod.addEventListener('change', () => {
+        const all = window.PAYROLL.payPeriodsForPicker(12);
+        const next = all.find(p => p.label === dcPeriod.value);
+        if (!next) return;
+        payrollState.period = next;
+        payrollState.shifts = null;
+        payrollState.allocations = null;
+        payrollFetchAndRender();
+      });
+      payrollDivPickerWire();
+      if (window.PAYROLL && payrollState.shifts === null && !payrollState.loading) {
+        payrollFetchAndRender();
+      }
     }
   }
 
