@@ -1,7 +1,184 @@
 [
   {
+    "date": "2026-09-04",
+    "generated": "2026-09-04T09:28:13.123653+00:00",
+    "rm": [
+      {
+        "name": "DeclanT",
+        "calls": 65,
+        "success": 11,
+        "seller": 0,
+        "rental": 0,
+        "email": 11,
+        "no_answer": 3,
+        "cph": 21.7,
+        "successRate": 16.9,
+        "workTime": 2.9914,
+        "talkTime": 0.7831,
+        "wrapTime": 1.1144,
+        "pauseTime": 0.0892,
+        "waitTime": 1.0047,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB"
+        ],
+        "answered": 62,
+        "talkPct": 26.2,
+        "wrapPct": 37.3,
+        "waitPct": 33.6,
+        "workPct": 97.1
+      },
+      {
+        "name": "ClintP",
+        "calls": 51,
+        "success": 15,
+        "seller": 0,
+        "rental": 0,
+        "email": 15,
+        "no_answer": 0,
+        "cph": 36.9,
+        "successRate": 29.4,
+        "workTime": 1.3819,
+        "talkTime": 0.6236,
+        "wrapTime": 0.0639,
+        "pauseTime": 0.0011,
+        "waitTime": 0.6933,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB"
+        ],
+        "answered": 51,
+        "talkPct": 45.1,
+        "wrapPct": 4.6,
+        "waitPct": 50.2,
+        "workPct": 99.9
+      }
+    ],
+    "fancy": [
+      {
+        "name": "CraigCarroll",
+        "calls": 76,
+        "success": 4,
+        "seller": 0,
+        "rental": 0,
+        "email": 4,
+        "no_answer": 0,
+        "cph": 30.0,
+        "successRate": 5.3,
+        "workTime": 2.5339,
+        "talkTime": 0.445,
+        "wrapTime": 1.4986,
+        "pauseTime": 0.0322,
+        "waitTime": 0.5581,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "AVENGERS"
+        ],
+        "answered": 76,
+        "talkPct": 17.6,
+        "wrapPct": 59.1,
+        "waitPct": 22.0,
+        "workPct": 98.7
+      },
+      {
+        "name": "KirstenLS",
+        "calls": 60,
+        "success": 1,
+        "seller": 1,
+        "rental": 0,
+        "email": 0,
+        "no_answer": 16,
+        "cph": 27.7,
+        "successRate": 1.7,
+        "workTime": 2.1639,
+        "talkTime": 0.5931,
+        "wrapTime": 0.67,
+        "pauseTime": 0.0044,
+        "waitTime": 0.8964,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "FARMERS"
+        ],
+        "answered": 44,
+        "talkPct": 27.4,
+        "wrapPct": 31.0,
+        "waitPct": 41.4,
+        "workPct": 99.8
+      }
+    ],
+    "by_agent_campaign": {
+      "CraigCarroll": {
+        "AVENGERS_CM": {
+          "calls": 76,
+          "success": 4,
+          "seller": 0,
+          "rental": 0,
+          "email": 4,
+          "no_answer": 0,
+          "answered": 76,
+          "workTime": 2.5339,
+          "talkTime": 0.445
+        }
+      },
+      "KirstenLS": {
+        "FARMERS_CM": {
+          "calls": 54,
+          "success": 1,
+          "seller": 1,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 11,
+          "answered": 43,
+          "workTime": 2.085,
+          "talkTime": 0.5778
+        },
+        "FARMERS_NA": {
+          "calls": 6,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 5,
+          "answered": 1,
+          "workTime": 0.0789,
+          "talkTime": 0.0153
+        }
+      },
+      "ClintP": {
+        "CLIENTHUB": {
+          "calls": 51,
+          "success": 15,
+          "seller": 0,
+          "rental": 0,
+          "email": 15,
+          "no_answer": 0,
+          "answered": 51,
+          "workTime": 1.3819,
+          "talkTime": 0.6236
+        }
+      },
+      "DeclanT": {
+        "CLIENTHUB": {
+          "calls": 65,
+          "success": 11,
+          "seller": 0,
+          "rental": 0,
+          "email": 11,
+          "no_answer": 3,
+          "answered": 62,
+          "workTime": 2.9914,
+          "talkTime": 0.7831
+        }
+      }
+    }
+  },
+  {
     "date": "2026-09-03",
-    "generated": "2026-09-03T19:39:58.427993+00:00",
+    "generated": "2026-09-04T09:28:13.123653+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -479,7 +656,7 @@
   },
   {
     "date": "2026-09-02",
-    "generated": "2026-09-03T19:39:58.427993+00:00",
+    "generated": "2026-09-04T09:28:13.123653+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -980,7 +1157,7 @@
   },
   {
     "date": "2026-09-01",
-    "generated": "2026-09-03T19:39:58.427993+00:00",
+    "generated": "2026-09-04T09:28:13.123653+00:00",
     "rm": [
       {
         "name": "NeelamJameel",
@@ -1649,7 +1826,7 @@
   },
   {
     "date": "2026-08-31",
-    "generated": "2026-09-03T19:39:58.427993+00:00",
+    "generated": "2026-09-04T09:28:13.123653+00:00",
     "rm": [
       {
         "name": "NeelamJameel",
@@ -2342,21 +2519,21 @@
   },
   {
     "date": "2026-08-30",
-    "generated": "2026-09-03T19:39:58.427993+00:00",
+    "generated": "2026-09-04T09:28:13.123653+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-29",
-    "generated": "2026-09-03T19:39:58.427993+00:00",
+    "generated": "2026-09-04T09:28:13.123653+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-08-28",
-    "generated": "2026-09-03T19:39:58.427993+00:00",
+    "generated": "2026-09-04T09:28:13.123653+00:00",
     "rm": [
       {
         "name": "SadiqaCarelse",
