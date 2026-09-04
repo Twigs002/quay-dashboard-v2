@@ -6395,11 +6395,13 @@
       ['boarding',  'Boarding Tool',         '⚠ Provisions & offboards staff accounts — grant with care'],
     ];
     let desigOpts = isSuper ? ALL_DESIG : ALL_DESIG.filter(([v]) => MGR_DESIG.includes(v));
-    // Managers may set salary + hourly rate when ADDING staff (adds run
-    // through the service-role Edge Function). Editing pay stays super-only.
+    // Managers (admins) and supers may both set pay - hourly rate, weekly
+    // hours, monthly salary and salary type - when adding OR editing staff.
+    // The quay-clock staff write guard permits a non-super to change these pay
+    // columns; only the privilege flags and app access stay superuser-only.
     // Broker / Senior Broker are never on payroll, so no pay fields for them.
     const isBrokerDesig = isBrokerDesignation(f.designation);
-    const showPay = !isBrokerModal && !isBrokerDesig && (isSuper || f.mode === 'add');
+    const showPay = !isBrokerModal && !isBrokerDesig;
     // Managers may reassign a caller/support role among the MGR_DESIG set (the
     // quay-clock trigger permits it), but the designation stays locked when a
     // manager edits someone whose current role is outside that set (a manager,
@@ -6480,8 +6482,8 @@
               ${desigOpts.map(([v, l]) => `<option value="${v}" ${f.designation === v ? 'selected' : ''}>${l}</option>`).join('')}
             </select>
             ${desigLocked
-              ? `<div class="muted" style="font-size:11px;margin-top:3px">This person's role, pay and app access are set by a superuser.</div>`
-              : ((!isSuper && isEdit) ? `<div class="muted" style="font-size:11px;margin-top:3px">Pay and app access are set by a superuser. You can update the name and role.</div>` : '')}
+              ? `<div class="muted" style="font-size:11px;margin-top:3px">This person's role and app access are set by a superuser. You can update the name and pay.</div>`
+              : ((!isSuper && isEdit) ? `<div class="muted" style="font-size:11px;margin-top:3px">App access is set by a superuser. You can update the name, role and pay.</div>` : '')}
           </label>
           <div class="field"><span>App access</span>
             <div class="muted" style="font-size:11.5px;margin-top:2px">
@@ -6591,6 +6593,10 @@
           mode: 'edit',
           id: s.id, name: s.name, pin: '',
           designation: s.designation || 'fancy',
+          // Remember the stored designation (may be null) so a manager's save
+          // only sends designation when it truly changed - an unchanged, echoed
+          // value can never trip the designation guard.
+          _origDesignation: s.designation || null,
           hourly_rate:  s.hourly_rate  != null ? String(s.hourly_rate)  : '',
           weekly_hours: s.weekly_hours != null ? String(s.weekly_hours) : '',
           salary:       s.salary       != null ? String(s.salary)       : '',
@@ -6766,6 +6772,26 @@
     document.getElementById('teamModalSave').addEventListener('click', saveTeamModal);
   }
 
+  // Turn a raw Postgres / PostgREST staff-write error into a message that names
+  // WHO is signed in and WHICH permission is missing, instead of a bare "not
+  // authorised". 42501 = insufficient_privilege - the staff write guard or RLS
+  // rejected a reserved column.
+  function prettyStaffWriteError(error) {
+    const raw = (error && (error.message || error.details)) || 'Unknown error';
+    const code = error && error.code;
+    const looksLikePerm = code === '42501'
+      || /row-level security|Only supers|Managers may only/i.test(raw);
+    if (!looksLikePerm) return raw;
+    const who  = (session && session.name) ? session.name : 'You';
+    const role = (session && session.super) ? 'superuser'
+               : (session && session.super === false && session.admin) ? 'manager'
+               : 'this account';
+    return `${who} (${role}) is not allowed to change one of these fields. `
+         + `Pay (hourly rate, weekly hours, salary, salary type) can be set by a manager or a superuser; `
+         + `admin / superuser rights, broker settings and app access are superuser-only. `
+         + `Server said: ${raw}`;
+  }
+
   async function saveTeamModal() {
     const f = _teamModal;
     if (!f) return;
@@ -6849,15 +6875,29 @@
           : (() => {
               // Broker / Senior Broker are never admins and never on payroll.
               const brokerRole = isBrokerDesignation(f.designation);
-              // The staff table's DB trigger reserves hourly_rate, weekly_hours,
-              // allowed_sites and the privilege flags to supers, and rejects the
-              // WHOLE update if a non-super includes any of them. A manager's
-              // edit therefore carries only name + designation — the trigger
-              // permits a designation change within the caller/support roles
-              // (rm/fancy/ln/assistant/admin_assistant) and treats an unchanged
-              // designation as a no-op. (PIN goes through admin-set-pin below.)
+              // The staff table's DB trigger reserves the privilege flags
+              // (is_super / is_admin), broker flags and allowed_sites to supers,
+              // and rejects the WHOLE update if a non-super includes any of them.
+              // Pay columns (hourly_rate, weekly_hours, salary, salary_type) are
+              // NOT reserved, so a manager may set them. A manager's edit
+              // therefore carries name + pay, plus designation ONLY when it
+              // actually changed - echoing an unchanged (possibly out-of-set)
+              // designation would otherwise trip the designation guard. The
+              // privilege / app-access fields are deliberately omitted so the
+              // guard has nothing reserved to reject. (PIN goes through
+              // admin-set-pin below.)
               if (!(session && session.super)) {
-                return { name: f.name.trim(), designation: f.designation || null };
+                const mgrPatch = {
+                  name: f.name.trim(),
+                  hourly_rate:  brokerRole ? null : (f.hourly_rate  === '' ? null : Number(f.hourly_rate)),
+                  weekly_hours: brokerRole ? null : (f.weekly_hours === '' ? null : Number(f.weekly_hours)),
+                  salary:       brokerRole ? null : (f.salary       === '' ? null : Number(f.salary)),
+                  salary_type:  f.salary_type === 'fixed' ? 'fixed' : 'prorata',
+                };
+                if ((f.designation || null) !== (f._origDesignation || null)) {
+                  mgrPatch.designation = f.designation || null;
+                }
+                return mgrPatch;
               }
               const p = {
                 name: f.name.trim(),
@@ -6874,7 +6914,7 @@
               return p;
             })();
         const { error } = await window.sb.from('staff').update(patch).eq('id', f.id);
-        if (error) throw new Error(error.message);
+        if (error) throw new Error(prettyStaffWriteError(error));
 
         // If the admin entered a new PIN, route it through admin-set-pin
         // (Edge Function) which uses the service role to reset the auth password.
