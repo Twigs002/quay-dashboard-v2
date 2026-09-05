@@ -1012,6 +1012,16 @@ window.VIEWS = (function () {
       // 75%" reads as "75% of the 20 auto-dials", not a broken number.
       const dialAtt = c.answeredCalls != null ? c.answeredCalls : (c.answered != null ? c.calls : 0);
       const manualCalls = (c.answered != null && dialAtt) ? Math.max(c.calls - dialAtt, 0) : 0;
+      // When Answered/Connect are blank, explain *why* so a team with real
+      // leads (e.g. Mozzies) doesn't read as "never connects". Two causes:
+      // Engine-Room-only teams (ClientHub has no pick-up signal), or Dialfire
+      // calls that pre-date answered tracking (20 Aug 2026) / have aged out of
+      // Dialfire's ~60-day call-log retention. Leads are unaffected either way.
+      const erCalls = c.engineRoom ? (c.engineRoom.calls || 0) : 0;
+      const dfCalls = c.dialfire ? (c.dialfire.calls || 0) : 0;
+      const noAnsWhy = (erCalls && !dfCalls)
+        ? 'No answered data: this team calls through the Engine Room (ClientHub), which has no pick-up / answered signal. Leads still count.'
+        : 'No answered data for these calls: they pre-date Dialfire answered tracking (from 20 Aug 2026) or have aged out of its ~60-day call-log retention. Leads still count.';
       const overlap = c.exact === false;
       const nameSuffix = overlap
         ? '<span title="Over-counted: a legacy week where an agent worked multiple campaigns and this row sums their total across all of them" style="margin-left:6px;color:var(--amber);font-weight:700;cursor:help" aria-label="Over-counted row">⚠</span>'
@@ -1032,10 +1042,10 @@ window.VIEWS = (function () {
         <td class="num tnum"${manualCalls ? ` title="${fmt(dialAtt)} auto-dial attempts + ${fmt(manualCalls)} manual Engine Room calls"` : ''}>${fmt(c.calls)}${manualCalls ? '<span class="muted" style="font-size:10px"> †</span>' : ''}</td>
         <td class="num tnum">${c.answered != null
             ? fmt(c.answered) + (manualCalls ? `<span class="muted" style="font-size:10px" title="Answered is measured on the ${fmt(dialAtt)} auto-dial attempts only. The ${fmt(manualCalls)} manual Engine Room calls have no pick-up signal.">/${fmt(dialAtt)}</span>` : '')
-            : '<span class="muted" title="No per-team answered data for this period yet">—</span>'}</td>
+            : `<span class="muted" style="cursor:help;border-bottom:1px dotted var(--muted)" title="${noAnsWhy}">—</span>`}</td>
         <td class="num tnum">${c.connect != null
             ? `<span title="Connect = ${fmt(c.answered)} answered ÷ ${fmt(dialAtt)} auto-dial attempts${manualCalls ? ` (excludes ${fmt(manualCalls)} manual Engine Room calls with no pick-up data)` : ''}">${c.connect}%${manualCalls ? ' †' : ''}</span>`
-            : '<span class="muted">—</span>'}</td>
+            : `<span class="muted" style="cursor:help;border-bottom:1px dotted var(--muted)" title="Connect rate — ${noAnsWhy}">—</span>`}</td>
         <td class="num tnum">${fmt(c.leads)}</td>
         <td class="num tnum">${fmt(c.seller)}</td>
         <td class="num tnum">${fmt(c.rental)}</td>
@@ -1106,8 +1116,11 @@ window.VIEWS = (function () {
               picked up (completed dials minus <code>No Answer</code>, <code>Not in service</code> and
               <code>Busy</code>); <b>Connect</b> = Answered ÷ Dialfire attempts. This is the telephony
               Connect rate, so it counts wrong numbers and voicemail as answered. Answered/Connect are
-              Dialfire-only (Engine Room has no pick-up signal) and show <b>—</b> for weeks that pre-date the
-              2026-08-20 fetcher change until those weeks are backfilled.</p>
+              Dialfire-only (Engine Room has no pick-up signal) and show <b>—</b> when there is no
+              answered signal for a team's calls in the period: either the calls run through the Engine
+              Room, or they pre-date Dialfire's answered tracking (from 2026-08-20) and have aged out of
+              its ~60-day call-log retention, so that history can no longer be recovered. Leads for those
+              calls are unaffected — hover a <b>—</b> for the specific reason.</p>
             <p class="muted">A <b>†</b> marks teams that also do manual Engine Room (ClientHub)
               calling. Those manual calls count in <b>Attempts</b> but have no pick-up signal, so
               <b>Answered</b> and <b>Connect</b> are measured only on the team's Dialfire auto-dials
