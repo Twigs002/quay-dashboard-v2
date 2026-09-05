@@ -1,11 +1,11 @@
 {
   "agents": [
     {
-      "hours": 25.986,
+      "hours": 40.58,
       "id": "craig-carroll",
       "name": "Craig Carroll",
       "name_normalised": "Craig Carroll",
-      "sessions": 6
+      "sessions": 7
     },
     {
       "hours": 40.909,
@@ -43,11 +43,11 @@
       "sessions": 5
     },
     {
-      "hours": 34.082,
+      "hours": 42.654,
       "id": "jason-julius",
       "name": "Jason Julius",
       "name_normalised": "Jason Julius",
-      "sessions": 4
+      "sessions": 5
     },
     {
       "hours": 34.722,
@@ -92,11 +92,11 @@
       "sessions": 5
     },
     {
-      "hours": 28.944,
+      "hours": 36.566,
       "id": "josh-adonis",
       "name": "Josh Adonis",
       "name_normalised": "Josh Adonis",
-      "sessions": 4
+      "sessions": 5
     },
     {
       "hours": 30.263,
@@ -197,11 +197,11 @@
       "sessions": 5
     },
     {
-      "hours": 38.624,
+      "hours": 47.451,
       "id": "claire",
       "name": "Claire Murch",
       "name_normalised": "Claire Murch",
-      "sessions": 4
+      "sessions": 5
     },
     {
       "hours": 46.066,
@@ -5432,11 +5432,11 @@
     ],
     "2026-08-31": [
       {
-        "hours": 25.986,
+        "hours": 40.58,
         "id": "craig-carroll",
         "name": "Craig Carroll",
         "name_normalised": "Craig Carroll",
-        "sessions": 6
+        "sessions": 7
       },
       {
         "hours": 40.909,
@@ -5474,11 +5474,11 @@
         "sessions": 5
       },
       {
-        "hours": 34.082,
+        "hours": 42.654,
         "id": "jason-julius",
         "name": "Jason Julius",
         "name_normalised": "Jason Julius",
-        "sessions": 4
+        "sessions": 5
       },
       {
         "hours": 34.722,
@@ -5523,11 +5523,11 @@
         "sessions": 5
       },
       {
-        "hours": 28.944,
+        "hours": 36.566,
         "id": "josh-adonis",
         "name": "Josh Adonis",
         "name_normalised": "Josh Adonis",
-        "sessions": 4
+        "sessions": 5
       },
       {
         "hours": 30.263,
@@ -5628,11 +5628,11 @@
         "sessions": 5
       },
       {
-        "hours": 38.624,
+        "hours": 47.451,
         "id": "claire",
         "name": "Claire Murch",
         "name_normalised": "Claire Murch",
-        "sessions": 4
+        "sessions": 5
       },
       {
         "hours": 46.066,
@@ -5692,7 +5692,7 @@
       }
     ]
   },
-  "generated_at": "2026-09-04T19:45:37.088970+00:00",
+  "generated_at": "2026-09-05T09:14:40.087893+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -5830,11 +5830,11 @@
           "sessions": 38
         },
         {
-          "hours": 667.285,
+          "hours": 681.879,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
-          "sessions": 85
+          "sessions": 86
         },
         {
           "hours": 697.153,
@@ -5921,11 +5921,11 @@
           "sessions": 89
         },
         {
-          "hours": 531.195,
+          "hours": 538.816,
           "id": "josh-adonis",
           "name": "Josh Adonis",
           "name_normalised": "Josh Adonis",
-          "sessions": 82
+          "sessions": 83
         },
         {
           "hours": 682.424,
@@ -6033,18 +6033,18 @@
           "sessions": 6
         },
         {
-          "hours": 444.853,
+          "hours": 453.68,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
-          "sessions": 51
+          "sessions": 52
         },
         {
-          "hours": 393.338,
+          "hours": 401.91,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 52
+          "sessions": 53
         },
         {
           "hours": 423.402,
@@ -6124,8 +6124,8 @@
           "sessions": 4
         }
       ],
-      "from": "2025-09-05T00:00:00+00:00",
-      "to": "2026-09-04T23:59:59+00:00"
+      "from": "2025-09-06T00:00:00+00:00",
+      "to": "2026-09-05T23:59:59+00:00"
     },
     "billing-period": {
       "agents": [
@@ -6200,18 +6200,18 @@
           "sessions": 1
         },
         {
-          "hours": 85.103,
+          "hours": 93.675,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 10
+          "sessions": 11
         },
         {
-          "hours": 83.357,
+          "hours": 92.184,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
-          "sessions": 10
+          "sessions": 11
         },
         {
           "hours": 79.037,
@@ -6221,11 +6221,11 @@
           "sessions": 10
         },
         {
-          "hours": 46.591,
+          "hours": 54.213,
           "id": "josh-adonis",
           "name": "Josh Adonis",
           "name_normalised": "Josh Adonis",
-          "sessions": 6
+          "sessions": 7
         },
         {
           "hours": 98.998,
@@ -6284,11 +6284,11 @@
           "sessions": 10
         },
         {
-          "hours": 43.998,
+          "hours": 58.592,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
-          "sessions": 11
+          "sessions": 12
         },
         {
           "hours": 67.831,
@@ -6416,13 +6416,6 @@
     "last-90": {
       "agents": [
         {
-          "hours": 600.537,
-          "id": "jaco",
-          "name": "Jan C (Jaco) Groenewald",
-          "name_normalised": "Jan C (Jaco) Groenewald",
-          "sessions": 71
-        },
-        {
           "hours": 70.467,
           "id": "whitney-malgas",
           "name": "Whitney Malgas",
@@ -6486,11 +6479,11 @@
           "sessions": 7
         },
         {
-          "hours": 400.035,
+          "hours": 414.629,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
-          "sessions": 53
+          "sessions": 54
         },
         {
           "hours": 512.811,
@@ -6633,6 +6626,13 @@
           "sessions": 23
         },
         {
+          "hours": 597.404,
+          "id": "jaco",
+          "name": "Jan C (Jaco) Groenewald",
+          "name_normalised": "Jan C (Jaco) Groenewald",
+          "sessions": 70
+        },
+        {
           "hours": 82.385,
           "id": "nicolette-van-der-berg",
           "name": "Nicolette Van Der Berg",
@@ -6661,11 +6661,11 @@
           "sessions": 56
         },
         {
-          "hours": 358.861,
+          "hours": 366.483,
           "id": "josh-adonis",
           "name": "Josh Adonis",
           "name_normalised": "Josh Adonis",
-          "sessions": 59
+          "sessions": 60
         },
         {
           "hours": 457.272,
@@ -6724,18 +6724,18 @@
           "sessions": 6
         },
         {
-          "hours": 444.853,
+          "hours": 453.68,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
-          "sessions": 51
+          "sessions": 52
         },
         {
-          "hours": 393.338,
+          "hours": 401.91,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 52
+          "sessions": 53
         },
         {
           "hours": 423.402,
@@ -6815,8 +6815,8 @@
           "sessions": 4
         }
       ],
-      "from": "2026-06-07T00:00:00+00:00",
-      "to": "2026-09-04T23:59:59+00:00"
+      "from": "2026-06-08T00:00:00+00:00",
+      "to": "2026-09-05T23:59:59+00:00"
     },
     "last-week": {
       "agents": [
@@ -7114,11 +7114,11 @@
           "sessions": 19
         },
         {
-          "hours": 136.161,
+          "hours": 144.733,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 18
+          "sessions": 19
         },
         {
           "hours": 78.472,
@@ -7135,11 +7135,11 @@
           "sessions": 25
         },
         {
-          "hours": 110.794,
+          "hours": 118.416,
           "id": "josh-adonis",
           "name": "Josh Adonis",
           "name_normalised": "Josh Adonis",
-          "sessions": 21
+          "sessions": 22
         },
         {
           "hours": 136.842,
@@ -7163,11 +7163,11 @@
           "sessions": 29
         },
         {
-          "hours": 97.074,
+          "hours": 111.668,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
-          "sessions": 18
+          "sessions": 19
         },
         {
           "hours": 168.275,
@@ -7296,11 +7296,11 @@
           "sessions": 19
         },
         {
-          "hours": 156.759,
+          "hours": 165.586,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
-          "sessions": 18
+          "sessions": 19
         },
         {
           "hours": 162.563,
@@ -7372,11 +7372,11 @@
     "this-week": {
       "agents": [
         {
-          "hours": 25.986,
+          "hours": 40.58,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
-          "sessions": 6
+          "sessions": 7
         },
         {
           "hours": 40.909,
@@ -7414,11 +7414,11 @@
           "sessions": 5
         },
         {
-          "hours": 34.082,
+          "hours": 42.654,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 4
+          "sessions": 5
         },
         {
           "hours": 34.722,
@@ -7463,11 +7463,11 @@
           "sessions": 5
         },
         {
-          "hours": 28.944,
+          "hours": 36.566,
           "id": "josh-adonis",
           "name": "Josh Adonis",
           "name_normalised": "Josh Adonis",
-          "sessions": 4
+          "sessions": 5
         },
         {
           "hours": 30.263,
@@ -7568,11 +7568,11 @@
           "sessions": 5
         },
         {
-          "hours": 38.624,
+          "hours": 47.451,
           "id": "claire",
           "name": "Claire Murch",
           "name_normalised": "Claire Murch",
-          "sessions": 4
+          "sessions": 5
         },
         {
           "hours": 46.066,
