@@ -6,8 +6,13 @@
   ],
   "days": [
     {
+      "date": "2026-09-06",
+      "generated": "2026-09-06T09:35:09.229896+00:00",
+      "teams": []
+    },
+    {
       "date": "2026-09-05",
-      "generated": "2026-09-05T19:30:22.638485+00:00",
+      "generated": "2026-09-06T09:35:09.229896+00:00",
       "teams": [
         {
           "calls": 0,
@@ -20,7 +25,7 @@
     },
     {
       "date": "2026-09-04",
-      "generated": "2026-09-05T19:30:22.638485+00:00",
+      "generated": "2026-09-06T09:35:09.229896+00:00",
       "teams": [
         {
           "calls": 98,
@@ -97,13 +102,6 @@
           "email": 2,
           "rental": 0,
           "seller": 0,
-          "team": "Samurais"
-        },
-        {
-          "calls": 4,
-          "email": 2,
-          "rental": 0,
-          "seller": 0,
           "team": "Furys"
         },
         {
@@ -112,6 +110,13 @@
           "rental": 0,
           "seller": 0,
           "team": "Pirates"
+        },
+        {
+          "calls": 4,
+          "email": 2,
+          "rental": 0,
+          "seller": 0,
+          "team": "Samurais"
         },
         {
           "calls": 2,
@@ -132,20 +137,20 @@
           "email": 0,
           "rental": 0,
           "seller": 0,
-          "team": "Hooligans"
+          "team": "Hoekers"
         },
         {
           "calls": 0,
           "email": 0,
           "rental": 0,
           "seller": 0,
-          "team": "Hoekers"
+          "team": "Hooligans"
         }
       ]
     },
     {
       "date": "2026-09-03",
-      "generated": "2026-09-05T19:30:22.638485+00:00",
+      "generated": "2026-09-06T09:35:09.229896+00:00",
       "teams": [
         {
           "calls": 94,
@@ -229,6 +234,13 @@
           "email": 0,
           "rental": 0,
           "seller": 0,
+          "team": "TNT"
+        },
+        {
+          "calls": 2,
+          "email": 0,
+          "rental": 0,
+          "seller": 0,
           "team": "Dragons"
         },
         {
@@ -237,6 +249,13 @@
           "rental": 0,
           "seller": 0,
           "team": "Headbangers"
+        },
+        {
+          "calls": 2,
+          "email": 2,
+          "rental": 0,
+          "seller": 0,
+          "team": "Blitz"
         },
         {
           "calls": 2,
@@ -251,20 +270,6 @@
           "rental": 0,
           "seller": 0,
           "team": "Conquerors"
-        },
-        {
-          "calls": 2,
-          "email": 2,
-          "rental": 0,
-          "seller": 0,
-          "team": "Blitz"
-        },
-        {
-          "calls": 2,
-          "email": 0,
-          "rental": 0,
-          "seller": 0,
-          "team": "TNT"
         },
         {
           "calls": 2,
@@ -285,20 +290,20 @@
           "email": 0,
           "rental": 0,
           "seller": 0,
-          "team": "Queens"
+          "team": "Spartans"
         },
         {
           "calls": 0,
           "email": 0,
           "rental": 0,
           "seller": 0,
-          "team": "Spartans"
+          "team": "Queens"
         }
       ]
     },
     {
       "date": "2026-09-02",
-      "generated": "2026-09-05T19:30:22.638485+00:00",
+      "generated": "2026-09-06T09:35:09.229896+00:00",
       "teams": [
         {
           "calls": 114,
@@ -375,21 +380,14 @@
           "email": 2,
           "rental": 0,
           "seller": 0,
-          "team": "Dragons"
+          "team": "Furys"
         },
         {
           "calls": 8,
           "email": 2,
           "rental": 0,
           "seller": 0,
-          "team": "Furys"
-        },
-        {
-          "calls": 6,
-          "email": 0,
-          "rental": 0,
-          "seller": 0,
-          "team": "Gunslingers"
+          "team": "Dragons"
         },
         {
           "calls": 6,
@@ -397,6 +395,13 @@
           "rental": 0,
           "seller": 0,
           "team": "TNT"
+        },
+        {
+          "calls": 6,
+          "email": 0,
+          "rental": 0,
+          "seller": 0,
+          "team": "Gunslingers"
         },
         {
           "calls": 4,
@@ -409,22 +414,36 @@
           "calls": 2,
           "email": 0,
           "rental": 0,
-          "seller": 2,
-          "team": "Samurais"
+          "seller": 0,
+          "team": "Blitz"
         },
         {
           "calls": 2,
           "email": 0,
           "rental": 0,
-          "seller": 0,
-          "team": "Blitz"
+          "seller": 2,
+          "team": "Samurais"
         },
         {
           "calls": 0,
           "email": 0,
           "rental": 0,
           "seller": 0,
-          "team": "Hooligans"
+          "team": "Soccer Moms"
+        },
+        {
+          "calls": 0,
+          "email": 0,
+          "rental": 0,
+          "seller": 0,
+          "team": "Llamas"
+        },
+        {
+          "calls": 0,
+          "email": 0,
+          "rental": 0,
+          "seller": 0,
+          "team": "Proteas"
         },
         {
           "calls": 0,
@@ -445,27 +464,13 @@
           "email": 0,
           "rental": 0,
           "seller": 0,
-          "team": "Proteas"
-        },
-        {
-          "calls": 0,
-          "email": 0,
-          "rental": 0,
-          "seller": 0,
-          "team": "Llamas"
-        },
-        {
-          "calls": 0,
-          "email": 0,
-          "rental": 0,
-          "seller": 0,
-          "team": "Soccer Moms"
+          "team": "Hooligans"
         }
       ]
     },
     {
       "date": "2026-09-01",
-      "generated": "2026-09-05T19:30:22.638485+00:00",
+      "generated": "2026-09-06T09:35:09.229896+00:00",
       "teams": [
         {
           "calls": 218,
@@ -560,17 +565,17 @@
         },
         {
           "calls": 6,
-          "email": 0,
-          "rental": 0,
-          "seller": 0,
-          "team": "Dragons"
-        },
-        {
-          "calls": 6,
           "email": 2,
           "rental": 0,
           "seller": 0,
           "team": "TNT"
+        },
+        {
+          "calls": 6,
+          "email": 0,
+          "rental": 0,
+          "seller": 0,
+          "team": "Dragons"
         },
         {
           "calls": 4,
@@ -584,21 +589,14 @@
           "email": 0,
           "rental": 0,
           "seller": 0,
-          "team": "Samurais"
+          "team": "Blitz"
         },
         {
           "calls": 2,
           "email": 0,
           "rental": 0,
           "seller": 0,
-          "team": "Blitz"
-        },
-        {
-          "calls": 0,
-          "email": 0,
-          "rental": 0,
-          "seller": 0,
-          "team": "Dealmakers"
+          "team": "Samurais"
         },
         {
           "calls": 0,
@@ -620,12 +618,19 @@
           "rental": 0,
           "seller": 0,
           "team": "Spartans"
+        },
+        {
+          "calls": 0,
+          "email": 0,
+          "rental": 0,
+          "seller": 0,
+          "team": "Dealmakers"
         }
       ]
     },
     {
       "date": "2026-08-31",
-      "generated": "2026-09-05T19:30:22.638485+00:00",
+      "generated": "2026-09-06T09:35:09.229896+00:00",
       "teams": [
         {
           "calls": 211,
@@ -713,17 +718,17 @@
         },
         {
           "calls": 4,
-          "email": 0,
-          "rental": 0,
-          "seller": 0,
-          "team": "Gunslingers"
-        },
-        {
-          "calls": 4,
           "email": 2,
           "rental": 0,
           "seller": 0,
           "team": "TNT"
+        },
+        {
+          "calls": 4,
+          "email": 0,
+          "rental": 0,
+          "seller": 0,
+          "team": "Gunslingers"
         },
         {
           "calls": 4,
@@ -737,35 +742,21 @@
           "email": 0,
           "rental": 0,
           "seller": 0,
-          "team": "Mozzies"
+          "team": "Pirates"
         },
         {
           "calls": 2,
           "email": 0,
           "rental": 0,
           "seller": 0,
-          "team": "Pirates"
+          "team": "Mozzies"
         },
         {
           "calls": 0,
           "email": 0,
           "rental": 0,
           "seller": 0,
-          "team": "Farmers"
-        },
-        {
-          "calls": 0,
-          "email": 0,
-          "rental": 0,
-          "seller": 0,
-          "team": "Weasels"
-        },
-        {
-          "calls": 0,
-          "email": 0,
-          "rental": 0,
-          "seller": 0,
-          "team": "Hoekers"
+          "team": "Soccer Moms"
         },
         {
           "calls": 0,
@@ -786,6 +777,27 @@
           "email": 0,
           "rental": 0,
           "seller": 0,
+          "team": "Weasels"
+        },
+        {
+          "calls": 0,
+          "email": 0,
+          "rental": 0,
+          "seller": 0,
+          "team": "Farmers"
+        },
+        {
+          "calls": 0,
+          "email": 0,
+          "rental": 0,
+          "seller": 0,
+          "team": "Hoekers"
+        },
+        {
+          "calls": 0,
+          "email": 0,
+          "rental": 0,
+          "seller": 0,
           "team": "Dutchmen"
         },
         {
@@ -794,19 +806,12 @@
           "rental": 0,
           "seller": 0,
           "team": "Assassins"
-        },
-        {
-          "calls": 0,
-          "email": 0,
-          "rental": 0,
-          "seller": 0,
-          "team": "Soccer Moms"
         }
       ]
     },
     {
       "date": "2026-08-30",
-      "generated": "2026-09-05T19:30:22.638485+00:00",
+      "generated": "2026-09-06T09:35:09.229896+00:00",
       "teams": []
     },
     {
@@ -4393,6 +4398,6 @@
       ]
     }
   ],
-  "generated_at": "2026-09-05T19:30:22.638485+00:00",
+  "generated_at": "2026-09-06T09:35:09.229896+00:00",
   "source": "dialfire"
 }
