@@ -1,11 +1,11 @@
 {
   "agents": [
     {
-      "hours": 9.041,
+      "hours": 12.467,
       "id": "declan",
       "name": "Declan Ryder Tyler",
       "name_normalised": "Declan Ryder Tyler",
-      "sessions": 3
+      "sessions": 6
     },
     {
       "hours": 9.015,
@@ -64,6 +64,13 @@
       "sessions": 1
     },
     {
+      "hours": 8.533,
+      "id": "jason-julius",
+      "name": "Jason Julius",
+      "name_normalised": "Jason Julius",
+      "sessions": 1
+    },
+    {
       "hours": 8.796,
       "id": "luke-van-wyk",
       "name": "Luke Van Wyk",
@@ -71,10 +78,10 @@
       "sessions": 1
     },
     {
-      "hours": 8.533,
-      "id": "jason-julius",
-      "name": "Jason Julius",
-      "name_normalised": "Jason Julius",
+      "hours": 8.594,
+      "id": "tamzin-jacobs",
+      "name": "Tamzin Jacobs",
+      "name_normalised": "Tamzin Jacobs",
       "sessions": 1
     },
     {
@@ -222,13 +229,6 @@
       "id": "jaco",
       "name": "Jan C (Jaco) Groenewald",
       "name_normalised": "Jan C (Jaco) Groenewald",
-      "sessions": 1
-    },
-    {
-      "hours": 9.21,
-      "id": "tamzin-jacobs",
-      "name": "Tamzin Jacobs",
-      "name_normalised": "Tamzin Jacobs",
       "sessions": 1
     },
     {
@@ -5453,7 +5453,7 @@
         "sessions": 5
       },
       {
-        "hours": 42.654,
+        "hours": 34.144,
         "id": "jason-julius",
         "name": "Jason Julius",
         "name_normalised": "Jason Julius",
@@ -5474,7 +5474,7 @@
         "sessions": 4
       },
       {
-        "hours": 44.106,
+        "hours": 35.113,
         "id": "tamzin-jacobs",
         "name": "Tamzin Jacobs",
         "name_normalised": "Tamzin Jacobs",
@@ -5672,11 +5672,11 @@
     ],
     "2026-09-07": [
       {
-        "hours": 9.041,
+        "hours": 12.467,
         "id": "declan",
         "name": "Declan Ryder Tyler",
         "name_normalised": "Declan Ryder Tyler",
-        "sessions": 3
+        "sessions": 6
       },
       {
         "hours": 9.015,
@@ -5735,6 +5735,13 @@
         "sessions": 1
       },
       {
+        "hours": 8.533,
+        "id": "jason-julius",
+        "name": "Jason Julius",
+        "name_normalised": "Jason Julius",
+        "sessions": 1
+      },
+      {
         "hours": 8.796,
         "id": "luke-van-wyk",
         "name": "Luke Van Wyk",
@@ -5742,10 +5749,10 @@
         "sessions": 1
       },
       {
-        "hours": 8.533,
-        "id": "jason-julius",
-        "name": "Jason Julius",
-        "name_normalised": "Jason Julius",
+        "hours": 8.594,
+        "id": "tamzin-jacobs",
+        "name": "Tamzin Jacobs",
+        "name_normalised": "Tamzin Jacobs",
         "sessions": 1
       },
       {
@@ -5896,13 +5903,6 @@
         "sessions": 1
       },
       {
-        "hours": 9.21,
-        "id": "tamzin-jacobs",
-        "name": "Tamzin Jacobs",
-        "name_normalised": "Tamzin Jacobs",
-        "sessions": 1
-      },
-      {
         "hours": 10.004,
         "id": "claire",
         "name": "Claire Murch",
@@ -5911,7 +5911,7 @@
       }
     ]
   },
-  "generated_at": "2026-09-08T05:07:26.039916+00:00",
+  "generated_at": "2026-09-08T09:49:31.110379+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -5972,11 +5972,11 @@
           "sessions": 92
         },
         {
-          "hours": 751.305,
+          "hours": 754.731,
           "id": "declan",
           "name": "Declan Ryder Tyler",
           "name_normalised": "Declan Ryder Tyler",
-          "sessions": 110
+          "sessions": 113
         },
         {
           "hours": 747.452,
@@ -5986,7 +5986,7 @@
           "sessions": 90
         },
         {
-          "hours": 720.332,
+          "hours": 710.723,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
@@ -6259,7 +6259,7 @@
           "sessions": 53
         },
         {
-          "hours": 410.442,
+          "hours": 401.932,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
@@ -6356,7 +6356,7 @@
           "sessions": 21
         },
         {
-          "hours": 99.225,
+          "hours": 89.616,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
@@ -6419,7 +6419,7 @@
           "sessions": 1
         },
         {
-          "hours": 102.208,
+          "hours": 93.698,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
@@ -6552,11 +6552,11 @@
           "sessions": 14
         },
         {
-          "hours": 91.762,
+          "hours": 95.188,
           "id": "declan",
           "name": "Declan Ryder Tyler",
           "name_normalised": "Declan Ryder Tyler",
-          "sessions": 21
+          "sessions": 24
         },
         {
           "hours": 108.255,
@@ -6733,7 +6733,7 @@
           "sessions": 50
         },
         {
-          "hours": 424.999,
+          "hours": 415.39,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
@@ -6775,11 +6775,11 @@
           "sessions": 58
         },
         {
-          "hours": 457.756,
+          "hours": 461.182,
           "id": "declan",
           "name": "Declan Ryder Tyler",
           "name_normalised": "Declan Ryder Tyler",
-          "sessions": 77
+          "sessions": 80
         },
         {
           "hours": 477.744,
@@ -6950,7 +6950,7 @@
           "sessions": 53
         },
         {
-          "hours": 410.442,
+          "hours": 401.932,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
@@ -7082,7 +7082,7 @@
           "sessions": 5
         },
         {
-          "hours": 42.654,
+          "hours": 34.144,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
@@ -7103,7 +7103,7 @@
           "sessions": 4
         },
         {
-          "hours": 44.106,
+          "hours": 35.113,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
@@ -7305,7 +7305,7 @@
     "this-month": {
       "agents": [
         {
-          "hours": 117.133,
+          "hours": 107.524,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
@@ -7368,7 +7368,7 @@
           "sessions": 14
         },
         {
-          "hours": 119.224,
+          "hours": 110.713,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
@@ -7452,11 +7452,11 @@
           "sessions": 16
         },
         {
-          "hours": 127.802,
+          "hours": 131.228,
           "id": "declan",
           "name": "Declan Ryder Tyler",
           "name_normalised": "Declan Ryder Tyler",
-          "sessions": 28
+          "sessions": 31
         },
         {
           "hours": 115.361,
@@ -7591,11 +7591,11 @@
     "this-week": {
       "agents": [
         {
-          "hours": 9.041,
+          "hours": 12.467,
           "id": "declan",
           "name": "Declan Ryder Tyler",
           "name_normalised": "Declan Ryder Tyler",
-          "sessions": 3
+          "sessions": 6
         },
         {
           "hours": 9.015,
@@ -7654,6 +7654,13 @@
           "sessions": 1
         },
         {
+          "hours": 8.533,
+          "id": "jason-julius",
+          "name": "Jason Julius",
+          "name_normalised": "Jason Julius",
+          "sessions": 1
+        },
+        {
           "hours": 8.796,
           "id": "luke-van-wyk",
           "name": "Luke Van Wyk",
@@ -7661,10 +7668,10 @@
           "sessions": 1
         },
         {
-          "hours": 8.533,
-          "id": "jason-julius",
-          "name": "Jason Julius",
-          "name_normalised": "Jason Julius",
+          "hours": 8.594,
+          "id": "tamzin-jacobs",
+          "name": "Tamzin Jacobs",
+          "name_normalised": "Tamzin Jacobs",
           "sessions": 1
         },
         {
@@ -7812,13 +7819,6 @@
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
-          "sessions": 1
-        },
-        {
-          "hours": 9.21,
-          "id": "tamzin-jacobs",
-          "name": "Tamzin Jacobs",
-          "name_normalised": "Tamzin Jacobs",
           "sessions": 1
         },
         {
