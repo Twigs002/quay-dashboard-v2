@@ -4343,6 +4343,12 @@
       if (rangeMeta && rangeMeta.weeksIncluded > 0) {
         rangeSuffix = ` · covers ${rangeMeta.effectiveFrom} → ${rangeMeta.effectiveTo}`
                     + ` · ${rangeMeta.weeksIncluded} complete week${rangeMeta.weeksIncluded === 1 ? '' : 's'}`;
+      } else if (rangeMeta && rangeMeta.granularity === 'daily' && rangeMeta.daysIncluded > 0) {
+        // Partial/offset range served from per-day snapshots — the numbers
+        // are real, just not a whole Mon–Sun week, so say so rather than
+        // implying "no work" with the red no-complete-weeks message.
+        rangeSuffix = ` · covers ${rangeMeta.effectiveFrom} → ${rangeMeta.effectiveTo}`
+                    + ` · ${rangeMeta.daysIncluded} day${rangeMeta.daysIncluded === 1 ? '' : 's'} (daily data)`;
       } else {
         rangeSuffix = ` · ${a} → ${b} · no complete Mon–Sun weeks in this range`;
       }
