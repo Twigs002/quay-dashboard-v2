@@ -348,8 +348,22 @@ window.QUAY_READY = (async function () {
     // start of a week (before that week's first Dialfire cron runs). Falls
     // back to the plain weeks[1] offset if that week isn't in history.
     if (periodKey === 'last-week') {
-      const lastMon = _addDaysYmd(currentWeekWindow().fromYmd, -7);
-      const w = weeks.find(x => x.weekStart === lastMon);
+      const curMon = currentWeekWindow().fromYmd;
+      const lastMon = _addDaysYmd(curMon, -7);
+      // Prefer the exact previous calendar week.
+      let w = weeks.find(x => x.weekStart === lastMon);
+      // Fallback: the most recent week that STARTS before the current week's
+      // Monday. weeks is sorted latest-first, so find() returns the newest
+      // such week. This keeps "Last Week" honest in two edge cases the old
+      // `weeks.slice(1, 2)` fallback got wrong:
+      //   • current week's weekly row hasn't been fetched yet (weeks[0] is
+      //     really last week) → return weeks[0], NOT weeks[1] a week too far.
+      //   • the exact previous-Monday row is missing from history (a gap) →
+      //     return the closest earlier completed week instead of skipping one.
+      // Either way "Last Week" can never collapse onto the in-progress week,
+      // which is now sourced from daily snapshots (see perAgentPerTeam /
+      // agentsFor current-week branches). (fix: teams-reporting-live-week)
+      if (!w) w = weeks.find(x => x.weekStart && x.weekStart < curMon);
       if (w) return [w];
     }
     const p = PERIODS[periodKey] || PERIODS['this-week'];
@@ -1462,6 +1476,21 @@ window.QUAY_READY = (async function () {
   }
 
   function perAgentPerTeam(periodKey) {
+    // Live current week ("This Week" chip): weekly_data.json / history only
+    // hold COMPLETED weeks, so _sliceFor('current-week') is an empty slice.
+    // Aggregate the in-progress week from daily snapshots (Mon → today)
+    // instead — the same source agentsFor/campaignsFor use. Daily entries
+    // carry the same by_agent_campaign shape as weekly rows, so the per-team
+    // aggregation below is unchanged. Without this the Teams Reporting tab
+    // showed zero callers for the live week. (fix: teams-reporting-live-week)
+    if (periodKey === 'current-week') {
+      const w = currentWeekWindow();
+      const slice = dailyDates
+        .filter(d => d >= w.fromYmd && d <= w.toYmd)
+        .map(d => dailyByDate.get(d))
+        .filter(Boolean);
+      return _aggregatePerAgentPerTeam(slice);
+    }
     return _aggregatePerAgentPerTeam(_sliceFor(periodKey));
   }
 
@@ -1491,6 +1520,24 @@ window.QUAY_READY = (async function () {
       const wEnd = _addDaysYmd(w.weekStart, 6);
       return wStart >= a && wEnd <= b;   // strict — fully inside
     });
+    // Daily fallback: no complete Mon–Sun week fits inside the range, but we
+    // DO have per-day snapshots covering it — aggregate those so single-day
+    // and partial/offset ranges (e.g. a 7-day span that isn't Mon–Sun) show
+    // real per-team numbers instead of an empty "no complete weeks" state.
+    // Mirrors agentsForRange's daily fallback; daily entries carry the same
+    // by_agent_campaign shape. (fix: teams-reporting-live-week)
+    if (slice.length === 0) {
+      const dates = dailyDates.filter(d => d >= a && d <= b).sort();
+      const dailySlice = dates.map(d => dailyByDate.get(d)).filter(Boolean);
+      if (dailySlice.length) {
+        const rows = _aggregatePerAgentPerTeam(dailySlice);
+        rows._range = { requestedFrom: a, requestedTo: b,
+                        effectiveFrom: dates[0], effectiveTo: dates[dates.length - 1],
+                        weeksIncluded: 0, daysIncluded: dates.length,
+                        granularity: 'daily' };
+        return rows;
+      }
+    }
     return _perAgentPerTeamRangeResult(slice, a, b);
   }
 
