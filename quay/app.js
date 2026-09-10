@@ -4517,13 +4517,16 @@
       erRows.sort((a, b) => b.calls - a.calls);
     };
     if (pickedCount) {
-      // Billing Period has no fixed ClientHub window, but it IS a concrete date
-      // span — so drive its Engine Room block off the per-day ClientHub feed,
-      // exactly like a custom range, rather than showing "not published".
-      const erBilling = !usingCustomRange && period === 'billing-period';
-      if (usingCustomRange || erBilling) {
-        const [a, b] = erBilling
-          ? (bw => [bw.fromYmd, bw.toYmd])(Q.billingPeriodWindow())
+      // Billing periods have no fixed ClientHub window, but they ARE concrete
+      // date spans — so drive their Engine Room block off the per-day ClientHub
+      // feed, exactly like a custom range, rather than showing "not published".
+      const erBillingWin = !usingCustomRange
+        ? (period === 'billing-period' ? Q.billingPeriodWindow()
+          : period === 'last-billing-period' ? Q.lastBillingPeriodWindow() : null)
+        : null;
+      if (usingCustomRange || erBillingWin) {
+        const [a, b] = erBillingWin
+          ? [erBillingWin.fromYmd, erBillingWin.toYmd]
           : (_trDateFrom <= _trDateTo ? [_trDateFrom, _trDateTo] : [_trDateTo, _trDateFrom]);
         const cov = Q.engineRoomRangeCoverage(a, b);
         if (cov.total === 0) {
@@ -4606,7 +4609,7 @@
           </div>
         </div>
         <div class="qf-chips" role="group" aria-label="Reporting period" style="margin-top:12px">
-          ${[['current-week', 'This Week'], ['last-week', 'Last Week'], ['this-month', 'This Month'], ['billing-period', 'Billing Period']].map(([k, lbl]) => {
+          ${[['current-week', 'This Week'], ['last-week', 'Last Week'], ['this-month', 'This Month'], ['billing-period', 'Billing Period'], ['last-billing-period', 'Last Billing Period']].map(([k, lbl]) => {
             // A preset chip is active only when no custom From/To range is set —
             // a range overrides the preset, so dim the chips while one is active.
             const on = !usingCustomRange && period === k;
