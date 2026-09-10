@@ -41,15 +41,17 @@
 <script>
   window.sb = window.supabase.createClient(window.QUAY_CONFIG.SUPABASE_URL, window.QUAY_CONFIG.SUPABASE_ANON_KEY);
 </script>
-<script src="quay/data.js"></script>
+<script src="quay/data.js?v=20260910a"></script>
 <script src="quay/lib.js"></script>
 <script>
   // views.js + app.js both capture `const Q = window.QUAY` at module-load
   // time — so we must defer loading them until QUAY is populated by data.js.
   // (lib.js doesn't reference QUAY, safe to load eagerly.)
   // Bump BUILD on every deploy so browsers/GitHub Pages fetch the new JS
-  // instead of serving a stale cached copy.
-  window.QUAY_BUILD = '20260820e';
+  // instead of serving a stale cached copy. Keep the literal ?v= on the
+  // quay/data.js tag above in lockstep — data.js loads before this script
+  // runs, so it can't read this var and is versioned by hand.
+  window.QUAY_BUILD = '20260910a';
   window.QUAY_READY.then(() => {
     const load = src => new Promise((res, rej) => {
       const s = document.createElement('script');
