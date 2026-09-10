@@ -300,6 +300,10 @@ window.QUAY_READY = (async function () {
     // rather than misleading weekly data if someone forgets to route
     // through the delegation branch in agentsFor.
     'billing-period':{ label: 'Billing Period',  weeks: 0, dayBased: true },
+    // Prior payroll cycle (the 21st→20th window before billing-period). Same
+    // day-based sentinel; routed through the billing branches in agentsFor /
+    // perAgentPerTeam / periodDateRange.
+    'last-billing-period':{ label: 'Last Billing Period', weeks: 0, dayBased: true },
     'last-90':       { label: 'Last 90 Days',    weeks: 13 },
     'all-time':      { label: 'All Time',        weeks: weeks.length },
   };
@@ -324,6 +328,22 @@ window.QUAY_READY = (async function () {
     return {
       fromYmd: `${startY}-${pad2(startM)}-21`,
       toYmd:   `${endY}-${pad2(endM)}-20`,
+    };
+  }
+
+  // The billing period immediately BEFORE the current one — the 21st→20th cycle
+  // that ends the day before billingPeriodWindow()'s start (i.e. one month
+  // earlier on both ends). Feeds the "Last Billing Period" view.
+  // (feat: teams-reporting-last-billing-period)
+  function lastBillingPeriodWindow(now = new Date()) {
+    const cur = billingPeriodWindow(now);
+    const [curStartY, curStartM] = cur.fromYmd.split('-').map(Number); // 21st of curStartM
+    const startY = curStartM === 1 ? curStartY - 1 : curStartY;
+    const startM = curStartM === 1 ? 12 : curStartM - 1;               // one month earlier
+    const pad2 = (n) => String(n).padStart(2, '0');
+    return {
+      fromYmd: `${startY}-${pad2(startM)}-21`,
+      toYmd:   `${curStartY}-${pad2(curStartM)}-20`,   // 20th of the current cycle's start month
     };
   }
 
@@ -537,6 +557,14 @@ window.QUAY_READY = (async function () {
         });
       }
       return list.sort((a, b) => b.calls - a.calls);
+    }
+    // Last Billing Period — same day-based delegation as billing-period, over
+    // the prior 21st→20th cycle. clock_data.json has no matching bucket, so
+    // clocked hours stay on the df/0.85 estimate (fine; only Teams Reporting,
+    // which reads workTime directly, surfaces this period today).
+    if (periodKey === 'last-billing-period') {
+      const w = lastBillingPeriodWindow();
+      return agentsForRange(w.fromYmd, w.toYmd).sort((a, b) => b.calls - a.calls);
     }
     const slice = _sliceFor(periodKey);
     const list = aggregateWeeks(slice);
@@ -1499,23 +1527,28 @@ window.QUAY_READY = (async function () {
       const w = currentWeekWindow();
       return _perAgentPerTeamDaily(w.fromYmd, w.toYmd);
     }
-    // Billing Period (payroll cycle: 21st of M-1 → 20th of M). It's a day-based
-    // window that doesn't line up with whole Mon–Sun weeks, so _sliceFor returns
-    // [] (PERIODS['billing-period'] is dayBased). Aggregate the EXACT window from
-    // daily snapshots so the per-team figures match what payroll actually pays
-    // for — including the partial weeks at the 21st/20th edges that a strict
-    // whole-week slice would drop. Falls back to complete weeks inside the window
-    // only when no daily snapshots cover it (a billing period older than the
-    // ~4-month daily-snapshot retention). (feat: teams-reporting-billing-period)
-    if (periodKey === 'billing-period') {
-      const w = billingPeriodWindow();
-      const daily = _perAgentPerTeamDaily(w.fromYmd, w.toYmd);
-      if (daily.length) return daily;
-      const weekSlice = weeks.filter(wk =>
-        wk.weekStart && wk.weekStart >= w.fromYmd && _addDaysYmd(wk.weekStart, 6) <= w.toYmd);
-      return _aggregatePerAgentPerTeam(weekSlice);
-    }
+    // Billing Period / Last Billing Period (payroll cycle: 21st of M-1 → 20th of
+    // M, or the cycle before it). Both are day-based windows that don't line up
+    // with whole Mon–Sun weeks, so _sliceFor returns [] (PERIODS[...] is
+    // dayBased). Aggregate the EXACT window from daily snapshots so the per-team
+    // figures match what payroll actually pays for — including the partial weeks
+    // at the 21st/20th edges that a strict whole-week slice would drop.
+    // (feat: teams-reporting-billing-period, -last-billing-period)
+    if (periodKey === 'billing-period') return _perAgentPerTeamWindow(billingPeriodWindow());
+    if (periodKey === 'last-billing-period') return _perAgentPerTeamWindow(lastBillingPeriodWindow());
     return _aggregatePerAgentPerTeam(_sliceFor(periodKey));
+  }
+
+  // Per-agent-per-team totals over an arbitrary { fromYmd, toYmd } window.
+  // Prefers the exact per-day snapshots; falls back to complete Mon–Sun weeks
+  // fully inside the window only when no daily snapshots cover it (a window
+  // older than the ~4-month daily-snapshot retention).
+  function _perAgentPerTeamWindow(w) {
+    const daily = _perAgentPerTeamDaily(w.fromYmd, w.toYmd);
+    if (daily.length) return daily;
+    const weekSlice = weeks.filter(wk =>
+      wk.weekStart && wk.weekStart >= w.fromYmd && _addDaysYmd(wk.weekStart, 6) <= w.toYmd);
+    return _aggregatePerAgentPerTeam(weekSlice);
   }
 
   // Add N days to a YYYY-MM-DD string, returning a new YYYY-MM-DD.
@@ -1643,8 +1676,9 @@ window.QUAY_READY = (async function () {
     // slice — resolve it directly so the header label/subtitle shows the real
     // cycle dates instead of the empty-slice 30-day fallback below.
     // (feat: teams-reporting-billing-period)
-    if (periodKey === 'billing-period') {
-      const w = billingPeriodWindow();
+    if (periodKey === 'billing-period' || periodKey === 'last-billing-period') {
+      const w = periodKey === 'last-billing-period'
+        ? lastBillingPeriodWindow() : billingPeriodWindow();
       return {
         fromISO: new Date(w.fromYmd + 'T00:00:00Z').toISOString(),
         // toISO is treated as exclusive by formatPeriodRange (it subtracts a
@@ -1682,6 +1716,7 @@ window.QUAY_READY = (async function () {
     perAgentPerTeam, perAgentPerTeamRange, teamCanonical, normalizeCampaignName,
     periodDateRange,
     billingPeriodWindow,
+    lastBillingPeriodWindow,
     LN_TEAMS_ALL,
     LN_TEAMS_ARCHIVED,
   };
