@@ -4497,9 +4497,9 @@
     // ClientHub calling is team-level (no per-agent split), so it lives in its
     // own block below the per-caller table rather than being folded into it.
     // Presets use the four fixed windows (fetch_clienthub_teams); custom ranges
-    // sum the per-day feed (fetch_clienthub_daily) so any range works. Unsupported
-    // presets (billing-period, last-90, all-time) have no fixed window — the note
-    // points the user at a custom range, which now does work.
+    // AND the Billing Period sum the per-day feed (fetch_clienthub_daily) so any
+    // date span works. The remaining fixed-window-less presets (last-90, all-time)
+    // have no window — the note points the user at a custom range, which works.
     const erBaseSub = 'ClientHub calling floor · team-level (no per-caller split)';
     let erRows = [];
     const erTot = { calls: 0, seller: 0, rental: 0, email: 0 };
@@ -4517,11 +4517,17 @@
       erRows.sort((a, b) => b.calls - a.calls);
     };
     if (pickedCount) {
-      if (usingCustomRange) {
-        const [a, b] = _trDateFrom <= _trDateTo ? [_trDateFrom, _trDateTo] : [_trDateTo, _trDateFrom];
+      // Billing Period has no fixed ClientHub window, but it IS a concrete date
+      // span — so drive its Engine Room block off the per-day ClientHub feed,
+      // exactly like a custom range, rather than showing "not published".
+      const erBilling = !usingCustomRange && period === 'billing-period';
+      if (usingCustomRange || erBilling) {
+        const [a, b] = erBilling
+          ? (bw => [bw.fromYmd, bw.toYmd])(Q.billingPeriodWindow())
+          : (_trDateFrom <= _trDateTo ? [_trDateFrom, _trDateTo] : [_trDateTo, _trDateFrom]);
         const cov = Q.engineRoomRangeCoverage(a, b);
         if (cov.total === 0) {
-          erNote = 'Engine Room daily data has not been published yet. The per-day ClientHub feed needs to run and backfill before custom ranges populate here; preset periods (This Week, Last Week, This Month) work in the meantime.';
+          erNote = 'Engine Room daily data has not been published yet. The per-day ClientHub feed needs to run and backfill before custom or billing-period ranges populate here; preset periods (This Week, Last Week, This Month) work in the meantime.';
         } else if (cov.count === 0) {
           erNote = `No Engine Room days have been published inside ${a} → ${b} yet.`;
         } else {
@@ -4598,6 +4604,16 @@
             ${usingCustomRange ? `<button class="btn" id="trDateClear" type="button" style="padding:5px 10px;font-size:12px">Clear</button>` : ''}
             <button class="btn" id="trExportPng" title="Download as PNG image" style="margin-left:6px">${I.download} PNG</button>
           </div>
+        </div>
+        <div class="qf-chips" role="group" aria-label="Reporting period" style="margin-top:12px">
+          ${[['current-week', 'This Week'], ['last-week', 'Last Week'], ['this-month', 'This Month'], ['billing-period', 'Billing Period']].map(([k, lbl]) => {
+            // A preset chip is active only when no custom From/To range is set —
+            // a range overrides the preset, so dim the chips while one is active.
+            const on = !usingCustomRange && period === k;
+            const rt = formatPeriodRange(k);
+            const title = rt ? `${lbl} · ${rt}` : lbl;
+            return `<button class="qf-chip ${on ? 'active' : ''}${usingCustomRange ? ' overridden' : ''}" data-tr-period="${k}" type="button" aria-pressed="${on}" title="${escapeHtml(title)}">${escapeHtml(lbl)}</button>`;
+          }).join('')}
         </div>
       </div>
 
@@ -4708,6 +4724,14 @@
         if (_trDocClickHandler) document.addEventListener('click', _trDocClickHandler);
       }, 0);
     }
+    // Reporting-period preset chips (This Week / Last Week / This Month /
+    // Billing Period). They set the shared `period` and clear any custom From/To
+    // range so the preset actually takes effect (a range overrides the preset).
+    document.querySelectorAll('[data-tr-period]').forEach(b => b.addEventListener('click', () => {
+      period = b.dataset.trPeriod;
+      _trDateFrom = null; _trDateTo = null;
+      shell();
+    }));
     document.querySelectorAll('th[data-tr-sort]').forEach(th => {
       th.addEventListener('click', () => {
         const k = th.dataset.trSort;

@@ -1475,21 +1475,45 @@ window.QUAY_READY = (async function () {
     return Array.from(agents.values());
   }
 
+  // Per-agent-per-team aggregation of the per-day snapshots whose date falls in
+  // [fromYmd, toYmd] inclusive. Daily entries carry the same by_agent_campaign
+  // shape as weekly rows, so this is exact for any calendar-day window — used
+  // for the live week and the payroll billing period, neither of which lines up
+  // with the completed Mon–Sun weeks stored in history/weekly_data.
+  function _perAgentPerTeamDaily(fromYmd, toYmd) {
+    const slice = dailyDates
+      .filter(d => d >= fromYmd && d <= toYmd)
+      .map(d => dailyByDate.get(d))
+      .filter(Boolean);
+    return _aggregatePerAgentPerTeam(slice);
+  }
+
   function perAgentPerTeam(periodKey) {
     // Live current week ("This Week" chip): weekly_data.json / history only
     // hold COMPLETED weeks, so _sliceFor('current-week') is an empty slice.
     // Aggregate the in-progress week from daily snapshots (Mon → today)
-    // instead — the same source agentsFor/campaignsFor use. Daily entries
-    // carry the same by_agent_campaign shape as weekly rows, so the per-team
-    // aggregation below is unchanged. Without this the Teams Reporting tab
-    // showed zero callers for the live week. (fix: teams-reporting-live-week)
+    // instead — the same source agentsFor/campaignsFor use. Without this the
+    // Teams Reporting tab showed zero callers for the live week.
+    // (fix: teams-reporting-live-week)
     if (periodKey === 'current-week') {
       const w = currentWeekWindow();
-      const slice = dailyDates
-        .filter(d => d >= w.fromYmd && d <= w.toYmd)
-        .map(d => dailyByDate.get(d))
-        .filter(Boolean);
-      return _aggregatePerAgentPerTeam(slice);
+      return _perAgentPerTeamDaily(w.fromYmd, w.toYmd);
+    }
+    // Billing Period (payroll cycle: 21st of M-1 → 20th of M). It's a day-based
+    // window that doesn't line up with whole Mon–Sun weeks, so _sliceFor returns
+    // [] (PERIODS['billing-period'] is dayBased). Aggregate the EXACT window from
+    // daily snapshots so the per-team figures match what payroll actually pays
+    // for — including the partial weeks at the 21st/20th edges that a strict
+    // whole-week slice would drop. Falls back to complete weeks inside the window
+    // only when no daily snapshots cover it (a billing period older than the
+    // ~4-month daily-snapshot retention). (feat: teams-reporting-billing-period)
+    if (periodKey === 'billing-period') {
+      const w = billingPeriodWindow();
+      const daily = _perAgentPerTeamDaily(w.fromYmd, w.toYmd);
+      if (daily.length) return daily;
+      const weekSlice = weeks.filter(wk =>
+        wk.weekStart && wk.weekStart >= w.fromYmd && _addDaysYmd(wk.weekStart, 6) <= w.toYmd);
+      return _aggregatePerAgentPerTeam(weekSlice);
     }
     return _aggregatePerAgentPerTeam(_sliceFor(periodKey));
   }
@@ -1615,6 +1639,19 @@ window.QUAY_READY = (async function () {
   // the All Staff "LN & Assistants" sub-tab). Earliest day in the period's
   // week-slice → start; latest weekStart + 7 days → end.
   function periodDateRange(periodKey) {
+    // Billing Period is a day-based payroll window (21st → 20th), not a weeks[]
+    // slice — resolve it directly so the header label/subtitle shows the real
+    // cycle dates instead of the empty-slice 30-day fallback below.
+    // (feat: teams-reporting-billing-period)
+    if (periodKey === 'billing-period') {
+      const w = billingPeriodWindow();
+      return {
+        fromISO: new Date(w.fromYmd + 'T00:00:00Z').toISOString(),
+        // toISO is treated as exclusive by formatPeriodRange (it subtracts a
+        // day for the inclusive end), so add a day to the inclusive 20th.
+        toISO: new Date(_addDaysYmd(w.toYmd, 1) + 'T00:00:00Z').toISOString(),
+      };
+    }
     const slice = _sliceFor(periodKey);
     if (!slice.length) {
       const to = new Date();
