@@ -1,6 +1,6 @@
 [
   {
-    "generated": "2026-09-13T11:45:29.541784+00:00",
+    "generated": "2026-09-14T05:11:42.804991+00:00",
     "week": "2026-09-07",
     "weekStart": "2026-09-07",
     "weekEnd": "2026-09-13",
@@ -4021,7 +4021,10 @@
         {
           "kind": "totals_only_response",
           "campaigns": [
+            "AMIGOS_NA",
             "BABES_NEW",
+            "BETTIES_NA",
+            "POWER_RANGERS_NA",
             "PROTEAS_CM",
             "SLAYERS_NEW",
             "SLAYERS_NA",
@@ -4030,7 +4033,6 @@
             "WEASELS_CM",
             "CLIENTHUB_NO_ANSWER",
             "CLIENTHUB_NEW",
-            "CONQUERORS_NA",
             "CONQUERORS_NEW"
           ],
           "detail": "Dialfire returned rows with no per-agent breakdown (name is '' or '-'). Totals recorded but per-agent attribution is lost for these campaigns."
