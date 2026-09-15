@@ -3381,7 +3381,15 @@
         .gte('updated_at', startOfTodaySAST)
         .order('calls', { ascending: false });
       if (error) throw error;
-      liveStats = data || [];
+      // Supabase/PostgREST returns numeric/decimal columns (success_rate,
+      // work_hours) as STRINGS to preserve precision. Coerce to numbers here
+      // so downstream `.toFixed()` on success_rate doesn't throw and blank the
+      // whole Live Floor render.
+      liveStats = (data || []).map(r => ({
+        ...r,
+        success_rate: r.success_rate == null ? null : Number(r.success_rate),
+        work_hours:   r.work_hours   == null ? null : Number(r.work_hours),
+      }));
       liveStatsByName = new Map();
       const stash = (key, row) => {
         if (key && !liveStatsByName.has(key)) liveStatsByName.set(key, row);
@@ -5254,7 +5262,16 @@
     const jobs = [];
     if (!schedule) jobs.push(loadScheduleData());
     jobs.push(loadLiveStats());
-    Promise.allSettled(jobs).then(() => { if (tab === 'live') render(); });
+    // Repaint #content directly once the loads settle — NOT via render().
+    // render() unconditionally re-invokes liveFloorWire(), which would fire
+    // these loads again and re-render again, an unbounded refetch/repaint
+    // loop. The header (role chips + date inputs) is wired above and lives
+    // outside #content, so only the card grid needs re-rendering here.
+    Promise.allSettled(jobs).then(() => {
+      if (tab !== 'live') return;
+      const host = document.getElementById('content');
+      if (host) { host.innerHTML = renderLiveFloor(); wireAgentClicks(host); }
+    });
   }
 
   // Build a deterministic avatar background for a name. Same Quay-blue palette
