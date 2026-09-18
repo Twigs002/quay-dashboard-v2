@@ -1674,7 +1674,7 @@
     const campRows = camps.length ? camps.map(c => {
       const conv = c.calls ? ((c.leads / c.calls) * 100).toFixed(1) : '0.0';
       return `<tr>
-        <td>${c.name}</td>
+        <td>${escapeHtml(c.name)}</td>
         <td class="num tnum">${fmt(c.calls)}</td>
         <td class="num tnum">${fmt(c.leads)}</td>
         <td class="num"><span class="pill ${sucClass(+conv)}">${conv}%</span></td>
@@ -1695,7 +1695,7 @@
           <div style="display:flex;align-items:center;gap:14px">
             <div class="avatar" style="width:46px;height:46px;font-size:15px">${initials(a.name)}</div>
             <div>
-              <div id="agentModalTitle" style="font-family:var(--serif);font-size:22px;font-weight:700;color:var(--ink)">${a.name}</div>
+              <div id="agentModalTitle" style="font-family:var(--serif);font-size:22px;font-weight:700;color:var(--ink)">${escapeHtml(a.name)}</div>
               <div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap">
                 <span class="pill ${a.team === 'RM' ? 'rm' : 'fancy'}" style="font-size:10.5px">${a.team}</span>
                 <span class="pill ${sc}" style="font-size:10.5px">${a.success}% success</span>
@@ -2763,10 +2763,10 @@
       const medal = i === 0 ? 'g' : i === 1 ? 's' : i === 2 ? 'b' : 'n';
       const sc = sucClass(a.success);
       const bar = Math.min(100, (a.calls / agents[0].calls) * 100);
-      return `<tr data-agent="${a.name}" style="cursor:pointer">
+      return `<tr data-agent="${escapeHtml(a.name)}" style="cursor:pointer">
         <td><div class="medal ${medal}">${i + 1}</div></td>
         <td><div class="agent-cell"><div class="avatar">${initials(a.name)}</div>
-          <div><div class="agent-name">${a.name}</div><div class="agent-sub">${a.team} desk</div></div></div></td>
+          <div><div class="agent-name">${escapeHtml(a.name)}</div><div class="agent-sub">${a.team} desk</div></div></div></td>
         <td class="num tnum">${fmt(a.calls)}</td>
         <td class="num tnum">${fmt(a.leads)}</td>
         <td class="num"><span class="pill ${sc}">${a.success}%</span></td>
@@ -2776,7 +2776,7 @@
 
     const srcRows = src.map(s => `
       <div class="src-row">
-        <div class="src-name"><span class="legend-swatch" style="background:${s.color}"></span>${s.name}</div>
+        <div class="src-name"><span class="legend-swatch" style="background:${s.color}"></span>${escapeHtml(s.name)}</div>
         <div class="src-meta">${fmt(s.calls)} calls · ${s.conv}%</div>
         <div class="src-bar"><span style="width:${(s.calls / src[0].calls) * 100}%;background:${s.color}"></span></div>
       </div>`).join('');
@@ -2833,14 +2833,14 @@
           <div class="eyebrow">${I.trophy} Top Performer</div>
           <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
             <div class="avatar" style="width:44px;height:44px;font-size:15px">${initials(top.name)}</div>
-            <div><div class="spot-name" style="margin:0">${top.name}</div>
+            <div><div class="spot-name" style="margin:0">${escapeHtml(top.name)}</div>
             <div class="spot-stat">${top.team} desk</div></div>
           </div>
           <div class="spot-stat" style="margin-top:14px"><b>${fmt(top.calls)}</b> calls · <b>${top.leads}</b> leads · <b>${top.success}%</b> success</div>
         </div>
         <div class="card spot">
           <div class="eyebrow">${I.target} Best Converting Source</div>
-          <div class="spot-name">${bestSrc.name}</div>
+          <div class="spot-name">${escapeHtml(bestSrc.name)}</div>
           <div class="spot-stat" style="margin-top:6px">Leading conversion across all channels</div>
           <div class="spot-stat" style="margin-top:14px"><b>${bestSrc.conv}%</b> conversion · <b>${fmt(bestSrc.leads)}</b> leads from <b>${fmt(bestSrc.calls)}</b> calls</div>
         </div>
@@ -2848,7 +2848,7 @@
           <div class="eyebrow" style="color:var(--red)">${I.alert} At Risk</div>
           <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
             <div class="avatar" style="width:44px;height:44px;font-size:15px;background:var(--red-tint);border-color:#E3BDB0;color:var(--red)">${initials(risk.name)}</div>
-            <div><div class="spot-name" style="margin:0">${risk.name}</div>
+            <div><div class="spot-name" style="margin:0">${escapeHtml(risk.name)}</div>
             <div class="spot-stat">below success target</div></div>
           </div>
           <div class="spot-stat" style="margin-top:14px"><b>${risk.success}%</b> success · target <b>${(CFG.BENCHMARKS && CFG.BENCHMARKS.rm_success_rate) || 17}%</b> · ${fmt(risk.calls)} calls</div>
@@ -2930,11 +2930,11 @@
     const items = [
       { type: momentumType, html: `${callsCopy} while ${succCopy}`,
         action: momentumAction },
-      { type: 'info', html: `<b>${bestSrc.name}</b> is the strongest channel at <b>${bestSrc.conv}% conversion</b>, well ahead of ${worstSrc.name} (${worstSrc.conv}%).`,
-        action: 'Shift spend toward ' + bestSrc.name },
-      { type: 'warn', html: `<b>${risk.name}</b> is converting at just <b>${risk.success}%</b>, below the ${(CFG.BENCHMARKS && CFG.BENCHMARKS.rm_success_rate) || 17}% target despite ${fmt(risk.calls)} calls — likely a quality not volume issue.`,
+      { type: 'info', html: `<b>${escapeHtml(bestSrc.name)}</b> is the strongest channel at <b>${bestSrc.conv}% conversion</b>, well ahead of ${escapeHtml(worstSrc.name)} (${worstSrc.conv}%).`,
+        action: 'Shift spend toward ' + escapeHtml(bestSrc.name) },
+      { type: 'warn', html: `<b>${escapeHtml(risk.name)}</b> is converting at just <b>${risk.success}%</b>, below the ${(CFG.BENCHMARKS && CFG.BENCHMARKS.rm_success_rate) || 17}% target despite ${fmt(risk.calls)} calls — likely a quality not volume issue.`,
         action: 'Schedule a call-quality coaching session' },
-      { type: 'up', html: `<b>${top.name}</b> leads the floor with ${fmt(top.calls)} calls and ${top.success}% success — a useful benchmark for the team.`,
+      { type: 'up', html: `<b>${escapeHtml(top.name)}</b> leads the floor with ${fmt(top.calls)} calls and ${top.success}% success — a useful benchmark for the team.`,
         action: 'Share top-performer call recordings' },
     ];
     const iconFor = t => t === 'up' ? I.up
@@ -3111,7 +3111,7 @@
     const campRows = camps.map(c => {
       const pct = ((c.calls / campTotal) * 100).toFixed(1);
       return `<div class="src-row">
-        <div class="src-name"><span class="legend-swatch" style="background:${c.color}"></span>${c.name}</div>
+        <div class="src-name"><span class="legend-swatch" style="background:${c.color}"></span>${escapeHtml(c.name)}</div>
         <div class="src-meta">${fmt(c.calls)} calls · ${pct}%</div>
         <div class="src-bar"><span style="width:${pct}%;background:${c.color}"></span></div>
       </div>`;
@@ -3260,10 +3260,10 @@
             <tbody>${top5.map((a, i) => {
               const medal = i === 0 ? 'g' : i === 1 ? 's' : i === 2 ? 'b' : 'n';
               const sc = sucClass(a.success);
-              return `<tr data-agent="${a.name}" style="cursor:pointer">
+              return `<tr data-agent="${escapeHtml(a.name)}" style="cursor:pointer">
                 <td><div class="medal ${medal}">${i + 1}</div></td>
                 <td><div class="agent-cell"><div class="avatar">${initials(a.name)}</div>
-                  <div><div class="agent-name">${a.name}</div><div class="agent-sub">${a.team} desk</div></div></div></td>
+                  <div><div class="agent-name">${escapeHtml(a.name)}</div><div class="agent-sub">${a.team} desk</div></div></div></td>
                 <td class="num tnum">${fmt(a.calls)}</td>
                 <td class="num tnum">${fmt(a.leads)}</td>
                 <td class="num"><span class="pill ${sc}">${a.success}%</span></td>
@@ -3347,7 +3347,7 @@
           </tr></thead>
           <tbody>${rows.map(r => `
             <tr>
-              <td><b>${r.name}</b> ${r.matched ? '' : '<span class="pill" style="background:#EEF0F6;color:var(--muted);font-size:10px;font-weight:700;margin-left:6px" title="Campaign not in TEAM_RAND_PER_LEAD — using floor average">floor avg</span>'}</td>
+              <td><b>${escapeHtml(r.name)}</b> ${r.matched ? '' : '<span class="pill" style="background:#EEF0F6;color:var(--muted);font-size:10px;font-weight:700;margin-left:6px" title="Campaign not in TEAM_RAND_PER_LEAD — using floor average">floor avg</span>'}</td>
               <td class="num tnum">${fmt(r.seller)}</td>
               <td class="num tnum" style="color:var(--muted)">R ${fmt(r.rate)}</td>
               <td class="num tnum">${fmt(r.rental)}</td>
