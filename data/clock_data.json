@@ -64,11 +64,11 @@
       "sessions": 3
     },
     {
-      "hours": 25.603,
+      "hours": 34.179,
       "id": "jason-julius",
       "name": "Jason Julius",
       "name_normalised": "Jason Julius",
-      "sessions": 3
+      "sessions": 4
     },
     {
       "hours": 32.389,
@@ -162,11 +162,11 @@
       "sessions": 4
     },
     {
-      "hours": 27.48,
+      "hours": 36.533,
       "id": "niel",
       "name": "Niel Steenkamp",
       "name_normalised": "Niel Steenkamp",
-      "sessions": 3
+      "sessions": 4
     },
     {
       "hours": 36.241,
@@ -218,11 +218,11 @@
       "sessions": 4
     },
     {
-      "hours": 23.611,
+      "hours": 31.164,
       "id": "quinn",
       "name": "Quinn Frazier",
       "name_normalised": "Quinn Frazier",
-      "sessions": 3
+      "sessions": 4
     },
     {
       "hours": 38.665,
@@ -6031,11 +6031,11 @@
         "sessions": 3
       },
       {
-        "hours": 25.603,
+        "hours": 34.179,
         "id": "jason-julius",
         "name": "Jason Julius",
         "name_normalised": "Jason Julius",
-        "sessions": 3
+        "sessions": 4
       },
       {
         "hours": 32.389,
@@ -6129,11 +6129,11 @@
         "sessions": 4
       },
       {
-        "hours": 27.48,
+        "hours": 36.533,
         "id": "niel",
         "name": "Niel Steenkamp",
         "name_normalised": "Niel Steenkamp",
-        "sessions": 3
+        "sessions": 4
       },
       {
         "hours": 36.241,
@@ -6185,11 +6185,11 @@
         "sessions": 4
       },
       {
-        "hours": 23.611,
+        "hours": 31.164,
         "id": "quinn",
         "name": "Quinn Frazier",
         "name_normalised": "Quinn Frazier",
-        "sessions": 3
+        "sessions": 4
       },
       {
         "hours": 38.665,
@@ -6235,7 +6235,7 @@
       }
     ]
   },
-  "generated_at": "2026-09-17T20:21:23.322286+00:00",
+  "generated_at": "2026-09-18T05:08:44.888889+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -6583,11 +6583,11 @@
           "sessions": 61
         },
         {
-          "hours": 461.673,
+          "hours": 470.248,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 61
+          "sessions": 62
         },
         {
           "hours": 506.575,
@@ -6625,18 +6625,18 @@
           "sessions": 62
         },
         {
-          "hours": 500.889,
+          "hours": 508.442,
           "id": "quinn",
           "name": "Quinn Frazier",
           "name_normalised": "Quinn Frazier",
-          "sessions": 62
+          "sessions": 63
         },
         {
-          "hours": 526.781,
+          "hours": 535.834,
           "id": "niel",
           "name": "Niel Steenkamp",
           "name_normalised": "Niel Steenkamp",
-          "sessions": 59
+          "sessions": 60
         },
         {
           "hours": 394.714,
@@ -6674,8 +6674,8 @@
           "sessions": 7
         }
       ],
-      "from": "2025-09-18T00:00:00+00:00",
-      "to": "2026-09-17T23:59:59+00:00"
+      "from": "2025-09-19T00:00:00+00:00",
+      "to": "2026-09-18T23:59:59+00:00"
     },
     "billing-period": {
       "agents": [
@@ -6750,11 +6750,11 @@
           "sessions": 1
         },
         {
-          "hours": 153.438,
+          "hours": 162.014,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 19
+          "sessions": 20
         },
         {
           "hours": 177.196,
@@ -6792,18 +6792,18 @@
           "sessions": 1
         },
         {
-          "hours": 173.835,
+          "hours": 182.888,
           "id": "niel",
           "name": "Niel Steenkamp",
           "name_normalised": "Niel Steenkamp",
-          "sessions": 19
+          "sessions": 20
         },
         {
-          "hours": 154.083,
+          "hours": 161.636,
           "id": "quinn",
           "name": "Quinn Frazier",
           "name_normalised": "Quinn Frazier",
-          "sessions": 19
+          "sessions": 20
         },
         {
           "hours": 180.005,
@@ -6973,13 +6973,6 @@
     "last-90": {
       "agents": [
         {
-          "hours": 616.565,
-          "id": "jaco",
-          "name": "Jan C (Jaco) Groenewald",
-          "name_normalised": "Jan C (Jaco) Groenewald",
-          "sessions": 73
-        },
-        {
           "hours": 499.051,
           "id": "anneeqa-williams",
           "name": "Anneeqa Williams",
@@ -7036,11 +7029,11 @@
           "sessions": 61
         },
         {
-          "hours": 461.673,
+          "hours": 470.248,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 61
+          "sessions": 62
         },
         {
           "hours": 21.242,
@@ -7225,11 +7218,18 @@
           "sessions": 62
         },
         {
-          "hours": 500.889,
+          "hours": 508.442,
           "id": "quinn",
           "name": "Quinn Frazier",
           "name_normalised": "Quinn Frazier",
-          "sessions": 62
+          "sessions": 63
+        },
+        {
+          "hours": 603.582,
+          "id": "jaco",
+          "name": "Jan C (Jaco) Groenewald",
+          "name_normalised": "Jan C (Jaco) Groenewald",
+          "sessions": 72
         },
         {
           "hours": 431.188,
@@ -7239,11 +7239,11 @@
           "sessions": 59
         },
         {
-          "hours": 526.781,
+          "hours": 535.834,
           "id": "niel",
           "name": "Niel Steenkamp",
           "name_normalised": "Niel Steenkamp",
-          "sessions": 59
+          "sessions": 60
         },
         {
           "hours": 534.855,
@@ -7288,8 +7288,8 @@
           "sessions": 7
         }
       ],
-      "from": "2026-06-20T00:00:00+00:00",
-      "to": "2026-09-17T23:59:59+00:00"
+      "from": "2026-06-21T00:00:00+00:00",
+      "to": "2026-09-18T23:59:59+00:00"
     },
     "last-week": {
       "agents": [
@@ -7664,18 +7664,18 @@
           "sessions": 18
         },
         {
-          "hours": 144.931,
+          "hours": 153.507,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 18
+          "sessions": 19
         },
         {
-          "hours": 145.368,
+          "hours": 152.921,
           "id": "quinn",
           "name": "Quinn Frazier",
           "name_normalised": "Quinn Frazier",
-          "sessions": 18
+          "sessions": 19
         },
         {
           "hours": 159.583,
@@ -7783,11 +7783,11 @@
           "sessions": 16
         },
         {
-          "hours": 165.073,
+          "hours": 174.126,
           "id": "niel",
           "name": "Niel Steenkamp",
           "name_normalised": "Niel Steenkamp",
-          "sessions": 18
+          "sessions": 19
         },
         {
           "hours": 177.196,
@@ -7908,11 +7908,11 @@
           "sessions": 3
         },
         {
-          "hours": 25.603,
+          "hours": 34.179,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
-          "sessions": 3
+          "sessions": 4
         },
         {
           "hours": 32.389,
@@ -8006,11 +8006,11 @@
           "sessions": 4
         },
         {
-          "hours": 27.48,
+          "hours": 36.533,
           "id": "niel",
           "name": "Niel Steenkamp",
           "name_normalised": "Niel Steenkamp",
-          "sessions": 3
+          "sessions": 4
         },
         {
           "hours": 36.241,
@@ -8062,11 +8062,11 @@
           "sessions": 4
         },
         {
-          "hours": 23.611,
+          "hours": 31.164,
           "id": "quinn",
           "name": "Quinn Frazier",
           "name_normalised": "Quinn Frazier",
-          "sessions": 3
+          "sessions": 4
         },
         {
           "hours": 38.665,
