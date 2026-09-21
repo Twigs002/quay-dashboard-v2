@@ -879,8 +879,8 @@
       if (count) count.textContent = checked.length ? `${checked.length} selected` : 'All divisions';
       const cap = document.getElementById('divCostCaption');
       const allCap = hideSdl
-        ? 'Cost-attribution pivot · PAYROLL = total hrs × rate (capped at full salary) · DIV CONTRIBUTION = half the wage for hours on this division (50% split · head office carries the other half)'
-        : 'Cost-attribution pivot · PAYROLL = total hrs × rate (capped at full salary) · SDL = 1.1% levy · DIV CONTRIBUTION = half the wage for hours on this division + its SDL share (50% split · head office carries the other half)';
+        ? 'Cost-attribution pivot · PAYROLL = what we pay the caller (fixed salary, else hrs × rate capped at salary) · DIV CONTRIBUTION = half the wage for hours on this division (50% split · head office carries the other half)'
+        : 'Cost-attribution pivot · PAYROLL = what we pay the caller (fixed salary, else hrs × rate capped at salary) · SDL = 1.1% levy · DIV CONTRIBUTION = half the wage for hours on this division + its SDL share (50% split · head office carries the other half)';
       if (cap) cap.innerHTML = checked.length
         ? `Showing ${checked.length} selected division${checked.length === 1 ? '' : 's'} · use the Divisions picker to change`
         : allCap;
@@ -2181,10 +2181,11 @@
         const members = teamEmp.get(team) || new Map();
         const enriched = [...members.entries()].map(([emp, hrs]) => {
           const meta = EMETA.get(emp) || {}; const rate = meta.hourlyRate; const tot = ETOT.get(emp) || 0;
-          // Charge basis capped at the agent's full salary — matches the
-          // on-screen Division Costs table (window.PAYROLL.cappedPayroll).
+          // Charge basis = what we pay the caller (fixed salary, or pro-rata
+          // earnings capped at salary) — matches the on-screen Division Costs
+          // table (window.PAYROLL.chargeBasis).
           const rawPayroll = rate != null ? tot * rate : 0;
-          const payroll = PR.cappedPayroll(rawPayroll, meta.salary != null ? meta.salary : null);
+          const payroll = PR.chargeBasis(rawPayroll, meta.salary != null ? meta.salary : null, meta.salaryType) || 0;
           const sdl = payroll * SDL_RATE;
           const pct = tot > 0 ? hrs / tot : 0; const contrib = (payroll * pct) / 2 + sdl * pct;
           return { emp, payroll, sdl, pct, contrib };
