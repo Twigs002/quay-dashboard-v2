@@ -879,6 +879,17 @@
     check('7.13d 11.42%', roundHalfUp(0.1142), 0.11)
     check('7.13e 32.56%', roundHalfUp(0.3256), 0.33)
 
+    // 7.14 — division-cost charge basis = what we pay the caller.
+    //   pro-rata → min(earned, salary); fixed → full salary.
+    check('7.14a prorata over salary → capped', chargeBasis(13700, 12000, 'prorata'), 12000)
+    check('7.14b prorata under salary → earned', chargeBasis(8000, 12000, 'prorata'), 8000)
+    check('7.14c prorata exactly salary', chargeBasis(12000, 12000, 'prorata'), 12000)
+    check('7.14d fixed over salary → full salary', chargeBasis(13700, 12000, 'fixed'), 12000)
+    check('7.14e fixed under salary → full salary', chargeBasis(8000, 12000, 'fixed'), 12000)
+    check('7.14f fixed, no earnings → full salary', chargeBasis(null, 12000, 'fixed'), 12000)
+    check('7.14g no salary → raw earnings', chargeBasis(13700, null, 'prorata'), 13700)
+    check('7.14h prorata, no earnings → null', chargeBasis(null, 12000, 'prorata'), null)
+
     const passed = results.filter(r => r.pass).length
     const failed = results.filter(r => !r.pass)
     // Summary
@@ -917,6 +928,7 @@
     roundHalfUp,
     fetchShiftsForPeriod,
     computeAllocations,
+    chargeBasis,
     loadConfigFromSupabase,
     reloadConfig,
     ensureConfigLoaded,
@@ -1079,7 +1091,7 @@
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between">
           <div>
             <h3 style="margin:0;font-family:var(--serif);font-size:17px">Division Costs</h3>
-            <div class="sub" style="margin-top:4px">Cost-attribution pivot per division · each team carries half the wage for hours worked (50% split)</div>
+            <div class="sub" style="margin-top:4px">Cost-attribution pivot per division · each team carries half the wage for hours worked (50% split) · wage = what we pay the caller (fixed salary, else hours × rate capped at salary)</div>
           </div>
           <div class="field" style="margin-bottom:0">
             <label>Pay period</label>
@@ -1290,7 +1302,12 @@
       const rate = meta ? meta.hourlyRate : null
       const designation = meta ? meta.designation : ''
       const division = meta ? meta.division : ''
-      const pay = rate != null ? total * rate : null
+      // Total Pay = what we actually pay the agent: fixed salary, or pro-rata
+      // earnings capped at salary (see chargeBasis). Overtime above salary is
+      // never paid — it surfaces on the Salary vs Earnings view instead.
+      const pay = chargeBasis(rate != null ? total * rate : null,
+                              meta ? meta.salary : null,
+                              meta ? meta.salaryType : null)
       grandHours += total
       if (pay != null) grandPay += pay
       else missingRate++
@@ -1316,7 +1333,7 @@
         <div class="card-head">
           <div>
             <h3>Earnings</h3>
-            <div class="sub">Total hours × hourly_rate per agent for the selected pay period</div>
+            <div class="sub">What we pay each agent this pay period — hours × hourly_rate, capped at their monthly salary (fixed salaries paid in full). Overtime above salary shows on Salary vs Earnings.</div>
           </div>
           ${_exportBtn()}
         </div>
@@ -1580,6 +1597,33 @@
       .concat(teamEmp.has('(No team noted)') ? ['(No team noted)'] : [])
   }
 
+  // Division-cost charge basis (business rule).
+  //
+  // Teams are charged for whatever we actually PAY the caller, which depends
+  // on the agent's salary basis (staff.salary_type):
+  //
+  //   fixed   → the full monthly salary. Hours are ignored: a fixed-salary
+  //             caller is paid their salary whether they over- or under-work,
+  //             so that's what the division is charged.
+  //   prorata → min(earned, salary), where earned = total hrs × hourly rate.
+  //             Under their salary if they worked less; capped at salary if
+  //             they worked overtime (we never pay a pro-rata caller above
+  //             their salary). So a 13.7k earner on a 12k salary bills 12k;
+  //             an 8k earner on a 12k salary bills the 8k earned.
+  //
+  // No salary on file → fall back to raw earnings (best available basis),
+  // matching the prior behaviour. For pro-rata, raw == null (unknown hourly
+  // rate) → null. Applied to the agent's TOTAL pay before the per-division
+  // %-split, so it lands on the whole person, not each division slice. Shared
+  // verbatim by the on-screen Division Costs table and the xlsx "Division
+  // Invoicing" sheet (via window.PAYROLL.chargeBasis) so both surfaces agree.
+  function chargeBasis(rawPayroll, salary, salaryType) {
+    if (salary == null) return rawPayroll
+    if (salaryType === 'fixed') return Number(salary)
+    if (rawPayroll == null) return null
+    return Math.min(rawPayroll, Number(salary))
+  }
+
   // Just the Division Costs <table> (wrapped in .tbl-wrap), for the given
   // `selected` division names (empty array = all divisions). Kept separate from
   // the card shell so ticking a checkbox can re-render only the table without
@@ -1665,8 +1709,23 @@
       const enriched = Array.from(members.entries()).map(([emp, hrs]) => {
         const meta = empMeta && empMeta.get(emp) ? empMeta.get(emp) : null
         const rate = meta ? meta.hourlyRate : null
+        const salary = meta ? meta.salary : null
+        const salaryType = meta ? meta.salaryType : null
         const totalHrs = empTotalHours.get(emp) || 0
-        const payroll = rate != null ? totalHrs * rate : null
+        const rawPayroll = rate != null ? totalHrs * rate : null
+        // Charge teams for what we pay the caller: fixed salary, or pro-rata
+        // earnings capped at salary (see chargeBasis).
+        const payroll = chargeBasis(rawPayroll, salary, salaryType)
+        const isFixed = salaryType === 'fixed' && salary != null
+        // Tooltip when the charged basis isn't simply "hours × rate": either a
+        // fixed salary, or a pro-rata charge capped below what they earned.
+        const basisTip = isFixed
+          ? (rawPayroll != null
+              ? `Fixed salary — hours would have earned ${_fmtZAR(rawPayroll)} this period`
+              : 'Fixed salary')
+          : (rawPayroll != null && payroll != null && payroll < rawPayroll
+              ? `Capped at full salary — earned ${_fmtZAR(rawPayroll)} this period`
+              : null)
         const sdl = payroll != null ? payroll * SDL_RATE : null
         // PERCENTAGE = fraction of this agent's pay-period time spent
         // on THIS division. Display as the same one-decimal %-of-time
@@ -1678,7 +1737,7 @@
         const contrib = (payroll != null && sdl != null)
           ? (payroll * pct) / 2 + (sdl * pct)
           : null
-        return { emp, hrs, rate, payroll, sdl, contrib, pct }
+        return { emp, hrs, rate, payroll, rawPayroll, basisTip, sdl, contrib, pct }
       }).sort((a, b) => (b.contrib || 0) - (a.contrib || 0))
 
       const cells = [`<td><b>${esc(team)}</b></td>`]
@@ -1687,7 +1746,12 @@
         if (i < enriched.length) {
           const x = enriched[i]
           cells.push(`<td>${esc(x.emp)}</td>`)
-          cells.push(`<td class="num tnum">${x.payroll == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(x.payroll)}</td>`)
+          const payrollCell = x.payroll == null
+            ? '<span style="color:var(--muted)">—</span>'
+            : (x.basisTip
+                ? `<span title="${esc(x.basisTip)}" style="border-bottom:1px dotted var(--muted)">${_fmtZAR(x.payroll)}</span>`
+                : _fmtZAR(x.payroll))
+          cells.push(`<td class="num tnum">${payrollCell}</td>`)
           if (!hideSdl) cells.push(`<td class="num tnum">${x.sdl == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(x.sdl)}</td>`)
           cells.push(`<td class="num tnum">${(x.pct * 100).toFixed(1)}%</td>`)
           cells.push(`<td class="num tnum">${x.contrib == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(x.contrib)}</td>`)
@@ -1765,8 +1829,8 @@
     const selSet = new Set(selected)
 
     const allCaption = hideSdl
-      ? 'Cost-attribution pivot · PAYROLL = total hrs × rate · DIV CONTRIBUTION = half the wage for hours on this division (50% split · head office carries the other half)'
-      : 'Cost-attribution pivot · PAYROLL = total hrs × rate · SDL = 1.1% levy · DIV CONTRIBUTION = half the wage for hours on this division + its SDL share (50% split · head office carries the other half)'
+      ? 'Cost-attribution pivot · PAYROLL = what we pay the caller (fixed salary, else hrs × rate capped at salary) · DIV CONTRIBUTION = half the wage for hours on this division (50% split · head office carries the other half)'
+      : 'Cost-attribution pivot · PAYROLL = what we pay the caller (fixed salary, else hrs × rate capped at salary) · SDL = 1.1% levy · DIV CONTRIBUTION = half the wage for hours on this division + its SDL share (50% split · head office carries the other half)'
     const subCaption = selected.length === 0
       ? allCaption
       : `Showing ${selected.length} selected division${selected.length === 1 ? '' : 's'} · use the Divisions picker to change`

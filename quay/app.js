@@ -879,8 +879,8 @@
       if (count) count.textContent = checked.length ? `${checked.length} selected` : 'All divisions';
       const cap = document.getElementById('divCostCaption');
       const allCap = hideSdl
-        ? 'Cost-attribution pivot · PAYROLL = total hrs × rate · DIV CONTRIBUTION = half the wage for hours on this division (50% split · head office carries the other half)'
-        : 'Cost-attribution pivot · PAYROLL = total hrs × rate · SDL = 1.1% levy · DIV CONTRIBUTION = half the wage for hours on this division + its SDL share (50% split · head office carries the other half)';
+        ? 'Cost-attribution pivot · PAYROLL = what we pay the caller (fixed salary, else hrs × rate capped at salary) · DIV CONTRIBUTION = half the wage for hours on this division (50% split · head office carries the other half)'
+        : 'Cost-attribution pivot · PAYROLL = what we pay the caller (fixed salary, else hrs × rate capped at salary) · SDL = 1.1% levy · DIV CONTRIBUTION = half the wage for hours on this division + its SDL share (50% split · head office carries the other half)';
       if (cap) cap.innerHTML = checked.length
         ? `Showing ${checked.length} selected division${checked.length === 1 ? '' : 's'} · use the Divisions picker to change`
         : allCap;
@@ -2154,9 +2154,14 @@
         const rate = meta.hourlyRate != null ? meta.hourlyRate : (meta.salary != null ? meta.salary / EXPECTED : null);
         // Salary basis (set per-staff in the Staff editor, default 'prorata'):
         //   fixed   → COST TO COMPANY is the full monthly salary, hours ignored.
-        //   prorata → COST TO COMPANY = billable hrs × rate (salary ÷ 193.5).
+        //   prorata → COST TO COMPANY = hrs × rate, capped at the monthly salary
+        //             (we never pay a pro-rata caller above their salary).
+        // Routed through window.PAYROLL.chargeBasis so this matches the pay on
+        // the Earnings view and the charge on the Division Costs pivot exactly.
         const isFixedSalary = meta.salaryType === 'fixed' && meta.salary != null;
-        const cost = isFixedSalary ? meta.salary : (rate != null ? total * rate : null);
+        const cost = PR.chargeBasis(rate != null ? total * rate : null,
+                                    meta.salary != null ? meta.salary : null,
+                                    meta.salaryType);
         acRows.push([
           agent, '', jobTitle(meta.designation), round2(billable), '', sat > 0 ? round2(sat) : '',
           round2(total), meta.salary != null ? round2(meta.salary) : '', '', WORK_DAYS,
@@ -2181,7 +2186,12 @@
         const members = teamEmp.get(team) || new Map();
         const enriched = [...members.entries()].map(([emp, hrs]) => {
           const meta = EMETA.get(emp) || {}; const rate = meta.hourlyRate; const tot = ETOT.get(emp) || 0;
-          const payroll = rate != null ? tot * rate : 0; const sdl = payroll * SDL_RATE;
+          // Charge basis = what we pay the caller (fixed salary, or pro-rata
+          // earnings capped at salary) — matches the on-screen Division Costs
+          // table (window.PAYROLL.chargeBasis).
+          const rawPayroll = rate != null ? tot * rate : 0;
+          const payroll = PR.chargeBasis(rawPayroll, meta.salary != null ? meta.salary : null, meta.salaryType) || 0;
+          const sdl = payroll * SDL_RATE;
           const pct = tot > 0 ? hrs / tot : 0; const contrib = (payroll * pct) / 2 + sdl * pct;
           return { emp, payroll, sdl, pct, contrib };
         }).sort((a, b) => b.contrib - a.contrib);
