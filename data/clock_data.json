@@ -1,5 +1,20 @@
 {
-  "agents": [],
+  "agents": [
+    {
+      "hours": 0.036,
+      "id": "declan",
+      "name": "Declan Ryder Tyler",
+      "name_normalised": "Declan Ryder Tyler",
+      "sessions": 1
+    },
+    {
+      "hours": 0.333,
+      "id": "zivana-kriel",
+      "name": "Zivana Kriel",
+      "name_normalised": "Zivana Kriel",
+      "sessions": 1
+    }
+  ],
   "by_week": {
     "2026-04-20": [
       {
@@ -5657,7 +5672,7 @@
         "sessions": 5
       },
       {
-        "hours": 57.379,
+        "hours": 48.341,
         "id": "jaco",
         "name": "Jan C (Jaco) Groenewald",
         "name_normalised": "Jan C (Jaco) Groenewald",
@@ -5925,7 +5940,7 @@
         "sessions": 5
       },
       {
-        "hours": 38.804,
+        "hours": 47.654,
         "id": "jaco",
         "name": "Jan C (Jaco) Groenewald",
         "name_normalised": "Jan C (Jaco) Groenewald",
@@ -5966,9 +5981,25 @@
         "name_normalised": "Aqeefah Arendse",
         "sessions": 3
       }
+    ],
+    "2026-09-21": [
+      {
+        "hours": 0.036,
+        "id": "declan",
+        "name": "Declan Ryder Tyler",
+        "name_normalised": "Declan Ryder Tyler",
+        "sessions": 1
+      },
+      {
+        "hours": 0.333,
+        "id": "zivana-kriel",
+        "name": "Zivana Kriel",
+        "name_normalised": "Zivana Kriel",
+        "sessions": 1
+      }
     ]
   },
-  "generated_at": "2026-09-21T05:24:04.687730+00:00",
+  "generated_at": "2026-09-21T10:49:24.582580+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -6029,11 +6060,11 @@
           "sessions": 100
         },
         {
-          "hours": 819.356,
+          "hours": 819.392,
           "id": "declan",
           "name": "Declan Ryder Tyler",
           "name_normalised": "Declan Ryder Tyler",
-          "sessions": 122
+          "sessions": 123
         },
         {
           "hours": 817.984,
@@ -6176,7 +6207,7 @@
           "sessions": 40
         },
         {
-          "hours": 1029.156,
+          "hours": 1028.968,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
@@ -6253,11 +6284,11 @@
           "sessions": 26
         },
         {
-          "hours": 711.691,
+          "hours": 712.024,
           "id": "zivana-kriel",
           "name": "Zivana Kriel",
           "name_normalised": "Zivana Kriel",
-          "sessions": 101
+          "sessions": 102
         },
         {
           "hours": 491.164,
@@ -6411,7 +6442,22 @@
       "to": "2026-09-21T23:59:59+00:00"
     },
     "billing-period": {
-      "agents": [],
+      "agents": [
+        {
+          "hours": 0.036,
+          "id": "declan",
+          "name": "Declan Ryder Tyler",
+          "name_normalised": "Declan Ryder Tyler",
+          "sessions": 1
+        },
+        {
+          "hours": 0.333,
+          "id": "zivana-kriel",
+          "name": "Zivana Kriel",
+          "name_normalised": "Zivana Kriel",
+          "sessions": 1
+        }
+      ],
       "from": "2026-09-21T00:00:00+00:00",
       "to": "2026-10-20T23:59:59+00:00"
     },
@@ -6453,11 +6499,11 @@
           "sessions": 61
         },
         {
-          "hours": 467.107,
+          "hours": 467.143,
           "id": "declan",
           "name": "Declan Ryder Tyler",
           "name_normalised": "Declan Ryder Tyler",
-          "sessions": 81
+          "sessions": 82
         },
         {
           "hours": 425.188,
@@ -6516,11 +6562,11 @@
           "sessions": 79
         },
         {
-          "hours": 452.723,
+          "hours": 453.056,
           "id": "zivana-kriel",
           "name": "Zivana Kriel",
           "name_normalised": "Zivana Kriel",
-          "sessions": 70
+          "sessions": 71
         },
         {
           "hours": 440.684,
@@ -6656,7 +6702,7 @@
           "sessions": 59
         },
         {
-          "hours": 598.388,
+          "hours": 598.2,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
@@ -6963,7 +7009,7 @@
           "sessions": 5
         },
         {
-          "hours": 38.804,
+          "hours": 47.654,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
@@ -7032,11 +7078,11 @@
           "sessions": 15
         },
         {
-          "hours": 122.093,
+          "hours": 122.129,
           "id": "declan",
           "name": "Declan Ryder Tyler",
           "name_normalised": "Declan Ryder Tyler",
-          "sessions": 24
+          "sessions": 25
         },
         {
           "hours": 107.629,
@@ -7116,11 +7162,11 @@
           "sessions": 13
         },
         {
-          "hours": 101.117,
+          "hours": 101.45,
           "id": "zivana-kriel",
           "name": "Zivana Kriel",
           "name_normalised": "Zivana Kriel",
-          "sessions": 16
+          "sessions": 17
         },
         {
           "hours": 127.173,
@@ -7214,7 +7260,7 @@
           "sessions": 15
         },
         {
-          "hours": 142.249,
+          "hours": 142.061,
           "id": "jaco",
           "name": "Jan C (Jaco) Groenewald",
           "name_normalised": "Jan C (Jaco) Groenewald",
@@ -7281,7 +7327,22 @@
       "to": "2026-09-27T23:59:59+00:00"
     },
     "this-week": {
-      "agents": [],
+      "agents": [
+        {
+          "hours": 0.036,
+          "id": "declan",
+          "name": "Declan Ryder Tyler",
+          "name_normalised": "Declan Ryder Tyler",
+          "sessions": 1
+        },
+        {
+          "hours": 0.333,
+          "id": "zivana-kriel",
+          "name": "Zivana Kriel",
+          "name_normalised": "Zivana Kriel",
+          "sessions": 1
+        }
+      ],
       "from": "2026-09-21T00:00:00+00:00",
       "to": "2026-09-27T23:59:59+00:00"
     }
