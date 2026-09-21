@@ -879,6 +879,13 @@
     check('7.13d 11.42%', roundHalfUp(0.1142), 0.11)
     check('7.13e 32.56%', roundHalfUp(0.3256), 0.33)
 
+    // 7.14 — division-cost salary cap: basis = min(earned, salary)
+    check('7.14a over salary → capped', cappedPayroll(13700, 12000), 12000)
+    check('7.14b under salary → earned', cappedPayroll(8000, 12000), 8000)
+    check('7.14c exactly salary', cappedPayroll(12000, 12000), 12000)
+    check('7.14d no salary → raw', cappedPayroll(13700, null), 13700)
+    check('7.14e no earnings → null', cappedPayroll(null, 12000), null)
+
     const passed = results.filter(r => r.pass).length
     const failed = results.filter(r => !r.pass)
     // Summary
@@ -917,6 +924,7 @@
     roundHalfUp,
     fetchShiftsForPeriod,
     computeAllocations,
+    cappedPayroll,
     loadConfigFromSupabase,
     reloadConfig,
     ensureConfigLoaded,
@@ -1079,7 +1087,7 @@
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between">
           <div>
             <h3 style="margin:0;font-family:var(--serif);font-size:17px">Division Costs</h3>
-            <div class="sub" style="margin-top:4px">Cost-attribution pivot per division · each team carries half the wage for hours worked (50% split)</div>
+            <div class="sub" style="margin-top:4px">Cost-attribution pivot per division · each team carries half the wage for hours worked (50% split) · wage capped at each agent's full salary</div>
           </div>
           <div class="field" style="margin-bottom:0">
             <label>Pay period</label>
@@ -1580,6 +1588,27 @@
       .concat(teamEmp.has('(No team noted)') ? ['(No team noted)'] : [])
   }
 
+  // Division-cost charging cap (business rule).
+  //
+  // A division is never charged for more wage than the agent's FULL monthly
+  // salary. The charge basis is the period's earnings (total hrs × hourly
+  // rate); if that exceeds salary — the agent worked overtime — the basis is
+  // capped at salary, so a 13.7k earner on a 12k salary bills teams off 12k.
+  // If earnings are below salary (they under-worked, e.g. 8k on a 12k salary)
+  // the actual 8k earned is used as-is. In short: basis = min(earned, salary).
+  //
+  // No salary on file → no cap (returns the raw amount, matching the prior
+  // behaviour). raw == null (unknown hourly rate) → null. Applied to the
+  // agent's TOTAL earnings before the per-division %-split, so the cap lands
+  // on the whole person, not each division slice. Shared verbatim by the
+  // on-screen Division Costs table and the xlsx "Division Invoicing" sheet
+  // (via window.PAYROLL.cappedPayroll) so both surfaces always agree.
+  function cappedPayroll(rawPayroll, salary) {
+    if (rawPayroll == null) return null
+    if (salary == null) return rawPayroll
+    return Math.min(rawPayroll, Number(salary))
+  }
+
   // Just the Division Costs <table> (wrapped in .tbl-wrap), for the given
   // `selected` division names (empty array = all divisions). Kept separate from
   // the card shell so ticking a checkbox can re-render only the table without
@@ -1666,7 +1695,10 @@
         const meta = empMeta && empMeta.get(emp) ? empMeta.get(emp) : null
         const rate = meta ? meta.hourlyRate : null
         const totalHrs = empTotalHours.get(emp) || 0
-        const payroll = rate != null ? totalHrs * rate : null
+        const rawPayroll = rate != null ? totalHrs * rate : null
+        // Cap the charge basis at the agent's full salary (see cappedPayroll).
+        const payroll = cappedPayroll(rawPayroll, meta ? meta.salary : null)
+        const wasCapped = rawPayroll != null && payroll != null && payroll < rawPayroll
         const sdl = payroll != null ? payroll * SDL_RATE : null
         // PERCENTAGE = fraction of this agent's pay-period time spent
         // on THIS division. Display as the same one-decimal %-of-time
@@ -1678,7 +1710,7 @@
         const contrib = (payroll != null && sdl != null)
           ? (payroll * pct) / 2 + (sdl * pct)
           : null
-        return { emp, hrs, rate, payroll, sdl, contrib, pct }
+        return { emp, hrs, rate, payroll, rawPayroll, wasCapped, sdl, contrib, pct }
       }).sort((a, b) => (b.contrib || 0) - (a.contrib || 0))
 
       const cells = [`<td><b>${esc(team)}</b></td>`]
@@ -1687,7 +1719,12 @@
         if (i < enriched.length) {
           const x = enriched[i]
           cells.push(`<td>${esc(x.emp)}</td>`)
-          cells.push(`<td class="num tnum">${x.payroll == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(x.payroll)}</td>`)
+          const payrollCell = x.payroll == null
+            ? '<span style="color:var(--muted)">—</span>'
+            : (x.wasCapped
+                ? `<span title="Capped at full salary — earned ${_fmtZAR(x.rawPayroll)} this period" style="border-bottom:1px dotted var(--muted)">${_fmtZAR(x.payroll)}</span>`
+                : _fmtZAR(x.payroll))
+          cells.push(`<td class="num tnum">${payrollCell}</td>`)
           if (!hideSdl) cells.push(`<td class="num tnum">${x.sdl == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(x.sdl)}</td>`)
           cells.push(`<td class="num tnum">${(x.pct * 100).toFixed(1)}%</td>`)
           cells.push(`<td class="num tnum">${x.contrib == null ? '<span style="color:var(--muted)">—</span>' : _fmtZAR(x.contrib)}</td>`)
@@ -1765,8 +1802,8 @@
     const selSet = new Set(selected)
 
     const allCaption = hideSdl
-      ? 'Cost-attribution pivot · PAYROLL = total hrs × rate · DIV CONTRIBUTION = half the wage for hours on this division (50% split · head office carries the other half)'
-      : 'Cost-attribution pivot · PAYROLL = total hrs × rate · SDL = 1.1% levy · DIV CONTRIBUTION = half the wage for hours on this division + its SDL share (50% split · head office carries the other half)'
+      ? 'Cost-attribution pivot · PAYROLL = total hrs × rate (capped at full salary) · DIV CONTRIBUTION = half the wage for hours on this division (50% split · head office carries the other half)'
+      : 'Cost-attribution pivot · PAYROLL = total hrs × rate (capped at full salary) · SDL = 1.1% levy · DIV CONTRIBUTION = half the wage for hours on this division + its SDL share (50% split · head office carries the other half)'
     const subCaption = selected.length === 0
       ? allCaption
       : `Showing ${selected.length} selected division${selected.length === 1 ? '' : 's'} · use the Divisions picker to change`
