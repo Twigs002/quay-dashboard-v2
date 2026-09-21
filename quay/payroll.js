@@ -1302,7 +1302,12 @@
       const rate = meta ? meta.hourlyRate : null
       const designation = meta ? meta.designation : ''
       const division = meta ? meta.division : ''
-      const pay = rate != null ? total * rate : null
+      // Total Pay = what we actually pay the agent: fixed salary, or pro-rata
+      // earnings capped at salary (see chargeBasis). Overtime above salary is
+      // never paid — it surfaces on the Salary vs Earnings view instead.
+      const pay = chargeBasis(rate != null ? total * rate : null,
+                              meta ? meta.salary : null,
+                              meta ? meta.salaryType : null)
       grandHours += total
       if (pay != null) grandPay += pay
       else missingRate++
@@ -1328,7 +1333,7 @@
         <div class="card-head">
           <div>
             <h3>Earnings</h3>
-            <div class="sub">Total hours × hourly_rate per agent for the selected pay period</div>
+            <div class="sub">What we pay each agent this pay period — hours × hourly_rate, capped at their monthly salary (fixed salaries paid in full). Overtime above salary shows on Salary vs Earnings.</div>
           </div>
           ${_exportBtn()}
         </div>

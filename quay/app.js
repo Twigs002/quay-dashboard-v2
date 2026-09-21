@@ -2154,9 +2154,14 @@
         const rate = meta.hourlyRate != null ? meta.hourlyRate : (meta.salary != null ? meta.salary / EXPECTED : null);
         // Salary basis (set per-staff in the Staff editor, default 'prorata'):
         //   fixed   → COST TO COMPANY is the full monthly salary, hours ignored.
-        //   prorata → COST TO COMPANY = billable hrs × rate (salary ÷ 193.5).
+        //   prorata → COST TO COMPANY = hrs × rate, capped at the monthly salary
+        //             (we never pay a pro-rata caller above their salary).
+        // Routed through window.PAYROLL.chargeBasis so this matches the pay on
+        // the Earnings view and the charge on the Division Costs pivot exactly.
         const isFixedSalary = meta.salaryType === 'fixed' && meta.salary != null;
-        const cost = isFixedSalary ? meta.salary : (rate != null ? total * rate : null);
+        const cost = PR.chargeBasis(rate != null ? total * rate : null,
+                                    meta.salary != null ? meta.salary : null,
+                                    meta.salaryType);
         acRows.push([
           agent, '', jobTitle(meta.designation), round2(billable), '', sat > 0 ? round2(sat) : '',
           round2(total), meta.salary != null ? round2(meta.salary) : '', '', WORK_DAYS,
