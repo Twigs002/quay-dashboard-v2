@@ -5915,7 +5915,7 @@
   let _teamSortDir = 'asc';
   let _teamModal = null;        // form state when modal is open (staff + broker)
   let _brokerFilter = '';       // search box on the Brokers sub-view
-  let _teamSubTab = 'staff';     // Staff tab sub-view: 'staff' | 'brokers' | 'contracts' (brokers/contracts super-only)
+  let _teamSubTab = 'staff';     // Staff tab sub-view: 'staff' | 'brokers' (brokers super-only)
   let _forgotThisWeek = [];     // forgot-to-clock-out events since Monday SAST
   let _absencesToday = new Map(); // staff_id -> {reason, reason_note, marked_by, marked_at}
   let _absenceModal = null;     // { staffId, name, reason, note, busy, error } when open
@@ -6043,15 +6043,12 @@
     }
   }
 
-  // Segmented Staff sub-view toggle at the top of the Staff tab: Staff Directory,
-  // Brokers (login accounts, super-only), and Contracts (Aqua Promotions generator,
-  // supers + admins). includeBrokers adds the super-only Brokers segment. Each was/
-  // would otherwise be a separate top-level tab; grouping keeps the Staff area cohesive.
+  // Segmented Staff sub-view toggle at the top of the Staff tab: Staff Directory
+  // and Brokers (login accounts, super-only). includeBrokers adds the super-only
+  // Brokers segment; without it the toggle is a single Staff Directory item.
   function _staffSubToggle(includeBrokers) {
     const segs = [['staff', 'Staff Directory']];
     if (includeBrokers) segs.push(['brokers', 'Brokers']);  // Brokers = super-only
-    segs.push(['contracts', 'Contracts']);
-    segs.push(['hr', 'Add to HR']);  // Aqua new-hire → HR sheet (same gate as Contracts)
     return `<div class="seg" id="staffSubSeg" role="group" aria-label="Staff section" style="margin-bottom:14px">
         ${segs.map(([id, label]) => {
           const on = _teamSubTab === id;
@@ -6064,17 +6061,13 @@
     if (_team == null && !_teamLoading) {
       loadTeam().then(() => { if (tab === 'team') shell(); });
     }
-    // Brokers (login accounts) stays super-only. Contracts (Aqua) is open to
-    // superusers AND admins (but not payroll-only logins). Managers/payroll who
-    // can see neither are pinned to the staff roster with no toggle.
+    // Brokers (login accounts) stays super-only. Managers/payroll who can't see
+    // it are pinned to the staff roster with no toggle.
     const canSub = !!(session && session.super);                                        // Brokers
-    const canContracts = !!(session && (session.super || (session.admin && !session.payroll))); // Contracts
     // Defensive: an admin can't reach 'brokers' (no button), but never render it for them.
     if (_teamSubTab === 'brokers' && !canSub) _teamSubTab = 'staff';
-    const subToggle = (canSub || canContracts) ? _staffSubToggle(canSub) : '';
+    const subToggle = canSub ? _staffSubToggle(canSub) : '';
     if (canSub && _teamSubTab === 'brokers')        return renderBrokersView(subToggle);
-    if (canContracts && _teamSubTab === 'contracts') return renderAquaContracts(subToggle);
-    if (canContracts && _teamSubTab === 'hr')        return renderAquaHr(subToggle);
     // The Staff Directory never shows brokers — they live in the Brokers
     // sub-view. Filtering here (for everyone) keeps managers from ever
     // seeing a broker.
@@ -6601,10 +6594,7 @@
     });
     // When the Brokers sub-view is showing, its wiring is entirely separate
     // from the staff roster — delegate and skip the staff handlers below.
-    const canContracts = !!(session && (session.super || (session.admin && !session.payroll)));
     if (session && session.super && _teamSubTab === 'brokers')   { wireBrokersView();  return; }
-    if (canContracts && _teamSubTab === 'contracts') { wireAquaContracts(); return; }
-    if (canContracts && _teamSubTab === 'hr')        { wireAquaHr(); return; }
     const search = document.getElementById('teamSearch');
     if (search) search.addEventListener('input', (e) => {
       _teamFilter = e.target.value;
@@ -7107,363 +7097,6 @@
       });
     });
     if (_teamModal) wireTeamModal();
-  }
-
-  // ---------------------------------------------------- AQUA CONTRACTS (super-only)
-  // Aqua Promotions (Pty) Ltd agreement generator + progress. Talks to a
-  // standalone Apps Script web app (CFG.AQUA_ENDPOINT), completely separate from
-  // the Quay 1 recruitment/broker pipeline. Auth is the logged-in user's Supabase
-  // JWT, verified server-side (admins/supers only) — no shared secret ships in
-  // this public JS. The list is managed by direct DOM injection (never a shell()
-  // re-render) so the form inputs are preserved while the user types.
-
-  async function _aquaFetch(payload) {
-    const { data } = await window.sb.auth.getSession();
-    const accessToken = data && data.session ? data.session.access_token : null;
-    if (!accessToken) throw new Error('Not signed in.');
-    const res = await fetch(CFG.AQUA_ENDPOINT, {
-      method: 'POST',
-      // text/plain keeps it a "simple" request (no CORS preflight, which Apps
-      // Script web apps reject).
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(Object.assign({ accessToken }, payload)),
-    });
-    return res.json();
-  }
-
-  function renderAquaContracts(subToggle = '') {
-    const gold = '#FDC503', navy = '#3D5BA6';
-    return `<div class="tab-view">
-      ${subToggle}
-      <div class="card card-pad" style="border-left:4px solid ${navy}">
-        <h3 style="margin:0;font-family:var(--serif);font-size:15px">Aqua Promotions contracts</h3>
-        <div class="muted" style="font-size:12.5px;margin-top:4px">Generate a Memorandum of Agreement for Aqua Promotions (Pty) Ltd. Kept completely separate from the broker contracts.</div>
-      </div>
-
-      <div class="card card-pad mt">
-        <div id="aquaFormMsg"></div>
-        <label class="field"><span>Full name</span>
-          <input id="aqName" type="text" autocomplete="off" placeholder="e.g. Jane Doe"></label>
-        <div style="display:flex;gap:16px;flex-wrap:wrap">
-          <label class="field" style="flex:1;min-width:200px"><span>ID number</span>
-            <input id="aqId" type="text" inputmode="numeric" autocomplete="off" placeholder="13-digit SA ID"></label>
-          <label class="field" style="flex:1;min-width:200px"><span>Start date</span>
-            <input id="aqStart" type="date"></label>
-        </div>
-        <div style="display:flex;gap:16px;flex-wrap:wrap">
-          <label class="field" style="flex:1;min-width:200px"><span>Remuneration (rand, pro-rata)</span>
-            <input id="aqRem" type="text" autocomplete="off" placeholder="e.g. 8000"></label>
-          <label class="field" style="flex:1;min-width:200px"><span>Contractor email <span style="color:#B42318">*</span></span>
-            <input id="aqEmail" type="email" required autocomplete="off" placeholder="Required — the agreement is emailed here"></label>
-        </div>
-        <label class="field"><span>Work hours <span class="muted" style="font-weight:400">(clause 3.1)</span></span>
-          <input id="aqHours" type="text" autocomplete="off" value="08:00 to 17:00 from Monday to Friday and include a 30 (thirty) minute's lunch break each day, full time"></label>
-        <div class="field"><span>Set up system accounts <span class="muted" style="font-weight:400">(optional)</span></span>
-          <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:2px">
-            <label style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" id="aqSysGoogle" value="google" style="width:auto"> Google account</label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" id="aqSysDialfire" value="dialfire" style="width:auto"> Dialfire account</label>
-          </div>
-          <div class="muted" style="font-size:12px;margin-top:6px">Tick only what this contractor needs. A setup request is emailed to whoever provisions accounts; nothing is created automatically.</div>
-        </div>
-        <div class="muted" style="font-size:12px;margin:-4px 0 12px">Entered as a rand amount (formatted R8,000.00 on a pro-rata basis). Work hours default to standard full-time and can be edited per contract. The contractor is emailed their agreement with Aqua Promotions branding, copying pagan, kat, alan and lieze.</div>
-        <button class="btn btn-primary" id="aquaGenBtn" style="background:${gold};color:#2A2100">Generate agreement</button>
-      </div>
-
-      <div class="card mt">
-        <div class="card-pad" style="display:flex;align-items:center;gap:12px;padding-bottom:0">
-          <strong style="font-size:14px">Generated contracts</strong>
-          <span id="aquaCount" class="muted" style="font-size:12.5px"></span>
-          <button class="btn small" id="aquaDigestBtn" style="margin-left:auto" title="Create a Gmail draft of the weekly team digest (it drafts only, never sends)">Draft digest now</button>
-          <button class="btn small" id="aquaRefreshBtn">Refresh</button>
-        </div>
-        <div class="tbl-wrap"><table class="tbl">
-          <thead><tr>
-            <th>Name</th><th>ID</th><th>Start</th><th>Remuneration</th>
-            <th>Status</th><th>FICA</th><th>Created</th><th class="r"></th>
-          </tr></thead>
-          <tbody id="aquaListBody">
-            <tr><td colspan="8" class="muted" style="text-align:center;padding:30px">Loading…</td></tr>
-          </tbody>
-        </table></div>
-      </div>
-    </div>`;
-  }
-
-  function wireAquaContracts() {
-    const msg = (kind, text) => {
-      const m = document.getElementById('aquaFormMsg');
-      if (!m) return;
-      const bg = kind === 'err' ? '#FDECEA' : '#FFF6D6';
-      const fg = kind === 'err' ? '#B42318' : '#7A5C00';
-      const bd = kind === 'err' ? '#F5C6C0' : '#F0DFA0';
-      m.innerHTML = text
-        ? `<div style="padding:12px 14px;border-radius:10px;font-size:14px;margin:0 0 14px;background:${bg};color:${fg};border:1px solid ${bd}">${escapeHtml(text)}</div>`
-        : '';
-    };
-    const errRow = (e) => `<tr><td colspan="8" class="muted" style="text-align:center;padding:24px;color:#B42318">Error: ${escapeHtml(String(e))}</td></tr>`;
-
-    // Small tags for the system accounts requested on a contract (e.g. Google,
-    // Dialfire). Blank when none were ticked.
-    function systemsTags(s) {
-      const parts = String(s || '').split(',').map(x => x.trim()).filter(Boolean);
-      if (!parts.length) return '';
-      return `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">` + parts.map(p =>
-        `<span class="pill" style="font-size:10px;padding:2px 7px;background:#FFF6D6;color:#7A5C00">${escapeHtml(p.replace(/ account$/i, ''))}</span>`
-      ).join('') + `</div>`;
-    }
-
-    function statusPill(s) {
-      if (s === 'Signed')     return '<span class="pill ok" style="font-size:11px;padding:3px 9px">Signed</span>';
-      if (s === 'Draft sent') return '<span class="pill" style="font-size:11px;padding:3px 9px;background:#FFF6D6;color:#7A5C00">Draft sent</span>';
-      return `<span class="pill" style="font-size:11px;padding:3px 9px;background:#EEF2F1;color:#3C4A48">${escapeHtml(s || 'Generated')}</span>`;
-    }
-
-    // FICA docs cell: status only. Set automatically when the candidate submits
-    // their FICA via their personal form link — no manual mark-off.
-    function ficaCell(r) {
-      if (r.fica === 'Received') {
-        return `<span class="pill ok" style="font-size:11px;padding:3px 9px">FICA received</span>`;
-      }
-      return `<span class="pill" style="font-size:11px;padding:3px 9px;background:#FFF8E6;color:#8A6D1B">Pending</span>`;
-    }
-
-    function renderRows(rows) {
-      const count = document.getElementById('aquaCount');
-      if (count) count.textContent = rows.length + (rows.length === 1 ? ' contract' : ' contracts');
-      const body = document.getElementById('aquaListBody');
-      if (!body) return;
-      if (!rows.length) { body.innerHTML = '<tr><td colspan="8" class="muted" style="text-align:center;padding:30px">No contracts yet.</td></tr>'; return; }
-      body.innerHTML = rows.map(r => {
-        const actions = [];
-        if (r.pdfUrl) actions.push(`<a href="${escapeHtml(r.pdfUrl)}" target="_blank" rel="noopener">PDF</a>`);
-        if (r.status !== 'Signed') actions.push(`<a href="#" data-aqua-sign="${escapeHtml(r.folderId)}">Mark signed</a>`);
-        return `<tr>
-          <td><div class="agent-cell"><div class="avatar">${escapeHtml(initialsOf(r.full_name))}</div>
-            <div class="agent-name">${escapeHtml(r.full_name)}${r.email ? `<div class="muted" style="font-size:11.5px;font-weight:400">${escapeHtml(r.email)}</div>` : ''}${systemsTags(r.systems)}</div></div></td>
-          <td class="muted tnum" style="font-size:12.5px">${escapeHtml(r.id_number)}</td>
-          <td style="font-size:12.5px">${escapeHtml(r.start_date)}</td>
-          <td style="font-size:12.5px">${escapeHtml(r.remuneration)}</td>
-          <td>${statusPill(r.status)}</td>
-          <td style="white-space:nowrap">${ficaCell(r)}</td>
-          <td class="muted tnum" style="font-size:12px">${escapeHtml(r.created)}</td>
-          <td class="r" style="white-space:nowrap;font-size:12.5px">${actions.join(' · ')}</td>
-        </tr>`;
-      }).join('');
-      body.querySelectorAll('a[data-aqua-sign]').forEach(a => {
-        a.addEventListener('click', async (ev) => {
-          ev.preventDefault();
-          if (!confirm('Mark this contract as signed?')) return;
-          try {
-            const res = await _aquaFetch({ kind: 'mark_signed', folderId: a.getAttribute('data-aqua-sign') });
-            if (res.ok) loadList(); else msg('err', 'Error: ' + (res.error || 'unknown'));
-          } catch (e) { msg('err', 'Network error: ' + e); }
-        });
-      });
-    }
-
-    async function loadList() {
-      const body = document.getElementById('aquaListBody');
-      if (body) body.innerHTML = '<tr><td colspan="7" class="muted" style="text-align:center;padding:30px">Loading…</td></tr>';
-      try {
-        const res = await _aquaFetch({ kind: 'list' });
-        if (!res.ok) { if (body) body.innerHTML = errRow(res.error || 'unauthorized'); return; }
-        renderRows(res.rows || []);
-      } catch (e) { if (body) body.innerHTML = errRow(e); }
-    }
-
-    const gen = document.getElementById('aquaGenBtn');
-    if (gen) gen.addEventListener('click', async () => {
-      msg('', '');
-      const val = (id) => (document.getElementById(id)?.value || '').trim();
-      const checked = (id) => !!document.getElementById(id)?.checked;
-      const systems = [];
-      if (checked('aqSysGoogle')) systems.push('google');
-      if (checked('aqSysDialfire')) systems.push('dialfire');
-      const fields = { full_name: val('aqName'), id_number: val('aqId'), start_date: val('aqStart'), remuneration: val('aqRem'), email: val('aqEmail'), work_hours: val('aqHours'), systems };
-      if (!fields.full_name || !fields.id_number) { msg('err', 'Full name and ID number are required.'); return; }
-      if (!fields.email) { msg('err', 'Contractor email is required — the agreement is emailed to them.'); return; }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) { msg('err', 'Please enter a valid contractor email address.'); return; }
-      gen.disabled = true; const label = gen.textContent; gen.textContent = 'Generating…';
-      try {
-        const res = await _aquaFetch({ fields });
-        gen.disabled = false; gen.textContent = label;
-        if (!res.ok) { msg('err', 'Error: ' + (res.error || 'unknown')); return; }
-        msg('ok', 'Agreement generated for ' + fields.full_name + '.'
-          + (res.emailed ? ' Emailed to the contractor.' : '')
-          + (res.provisioned ? ' Account-setup request sent.' : ''));
-        ['aqName', 'aqId', 'aqStart', 'aqRem', 'aqEmail'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-        ['aqSysGoogle', 'aqSysDialfire'].forEach(id => { const el = document.getElementById(id); if (el) el.checked = false; });
-        loadList();
-      } catch (e) {
-        gen.disabled = false; gen.textContent = label;
-        msg('err', 'Network error: ' + e);
-      }
-    });
-
-    const refresh = document.getElementById('aquaRefreshBtn');
-    if (refresh) refresh.addEventListener('click', loadList);
-
-    // Fire-now: create the weekly team digest as a Gmail DRAFT (never sends —
-    // it lands in Pagan's drafts to review and send).
-    const digest = document.getElementById('aquaDigestBtn');
-    if (digest) digest.addEventListener('click', async () => {
-      msg('', '');
-      digest.disabled = true; const label = digest.textContent; digest.textContent = 'Drafting…';
-      try {
-        const res = await _aquaFetch({ kind: 'weekly_digest_draft' });
-        digest.disabled = false; digest.textContent = label;
-        if (!res.ok) { msg('err', 'Error: ' + (res.error || 'unknown')); return; }
-        const c = res.counts || {};
-        msg('ok', `Weekly digest drafted in Gmail (review and send from Pagan's drafts): ${c.awaitingSignature || 0} awaiting signature, ${c.ficaPending || 0} FICA pending.`);
-      } catch (e) {
-        digest.disabled = false; digest.textContent = label;
-        msg('err', 'Network error: ' + e);
-      }
-    });
-
-    loadList();
-  }
-
-  // ---------------------------------------------------- ADD TO HR (Aqua)
-  // Appends a new-hire row to the AQUA EMPLOYEES tab of the QUAY 1 HR
-  // Information Sheet via the Aqua web app (kind:'hr_add'). Append-only.
-  // Aqua Promotions branding, Quay 1 palette (navy + gold), no Quay 1 wording.
-
-  function renderAquaHr(subToggle = '') {
-    const navy = '#3D5BA6', gold = '#FDC503';
-    const txt = (id, ph = '') => `<input id="${id}" type="text" autocomplete="off" placeholder="${ph}">`;
-    return `<div class="tab-view">
-      ${subToggle}
-      <div class="card card-pad" style="border-left:4px solid ${navy}">
-        <h3 style="margin:0;font-family:var(--serif);font-size:15px">Aqua Promotions — add to HR</h3>
-        <div class="muted" style="font-size:12.5px;margin-top:4px">Adds a new hire straight into the <strong>AQUA EMPLOYEES</strong> record on the HR Information Sheet. Only the name is required; fill what you have and HR can complete the rest.</div>
-      </div>
-
-      <div class="card card-pad mt">
-        <div id="hrFormMsg"></div>
-
-        <div class="hr-sec" style="color:${navy}">Identity</div>
-        <label class="field"><span>Full name</span><input id="hrName" type="text" autocomplete="off" placeholder="e.g. Jane Doe"></label>
-        <div class="hr-grid">
-          <label class="field"><span>ID / passport number</span><input id="hrId" type="text" inputmode="numeric" autocomplete="off" placeholder="13-digit SA ID"></label>
-          <label class="field"><span>Nationality</span><input id="hrNationality" type="text" autocomplete="off" value="South African"></label>
-          <label class="field"><span>Birthday</span>${txt('hrBirthday', 'DD/MM/YYYY')}</label>
-          <label class="field"><span>Start date</span><input id="hrStart" type="date"></label>
-        </div>
-
-        <div class="hr-sec" style="color:${navy}">Contact</div>
-        <div class="hr-grid">
-          <label class="field"><span>Personal email</span><input id="hrEmail" type="email" autocomplete="off" placeholder="name@example.com"></label>
-          <label class="field"><span>Contact number</span>${txt('hrContact', 'e.g. 082 123 4567')}</label>
-        </div>
-        <label class="field"><span>Residential address</span><input id="hrAddress" type="text" autocomplete="off" placeholder="Street, suburb, city, postal code"></label>
-
-        <div class="hr-sec" style="color:${navy}">Role</div>
-        <div class="hr-grid">
-          <label class="field"><span>Designation</span>${txt('hrDesignation', 'e.g. Relationship Manager')}</label>
-          <label class="field"><span>Part time / full time RM</span>
-            <select id="hrPtFt"><option value="">—</option><option>Full Time</option><option>Part Time</option></select></label>
-          <label class="field"><span>Who do they work with?</span>${txt('hrWorksWith')}</label>
-        </div>
-
-        <div class="hr-sec" style="color:${navy}">Banking</div>
-        <div class="hr-grid">
-          <label class="field"><span>Bank</span>${txt('hrBank')}</label>
-          <label class="field"><span>Account number</span>${txt('hrAccNo')}</label>
-          <label class="field"><span>Account type</span>
-            <select id="hrAccType"><option value="">—</option><option>Cheque</option><option>Savings</option></select></label>
-          <label class="field"><span>Income tax number</span>${txt('hrTax')}</label>
-        </div>
-
-        <div class="hr-sec" style="color:${navy}">Documents received</div>
-        <div class="hr-checks">
-          <label><input type="checkbox" id="hrIdCopy"> ID / passport copy</label>
-          <label><input type="checkbox" id="hrProofAddr"> Proof of address</label>
-          <label><input type="checkbox" id="hrBankConf"> Bank confirmation</label>
-          <label><input type="checkbox" id="hrNda"> Non-disclosure signed</label>
-          <label><input type="checkbox" id="hrAgreement"> Agreement received</label>
-          <label><input type="checkbox" id="hrIdReceived"> ID received</label>
-          <label><input type="checkbox" id="hrRyanGreeff"> Ryan Greeff signed</label>
-        </div>
-        <div class="hr-grid" style="margin-top:6px">
-          <label class="field"><span>Work permit expiry <span class="muted" style="font-weight:400">(if applicable)</span></span>${txt('hrWorkPermit')}</label>
-          <label class="field"><span>Link to HR file <span class="muted" style="font-weight:400">(optional)</span></span>${txt('hrHrFile')}</label>
-        </div>
-
-        <div class="hr-sec" style="color:${navy}">Next of kin</div>
-        <div class="hr-grid">
-          <label class="field"><span>Name</span>${txt('hrNokName')}</label>
-          <label class="field"><span>Contact number</span>${txt('hrNokContact')}</label>
-          <label class="field"><span>Relationship</span>${txt('hrNokRel')}</label>
-          <label class="field"><span>Email</span>${txt('hrNokEmail')}</label>
-        </div>
-
-        <label class="field" style="margin-top:14px"><span>Comments</span><input id="hrComments" type="text" autocomplete="off" placeholder="Anything HR should know"></label>
-
-        <button class="btn btn-primary" id="hrAddBtn" style="margin-top:16px;background:${gold};color:#1F2A44;border-color:${gold}">Add to HR sheet</button>
-      </div>
-    </div>
-    <style>
-      .hr-sec{font-family:var(--serif);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
-      .hr-sec:first-of-type{margin-top:2px}
-      .hr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 16px}
-      .hr-checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px 16px}
-      .hr-checks label{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:500;cursor:pointer;text-transform:none;letter-spacing:0;color:var(--ink)}
-      .hr-checks input{width:auto}
-    </style>`;
-  }
-
-  function wireAquaHr() {
-    const msg = (kind, text) => {
-      const m = document.getElementById('hrFormMsg');
-      if (!m) return;
-      const err = kind === 'err';
-      m.innerHTML = text
-        ? `<div style="padding:12px 14px;border-radius:10px;font-size:14px;margin:0 0 14px;background:${err ? '#FDECEA' : '#EAF0FB'};color:${err ? '#B42318' : '#2E477F'};border:1px solid ${err ? '#F5C6C0' : '#C7D6F0'}">${escapeHtml(text)}</div>`
-        : '';
-    };
-    // Free-text / value fields: input id -> backend field key.
-    const TEXT = {
-      hrName: 'name', hrStart: 'start_date', hrId: 'id_number', hrNationality: 'nationality',
-      hrBirthday: 'birthday', hrEmail: 'email', hrContact: 'contact', hrAddress: 'address',
-      hrDesignation: 'designation', hrPtFt: 'pt_ft', hrWorksWith: 'works_with',
-      hrBank: 'bank', hrAccNo: 'account_number', hrAccType: 'account_type', hrTax: 'tax_number',
-      hrWorkPermit: 'work_permit_expiry', hrHrFile: 'link_hr_file', hrComments: 'comments',
-      hrNokName: 'nok_name', hrNokContact: 'nok_contact', hrNokRel: 'nok_relationship', hrNokEmail: 'nok_email',
-    };
-    // Checkboxes: input id -> backend field key (sends "Yes" when ticked).
-    const CHECK = {
-      hrIdCopy: 'id_copy', hrProofAddr: 'proof_of_address', hrBankConf: 'bank_confirmation',
-      hrNda: 'nda_signed', hrAgreement: 'agreement_received', hrIdReceived: 'id_received',
-      hrRyanGreeff: 'ryan_greeff_signed',
-    };
-
-    const btn = document.getElementById('hrAddBtn');
-    if (btn) btn.addEventListener('click', async () => {
-      msg('', '');
-      const fields = {};
-      Object.keys(TEXT).forEach(id => {
-        const v = (document.getElementById(id)?.value || '').trim();
-        if (v) fields[TEXT[id]] = v;
-      });
-      Object.keys(CHECK).forEach(id => {
-        if (document.getElementById(id)?.checked) fields[CHECK[id]] = 'Yes';
-      });
-      if (!fields.name) { msg('err', 'Full name is required.'); return; }
-      btn.disabled = true; const label = btn.textContent; btn.textContent = 'Adding…';
-      try {
-        const res = await _aquaFetch({ kind: 'hr_add', fields });
-        btn.disabled = false; btn.textContent = label;
-        if (!res.ok) { msg('err', 'Error: ' + (res.error || 'unknown')); return; }
-        msg('ok', `${fields.name} added to the AQUA EMPLOYEES HR record.`);
-        // Reset every field.
-        Object.keys(TEXT).forEach(id => { const el = document.getElementById(id); if (el) el.value = (id === 'hrNationality') ? 'South African' : ''; });
-        Object.keys(CHECK).forEach(id => { const el = document.getElementById(id); if (el) el.checked = false; });
-      } catch (e) {
-        btn.disabled = false; btn.textContent = label;
-        msg('err', 'Network error: ' + e);
-      }
-    });
   }
 
   // ─── Live red-flags badge ────────────────────────────────────────────
