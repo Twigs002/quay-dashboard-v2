@@ -8,7 +8,7 @@
       "sessions": 4
     },
     {
-      "hours": 14.519,
+      "hours": 23.19,
       "id": "zivana-kriel",
       "name": "Zivana Kriel",
       "name_normalised": "Zivana Kriel",
@@ -47,10 +47,10 @@
       "id": "killarney",
       "name": "Killarney Mia Jones",
       "name_normalised": "Killarney Mia Jones",
-      "sessions": 2
+      "sessions": 3
     },
     {
-      "hours": 29.876,
+      "hours": 29.89,
       "id": "matthew-hallett",
       "name": "Matthew Hallett",
       "name_normalised": "Matthew Hallett",
@@ -64,11 +64,11 @@
       "sessions": 3
     },
     {
-      "hours": 34.629,
+      "hours": 25.797,
       "id": "zeak-klein",
       "name": "Zeak Klein",
       "name_normalised": "Zeak Klein",
-      "sessions": 3
+      "sessions": 4
     },
     {
       "hours": 27.065,
@@ -113,7 +113,7 @@
       "sessions": 3
     },
     {
-      "hours": 29.139,
+      "hours": 26.982,
       "id": "anneeqa-williams",
       "name": "Anneeqa Williams",
       "name_normalised": "Anneeqa Williams",
@@ -265,6 +265,13 @@
       "name": "Quinn Frazier",
       "name_normalised": "Quinn Frazier",
       "sessions": 3
+    },
+    {
+      "hours": 9.0,
+      "id": "brandon-hayward",
+      "name": "Brandon Hayward",
+      "name_normalised": "Brandon Hayward",
+      "sessions": 1
     }
   ],
   "by_week": {
@@ -5989,7 +5996,7 @@
         "sessions": 7
       },
       {
-        "hours": 40.988,
+        "hours": 32.004,
         "id": "anneeqa-williams",
         "name": "Anneeqa Williams",
         "name_normalised": "Anneeqa Williams",
@@ -6031,7 +6038,7 @@
         "sessions": 4
       },
       {
-        "hours": 42.744,
+        "hours": 34.179,
         "id": "jason-julius",
         "name": "Jason Julius",
         "name_normalised": "Jason Julius",
@@ -6206,14 +6213,14 @@
         "sessions": 4
       },
       {
-        "hours": 50.552,
+        "hours": 39.478,
         "id": "luke-van-wyk",
         "name": "Luke Van Wyk",
         "name_normalised": "Luke Van Wyk",
         "sessions": 5
       },
       {
-        "hours": 35.323,
+        "hours": 25.787,
         "id": "zeak-klein",
         "name": "Zeak Klein",
         "name_normalised": "Zeak Klein",
@@ -6243,7 +6250,7 @@
         "sessions": 4
       },
       {
-        "hours": 14.519,
+        "hours": 23.19,
         "id": "zivana-kriel",
         "name": "Zivana Kriel",
         "name_normalised": "Zivana Kriel",
@@ -6282,10 +6289,10 @@
         "id": "killarney",
         "name": "Killarney Mia Jones",
         "name_normalised": "Killarney Mia Jones",
-        "sessions": 2
+        "sessions": 3
       },
       {
-        "hours": 29.876,
+        "hours": 29.89,
         "id": "matthew-hallett",
         "name": "Matthew Hallett",
         "name_normalised": "Matthew Hallett",
@@ -6299,11 +6306,11 @@
         "sessions": 3
       },
       {
-        "hours": 34.629,
+        "hours": 25.797,
         "id": "zeak-klein",
         "name": "Zeak Klein",
         "name_normalised": "Zeak Klein",
-        "sessions": 3
+        "sessions": 4
       },
       {
         "hours": 27.065,
@@ -6348,7 +6355,7 @@
         "sessions": 3
       },
       {
-        "hours": 29.139,
+        "hours": 26.982,
         "id": "anneeqa-williams",
         "name": "Anneeqa Williams",
         "name_normalised": "Anneeqa Williams",
@@ -6500,10 +6507,17 @@
         "name": "Quinn Frazier",
         "name_normalised": "Quinn Frazier",
         "sessions": 3
+      },
+      {
+        "hours": 9.0,
+        "id": "brandon-hayward",
+        "name": "Brandon Hayward",
+        "name_normalised": "Brandon Hayward",
+        "sessions": 1
       }
     ]
   },
-  "generated_at": "2026-09-25T05:29:26.362642+00:00",
+  "generated_at": "2026-09-25T10:33:00.031359+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -6529,7 +6543,7 @@
           "sessions": 4
         },
         {
-          "hours": 845.127,
+          "hours": 833.986,
           "id": "anneeqa-williams",
           "name": "Anneeqa Williams",
           "name_normalised": "Anneeqa Williams",
@@ -6764,7 +6778,7 @@
           "id": "killarney",
           "name": "Killarney Mia Jones",
           "name_normalised": "Killarney Mia Jones",
-          "sessions": 101
+          "sessions": 102
         },
         {
           "hours": 286.901,
@@ -6788,7 +6802,7 @@
           "sessions": 26
         },
         {
-          "hours": 726.21,
+          "hours": 734.881,
           "id": "zivana-kriel",
           "name": "Zivana Kriel",
           "name_normalised": "Zivana Kriel",
@@ -6802,7 +6816,7 @@
           "sessions": 62
         },
         {
-          "hours": 766.907,
+          "hours": 766.921,
           "id": "matthew-hallett",
           "name": "Matthew Hallett",
           "name_normalised": "Matthew Hallett",
@@ -6851,7 +6865,7 @@
           "sessions": 65
         },
         {
-          "hours": 504.382,
+          "hours": 495.816,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
@@ -6921,7 +6935,7 @@
           "sessions": 23
         },
         {
-          "hours": 218.343,
+          "hours": 207.269,
           "id": "luke-van-wyk",
           "name": "Luke Van Wyk",
           "name_normalised": "Luke Van Wyk",
@@ -6935,11 +6949,18 @@
           "sessions": 17
         },
         {
-          "hours": 88.538,
+          "hours": 70.17,
           "id": "zeak-klein",
           "name": "Zeak Klein",
           "name_normalised": "Zeak Klein",
-          "sessions": 11
+          "sessions": 12
+        },
+        {
+          "hours": 9.0,
+          "id": "brandon-hayward",
+          "name": "Brandon Hayward",
+          "name_normalised": "Brandon Hayward",
+          "sessions": 1
         }
       ],
       "from": "2025-09-26T00:00:00+00:00",
@@ -6955,7 +6976,7 @@
           "sessions": 4
         },
         {
-          "hours": 14.519,
+          "hours": 23.19,
           "id": "zivana-kriel",
           "name": "Zivana Kriel",
           "name_normalised": "Zivana Kriel",
@@ -6994,10 +7015,10 @@
           "id": "killarney",
           "name": "Killarney Mia Jones",
           "name_normalised": "Killarney Mia Jones",
-          "sessions": 2
+          "sessions": 3
         },
         {
-          "hours": 29.876,
+          "hours": 29.89,
           "id": "matthew-hallett",
           "name": "Matthew Hallett",
           "name_normalised": "Matthew Hallett",
@@ -7011,11 +7032,11 @@
           "sessions": 3
         },
         {
-          "hours": 34.629,
+          "hours": 25.797,
           "id": "zeak-klein",
           "name": "Zeak Klein",
           "name_normalised": "Zeak Klein",
-          "sessions": 3
+          "sessions": 4
         },
         {
           "hours": 27.065,
@@ -7060,7 +7081,7 @@
           "sessions": 3
         },
         {
-          "hours": 29.139,
+          "hours": 26.982,
           "id": "anneeqa-williams",
           "name": "Anneeqa Williams",
           "name_normalised": "Anneeqa Williams",
@@ -7212,6 +7233,13 @@
           "name": "Quinn Frazier",
           "name_normalised": "Quinn Frazier",
           "sessions": 3
+        },
+        {
+          "hours": 9.0,
+          "id": "brandon-hayward",
+          "name": "Brandon Hayward",
+          "name_normalised": "Brandon Hayward",
+          "sessions": 1
         }
       ],
       "from": "2026-09-21T00:00:00+00:00",
@@ -7220,7 +7248,7 @@
     "last-90": {
       "agents": [
         {
-          "hours": 502.689,
+          "hours": 491.548,
           "id": "anneeqa-williams",
           "name": "Anneeqa Williams",
           "name_normalised": "Anneeqa Williams",
@@ -7241,7 +7269,7 @@
           "sessions": 1
         },
         {
-          "hours": 439.899,
+          "hours": 448.57,
           "id": "zivana-kriel",
           "name": "Zivana Kriel",
           "name_normalised": "Zivana Kriel",
@@ -7262,7 +7290,7 @@
           "sessions": 61
         },
         {
-          "hours": 543.136,
+          "hours": 543.15,
           "id": "matthew-hallett",
           "name": "Matthew Hallett",
           "name_normalised": "Matthew Hallett",
@@ -7322,7 +7350,7 @@
           "id": "killarney",
           "name": "Killarney Mia Jones",
           "name_normalised": "Killarney Mia Jones",
-          "sessions": 62
+          "sessions": 63
         },
         {
           "hours": 269.183,
@@ -7444,7 +7472,7 @@
           "sessions": 62
         },
         {
-          "hours": 462.118,
+          "hours": 453.552,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
@@ -7507,7 +7535,7 @@
           "sessions": 23
         },
         {
-          "hours": 218.343,
+          "hours": 207.269,
           "id": "luke-van-wyk",
           "name": "Luke Van Wyk",
           "name_normalised": "Luke Van Wyk",
@@ -7521,11 +7549,18 @@
           "sessions": 17
         },
         {
-          "hours": 88.538,
+          "hours": 70.17,
           "id": "zeak-klein",
           "name": "Zeak Klein",
           "name_normalised": "Zeak Klein",
-          "sessions": 11
+          "sessions": 12
+        },
+        {
+          "hours": 9.0,
+          "id": "brandon-hayward",
+          "name": "Brandon Hayward",
+          "name_normalised": "Brandon Hayward",
+          "sessions": 1
         }
       ],
       "from": "2026-06-28T00:00:00+00:00",
@@ -7555,7 +7590,7 @@
           "sessions": 7
         },
         {
-          "hours": 40.988,
+          "hours": 32.004,
           "id": "anneeqa-williams",
           "name": "Anneeqa Williams",
           "name_normalised": "Anneeqa Williams",
@@ -7597,7 +7632,7 @@
           "sessions": 4
         },
         {
-          "hours": 42.744,
+          "hours": 34.179,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
@@ -7772,14 +7807,14 @@
           "sessions": 4
         },
         {
-          "hours": 50.552,
+          "hours": 39.478,
           "id": "luke-van-wyk",
           "name": "Luke Van Wyk",
           "name_normalised": "Luke Van Wyk",
           "sessions": 5
         },
         {
-          "hours": 35.323,
+          "hours": 25.787,
           "id": "zeak-klein",
           "name": "Zeak Klein",
           "name_normalised": "Zeak Klein",
@@ -7848,7 +7883,7 @@
           "sessions": 18
         },
         {
-          "hours": 145.126,
+          "hours": 136.561,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
@@ -7911,7 +7946,7 @@
           "sessions": 16
         },
         {
-          "hours": 115.636,
+          "hours": 124.307,
           "id": "zivana-kriel",
           "name": "Zivana Kriel",
           "name_normalised": "Zivana Kriel",
@@ -7922,7 +7957,7 @@
           "id": "killarney",
           "name": "Killarney Mia Jones",
           "name_normalised": "Killarney Mia Jones",
-          "sessions": 18
+          "sessions": 19
         },
         {
           "hours": 153.776,
@@ -7946,7 +7981,7 @@
           "sessions": 26
         },
         {
-          "hours": 159.538,
+          "hours": 159.552,
           "id": "matthew-hallett",
           "name": "Matthew Hallett",
           "name_normalised": "Matthew Hallett",
@@ -7974,7 +8009,7 @@
           "sessions": 18
         },
         {
-          "hours": 146.161,
+          "hours": 135.02,
           "id": "anneeqa-williams",
           "name": "Anneeqa Williams",
           "name_normalised": "Anneeqa Williams",
@@ -8037,7 +8072,7 @@
           "sessions": 16
         },
         {
-          "hours": 173.038,
+          "hours": 161.964,
           "id": "luke-van-wyk",
           "name": "Luke Van Wyk",
           "name_normalised": "Luke Van Wyk",
@@ -8065,11 +8100,18 @@
           "sessions": 14
         },
         {
-          "hours": 88.538,
+          "hours": 70.17,
           "id": "zeak-klein",
           "name": "Zeak Klein",
           "name_normalised": "Zeak Klein",
-          "sessions": 11
+          "sessions": 12
+        },
+        {
+          "hours": 9.0,
+          "id": "brandon-hayward",
+          "name": "Brandon Hayward",
+          "name_normalised": "Brandon Hayward",
+          "sessions": 1
         }
       ],
       "from": "2026-08-31T00:00:00+00:00",
@@ -8085,7 +8127,7 @@
           "sessions": 4
         },
         {
-          "hours": 14.519,
+          "hours": 23.19,
           "id": "zivana-kriel",
           "name": "Zivana Kriel",
           "name_normalised": "Zivana Kriel",
@@ -8124,10 +8166,10 @@
           "id": "killarney",
           "name": "Killarney Mia Jones",
           "name_normalised": "Killarney Mia Jones",
-          "sessions": 2
+          "sessions": 3
         },
         {
-          "hours": 29.876,
+          "hours": 29.89,
           "id": "matthew-hallett",
           "name": "Matthew Hallett",
           "name_normalised": "Matthew Hallett",
@@ -8141,11 +8183,11 @@
           "sessions": 3
         },
         {
-          "hours": 34.629,
+          "hours": 25.797,
           "id": "zeak-klein",
           "name": "Zeak Klein",
           "name_normalised": "Zeak Klein",
-          "sessions": 3
+          "sessions": 4
         },
         {
           "hours": 27.065,
@@ -8190,7 +8232,7 @@
           "sessions": 3
         },
         {
-          "hours": 29.139,
+          "hours": 26.982,
           "id": "anneeqa-williams",
           "name": "Anneeqa Williams",
           "name_normalised": "Anneeqa Williams",
@@ -8342,6 +8384,13 @@
           "name": "Quinn Frazier",
           "name_normalised": "Quinn Frazier",
           "sessions": 3
+        },
+        {
+          "hours": 9.0,
+          "id": "brandon-hayward",
+          "name": "Brandon Hayward",
+          "name_normalised": "Brandon Hayward",
+          "sessions": 1
         }
       ],
       "from": "2026-09-21T00:00:00+00:00",
