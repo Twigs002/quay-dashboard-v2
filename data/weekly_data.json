@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-24T05:06:30.648079+00:00",
+  "generated": "2026-09-25T05:08:44.004262+00:00",
   "week": "2026-09-21",
   "weekStart": "2026-09-21",
   "weekEnd": "2026-09-27",
@@ -1935,6 +1935,21 @@
       "waitTime": 1.4153,
       "agent_count": 1
     },
+    "KNIGHTS_NA": {
+      "calls": 0,
+      "success": 0,
+      "seller": 0,
+      "rental": 0,
+      "email": 0,
+      "no_answer": 0,
+      "answered": 0,
+      "workTime": 0.0,
+      "talkTime": 0.0,
+      "wrapTime": 0.0,
+      "pauseTime": 0.0,
+      "waitTime": 0.0,
+      "agent_count": 0
+    },
     "KOEKSISTERS_NEW": {
       "calls": 0,
       "success": 0,
@@ -3807,7 +3822,6 @@
       {
         "kind": "fetch_failed",
         "campaigns": [
-          "KNIGHTS_NA",
           "AMIGOS_LN",
           "ASSASSINS_LN",
           "AVENGERS_LN",
@@ -3948,6 +3962,7 @@
           "INVINCIBLES_CM",
           "INVINCIBLES_NA",
           "KNIGHTS_NEW",
+          "KNIGHTS_NA",
           "KOEKSISTERS_NEW",
           "KOEKSISTERS_CM",
           "KOEKSISTERS_NA",
