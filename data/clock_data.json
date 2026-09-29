@@ -57,6 +57,13 @@
       "sessions": 1
     },
     {
+      "hours": 9.0,
+      "id": "craig-carroll",
+      "name": "Craig Carroll",
+      "name_normalised": "Craig Carroll",
+      "sessions": 1
+    },
+    {
       "hours": 8.993,
       "id": "basil-tambwe",
       "name": "Basil Tambwe",
@@ -169,11 +176,11 @@
       "sessions": 1
     },
     {
-      "hours": 9.064,
+      "hours": 10.404,
       "id": "tamzin-jacobs",
       "name": "Tamzin Jacobs",
       "name_normalised": "Tamzin Jacobs",
-      "sessions": 1
+      "sessions": 2
     },
     {
       "hours": 6.824,
@@ -236,13 +243,6 @@
       "id": "luke-van-wyk",
       "name": "Luke Van Wyk",
       "name_normalised": "Luke Van Wyk",
-      "sessions": 1
-    },
-    {
-      "hours": 11.632,
-      "id": "craig-carroll",
-      "name": "Craig Carroll",
-      "name_normalised": "Craig Carroll",
       "sessions": 1
     }
   ],
@@ -6278,14 +6278,14 @@
         "sessions": 4
       },
       {
-        "hours": 36.404,
+        "hours": 27.404,
         "id": "craig-carroll",
         "name": "Craig Carroll",
         "name_normalised": "Craig Carroll",
         "sessions": 5
       },
       {
-        "hours": 34.068,
+        "hours": 25.56,
         "id": "jason-julius",
         "name": "Jason Julius",
         "name_normalised": "Jason Julius",
@@ -6390,7 +6390,7 @@
         "sessions": 4
       },
       {
-        "hours": 27.467,
+        "hours": 18.018,
         "id": "bronwyn-botha",
         "name": "Bronwyn Botha",
         "name_normalised": "Bronwyn Botha",
@@ -6546,6 +6546,13 @@
         "sessions": 1
       },
       {
+        "hours": 9.0,
+        "id": "craig-carroll",
+        "name": "Craig Carroll",
+        "name_normalised": "Craig Carroll",
+        "sessions": 1
+      },
+      {
         "hours": 8.993,
         "id": "basil-tambwe",
         "name": "Basil Tambwe",
@@ -6658,11 +6665,11 @@
         "sessions": 1
       },
       {
-        "hours": 9.064,
+        "hours": 10.404,
         "id": "tamzin-jacobs",
         "name": "Tamzin Jacobs",
         "name_normalised": "Tamzin Jacobs",
-        "sessions": 1
+        "sessions": 2
       },
       {
         "hours": 6.824,
@@ -6726,17 +6733,10 @@
         "name": "Luke Van Wyk",
         "name_normalised": "Luke Van Wyk",
         "sessions": 1
-      },
-      {
-        "hours": 11.632,
-        "id": "craig-carroll",
-        "name": "Craig Carroll",
-        "name_normalised": "Craig Carroll",
-        "sessions": 1
       }
     ]
   },
-  "generated_at": "2026-09-29T06:10:44.291706+00:00",
+  "generated_at": "2026-09-29T11:35:38.290744+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -6811,11 +6811,11 @@
           "sessions": 101
         },
         {
-          "hours": 814.314,
+          "hours": 815.654,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
-          "sessions": 121
+          "sessions": 122
         },
         {
           "hours": 470.906,
@@ -6874,7 +6874,7 @@
           "sessions": 38
         },
         {
-          "hours": 809.003,
+          "hours": 797.371,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
@@ -6986,7 +6986,7 @@
           "sessions": 88
         },
         {
-          "hours": 906.196,
+          "hours": 896.747,
           "id": "bronwyn-botha",
           "name": "Bronwyn Botha",
           "name_normalised": "Bronwyn Botha",
@@ -7084,7 +7084,7 @@
           "sessions": 67
         },
         {
-          "hours": 512.875,
+          "hours": 504.366,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
@@ -7251,14 +7251,14 @@
           "sessions": 5
         },
         {
-          "hours": 48.036,
+          "hours": 36.404,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
           "sessions": 6
         },
         {
-          "hours": 42.627,
+          "hours": 34.118,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
@@ -7335,11 +7335,11 @@
           "sessions": 3
         },
         {
-          "hours": 41.268,
+          "hours": 42.608,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
-          "sessions": 7
+          "sessions": 8
         },
         {
           "hours": 45.058,
@@ -7363,7 +7363,7 @@
           "sessions": 5
         },
         {
-          "hours": 36.476,
+          "hours": 27.027,
           "id": "bronwyn-botha",
           "name": "Bronwyn Botha",
           "name_normalised": "Bronwyn Botha",
@@ -7551,7 +7551,7 @@
           "sessions": 32
         },
         {
-          "hours": 443.62,
+          "hours": 431.988,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
@@ -7572,7 +7572,7 @@
           "sessions": 53
         },
         {
-          "hours": 521.009,
+          "hours": 511.56,
           "id": "bronwyn-botha",
           "name": "Bronwyn Botha",
           "name_normalised": "Bronwyn Botha",
@@ -7621,11 +7621,11 @@
           "sessions": 58
         },
         {
-          "hours": 415.532,
+          "hours": 416.872,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
-          "sessions": 75
+          "sessions": 76
         },
         {
           "hours": 536.035,
@@ -7712,7 +7712,7 @@
           "sessions": 81
         },
         {
-          "hours": 452.337,
+          "hours": 443.828,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
@@ -7844,14 +7844,14 @@
           "sessions": 4
         },
         {
-          "hours": 36.404,
+          "hours": 27.404,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
           "sessions": 5
         },
         {
-          "hours": 34.068,
+          "hours": 25.56,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
@@ -7956,7 +7956,7 @@
           "sessions": 4
         },
         {
-          "hours": 27.467,
+          "hours": 18.018,
           "id": "bronwyn-botha",
           "name": "Bronwyn Botha",
           "name_normalised": "Bronwyn Botha",
@@ -8081,7 +8081,7 @@
           "sessions": 12
         },
         {
-          "hours": 116.952,
+          "hours": 107.503,
           "id": "bronwyn-botha",
           "name": "Bronwyn Botha",
           "name_normalised": "Bronwyn Botha",
@@ -8123,7 +8123,7 @@
           "sessions": 14
         },
         {
-          "hours": 119.475,
+          "hours": 110.967,
           "id": "jason-julius",
           "name": "Jason Julius",
           "name_normalised": "Jason Julius",
@@ -8137,11 +8137,11 @@
           "sessions": 15
         },
         {
-          "hours": 112.185,
+          "hours": 113.525,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
-          "sessions": 17
+          "sessions": 18
         },
         {
           "hours": 125.418,
@@ -8172,7 +8172,7 @@
           "sessions": 11
         },
         {
-          "hours": 132.623,
+          "hours": 120.991,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
@@ -8395,6 +8395,13 @@
           "sessions": 1
         },
         {
+          "hours": 9.0,
+          "id": "craig-carroll",
+          "name": "Craig Carroll",
+          "name_normalised": "Craig Carroll",
+          "sessions": 1
+        },
+        {
           "hours": 8.993,
           "id": "basil-tambwe",
           "name": "Basil Tambwe",
@@ -8507,11 +8514,11 @@
           "sessions": 1
         },
         {
-          "hours": 9.064,
+          "hours": 10.404,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
-          "sessions": 1
+          "sessions": 2
         },
         {
           "hours": 6.824,
@@ -8574,13 +8581,6 @@
           "id": "luke-van-wyk",
           "name": "Luke Van Wyk",
           "name_normalised": "Luke Van Wyk",
-          "sessions": 1
-        },
-        {
-          "hours": 11.632,
-          "id": "craig-carroll",
-          "name": "Craig Carroll",
-          "name_normalised": "Craig Carroll",
           "sessions": 1
         }
       ],
