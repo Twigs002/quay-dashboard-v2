@@ -17,8 +17,14 @@ window.QUAY_READY = (async function () {
   // actually changed.
   const NC = { cache: 'no-cache' };
   const [weekly, history, clockData, dailyData, clienthubData, clienthubDaily] = await Promise.all([
-    fetch('data/weekly_data.json', NC).then(r => r.json()),
-    fetch('data/history.json', NC).then(r => r.json()),
+    // Guard the two core loads the same way the five below are guarded: a 404
+    // or transient network error must not reject the whole Promise.all and blank
+    // the dashboard. Fall back to an empty week / empty history so the rest of
+    // the pipeline renders a friendly empty state instead of the error screen.
+    fetch('data/weekly_data.json', NC)
+      .then(r => r.ok ? r.json() : { week: null, weekStart: null, rm: [], fancy: [] })
+      .catch(() => ({ week: null, weekStart: null, rm: [], fancy: [] })),
+    fetch('data/history.json', NC).then(r => r.ok ? r.json() : []).catch(() => []),
     fetch('data/clock_data.json', NC).then(r => r.ok ? r.json() : null).catch(() => null),
     // Per-day stats from fetch_dialfire_daily.py — file may not exist yet
     // if the workflow hasn't run successfully. Treat as empty in that case.

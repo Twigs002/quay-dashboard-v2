@@ -1,0 +1,9 @@
+# Local tooling & runtime artefacts — never commit these. The daemon log under
+# logs/ can contain a masked service-role key, so a stray `git add -A` must not
+# sweep it into a commit.
+logs/
+.DS_Store
+__pycache__/
+*.pyc
+.claude/
+.claude-flow/
