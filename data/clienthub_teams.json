@@ -4,7 +4,7 @@
     "new",
     "na"
   ],
-  "generated_at": "2026-10-01T06:30:07.400902+00:00",
+  "generated_at": "2026-10-02T06:13:11.048613+00:00",
   "source": "dialfire",
   "windows": {
     "last-month": {
@@ -78,8 +78,8 @@
         {
           "by_campaign": {
             "master": {
-              "calls": 1128,
-              "email": 14,
+              "calls": 1190,
+              "email": 22,
               "rental": 4,
               "seller": 30
             },
@@ -96,8 +96,8 @@
               "seller": 12
             }
           },
-          "calls": 1752,
-          "email": 40,
+          "calls": 1814,
+          "email": 48,
           "owner_ids": [
             "79270572"
           ],
@@ -138,6 +138,30 @@
         {
           "by_campaign": {
             "master": {
+              "calls": 1627,
+              "email": 287,
+              "rental": 4,
+              "seller": 49
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 1627,
+          "email": 287,
+          "owner_ids": [
+            "512880424"
+          ],
+          "rental": 4,
+          "seller": 49,
+          "team": "Furys"
+        },
+        {
+          "by_campaign": {
+            "master": {
               "calls": 1611,
               "email": 187,
               "rental": 2,
@@ -168,26 +192,32 @@
         {
           "by_campaign": {
             "master": {
-              "calls": 1415,
-              "email": 251,
-              "rental": 4,
-              "seller": 45
+              "calls": 1428,
+              "email": 213,
+              "rental": 0,
+              "seller": 26
             },
             "na": {
               "calls": 0,
               "email": 0,
               "rental": 0,
               "seller": 0
+            },
+            "new": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
             }
           },
-          "calls": 1415,
-          "email": 251,
+          "calls": 1428,
+          "email": 213,
           "owner_ids": [
-            "512880424"
+            "85377840"
           ],
-          "rental": 4,
-          "seller": 45,
-          "team": "Furys"
+          "rental": 0,
+          "seller": 26,
+          "team": "Gunslingers"
         },
         {
           "by_campaign": {
@@ -222,40 +252,10 @@
         {
           "by_campaign": {
             "master": {
-              "calls": 1216,
-              "email": 177,
-              "rental": 0,
-              "seller": 20
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "new": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 1216,
-          "email": 177,
-          "owner_ids": [
-            "85377840"
-          ],
-          "rental": 0,
-          "seller": 20,
-          "team": "Gunslingers"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 994,
-              "email": 145,
+              "calls": 1143,
+              "email": 161,
               "rental": 6,
-              "seller": 60
+              "seller": 66
             },
             "na": {
               "calls": 0,
@@ -270,22 +270,22 @@
               "seller": 0
             }
           },
-          "calls": 996,
-          "email": 145,
+          "calls": 1145,
+          "email": 161,
           "owner_ids": [
             "60766526"
           ],
           "rental": 6,
-          "seller": 60,
+          "seller": 66,
           "team": "Ballers"
         },
         {
           "by_campaign": {
             "master": {
-              "calls": 961,
-              "email": 165,
+              "calls": 1117,
+              "email": 191,
               "rental": 4,
-              "seller": 38
+              "seller": 44
             },
             "na": {
               "calls": 0,
@@ -300,13 +300,13 @@
               "seller": 2
             }
           },
-          "calls": 967,
-          "email": 165,
+          "calls": 1123,
+          "email": 191,
           "owner_ids": [
             "84022188"
           ],
           "rental": 4,
-          "seller": 40,
+          "seller": 46,
           "team": "Dragons"
         },
         {
@@ -342,6 +342,36 @@
         {
           "by_campaign": {
             "master": {
+              "calls": 714,
+              "email": 99,
+              "rental": 8,
+              "seller": 34
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "new": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 714,
+          "email": 99,
+          "owner_ids": [
+            "57438698"
+          ],
+          "rental": 8,
+          "seller": 34,
+          "team": "Pirates"
+        },
+        {
+          "by_campaign": {
+            "master": {
               "calls": 662,
               "email": 70,
               "rental": 0,
@@ -368,36 +398,6 @@
           "rental": 0,
           "seller": 8,
           "team": "Warriors"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 595,
-              "email": 87,
-              "rental": 6,
-              "seller": 32
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "new": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 595,
-          "email": 87,
-          "owner_ids": [
-            "57438698"
-          ],
-          "rental": 6,
-          "seller": 32,
-          "team": "Pirates"
         },
         {
           "by_campaign": {
@@ -432,8 +432,8 @@
         {
           "by_campaign": {
             "master": {
-              "calls": 316,
-              "email": 32,
+              "calls": 360,
+              "email": 38,
               "rental": 0,
               "seller": 6
             },
@@ -450,8 +450,8 @@
               "seller": 0
             }
           },
-          "calls": 320,
-          "email": 32,
+          "calls": 364,
+          "email": 38,
           "owner_ids": [
             "195736166"
           ],
@@ -482,6 +482,30 @@
           "rental": 0,
           "seller": 2,
           "team": "TNT"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 92,
+              "email": 8,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 92,
+          "email": 8,
+          "owner_ids": [
+            "571004737"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Farmers"
         },
         {
           "by_campaign": {
@@ -536,30 +560,6 @@
           "rental": 0,
           "seller": 2,
           "team": "Blitz"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 78,
-              "email": 6,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 78,
-          "email": 6,
-          "owner_ids": [
-            "571004737"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Farmers"
         },
         {
           "by_campaign": {
@@ -718,16 +718,268 @@
               "email": 0,
               "rental": 0,
               "seller": 0
+            },
+            "new": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
             }
           },
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "87790103"
+            "84683538"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Komorants"
+          "team": "Gladiators"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "551111272"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Invincibles"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "new": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "61949424"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Assassins"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "142508407"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Hustlers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "570999348"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Tornadoes"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "90830340"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Mozzies"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "84878181"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Targaryens"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "61949593"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Avengers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "new": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "445668165"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Proteas"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "182959417"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Power Rangers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "new": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "142516092"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Soccer Moms"
         },
         {
           "by_campaign": {
@@ -755,6 +1007,12 @@
               "rental": 0,
               "seller": 0
             },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
             "new": {
               "calls": 0,
               "email": 0,
@@ -765,11 +1023,275 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "290480467"
+            "209260894"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Tigers"
+          "team": "Queens"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "1763468269"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Hout Baes"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "new": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "192141162"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Dealers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "new": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "61715183"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Babes"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "new": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "371434880"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Musketeers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "90886933"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Hoekers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "new": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "61989266"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Amigos"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "61022342"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Lions"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "new": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "221066166"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Dealmakers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "142837564"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Wombats"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "1752588073"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Rockets"
         },
         {
           "by_campaign": {
@@ -839,6 +1361,30 @@
               "rental": 0,
               "seller": 0
             },
+            "new": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "290480467"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Tigers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
             "na": {
               "calls": 0,
               "email": 0,
@@ -855,29 +1401,11 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "221066166"
+            "253761461"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Dealmakers"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "90830340"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Mozzies"
+          "team": "City Sunsets"
         },
         {
           "by_campaign": {
@@ -897,11 +1425,11 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "142508407"
+            "61951607"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Hustlers"
+          "team": "Spartans"
         },
         {
           "by_campaign": {
@@ -921,11 +1449,11 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "90886933"
+            "61951340"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Hoekers"
+          "team": "Slayers"
         },
         {
           "by_campaign": {
@@ -950,60 +1478,6 @@
           "rental": 0,
           "seller": 0,
           "team": "Weasels"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "new": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "84683538"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Gladiators"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "61022342"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Lions"
         },
         {
           "by_campaign": {
@@ -1066,276 +1540,6 @@
               "email": 0,
               "rental": 0,
               "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "182959417"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Power Rangers"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "new": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "61989266"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Amigos"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "61949593"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Avengers"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "new": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "61949424"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Assassins"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "142835358"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Koeksisters"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "new": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "61715183"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Babes"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "new": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "209260894"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Queens"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "84878181"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Targaryens"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "new": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "445668165"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Proteas"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "new": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "142516092"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Soccer Moms"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
             },
             "new": {
               "calls": 0,
@@ -1371,11 +1575,11 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "1763468269"
+            "87790103"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Hout Baes"
+          "team": "Komorants"
         },
         {
           "by_campaign": {
@@ -1395,251 +1599,11 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "61951340"
+            "142835358"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Slayers"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "570999348"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Tornadoes"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "new": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "253761461"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "City Sunsets"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "1752588073"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Rockets"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "61951607"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Spartans"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "142837564"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Wombats"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "new": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "371434880"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Musketeers"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "551111272"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Invincibles"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "new": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "192141162"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Dealers"
-        },
-        {
-          "by_campaign": {
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "87888060"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Betties"
-        },
-        {
-          "by_campaign": {
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "87800852"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Vipers"
+          "team": "Koeksisters"
         },
         {
           "by_campaign": {
@@ -1671,6 +1635,42 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
+            "87800852"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Vipers"
+        },
+        {
+          "by_campaign": {
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "87888060"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Betties"
+        },
+        {
+          "by_campaign": {
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
             "223928394"
           ],
           "rental": 0,
@@ -1680,10 +1680,10 @@
       ],
       "to": "2026-09-30",
       "totals": {
-        "calls": 18765,
-        "email": 2367,
-        "rental": 44,
-        "seller": 519,
+        "calls": 19733,
+        "email": 2509,
+        "rental": 46,
+        "seller": 543,
         "teams": 63
       }
     },
@@ -2139,24 +2139,6 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "142835358"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Koeksisters"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
             "61715183"
           ],
           "rental": 0,
@@ -2175,11 +2157,11 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "209260894"
+            "551111272"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Queens"
+          "team": "Invincibles"
         },
         {
           "by_campaign": {
@@ -2193,383 +2175,11 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "735062128"
+            "61949424"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Swesties"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "290480467"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Tigers"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "112213784"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Goal Diggers"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "84878181"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Targaryens"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "142837416"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Dutchmen"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "445668165"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Proteas"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "221066166"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Dealmakers"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "142516092"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Soccer Moms"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "142837780"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Hooligans"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "1763468269"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Hout Baes"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "61951340"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Slayers"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "570999348"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Tornadoes"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "new": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "253761461"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "City Sunsets"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "61022342"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Lions"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "254689367"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Chargers"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "61698092"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Raccoons"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "61989266"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Amigos"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            },
-            "na": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "61951607"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Spartans"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "142837564"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Wombats"
+          "team": "Assassins"
         },
         {
           "by_campaign": {
@@ -2643,11 +2253,35 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "551111272"
+            "61989266"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Invincibles"
+          "team": "Amigos"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "61022342"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Lions"
         },
         {
           "by_campaign": {
@@ -2661,14 +2295,20 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "61949424"
+            "221066166"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Assassins"
+          "team": "Dealmakers"
         },
         {
           "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
             "na": {
               "calls": 0,
               "email": 0,
@@ -2679,11 +2319,353 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "61983137"
+            "570999348"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Weasels"
+          "team": "Tornadoes"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "84878181"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Targaryens"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "142837564"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Wombats"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "112213784"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Goal Diggers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "142837416"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Dutchmen"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "290480467"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Tigers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "new": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "253761461"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "City Sunsets"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "445668165"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Proteas"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "61951340"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Slayers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "61951607"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Spartans"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "61698092"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Raccoons"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "142516092"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Soccer Moms"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            },
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "254689367"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Chargers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "735062128"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Swesties"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "142837780"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Hooligans"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "142835358"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Koeksisters"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "209260894"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Queens"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "1763468269"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Hout Baes"
         },
         {
           "by_campaign": {
@@ -2733,11 +2715,11 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "91462678"
+            "61983137"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Retrievers"
+          "team": "Weasels"
         },
         {
           "by_campaign": {
@@ -2756,6 +2738,24 @@
           "rental": 0,
           "seller": 0,
           "team": "Hoekers"
+        },
+        {
+          "by_campaign": {
+            "na": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "91462678"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Retrievers"
         }
       ],
       "to": "2026-09-27",
@@ -2778,14 +2778,104 @@
         {
           "by_campaign": {
             "master": {
-              "calls": 2,
-              "email": 0,
+              "calls": 214,
+              "email": 38,
+              "rental": 0,
+              "seller": 4
+            }
+          },
+          "calls": 214,
+          "email": 38,
+          "owner_ids": [
+            "512880424"
+          ],
+          "rental": 0,
+          "seller": 4,
+          "team": "Furys"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 212,
+              "email": 36,
+              "rental": 0,
+              "seller": 6
+            }
+          },
+          "calls": 212,
+          "email": 36,
+          "owner_ids": [
+            "85377840"
+          ],
+          "rental": 0,
+          "seller": 6,
+          "team": "Gunslingers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 156,
+              "email": 26,
+              "rental": 0,
+              "seller": 6
+            }
+          },
+          "calls": 156,
+          "email": 26,
+          "owner_ids": [
+            "84022188"
+          ],
+          "rental": 0,
+          "seller": 6,
+          "team": "Dragons"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 150,
+              "email": 16,
+              "rental": 0,
+              "seller": 6
+            }
+          },
+          "calls": 150,
+          "email": 16,
+          "owner_ids": [
+            "60766526"
+          ],
+          "rental": 0,
+          "seller": 6,
+          "team": "Ballers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 120,
+              "email": 12,
+              "rental": 2,
+              "seller": 2
+            }
+          },
+          "calls": 120,
+          "email": 12,
+          "owner_ids": [
+            "57438698"
+          ],
+          "rental": 2,
+          "seller": 2,
+          "team": "Pirates"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 64,
+              "email": 8,
               "rental": 0,
               "seller": 0
             }
           },
-          "calls": 2,
-          "email": 0,
+          "calls": 64,
+          "email": 8,
           "owner_ids": [
             "79270572"
           ],
@@ -2796,68 +2886,14 @@
         {
           "by_campaign": {
             "master": {
-              "calls": 2,
-              "email": 2,
+              "calls": 44,
+              "email": 6,
               "rental": 0,
               "seller": 0
             }
           },
-          "calls": 2,
-          "email": 2,
-          "owner_ids": [
-            "512880424"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Furys"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 1,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 1,
-          "email": 0,
-          "owner_ids": [
-            "60766526"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Ballers"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "84022188"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Dragons"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
+          "calls": 44,
+          "email": 6,
           "owner_ids": [
             "195736166"
           ],
@@ -2868,6 +2904,24 @@
         {
           "by_campaign": {
             "master": {
+              "calls": 14,
+              "email": 2,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 14,
+          "email": 2,
+          "owner_ids": [
+            "571004737"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Farmers"
+        },
+        {
+          "by_campaign": {
+            "master": {
               "calls": 0,
               "email": 0,
               "rental": 0,
@@ -2877,11 +2931,11 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "85377840"
+            "445668165"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Gunslingers"
+          "team": "Proteas"
         },
         {
           "by_campaign": {
@@ -2913,29 +2967,11 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "221066166"
+            "371434880"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Dealmakers"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "1763468269"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Hout Baes"
+          "team": "Musketeers"
         },
         {
           "by_campaign": {
@@ -2967,20 +3003,74 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "57438698"
+            "221066166"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Pirates"
+          "team": "Dealmakers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "142837528"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Boets"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "61983888"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Warriors"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "1763468269"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Hout Baes"
         }
       ],
-      "to": "2026-10-01",
+      "to": "2026-10-02",
       "totals": {
-        "calls": 5,
-        "email": 2,
-        "rental": 0,
-        "seller": 0,
-        "teams": 11
+        "calls": 974,
+        "email": 144,
+        "rental": 2,
+        "seller": 24,
+        "teams": 16
       }
     },
     "this-week": {
@@ -2994,74 +3084,92 @@
         {
           "by_campaign": {
             "master": {
-              "calls": 368,
-              "email": 72,
+              "calls": 580,
+              "email": 108,
               "rental": 0,
-              "seller": 18
+              "seller": 22
             }
           },
-          "calls": 368,
-          "email": 72,
+          "calls": 580,
+          "email": 108,
           "owner_ids": [
             "512880424"
           ],
           "rental": 0,
-          "seller": 18,
+          "seller": 22,
           "team": "Furys"
         },
         {
           "by_campaign": {
             "master": {
-              "calls": 325,
-              "email": 44,
+              "calls": 537,
+              "email": 80,
               "rental": 0,
-              "seller": 10
+              "seller": 16
             }
           },
-          "calls": 325,
-          "email": 44,
+          "calls": 537,
+          "email": 80,
           "owner_ids": [
             "85377840"
           ],
           "rental": 0,
-          "seller": 10,
+          "seller": 16,
           "team": "Gunslingers"
         },
         {
           "by_campaign": {
             "master": {
-              "calls": 284,
-              "email": 56,
+              "calls": 440,
+              "email": 82,
               "rental": 2,
-              "seller": 10
+              "seller": 16
             }
           },
-          "calls": 284,
-          "email": 56,
+          "calls": 440,
+          "email": 82,
           "owner_ids": [
             "84022188"
           ],
           "rental": 2,
-          "seller": 10,
+          "seller": 16,
           "team": "Dragons"
         },
         {
           "by_campaign": {
             "master": {
-              "calls": 210,
-              "email": 23,
+              "calls": 359,
+              "email": 39,
               "rental": 0,
-              "seller": 12
+              "seller": 18
             }
           },
-          "calls": 210,
-          "email": 23,
+          "calls": 359,
+          "email": 39,
           "owner_ids": [
             "60766526"
           ],
           "rental": 0,
-          "seller": 12,
+          "seller": 18,
           "team": "Ballers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 301,
+              "email": 45,
+              "rental": 4,
+              "seller": 14
+            }
+          },
+          "calls": 301,
+          "email": 45,
+          "owner_ids": [
+            "57438698"
+          ],
+          "rental": 4,
+          "seller": 14,
+          "team": "Pirates"
         },
         {
           "by_campaign": {
@@ -3084,32 +3192,14 @@
         {
           "by_campaign": {
             "master": {
-              "calls": 181,
-              "email": 33,
-              "rental": 2,
-              "seller": 12
-            }
-          },
-          "calls": 181,
-          "email": 33,
-          "owner_ids": [
-            "57438698"
-          ],
-          "rental": 2,
-          "seller": 12,
-          "team": "Pirates"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 88,
-              "email": 0,
+              "calls": 150,
+              "email": 8,
               "rental": 0,
               "seller": 4
             }
           },
-          "calls": 88,
-          "email": 0,
+          "calls": 150,
+          "email": 8,
           "owner_ids": [
             "79270572"
           ],
@@ -3120,14 +3210,14 @@
         {
           "by_campaign": {
             "master": {
-              "calls": 40,
-              "email": 4,
+              "calls": 84,
+              "email": 10,
               "rental": 0,
               "seller": 4
             }
           },
-          "calls": 40,
-          "email": 4,
+          "calls": 84,
+          "email": 10,
           "owner_ids": [
             "195736166"
           ],
@@ -3138,14 +3228,14 @@
         {
           "by_campaign": {
             "master": {
-              "calls": 26,
-              "email": 4,
+              "calls": 40,
+              "email": 6,
               "rental": 0,
               "seller": 0
             }
           },
-          "calls": 26,
-          "email": 4,
+          "calls": 40,
+          "email": 6,
           "owner_ids": [
             "571004737"
           ],
@@ -3201,24 +3291,6 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "142835358"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Koeksisters"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
             "61715183"
           ],
           "rental": 0,
@@ -3237,11 +3309,11 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "487152396"
+            "551111272"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Panthers"
+          "team": "Invincibles"
         },
         {
           "by_campaign": {
@@ -3255,173 +3327,11 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "342583654"
+            "61949424"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Hawks"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "112213784"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Goal Diggers"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "221066166"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Dealmakers"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "142516092"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Soccer Moms"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "142837780"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Hooligans"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "90886933"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Hoekers"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "1763468269"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Hout Baes"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "61951340"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Slayers"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "182959417"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Power Rangers"
-        },
-        {
-          "by_campaign": {
-            "master": {
-              "calls": 0,
-              "email": 0,
-              "rental": 0,
-              "seller": 0
-            }
-          },
-          "calls": 0,
-          "email": 0,
-          "owner_ids": [
-            "142837564"
-          ],
-          "rental": 0,
-          "seller": 0,
-          "team": "Wombats"
+          "team": "Assassins"
         },
         {
           "by_campaign": {
@@ -3471,11 +3381,11 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "551111272"
+            "90886933"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Invincibles"
+          "team": "Hoekers"
         },
         {
           "by_campaign": {
@@ -3489,20 +3399,254 @@
           "calls": 0,
           "email": 0,
           "owner_ids": [
-            "61949424"
+            "221066166"
           ],
           "rental": 0,
           "seller": 0,
-          "team": "Assassins"
+          "team": "Dealmakers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "142837564"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Wombats"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "112213784"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Goal Diggers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "445668165"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Proteas"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "182959417"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Power Rangers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "61951340"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Slayers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "342583654"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Hawks"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "487152396"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Panthers"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "142516092"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Soccer Moms"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "142837780"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Hooligans"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "142837528"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Boets"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "142835358"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Koeksisters"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "61983888"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Warriors"
+        },
+        {
+          "by_campaign": {
+            "master": {
+              "calls": 0,
+              "email": 0,
+              "rental": 0,
+              "seller": 0
+            }
+          },
+          "calls": 0,
+          "email": 0,
+          "owner_ids": [
+            "1763468269"
+          ],
+          "rental": 0,
+          "seller": 0,
+          "team": "Hout Baes"
         }
       ],
-      "to": "2026-10-01",
+      "to": "2026-10-02",
       "totals": {
-        "calls": 1732,
-        "email": 270,
-        "rental": 4,
-        "seller": 80,
-        "teams": 28
+        "calls": 2701,
+        "email": 412,
+        "rental": 6,
+        "seller": 104,
+        "teams": 31
       }
     }
   }
