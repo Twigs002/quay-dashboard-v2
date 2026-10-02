@@ -1,8 +1,60 @@
 [
   {
     "date": "2026-10-02",
-    "generated": "2026-10-02T10:59:27.581665+00:00",
+    "generated": "2026-10-02T21:11:02.178006+00:00",
     "rm": [
+      {
+        "name": "Gio",
+        "calls": 180,
+        "success": 35,
+        "seller": 13,
+        "rental": 1,
+        "email": 21,
+        "no_answer": 8,
+        "cph": 30.8,
+        "successRate": 19.4,
+        "workTime": 5.8478,
+        "talkTime": 2.04,
+        "wrapTime": 0.6742,
+        "pauseTime": 0.0661,
+        "waitTime": 3.0675,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB"
+        ],
+        "answered": 172,
+        "talkPct": 34.9,
+        "wrapPct": 11.5,
+        "waitPct": 52.5,
+        "workPct": 98.9
+      },
+      {
+        "name": "Aqeefah Arendse",
+        "calls": 159,
+        "success": 41,
+        "seller": 3,
+        "rental": 0,
+        "email": 38,
+        "no_answer": 12,
+        "cph": 29.2,
+        "successRate": 25.8,
+        "workTime": 5.4542,
+        "talkTime": 1.9436,
+        "wrapTime": 0.6972,
+        "pauseTime": 0.0311,
+        "waitTime": 2.7822,
+        "is_rm": true,
+        "meetsTarget": false,
+        "campaigns": [
+          "CLIENTHUB"
+        ],
+        "answered": 147,
+        "talkPct": 35.6,
+        "wrapPct": 12.8,
+        "waitPct": 51.0,
+        "workPct": 99.4
+      },
       {
         "name": "TrialDay2",
         "calls": 157,
@@ -30,214 +82,215 @@
         "workPct": 99.7
       },
       {
-        "name": "Gio",
-        "calls": 126,
-        "success": 28,
-        "seller": 11,
-        "rental": 1,
-        "email": 16,
-        "no_answer": 3,
-        "cph": 31.8,
-        "successRate": 22.2,
-        "workTime": 3.9636,
-        "talkTime": 1.6094,
-        "wrapTime": 0.5172,
-        "pauseTime": 0.0517,
-        "waitTime": 1.7853,
-        "is_rm": true,
-        "meetsTarget": false,
-        "campaigns": [
-          "CLIENTHUB"
-        ],
-        "answered": 123,
-        "talkPct": 40.6,
-        "wrapPct": 13.0,
-        "waitPct": 45.0,
-        "workPct": 98.7
-      },
-      {
-        "name": "Aqeefah Arendse",
-        "calls": 102,
-        "success": 34,
-        "seller": 3,
-        "rental": 0,
-        "email": 31,
-        "no_answer": 6,
-        "cph": 32.6,
-        "successRate": 33.3,
-        "workTime": 3.1311,
-        "talkTime": 1.425,
-        "wrapTime": 0.3678,
-        "pauseTime": 0.0294,
-        "waitTime": 1.3089,
-        "is_rm": true,
-        "meetsTarget": false,
-        "campaigns": [
-          "CLIENTHUB"
-        ],
-        "answered": 96,
-        "talkPct": 45.5,
-        "wrapPct": 11.7,
-        "waitPct": 41.8,
-        "workPct": 99.1
-      },
-      {
         "name": "ZeakK",
-        "calls": 79,
-        "success": 19,
-        "seller": 1,
+        "calls": 124,
+        "success": 24,
+        "seller": 2,
         "rental": 0,
-        "email": 18,
-        "no_answer": 2,
-        "cph": 21.5,
-        "successRate": 24.1,
-        "workTime": 3.6808,
-        "talkTime": 1.0542,
-        "wrapTime": 1.5444,
-        "pauseTime": 0.075,
-        "waitTime": 1.0072,
+        "email": 22,
+        "no_answer": 4,
+        "cph": 17.0,
+        "successRate": 19.4,
+        "workTime": 7.2808,
+        "talkTime": 1.5389,
+        "wrapTime": 3.5086,
+        "pauseTime": 0.1061,
+        "waitTime": 2.1272,
         "is_rm": true,
         "meetsTarget": false,
         "campaigns": [
           "CLIENTHUB"
         ],
-        "answered": 77,
-        "talkPct": 28.6,
-        "wrapPct": 42.0,
-        "waitPct": 27.4,
-        "workPct": 98.0
+        "answered": 120,
+        "talkPct": 21.1,
+        "wrapPct": 48.2,
+        "waitPct": 29.2,
+        "workPct": 98.6
       },
       {
         "name": "TrialDay3",
-        "calls": 70,
-        "success": 11,
+        "calls": 82,
+        "success": 13,
         "seller": 5,
-        "rental": 5,
-        "email": 1,
-        "no_answer": 1,
-        "cph": 33.0,
-        "successRate": 15.7,
-        "workTime": 2.1186,
-        "talkTime": 0.845,
-        "wrapTime": 0.2147,
+        "rental": 6,
+        "email": 2,
+        "no_answer": 3,
+        "cph": 32.5,
+        "successRate": 15.9,
+        "workTime": 2.5236,
+        "talkTime": 0.9894,
+        "wrapTime": 0.2517,
         "pauseTime": 0.0694,
-        "waitTime": 0.9894,
+        "waitTime": 1.2131,
         "is_rm": true,
         "meetsTarget": false,
         "campaigns": [
           "CLIENTHUB"
         ],
-        "answered": 69,
-        "talkPct": 39.9,
-        "wrapPct": 10.1,
-        "waitPct": 46.7,
-        "workPct": 96.8
+        "answered": 79,
+        "talkPct": 39.2,
+        "wrapPct": 10.0,
+        "waitPct": 48.1,
+        "workPct": 97.3
       },
       {
         "name": "TrialDay1",
-        "calls": 33,
-        "success": 7,
+        "calls": 47,
+        "success": 11,
         "seller": 1,
         "rental": 0,
-        "email": 6,
-        "no_answer": 1,
-        "cph": 18.8,
-        "successRate": 21.2,
-        "workTime": 1.7514,
-        "talkTime": 0.4269,
-        "wrapTime": 0.7958,
-        "pauseTime": 0.0311,
-        "waitTime": 0.4975,
+        "email": 10,
+        "no_answer": 2,
+        "cph": 19.2,
+        "successRate": 23.4,
+        "workTime": 2.4517,
+        "talkTime": 0.6072,
+        "wrapTime": 1.0492,
+        "pauseTime": 0.0392,
+        "waitTime": 0.7561,
         "is_rm": true,
         "meetsTarget": false,
         "campaigns": [
           "CLIENTHUB"
         ],
-        "answered": 32,
-        "talkPct": 24.4,
-        "wrapPct": 45.4,
-        "waitPct": 28.4,
-        "workPct": 98.3
+        "answered": 45,
+        "talkPct": 24.8,
+        "wrapPct": 42.8,
+        "waitPct": 30.8,
+        "workPct": 98.4
       }
     ],
     "fancy": [
       {
         "name": "KirstenLS",
-        "calls": 78,
+        "calls": 127,
         "success": 1,
         "seller": 1,
         "rental": 0,
         "email": 0,
-        "no_answer": 39,
-        "cph": 22.4,
-        "successRate": 1.3,
-        "workTime": 3.485,
-        "talkTime": 0.4492,
-        "wrapTime": 2.0464,
-        "pauseTime": 0.0209,
-        "waitTime": 0.9686,
+        "no_answer": 67,
+        "cph": 22.9,
+        "successRate": 0.8,
+        "workTime": 5.5422,
+        "talkTime": 0.6784,
+        "wrapTime": 3.2638,
+        "pauseTime": 0.0453,
+        "waitTime": 1.5547,
         "is_rm": false,
         "meetsTarget": false,
         "campaigns": [
           "FARMERS"
         ],
-        "answered": 39,
-        "talkPct": 12.9,
-        "wrapPct": 58.7,
-        "waitPct": 27.8,
-        "workPct": 99.4
+        "answered": 60,
+        "talkPct": 12.2,
+        "wrapPct": 58.9,
+        "waitPct": 28.1,
+        "workPct": 99.2
       },
       {
         "name": "JoshAdonis",
-        "calls": 78,
-        "success": 21,
-        "seller": 1,
+        "calls": 116,
+        "success": 25,
+        "seller": 2,
         "rental": 1,
-        "email": 19,
-        "no_answer": 5,
-        "cph": 22.9,
-        "successRate": 26.9,
-        "workTime": 3.4083,
-        "talkTime": 1.2164,
-        "wrapTime": 0.1394,
-        "pauseTime": 0.0042,
-        "waitTime": 2.0483,
+        "email": 22,
+        "no_answer": 12,
+        "cph": 20.4,
+        "successRate": 21.6,
+        "workTime": 5.6867,
+        "talkTime": 1.6436,
+        "wrapTime": 0.2067,
+        "pauseTime": 0.0347,
+        "waitTime": 3.8017,
         "is_rm": false,
         "meetsTarget": false,
         "campaigns": [
-          "HUSTLERS"
+          "HUSTLERS",
+          "WOMBATS"
         ],
-        "answered": 73,
-        "talkPct": 35.7,
-        "wrapPct": 4.1,
-        "waitPct": 60.1,
-        "workPct": 99.9
+        "answered": 104,
+        "talkPct": 28.9,
+        "wrapPct": 3.6,
+        "waitPct": 66.9,
+        "workPct": 99.4
       },
       {
         "name": "DeclanT",
-        "calls": 72,
-        "success": 8,
+        "calls": 100,
+        "success": 12,
         "seller": 2,
         "rental": 0,
-        "email": 6,
-        "no_answer": 7,
-        "cph": 18.0,
-        "successRate": 11.1,
-        "workTime": 4.005,
-        "talkTime": 0.6606,
-        "wrapTime": 1.0953,
-        "pauseTime": 0.0531,
-        "waitTime": 2.1961,
+        "email": 10,
+        "no_answer": 8,
+        "cph": 15.0,
+        "successRate": 12.0,
+        "workTime": 6.6881,
+        "talkTime": 0.9261,
+        "wrapTime": 2.3467,
+        "pauseTime": 0.0775,
+        "waitTime": 3.3378,
         "is_rm": false,
         "meetsTarget": false,
         "campaigns": [
           "CONQUERORS"
         ],
-        "answered": 65,
-        "talkPct": 16.5,
-        "wrapPct": 27.3,
-        "waitPct": 54.8,
-        "workPct": 98.7
+        "answered": 92,
+        "talkPct": 13.8,
+        "wrapPct": 35.1,
+        "waitPct": 49.9,
+        "workPct": 98.9
+      },
+      {
+        "name": "QhayiyaDayimani",
+        "calls": 80,
+        "success": 4,
+        "seller": 0,
+        "rental": 0,
+        "email": 4,
+        "no_answer": 65,
+        "cph": 16.0,
+        "successRate": 5.0,
+        "workTime": 5.0053,
+        "talkTime": 0.5364,
+        "wrapTime": 3.9936,
+        "pauseTime": 0.0017,
+        "waitTime": 0.4736,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "ASSASSINS"
+        ],
+        "answered": 15,
+        "talkPct": 10.7,
+        "wrapPct": 79.8,
+        "waitPct": 9.5,
+        "workPct": 100.0
+      },
+      {
+        "name": "BronwynBotha",
+        "calls": 50,
+        "success": 0,
+        "seller": 0,
+        "rental": 0,
+        "email": 0,
+        "no_answer": 34,
+        "cph": 57.7,
+        "successRate": 0.0,
+        "workTime": 0.8667,
+        "talkTime": 0.0831,
+        "wrapTime": 0.6369,
+        "pauseTime": 0.0061,
+        "waitTime": 0.1406,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "SURFERS"
+        ],
+        "answered": 16,
+        "talkPct": 9.6,
+        "wrapPct": 73.5,
+        "waitPct": 16.2,
+        "workPct": 99.3
       },
       {
         "name": "CraigCarroll",
@@ -266,57 +319,136 @@
         "workPct": 98.7
       },
       {
-        "name": "QhayiyaDayimani",
-        "calls": 45,
-        "success": 3,
-        "seller": 0,
-        "rental": 0,
-        "email": 3,
-        "no_answer": 32,
-        "cph": 14.6,
-        "successRate": 6.7,
-        "workTime": 3.08,
-        "talkTime": 0.3581,
-        "wrapTime": 2.4764,
-        "pauseTime": 0.0006,
-        "waitTime": 0.245,
-        "is_rm": false,
-        "meetsTarget": false,
-        "campaigns": [
-          "ASSASSINS"
-        ],
-        "answered": 13,
-        "talkPct": 11.6,
-        "wrapPct": 80.4,
-        "waitPct": 8.0,
-        "workPct": 100.0
-      },
-      {
         "name": "TamzinJacobs",
-        "calls": 27,
-        "success": 8,
-        "seller": 3,
+        "calls": 42,
+        "success": 10,
+        "seller": 5,
         "rental": 0,
         "email": 5,
         "no_answer": 2,
-        "cph": 22.0,
-        "successRate": 29.6,
-        "workTime": 1.2286,
-        "talkTime": 0.4117,
-        "wrapTime": 0.0714,
-        "pauseTime": 0.0,
-        "waitTime": 0.7456,
+        "cph": 20.4,
+        "successRate": 23.8,
+        "workTime": 2.0626,
+        "talkTime": 0.6003,
+        "wrapTime": 0.1095,
+        "pauseTime": 0.0097,
+        "waitTime": 1.3431,
         "is_rm": false,
         "meetsTarget": false,
         "campaigns": [
           "HOEKERS",
           "VIPERS"
         ],
-        "answered": 25,
-        "talkPct": 33.5,
-        "wrapPct": 5.8,
-        "waitPct": 60.7,
+        "answered": 40,
+        "talkPct": 29.1,
+        "wrapPct": 5.3,
+        "waitPct": 65.1,
+        "workPct": 99.5
+      },
+      {
+        "name": "Nicolette",
+        "calls": 24,
+        "success": 7,
+        "seller": 2,
+        "rental": 0,
+        "email": 5,
+        "no_answer": 0,
+        "cph": 32.3,
+        "successRate": 29.2,
+        "workTime": 0.7428,
+        "talkTime": 0.3053,
+        "wrapTime": 0.1153,
+        "pauseTime": 0.0,
+        "waitTime": 0.3222,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "DRAGONS"
+        ],
+        "answered": 24,
+        "talkPct": 41.1,
+        "wrapPct": 15.5,
+        "waitPct": 43.4,
         "workPct": 100.0
+      },
+      {
+        "name": "KayleighDucroq",
+        "calls": 21,
+        "success": 1,
+        "seller": 1,
+        "rental": 0,
+        "email": 0,
+        "no_answer": 13,
+        "cph": 34.4,
+        "successRate": 4.8,
+        "workTime": 0.6103,
+        "talkTime": 0.0875,
+        "wrapTime": 0.5003,
+        "pauseTime": 0.0,
+        "waitTime": 0.0225,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "WARRIORS"
+        ],
+        "answered": 8,
+        "talkPct": 14.3,
+        "wrapPct": 82.0,
+        "waitPct": 3.7,
+        "workPct": 100.0
+      },
+      {
+        "name": "LukevanWyk",
+        "calls": 18,
+        "success": 6,
+        "seller": 0,
+        "rental": 0,
+        "email": 6,
+        "no_answer": 1,
+        "cph": 24.0,
+        "successRate": 33.3,
+        "workTime": 0.7489,
+        "talkTime": 0.2803,
+        "wrapTime": 0.0222,
+        "pauseTime": 0.0047,
+        "waitTime": 0.4417,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "BOETS"
+        ],
+        "answered": 17,
+        "talkPct": 37.4,
+        "wrapPct": 3.0,
+        "waitPct": 59.0,
+        "workPct": 99.4
+      },
+      {
+        "name": "AnneeqaWilliams",
+        "calls": 15,
+        "success": 5,
+        "seller": 0,
+        "rental": 0,
+        "email": 5,
+        "no_answer": 0,
+        "cph": 19.3,
+        "successRate": 33.3,
+        "workTime": 0.7775,
+        "talkTime": 0.278,
+        "wrapTime": 0.1358,
+        "pauseTime": 0.0089,
+        "waitTime": 0.3548,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "DRAGONS",
+          "GUNSLINGERS"
+        ],
+        "answered": 15,
+        "talkPct": 35.8,
+        "wrapPct": 17.5,
+        "waitPct": 45.6,
+        "workPct": 98.9
       },
       {
         "name": "ZivanaKriel",
@@ -343,6 +475,32 @@
         "wrapPct": 1.2,
         "waitPct": 64.8,
         "workPct": 96.9
+      },
+      {
+        "name": "JaredBrooks",
+        "calls": 5,
+        "success": 0,
+        "seller": 0,
+        "rental": 0,
+        "email": 0,
+        "no_answer": 0,
+        "cph": 31.0,
+        "successRate": 0.0,
+        "workTime": 0.1611,
+        "talkTime": 0.0783,
+        "wrapTime": 0.0558,
+        "pauseTime": 0.0,
+        "waitTime": 0.0269,
+        "is_rm": false,
+        "meetsTarget": false,
+        "campaigns": [
+          "RACOONS"
+        ],
+        "answered": 5,
+        "talkPct": 48.6,
+        "wrapPct": 34.6,
+        "waitPct": 16.7,
+        "workPct": 100.0
       },
       {
         "name": "MatthewHallett",
@@ -374,39 +532,89 @@
     "by_agent_campaign": {
       "QhayiyaDayimani": {
         "ASSASSINS_CM": {
-          "calls": 45,
+          "calls": 80,
+          "success": 4,
+          "seller": 0,
+          "rental": 0,
+          "email": 4,
+          "no_answer": 65,
+          "answered": 15,
+          "workTime": 5.0053,
+          "talkTime": 0.5364
+        }
+      },
+      "LukevanWyk": {
+        "BOETS_CM": {
+          "calls": 18,
+          "success": 6,
+          "seller": 0,
+          "rental": 0,
+          "email": 6,
+          "no_answer": 1,
+          "answered": 17,
+          "workTime": 0.7489,
+          "talkTime": 0.2803
+        }
+      },
+      "AnneeqaWilliams": {
+        "DRAGONS_CM": {
+          "calls": 9,
           "success": 3,
           "seller": 0,
           "rental": 0,
           "email": 3,
-          "no_answer": 32,
-          "answered": 13,
-          "workTime": 3.08,
-          "talkTime": 0.3581
+          "no_answer": 0,
+          "answered": 9,
+          "workTime": 0.5417,
+          "talkTime": 0.2072
+        },
+        "GUNSLINGERS_CM": {
+          "calls": 6,
+          "success": 2,
+          "seller": 0,
+          "rental": 0,
+          "email": 2,
+          "no_answer": 0,
+          "answered": 6,
+          "workTime": 0.2358,
+          "talkTime": 0.0708
+        }
+      },
+      "Nicolette": {
+        "DRAGONS_CM": {
+          "calls": 24,
+          "success": 7,
+          "seller": 2,
+          "rental": 0,
+          "email": 5,
+          "no_answer": 0,
+          "answered": 24,
+          "workTime": 0.7428,
+          "talkTime": 0.3053
         }
       },
       "KirstenLS": {
         "FARMERS_CM": {
-          "calls": 37,
+          "calls": 56,
           "success": 1,
           "seller": 1,
           "rental": 0,
           "email": 0,
-          "no_answer": 3,
-          "answered": 34,
-          "workTime": 1.9425,
-          "talkTime": 0.3878
+          "no_answer": 6,
+          "answered": 50,
+          "workTime": 3.2544,
+          "talkTime": 0.5528
         },
         "FARMERS_NA": {
-          "calls": 41,
+          "calls": 71,
           "success": 0,
           "seller": 0,
           "rental": 0,
           "email": 0,
-          "no_answer": 36,
-          "answered": 5,
-          "workTime": 1.5425,
-          "talkTime": 0.0614
+          "no_answer": 61,
+          "answered": 10,
+          "workTime": 2.2878,
+          "talkTime": 0.1256
         }
       },
       "TamzinJacobs": {
@@ -421,16 +629,27 @@
           "workTime": 0.6461,
           "talkTime": 0.2389
         },
+        "VIPERS_CM": {
+          "calls": 9,
+          "success": 2,
+          "seller": 2,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 0,
+          "answered": 9,
+          "workTime": 0.3867,
+          "talkTime": 0.1136
+        },
         "VIPERS_NA": {
-          "calls": 5,
+          "calls": 11,
           "success": 1,
           "seller": 1,
           "rental": 0,
           "email": 0,
           "no_answer": 2,
-          "answered": 3,
-          "workTime": 0.3133,
-          "talkTime": 0.0925
+          "answered": 9,
+          "workTime": 0.7606,
+          "talkTime": 0.1675
         },
         "HOEKERS_NA": {
           "calls": 6,
@@ -446,15 +665,26 @@
       },
       "JoshAdonis": {
         "HUSTLERS_NA": {
-          "calls": 78,
-          "success": 21,
-          "seller": 1,
+          "calls": 112,
+          "success": 25,
+          "seller": 2,
           "rental": 1,
-          "email": 19,
-          "no_answer": 5,
-          "answered": 73,
-          "workTime": 3.4083,
-          "talkTime": 1.2164
+          "email": 22,
+          "no_answer": 12,
+          "answered": 100,
+          "workTime": 5.32,
+          "talkTime": 1.5619
+        },
+        "WOMBATS_NA": {
+          "calls": 4,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 0,
+          "answered": 4,
+          "workTime": 0.3667,
+          "talkTime": 0.0817
         }
       },
       "MatthewHallett": {
@@ -494,6 +724,19 @@
           "talkTime": 0.3019
         }
       },
+      "JaredBrooks": {
+        "RACOONS_CM": {
+          "calls": 5,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 0,
+          "answered": 5,
+          "workTime": 0.1611,
+          "talkTime": 0.0783
+        }
+      },
       "ZivanaKriel": {
         "SLAYERS_CM": {
           "calls": 10,
@@ -507,43 +750,69 @@
           "talkTime": 0.0797
         }
       },
+      "BronwynBotha": {
+        "SURFERS_NA": {
+          "calls": 50,
+          "success": 0,
+          "seller": 0,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 34,
+          "answered": 16,
+          "workTime": 0.8667,
+          "talkTime": 0.0831
+        }
+      },
+      "KayleighDucroq": {
+        "WARRIORS_NA": {
+          "calls": 21,
+          "success": 1,
+          "seller": 1,
+          "rental": 0,
+          "email": 0,
+          "no_answer": 13,
+          "answered": 8,
+          "workTime": 0.6103,
+          "talkTime": 0.0875
+        }
+      },
       "Aqeefah Arendse": {
         "CLIENTHUB": {
-          "calls": 102,
-          "success": 34,
+          "calls": 159,
+          "success": 41,
           "seller": 3,
           "rental": 0,
-          "email": 31,
-          "no_answer": 6,
-          "answered": 96,
-          "workTime": 3.1311,
-          "talkTime": 1.425
+          "email": 38,
+          "no_answer": 12,
+          "answered": 147,
+          "workTime": 5.4542,
+          "talkTime": 1.9436
         }
       },
       "Gio": {
         "CLIENTHUB": {
-          "calls": 126,
-          "success": 28,
-          "seller": 11,
+          "calls": 180,
+          "success": 35,
+          "seller": 13,
           "rental": 1,
-          "email": 16,
-          "no_answer": 3,
-          "answered": 123,
-          "workTime": 3.9636,
-          "talkTime": 1.6094
+          "email": 21,
+          "no_answer": 8,
+          "answered": 172,
+          "workTime": 5.8478,
+          "talkTime": 2.04
         }
       },
       "TrialDay1": {
         "CLIENTHUB": {
-          "calls": 33,
-          "success": 7,
+          "calls": 47,
+          "success": 11,
           "seller": 1,
           "rental": 0,
-          "email": 6,
-          "no_answer": 1,
-          "answered": 32,
-          "workTime": 1.7514,
-          "talkTime": 0.4269
+          "email": 10,
+          "no_answer": 2,
+          "answered": 45,
+          "workTime": 2.4517,
+          "talkTime": 0.6072
         }
       },
       "TrialDay2": {
@@ -561,48 +830,48 @@
       },
       "TrialDay3": {
         "CLIENTHUB": {
-          "calls": 70,
-          "success": 11,
+          "calls": 82,
+          "success": 13,
           "seller": 5,
-          "rental": 5,
-          "email": 1,
-          "no_answer": 1,
-          "answered": 69,
-          "workTime": 2.1186,
-          "talkTime": 0.845
+          "rental": 6,
+          "email": 2,
+          "no_answer": 3,
+          "answered": 79,
+          "workTime": 2.5236,
+          "talkTime": 0.9894
         }
       },
       "ZeakK": {
         "CLIENTHUB": {
-          "calls": 79,
-          "success": 19,
-          "seller": 1,
+          "calls": 124,
+          "success": 24,
+          "seller": 2,
           "rental": 0,
-          "email": 18,
-          "no_answer": 2,
-          "answered": 77,
-          "workTime": 3.6808,
-          "talkTime": 1.0542
+          "email": 22,
+          "no_answer": 4,
+          "answered": 120,
+          "workTime": 7.2808,
+          "talkTime": 1.5389
         }
       },
       "DeclanT": {
         "CONQUERORS_CM": {
-          "calls": 72,
-          "success": 8,
+          "calls": 100,
+          "success": 12,
           "seller": 2,
           "rental": 0,
-          "email": 6,
-          "no_answer": 7,
-          "answered": 65,
-          "workTime": 4.005,
-          "talkTime": 0.6606
+          "email": 10,
+          "no_answer": 8,
+          "answered": 92,
+          "workTime": 6.6881,
+          "talkTime": 0.9261
         }
       }
     }
   },
   {
     "date": "2026-10-01",
-    "generated": "2026-10-02T10:59:27.581665+00:00",
+    "generated": "2026-10-02T21:11:02.178006+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -1367,7 +1636,7 @@
   },
   {
     "date": "2026-09-30",
-    "generated": "2026-10-02T10:59:27.581665+00:00",
+    "generated": "2026-10-02T21:11:02.178006+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -2114,7 +2383,7 @@
   },
   {
     "date": "2026-09-29",
-    "generated": "2026-10-02T10:59:27.581665+00:00",
+    "generated": "2026-10-02T21:11:02.178006+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -2806,7 +3075,7 @@
   },
   {
     "date": "2026-09-28",
-    "generated": "2026-10-02T10:59:27.581665+00:00",
+    "generated": "2026-10-02T21:11:02.178006+00:00",
     "rm": [
       {
         "name": "Gio",
@@ -3127,7 +3396,7 @@
         "name": "ClintP",
         "calls": 19,
         "success": 1,
-        "seller": 0,
+        "seller": 1,
         "rental": 0,
         "email": 0,
         "no_answer": 0,
@@ -3337,7 +3606,7 @@
         "HAWKS_CM": {
           "calls": 19,
           "success": 1,
-          "seller": 0,
+          "seller": 1,
           "rental": 0,
           "email": 0,
           "no_answer": 0,
@@ -3513,21 +3782,21 @@
   },
   {
     "date": "2026-09-27",
-    "generated": "2026-10-02T10:59:27.581665+00:00",
+    "generated": "2026-10-02T21:11:02.178006+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-09-26",
-    "generated": "2026-10-02T10:59:27.581665+00:00",
+    "generated": "2026-10-02T21:11:02.178006+00:00",
     "rm": [],
     "fancy": [],
     "by_agent_campaign": {}
   },
   {
     "date": "2026-09-25",
-    "generated": "2026-10-02T10:59:27.581665+00:00",
+    "generated": "2026-10-02T21:11:02.178006+00:00",
     "rm": [
       {
         "name": "Gio",
