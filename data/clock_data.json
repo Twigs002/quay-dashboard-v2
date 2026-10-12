@@ -1,5 +1,27 @@
 {
-  "agents": [],
+  "agents": [
+    {
+      "hours": 0.529,
+      "id": "zivana-kriel",
+      "name": "Zivana Kriel",
+      "name_normalised": "Zivana Kriel",
+      "sessions": 1
+    },
+    {
+      "hours": 6.75,
+      "id": "declan",
+      "name": "Declan Ryder Tyler",
+      "name_normalised": "Declan Ryder Tyler",
+      "sessions": 4
+    },
+    {
+      "hours": 5.258,
+      "id": "tamzin-jacobs",
+      "name": "Tamzin Jacobs",
+      "name_normalised": "Tamzin Jacobs",
+      "sessions": 1
+    }
+  ],
   "by_week": {
     "2026-04-20": [
       {
@@ -6335,7 +6357,7 @@
         "sessions": 5
       },
       {
-        "hours": 41.178,
+        "hours": 32.187,
         "id": "craig-carroll",
         "name": "Craig Carroll",
         "name_normalised": "Craig Carroll",
@@ -6412,7 +6434,7 @@
         "sessions": 5
       },
       {
-        "hours": 37.576,
+        "hours": 28.664,
         "id": "zeak-klein",
         "name": "Zeak Klein",
         "name_normalised": "Zeak Klein",
@@ -6512,7 +6534,7 @@
     ],
     "2026-10-05": [
       {
-        "hours": 47.893,
+        "hours": 45.311,
         "id": "craig-carroll",
         "name": "Craig Carroll",
         "name_normalised": "Craig Carroll",
@@ -6533,7 +6555,7 @@
         "sessions": 9
       },
       {
-        "hours": 41.327,
+        "hours": 39.784,
         "id": "ntokoto-xitiviso",
         "name": "Ntokoto Xitiviso",
         "name_normalised": "Ntokoto Xitiviso",
@@ -6547,7 +6569,7 @@
         "sessions": 5
       },
       {
-        "hours": 45.983,
+        "hours": 41.609,
         "id": "kirsten",
         "name": "Kirsten Lauder-Simelane",
         "name_normalised": "Kirsten Lauder-Simelane",
@@ -6589,7 +6611,7 @@
         "sessions": 5
       },
       {
-        "hours": 46.767,
+        "hours": 41.551,
         "id": "zivana-kriel",
         "name": "Zivana Kriel",
         "name_normalised": "Zivana Kriel",
@@ -6770,9 +6792,32 @@
         "name_normalised": "Qhayiya Dayimani",
         "sessions": 4
       }
+    ],
+    "2026-10-12": [
+      {
+        "hours": 0.529,
+        "id": "zivana-kriel",
+        "name": "Zivana Kriel",
+        "name_normalised": "Zivana Kriel",
+        "sessions": 1
+      },
+      {
+        "hours": 6.75,
+        "id": "declan",
+        "name": "Declan Ryder Tyler",
+        "name_normalised": "Declan Ryder Tyler",
+        "sessions": 4
+      },
+      {
+        "hours": 5.258,
+        "id": "tamzin-jacobs",
+        "name": "Tamzin Jacobs",
+        "name_normalised": "Tamzin Jacobs",
+        "sessions": 1
+      }
     ]
   },
-  "generated_at": "2026-10-12T06:31:29.809510+00:00",
+  "generated_at": "2026-10-12T13:15:41.162454+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -6833,11 +6878,11 @@
           "sessions": 114
         },
         {
-          "hours": 920.091,
+          "hours": 926.841,
           "id": "declan",
           "name": "Declan Ryder Tyler",
           "name_normalised": "Declan Ryder Tyler",
-          "sessions": 140
+          "sessions": 144
         },
         {
           "hours": 845.109,
@@ -6847,11 +6892,11 @@
           "sessions": 101
         },
         {
-          "hours": 894.054,
+          "hours": 899.312,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
-          "sessions": 136
+          "sessions": 137
         },
         {
           "hours": 470.906,
@@ -6910,7 +6955,7 @@
           "sessions": 38
         },
         {
-          "hours": 870.832,
+          "hours": 859.259,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
@@ -7057,11 +7102,11 @@
           "sessions": 26
         },
         {
-          "hours": 820.784,
+          "hours": 816.097,
           "id": "zivana-kriel",
           "name": "Zivana Kriel",
           "name_normalised": "Zivana Kriel",
-          "sessions": 120
+          "sessions": 121
         },
         {
           "hours": 491.164,
@@ -7176,7 +7221,7 @@
           "sessions": 75
         },
         {
-          "hours": 513.197,
+          "hours": 508.823,
           "id": "kirsten",
           "name": "Kirsten Lauder-Simelane",
           "name_normalised": "Kirsten Lauder-Simelane",
@@ -7204,7 +7249,7 @@
           "sessions": 28
         },
         {
-          "hours": 162.773,
+          "hours": 153.861,
           "id": "zeak-klein",
           "name": "Zeak Klein",
           "name_normalised": "Zeak Klein",
@@ -7218,7 +7263,7 @@
           "sessions": 12
         },
         {
-          "hours": 41.327,
+          "hours": 39.784,
           "id": "ntokoto-xitiviso",
           "name": "Ntokoto Xitiviso",
           "name_normalised": "Ntokoto Xitiviso",
@@ -7231,21 +7276,21 @@
     "billing-period": {
       "agents": [
         {
-          "hours": 100.735,
+          "hours": 107.485,
           "id": "declan",
           "name": "Declan Ryder Tyler",
           "name_normalised": "Declan Ryder Tyler",
-          "sessions": 18
+          "sessions": 22
         },
         {
-          "hours": 109.093,
+          "hours": 104.406,
           "id": "zivana-kriel",
           "name": "Zivana Kriel",
           "name_normalised": "Zivana Kriel",
-          "sessions": 19
+          "sessions": 20
         },
         {
-          "hours": 118.71,
+          "hours": 114.336,
           "id": "kirsten",
           "name": "Kirsten Lauder-Simelane",
           "name_normalised": "Kirsten Lauder-Simelane",
@@ -7294,7 +7339,7 @@
           "sessions": 14
         },
         {
-          "hours": 116.136,
+          "hours": 104.563,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
@@ -7308,7 +7353,7 @@
           "sessions": 9
         },
         {
-          "hours": 118.4,
+          "hours": 109.488,
           "id": "zeak-klein",
           "name": "Zeak Klein",
           "name_normalised": "Zeak Klein",
@@ -7378,11 +7423,11 @@
           "sessions": 11
         },
         {
-          "hours": 121.008,
+          "hours": 126.266,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
-          "sessions": 22
+          "sessions": 23
         },
         {
           "hours": 115.86,
@@ -7504,7 +7549,7 @@
           "sessions": 12
         },
         {
-          "hours": 41.327,
+          "hours": 39.784,
           "id": "ntokoto-xitiviso",
           "name": "Ntokoto Xitiviso",
           "name_normalised": "Ntokoto Xitiviso",
@@ -7517,11 +7562,11 @@
     "last-90": {
       "agents": [
         {
-          "hours": 428.911,
+          "hours": 434.169,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
-          "sessions": 81
+          "sessions": 82
         },
         {
           "hours": 439.204,
@@ -7566,7 +7611,7 @@
           "sessions": 54
         },
         {
-          "hours": 497.164,
+          "hours": 492.79,
           "id": "kirsten",
           "name": "Kirsten Lauder-Simelane",
           "name_normalised": "Kirsten Lauder-Simelane",
@@ -7587,7 +7632,7 @@
           "sessions": 59
         },
         {
-          "hours": 431.026,
+          "hours": 419.453,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
@@ -7650,11 +7695,11 @@
           "sessions": 56
         },
         {
-          "hours": 446.677,
+          "hours": 441.99,
           "id": "zivana-kriel",
           "name": "Zivana Kriel",
           "name_normalised": "Zivana Kriel",
-          "sessions": 72
+          "sessions": 73
         },
         {
           "hours": 439.067,
@@ -7755,11 +7800,11 @@
           "sessions": 58
         },
         {
-          "hours": 479.35,
+          "hours": 486.1,
           "id": "declan",
           "name": "Declan Ryder Tyler",
           "name_normalised": "Declan Ryder Tyler",
-          "sessions": 84
+          "sessions": 88
         },
         {
           "hours": 181.363,
@@ -7804,7 +7849,7 @@
           "sessions": 28
         },
         {
-          "hours": 162.773,
+          "hours": 153.861,
           "id": "zeak-klein",
           "name": "Zeak Klein",
           "name_normalised": "Zeak Klein",
@@ -7818,7 +7863,7 @@
           "sessions": 12
         },
         {
-          "hours": 41.327,
+          "hours": 39.784,
           "id": "ntokoto-xitiviso",
           "name": "Ntokoto Xitiviso",
           "name_normalised": "Ntokoto Xitiviso",
@@ -7831,7 +7876,7 @@
     "last-week": {
       "agents": [
         {
-          "hours": 47.893,
+          "hours": 45.311,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
@@ -7852,7 +7897,7 @@
           "sessions": 9
         },
         {
-          "hours": 41.327,
+          "hours": 39.784,
           "id": "ntokoto-xitiviso",
           "name": "Ntokoto Xitiviso",
           "name_normalised": "Ntokoto Xitiviso",
@@ -7866,7 +7911,7 @@
           "sessions": 5
         },
         {
-          "hours": 45.983,
+          "hours": 41.609,
           "id": "kirsten",
           "name": "Kirsten Lauder-Simelane",
           "name_normalised": "Kirsten Lauder-Simelane",
@@ -7908,7 +7953,7 @@
           "sessions": 5
         },
         {
-          "hours": 46.767,
+          "hours": 41.551,
           "id": "zivana-kriel",
           "name": "Zivana Kriel",
           "name_normalised": "Zivana Kriel",
@@ -8096,21 +8141,21 @@
     "this-month": {
       "agents": [
         {
-          "hours": 100.735,
+          "hours": 107.485,
           "id": "declan",
           "name": "Declan Ryder Tyler",
           "name_normalised": "Declan Ryder Tyler",
-          "sessions": 18
+          "sessions": 22
         },
         {
-          "hours": 109.093,
+          "hours": 104.406,
           "id": "zivana-kriel",
           "name": "Zivana Kriel",
           "name_normalised": "Zivana Kriel",
-          "sessions": 19
+          "sessions": 20
         },
         {
-          "hours": 118.71,
+          "hours": 114.336,
           "id": "kirsten",
           "name": "Kirsten Lauder-Simelane",
           "name_normalised": "Kirsten Lauder-Simelane",
@@ -8159,7 +8204,7 @@
           "sessions": 14
         },
         {
-          "hours": 116.136,
+          "hours": 104.563,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
@@ -8173,7 +8218,7 @@
           "sessions": 9
         },
         {
-          "hours": 118.4,
+          "hours": 109.488,
           "id": "zeak-klein",
           "name": "Zeak Klein",
           "name_normalised": "Zeak Klein",
@@ -8243,11 +8288,11 @@
           "sessions": 11
         },
         {
-          "hours": 121.008,
+          "hours": 126.266,
           "id": "tamzin-jacobs",
           "name": "Tamzin Jacobs",
           "name_normalised": "Tamzin Jacobs",
-          "sessions": 22
+          "sessions": 23
         },
         {
           "hours": 115.86,
@@ -8369,7 +8414,7 @@
           "sessions": 12
         },
         {
-          "hours": 41.327,
+          "hours": 39.784,
           "id": "ntokoto-xitiviso",
           "name": "Ntokoto Xitiviso",
           "name_normalised": "Ntokoto Xitiviso",
@@ -8380,7 +8425,29 @@
       "to": "2026-10-18T23:59:59+00:00"
     },
     "this-week": {
-      "agents": [],
+      "agents": [
+        {
+          "hours": 0.529,
+          "id": "zivana-kriel",
+          "name": "Zivana Kriel",
+          "name_normalised": "Zivana Kriel",
+          "sessions": 1
+        },
+        {
+          "hours": 6.75,
+          "id": "declan",
+          "name": "Declan Ryder Tyler",
+          "name_normalised": "Declan Ryder Tyler",
+          "sessions": 4
+        },
+        {
+          "hours": 5.258,
+          "id": "tamzin-jacobs",
+          "name": "Tamzin Jacobs",
+          "name_normalised": "Tamzin Jacobs",
+          "sessions": 1
+        }
+      ],
       "from": "2026-10-12T00:00:00+00:00",
       "to": "2026-10-18T23:59:59+00:00"
     }
