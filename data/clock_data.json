@@ -8,11 +8,11 @@
       "sessions": 3
     },
     {
-      "hours": 18.057,
+      "hours": 18.734,
       "id": "declan",
       "name": "Declan Ryder Tyler",
       "name_normalised": "Declan Ryder Tyler",
-      "sessions": 11
+      "sessions": 13
     },
     {
       "hours": 18.019,
@@ -50,7 +50,7 @@
       "sessions": 2
     },
     {
-      "hours": 18.108,
+      "hours": 18.005,
       "id": "anneeqa-williams",
       "name": "Anneeqa Williams",
       "name_normalised": "Anneeqa Williams",
@@ -99,7 +99,7 @@
       "sessions": 2
     },
     {
-      "hours": 9.579,
+      "hours": 19.062,
       "id": "matthew-hallett",
       "name": "Matthew Hallett",
       "name_normalised": "Matthew Hallett",
@@ -239,6 +239,13 @@
       "sessions": 2
     },
     {
+      "hours": 9.0,
+      "id": "craig-carroll",
+      "name": "Craig Carroll",
+      "name_normalised": "Craig Carroll",
+      "sessions": 1
+    },
+    {
       "hours": 6.941,
       "id": "aqeefah-arendse",
       "name": "Aqeefah Arendse",
@@ -250,13 +257,6 @@
       "id": "jason-hendricks",
       "name": "Jason Hendricks",
       "name_normalised": "Jason Hendricks",
-      "sessions": 1
-    },
-    {
-      "hours": 10.15,
-      "id": "craig-carroll",
-      "name": "Craig Carroll",
-      "name_normalised": "Craig Carroll",
       "sessions": 1
     }
   ],
@@ -7010,7 +7010,7 @@
         "sessions": 5
       },
       {
-        "hours": 36.059,
+        "hours": 27.06,
         "id": "anneeqa-williams",
         "name": "Anneeqa Williams",
         "name_normalised": "Anneeqa Williams",
@@ -7040,11 +7040,11 @@
         "sessions": 3
       },
       {
-        "hours": 18.057,
+        "hours": 18.734,
         "id": "declan",
         "name": "Declan Ryder Tyler",
         "name_normalised": "Declan Ryder Tyler",
-        "sessions": 11
+        "sessions": 13
       },
       {
         "hours": 18.019,
@@ -7082,7 +7082,7 @@
         "sessions": 2
       },
       {
-        "hours": 18.108,
+        "hours": 18.005,
         "id": "anneeqa-williams",
         "name": "Anneeqa Williams",
         "name_normalised": "Anneeqa Williams",
@@ -7131,7 +7131,7 @@
         "sessions": 2
       },
       {
-        "hours": 9.579,
+        "hours": 19.062,
         "id": "matthew-hallett",
         "name": "Matthew Hallett",
         "name_normalised": "Matthew Hallett",
@@ -7271,6 +7271,13 @@
         "sessions": 2
       },
       {
+        "hours": 9.0,
+        "id": "craig-carroll",
+        "name": "Craig Carroll",
+        "name_normalised": "Craig Carroll",
+        "sessions": 1
+      },
+      {
         "hours": 6.941,
         "id": "aqeefah-arendse",
         "name": "Aqeefah Arendse",
@@ -7283,17 +7290,10 @@
         "name": "Jason Hendricks",
         "name_normalised": "Jason Hendricks",
         "sessions": 1
-      },
-      {
-        "hours": 10.15,
-        "id": "craig-carroll",
-        "name": "Craig Carroll",
-        "name_normalised": "Craig Carroll",
-        "sessions": 1
       }
     ]
   },
-  "generated_at": "2026-10-14T05:26:43.162952+00:00",
+  "generated_at": "2026-10-14T10:20:07.153521+00:00",
   "periods": {
     "all-time": {
       "agents": [
@@ -7319,7 +7319,7 @@
           "sessions": 4
         },
         {
-          "hours": 938.93,
+          "hours": 929.828,
           "id": "anneeqa-williams",
           "name": "Anneeqa Williams",
           "name_normalised": "Anneeqa Williams",
@@ -7354,11 +7354,11 @@
           "sessions": 116
         },
         {
-          "hours": 938.148,
+          "hours": 938.825,
           "id": "declan",
           "name": "Declan Ryder Tyler",
           "name_normalised": "Declan Ryder Tyler",
-          "sessions": 151
+          "sessions": 153
         },
         {
           "hours": 845.109,
@@ -7431,7 +7431,7 @@
           "sessions": 38
         },
         {
-          "hours": 891.465,
+          "hours": 890.315,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
@@ -7592,7 +7592,7 @@
           "sessions": 62
         },
         {
-          "hours": 877.086,
+          "hours": 886.569,
           "id": "matthew-hallett",
           "name": "Matthew Hallett",
           "name_normalised": "Matthew Hallett",
@@ -7752,11 +7752,11 @@
     "billing-period": {
       "agents": [
         {
-          "hours": 118.792,
+          "hours": 119.469,
           "id": "declan",
           "name": "Declan Ryder Tyler",
           "name_normalised": "Declan Ryder Tyler",
-          "sessions": 29
+          "sessions": 31
         },
         {
           "hours": 121.464,
@@ -7801,7 +7801,7 @@
           "sessions": 15
         },
         {
-          "hours": 140.055,
+          "hours": 149.538,
           "id": "matthew-hallett",
           "name": "Matthew Hallett",
           "name_normalised": "Matthew Hallett",
@@ -7815,7 +7815,7 @@
           "sessions": 16
         },
         {
-          "hours": 136.769,
+          "hours": 135.619,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
@@ -7864,7 +7864,7 @@
           "sessions": 15
         },
         {
-          "hours": 131.926,
+          "hours": 122.824,
           "id": "anneeqa-williams",
           "name": "Anneeqa Williams",
           "name_normalised": "Anneeqa Williams",
@@ -8045,18 +8045,18 @@
           "sessions": 23
         },
         {
-          "hours": 484.777,
+          "hours": 475.675,
           "id": "anneeqa-williams",
           "name": "Anneeqa Williams",
           "name_normalised": "Anneeqa Williams",
           "sessions": 76
         },
         {
-          "hours": 489.041,
+          "hours": 489.718,
           "id": "declan",
           "name": "Declan Ryder Tyler",
           "name_normalised": "Declan Ryder Tyler",
-          "sessions": 93
+          "sessions": 95
         },
         {
           "hours": 441.808,
@@ -8192,7 +8192,7 @@
           "sessions": 59
         },
         {
-          "hours": 433.989,
+          "hours": 432.839,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
@@ -8241,7 +8241,7 @@
           "sessions": 60
         },
         {
-          "hours": 545.978,
+          "hours": 555.461,
           "id": "matthew-hallett",
           "name": "Matthew Hallett",
           "name_normalised": "Matthew Hallett",
@@ -8590,7 +8590,7 @@
           "sessions": 5
         },
         {
-          "hours": 36.059,
+          "hours": 27.06,
           "id": "anneeqa-williams",
           "name": "Anneeqa Williams",
           "name_normalised": "Anneeqa Williams",
@@ -8617,11 +8617,11 @@
     "this-month": {
       "agents": [
         {
-          "hours": 118.792,
+          "hours": 119.469,
           "id": "declan",
           "name": "Declan Ryder Tyler",
           "name_normalised": "Declan Ryder Tyler",
-          "sessions": 29
+          "sessions": 31
         },
         {
           "hours": 121.464,
@@ -8666,7 +8666,7 @@
           "sessions": 15
         },
         {
-          "hours": 140.055,
+          "hours": 149.538,
           "id": "matthew-hallett",
           "name": "Matthew Hallett",
           "name_normalised": "Matthew Hallett",
@@ -8680,7 +8680,7 @@
           "sessions": 16
         },
         {
-          "hours": 136.769,
+          "hours": 135.619,
           "id": "craig-carroll",
           "name": "Craig Carroll",
           "name_normalised": "Craig Carroll",
@@ -8729,7 +8729,7 @@
           "sessions": 15
         },
         {
-          "hours": 131.926,
+          "hours": 122.824,
           "id": "anneeqa-williams",
           "name": "Anneeqa Williams",
           "name_normalised": "Anneeqa Williams",
@@ -8910,11 +8910,11 @@
           "sessions": 3
         },
         {
-          "hours": 18.057,
+          "hours": 18.734,
           "id": "declan",
           "name": "Declan Ryder Tyler",
           "name_normalised": "Declan Ryder Tyler",
-          "sessions": 11
+          "sessions": 13
         },
         {
           "hours": 18.019,
@@ -8952,7 +8952,7 @@
           "sessions": 2
         },
         {
-          "hours": 18.108,
+          "hours": 18.005,
           "id": "anneeqa-williams",
           "name": "Anneeqa Williams",
           "name_normalised": "Anneeqa Williams",
@@ -9001,7 +9001,7 @@
           "sessions": 2
         },
         {
-          "hours": 9.579,
+          "hours": 19.062,
           "id": "matthew-hallett",
           "name": "Matthew Hallett",
           "name_normalised": "Matthew Hallett",
@@ -9141,6 +9141,13 @@
           "sessions": 2
         },
         {
+          "hours": 9.0,
+          "id": "craig-carroll",
+          "name": "Craig Carroll",
+          "name_normalised": "Craig Carroll",
+          "sessions": 1
+        },
+        {
           "hours": 6.941,
           "id": "aqeefah-arendse",
           "name": "Aqeefah Arendse",
@@ -9152,13 +9159,6 @@
           "id": "jason-hendricks",
           "name": "Jason Hendricks",
           "name_normalised": "Jason Hendricks",
-          "sessions": 1
-        },
-        {
-          "hours": 10.15,
-          "id": "craig-carroll",
-          "name": "Craig Carroll",
-          "name_normalised": "Craig Carroll",
           "sessions": 1
         }
       ],
