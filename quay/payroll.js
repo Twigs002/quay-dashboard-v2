@@ -80,10 +80,12 @@
     // for team names). Added: ASB Calling, Clienthub, Engine Room, Rentals
     // (were silently dropping their hours from By-Division). Removed:
     // Rebels (archived in clock roster — real payroll rows never land
-    // against it). TODO: move roster to a shared Supabase `divisions`
-    // table so this drift can't happen a fourth time.
+    // against it). 2026-10-16: added ASB/SS/WSB Injection (exist in the clock
+    // CLOCK_CAMPAIGNS_ALL but were showing as "Not in master list"). TODO:
+    // move roster to a shared Supabase `divisions` table so this drift can't
+    // happen a fifth time.
     CANONICAL_TEAMS: [
-      'Amigos', 'ASB Calling', 'Assassins', 'Avengers', 'Babes', 'Ballers',
+      'Amigos', 'ASB Calling', 'ASB Injection', 'Assassins', 'Avengers', 'Babes', 'Ballers',
       'Bergscape', 'Betties', 'Blitz', 'Boets', 'Bulls', 'Cavaliers',
       'Chargers', 'City Sunsets', 'Clienthub', 'Conquerors', 'Dealers',
       'Dealmakers', 'Dixies', 'Dolphins', 'Donkeys', 'Dragons', 'Dutchmen',
@@ -93,9 +95,9 @@
       'Jaguars', 'Knights', 'Koeksisters', 'Komorants', 'Lions', 'Llamas',
       'Musketeers', 'Panthers', 'Pirates', 'Power Rangers', 'Prom Queens',
       'Proteas', 'Raccoons', 'Rentals', 'Rockets', 'Samurais', 'Slayers',
-      'Soccer Moms', 'Spartans', 'Surfers', 'Swesties', 'Targaryens',
+      'Soccer Moms', 'Spartans', 'SS Injection', 'Surfers', 'Swesties', 'Targaryens',
       'Tigers', 'TNT', 'Tornadoes', 'Vikings', 'Vipers', 'Warriors',
-      'Weasels', 'Wizards', 'Wolves', 'Wombats',
+      'Weasels', 'Wizards', 'Wolves', 'Wombats', 'WSB Injection',
     ],
 
     // Spec §3.2 — typo / variant exact-match merges. Applied AFTER the
@@ -322,6 +324,12 @@
 
   function titleCaseWord(w) {
     if (!w) return ''
+    // Preserve short all-caps acronyms (2-4 letters) so team names like
+    // "ASB Injection", "SS Injection", "WSB Injection" and "LN" keep their
+    // casing instead of becoming "Asb"/"Ss"/"Wsb". Only fires when the whole
+    // token is already uppercase letters; mixed/lower-case tokens still get
+    // title-cased and are corrected downstream by the canonical-case map.
+    if (/^[A-Z]{2,4}$/.test(w)) return w
     return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
   }
 
@@ -889,6 +897,15 @@
     check('7.14f fixed, no earnings → full salary', chargeBasis(null, 12000, 'fixed'), 12000)
     check('7.14g no salary → raw earnings', chargeBasis(13700, null, 'prorata'), 13700)
     check('7.14h prorata, no earnings → null', chargeBasis(null, 12000, 'prorata'), null)
+
+    // 7.15 — short all-caps acronyms survive title-casing (the ASB/SS/WSB
+    // Injection teams). Without the titleCaseWord fix these became
+    // 'Asb Injection' etc. and dropped out of the canonical roster.
+    check('7.15a ASB Injection', parseTeams('ASB Injection'), ['ASB Injection'])
+    check('7.15b SS Injection', parseTeams('SS Injection'), ['SS Injection'])
+    check('7.15c WSB Injection', parseTeams('WSB Injection'), ['WSB Injection'])
+    check('7.15d lower-case asb injection → canonical', parseTeams('asb injection'), ['ASB Injection'])
+    check('7.15e ordinary word still title-cases', parseTeams('ballers'), ['Ballers'])
 
     const passed = results.filter(r => r.pass).length
     const failed = results.filter(r => !r.pass)

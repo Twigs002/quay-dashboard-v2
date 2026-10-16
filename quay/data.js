@@ -1623,7 +1623,7 @@ window.QUAY_READY = (async function () {
   // fetch errors out, or when RLS blocks an unauthenticated boot. Without
   // it a network blip would empty the LN Stats team picker.
   const LN_TEAMS_FALLBACK = [
-    'ASB Calling', 'Amigos', 'Assassins', 'Avengers', 'Babes', 'Ballers',
+    'ASB Calling', 'ASB Injection', 'Amigos', 'Assassins', 'Avengers', 'Babes', 'Ballers',
     'Bergscape', 'Betties', 'Blitz', 'Boets', 'Bulls', 'Cavaliers',
     'Chargers', 'City Sunsets', 'Clienthub', 'Conquerors', 'Dealers',
     'Dealmakers', 'Dixies', 'Dolphins', 'Donkeys', 'Dragons', 'Dutchmen',
@@ -1633,9 +1633,9 @@ window.QUAY_READY = (async function () {
     'Jaguars', 'Knights', 'Koeksisters', 'Komorants', 'Lions', 'Llamas',
     'Musketeers', 'Panthers', 'Pirates', 'Power Rangers', 'Prom Queens',
     'Proteas', 'Raccoons', 'Rentals', 'Rockets', 'Samurais', 'Slayers',
-    'Soccer Moms', 'Spartans', 'Surfers', 'Swesties', 'Targaryens',
+    'Soccer Moms', 'Spartans', 'SS Injection', 'Surfers', 'Swesties', 'Targaryens',
     'Tigers', 'TNT', 'Tornadoes', 'Vikings', 'Vipers', 'Warriors',
-    'Weasels', 'Wizards', 'Wolves', 'Wombats',
+    'Weasels', 'Wizards', 'Wolves', 'Wombats', 'WSB Injection',
   ];
 
   // Loads the full ln_teams roster split into active + archived. The active

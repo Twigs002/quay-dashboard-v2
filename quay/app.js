@@ -2082,7 +2082,9 @@
         const meta = EMETA.get(agent) || {};
         const total = ETOT.get(agent) || 0;
         const rate = meta.hourlyRate;
-        const pay = rate != null ? total * rate : null;
+        // Charge basis = fixed salary, or pro-rata earnings capped at salary
+        // (matches the on-screen view + other xlsx sheets), not raw hrs*rate.
+        const pay = window.PAYROLL.chargeBasis(rate != null ? total * rate : null, meta.salary, meta.salaryType);
         paRows.push([agent, meta.salaryType === 'fixed' ? 'Fixed' : 'Pro-rata', PR.decimalToHHMM(total), round2(total), pay == null ? '' : round2(pay)]);
       });
 
@@ -2463,7 +2465,8 @@
           const total = ETOT.get(agent) || 0;
           const meta = EMETA.get(agent) || {};
           const rate = meta.hourlyRate;
-          const pay = rate != null ? total * rate : null;
+          // Charge basis (fixed salary / pro-rata capped at salary), not raw.
+          const pay = window.PAYROLL.chargeBasis(rate != null ? total * rate : null, meta.salary, meta.salaryType);
           gHrs += total;
           if (pay != null) gPay += pay;
           const parts = (agent || '').split(/\s+/);
@@ -2617,7 +2620,10 @@
           const meta = EMETA.get(emp);
           const rate = meta ? meta.hourlyRate : null;
           const total = ETOT.get(emp) || 0;
-          const payroll = rate != null ? total * rate : null;
+          // Charge basis (fixed salary / pro-rata capped at salary), not raw;
+          // meta can be null here, so guard the salary/type reads.
+          const payroll = window.PAYROLL.chargeBasis(rate != null ? total * rate : null,
+                              meta ? meta.salary : null, meta ? meta.salaryType : null);
           const sdl = payroll != null ? payroll * SDL_RATE : null;
           const pct = total > 0 ? (hrs / total) : 0;
           // (PAYROLL × PCT) / 2 + (SDL × PCT) — SDL is NOT halved.
