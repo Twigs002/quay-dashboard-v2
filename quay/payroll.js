@@ -682,6 +682,11 @@
       const agentName = nameById.get(staffId) || staffId
       rows.sort((a, b) => a.ts < b.ts ? -1 : a.ts > b.ts ? 1 : 0)
       let openIn = null
+      // End (ms) of the most recent shift we've already PAID for this staffer.
+      // Used to reject a duplicate/legacy OUT whose reconstructed window overlaps
+      // an already-paid shift, so a pre-trigger double-close in the table can't
+      // be billed twice.
+      let lastPaidEndMs = -Infinity
       for (const ev of rows) {
         if (ev.dir === 'in') {
           if (openIn) {
@@ -696,14 +701,20 @@
           if (!openIn) {
             console.warn('[payroll] orphaned out event (no matching in):',
               staffId, ev.ts)
-            // Still flag for correction, AND pay it off the cached duration_hrs
-            // so the hours aren't silently dropped (the clock admin falls back
-            // the same way, admin.js ~1058). Safe now that the quay-clock
-            // double-out trigger prevents race-created duplicate OUTs. The
+            // Always flag for correction. Pay it off the cached duration_hrs so
+            // genuine missing-IN hours aren't silently dropped (matches the clock
+            // admin fallback, admin.js ~1058) -- BUT only when its reconstructed
+            // window does NOT overlap a shift we've already paid. That overlap
+            // guard is what stops a legacy/duplicate OUT (a pre-trigger
+            // double-close already in the events table) from being billed a
+            // second time: fetchShiftsForPeriod reprocesses ALL historical rows,
+            // and the clock-side double-out trigger only blocks NEW ones. The
             // clock-in is reconstructed from the duration purely for display.
             anomalies.push({ agentId: staffId, agentName, kind: 'no-clock-in', at: ev.ts })
             const dh = Number(ev.duration_hrs)
-            if (!isNaN(dh) && dh > 0) {
+            const outMs = new Date(ev.ts).getTime()
+            const startMs = outMs - dh * 3.6e6
+            if (!isNaN(dh) && dh > 0 && startMs >= lastPaidEndMs) {
               shifts.push({
                 agentId: staffId,
                 agentName: nameById.get(staffId) || staffId,
@@ -712,11 +723,12 @@
                 hourlyRate: rateById.get(staffId),
                 salary: salaryById.get(staffId),
                 salaryType: salaryTypeById.get(staffId) || 'prorata',
-                clockInAt: new Date(new Date(ev.ts).getTime() - dh * 3.6e6).toISOString(),
+                clockInAt: new Date(startMs).toISOString(),
                 clockOutAt: ev.ts,
                 shiftHours: dh,
                 note: ev.note || '',
               })
+              lastPaidEndMs = Math.max(lastPaidEndMs, outMs)
             }
             continue
           }
@@ -746,6 +758,7 @@
             shiftHours: hrs,
             note: note,
           })
+          lastPaidEndMs = Math.max(lastPaidEndMs, new Date(ev.ts).getTime())
           openIn = null
         }
       }
