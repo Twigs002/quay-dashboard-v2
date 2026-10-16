@@ -1344,9 +1344,12 @@ window.QUAY_READY = (async function () {
       // fetcher last wrote. On Mondays the fetcher returns last week's full
       // Mon-Sun until the morning cron runs.
       const sowIso = (() => {
-        const d = new Date();
-        const day = (d.getDay() + 6) % 7; // 0=Mon..6=Sun
-        d.setHours(0,0,0,0); d.setDate(d.getDate() - day);
+        // SAST-anchored: today's date in Africa/Johannesburg, then step
+        // back to Monday in UTC maths so toISOString() cannot shift the day.
+        const ymd = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' });
+        const d = new Date(ymd + 'T00:00:00Z');
+        const day = (d.getUTCDay() + 6) % 7; // 0=Mon..6=Sun
+        d.setUTCDate(d.getUTCDate() - day);
         return d.toISOString().slice(0, 10);
       })();
       const dataWeekStart = (weeks[0] && weeks[0].weekStart) || null;
