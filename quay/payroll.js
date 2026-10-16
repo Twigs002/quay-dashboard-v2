@@ -592,7 +592,7 @@
       // The `id` primary key is unique, so appending it makes the order total
       // and the page cut fully deterministic.
       const { data, error } = await window.sb.from('events')
-        .select('id, staff_id, ts, dir, note')
+        .select('id, staff_id, ts, dir, note, duration_hrs')
         .gte('ts', fromISO).lte('ts', toISO)
         .order('ts', { ascending: true })
         .order('staff_id', { ascending: true })
@@ -696,7 +696,28 @@
           if (!openIn) {
             console.warn('[payroll] orphaned out event (no matching in):',
               staffId, ev.ts)
+            // Still flag for correction, AND pay it off the cached duration_hrs
+            // so the hours aren't silently dropped (the clock admin falls back
+            // the same way, admin.js ~1058). Safe now that the quay-clock
+            // double-out trigger prevents race-created duplicate OUTs. The
+            // clock-in is reconstructed from the duration purely for display.
             anomalies.push({ agentId: staffId, agentName, kind: 'no-clock-in', at: ev.ts })
+            const dh = Number(ev.duration_hrs)
+            if (!isNaN(dh) && dh > 0) {
+              shifts.push({
+                agentId: staffId,
+                agentName: nameById.get(staffId) || staffId,
+                designation: designationById.get(staffId) || '',
+                division: divisionById.get(staffId) || '',
+                hourlyRate: rateById.get(staffId),
+                salary: salaryById.get(staffId),
+                salaryType: salaryTypeById.get(staffId) || 'prorata',
+                clockInAt: new Date(new Date(ev.ts).getTime() - dh * 3.6e6).toISOString(),
+                clockOutAt: ev.ts,
+                shiftHours: dh,
+                note: ev.note || '',
+              })
+            }
             continue
           }
           const hrs = hoursDecimal(openIn.ts, ev.ts)
