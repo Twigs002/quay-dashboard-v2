@@ -2008,7 +2008,7 @@
     if (_xlsxLibPromise) return _xlsxLibPromise;
     _xlsxLibPromise = new Promise((res, rej) => {
       const sc = document.createElement('script');
-      sc.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      sc.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
       sc.onload = () => window.XLSX ? res(window.XLSX) : rej(new Error('Spreadsheet library loaded but XLSX missing'));
       sc.onerror = () => { _xlsxLibPromise = null; rej(new Error('Could not load the spreadsheet library (offline?)')); };
       document.head.appendChild(sc);
