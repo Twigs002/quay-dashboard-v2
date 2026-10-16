@@ -79,7 +79,7 @@ MIN_TEAMS = 40
 # A live pull from public.ln_teams is preferred (see load_roster); this is the
 # fallback so the refresh never blocks on a Supabase blip.
 ROSTER_FALLBACK = [
-    "ASB Calling", "Amigos", "Assassins", "Avengers", "Babes", "Ballers",
+    "ASB Calling", "ASB Injection", "Amigos", "Assassins", "Avengers", "Babes", "Ballers",
     "Bergscape", "Betties", "Blitz", "Boets", "Bulls", "Cavaliers",
     "Chargers", "City Sunsets", "Clienthub", "Conquerors", "Dealers",
     "Dealmakers", "Dixies", "Dolphins", "Donkeys", "Dragons", "Dutchmen",
@@ -89,9 +89,9 @@ ROSTER_FALLBACK = [
     "Jaguars", "Knights", "Koeksisters", "Komorants", "Lions", "Llamas",
     "Musketeers", "Panthers", "Pirates", "Power Rangers", "Prom Queens",
     "Proteas", "Raccoons", "Rentals", "Rockets", "Samurais", "Slayers",
-    "Soccer Moms", "Spartans", "Surfers", "Swesties", "Targaryens",
+    "Soccer Moms", "Spartans", "SS Injection", "Surfers", "Swesties", "Targaryens",
     "Tigers", "TNT", "Tornadoes", "Vikings", "Vipers", "Warriors",
-    "Weasels", "Wizards", "Wolves", "Wombats",
+    "Weasels", "Wizards", "Wolves", "Wombats", "WSB Injection",
 ]
 
 

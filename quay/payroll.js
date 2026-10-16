@@ -80,10 +80,12 @@
     // for team names). Added: ASB Calling, Clienthub, Engine Room, Rentals
     // (were silently dropping their hours from By-Division). Removed:
     // Rebels (archived in clock roster — real payroll rows never land
-    // against it). TODO: move roster to a shared Supabase `divisions`
-    // table so this drift can't happen a fourth time.
+    // against it). 2026-10-16: added ASB/SS/WSB Injection (exist in the clock
+    // CLOCK_CAMPAIGNS_ALL but were showing as "Not in master list"). TODO:
+    // move roster to a shared Supabase `divisions` table so this drift can't
+    // happen a fifth time.
     CANONICAL_TEAMS: [
-      'Amigos', 'ASB Calling', 'Assassins', 'Avengers', 'Babes', 'Ballers',
+      'Amigos', 'ASB Calling', 'ASB Injection', 'Assassins', 'Avengers', 'Babes', 'Ballers',
       'Bergscape', 'Betties', 'Blitz', 'Boets', 'Bulls', 'Cavaliers',
       'Chargers', 'City Sunsets', 'Clienthub', 'Conquerors', 'Dealers',
       'Dealmakers', 'Dixies', 'Dolphins', 'Donkeys', 'Dragons', 'Dutchmen',
@@ -93,9 +95,9 @@
       'Jaguars', 'Knights', 'Koeksisters', 'Komorants', 'Lions', 'Llamas',
       'Musketeers', 'Panthers', 'Pirates', 'Power Rangers', 'Prom Queens',
       'Proteas', 'Raccoons', 'Rentals', 'Rockets', 'Samurais', 'Slayers',
-      'Soccer Moms', 'Spartans', 'Surfers', 'Swesties', 'Targaryens',
+      'Soccer Moms', 'Spartans', 'SS Injection', 'Surfers', 'Swesties', 'Targaryens',
       'Tigers', 'TNT', 'Tornadoes', 'Vikings', 'Vipers', 'Warriors',
-      'Weasels', 'Wizards', 'Wolves', 'Wombats',
+      'Weasels', 'Wizards', 'Wolves', 'Wombats', 'WSB Injection',
     ],
 
     // Spec §3.2 — typo / variant exact-match merges. Applied AFTER the
@@ -322,6 +324,12 @@
 
   function titleCaseWord(w) {
     if (!w) return ''
+    // Preserve short all-caps acronyms (2-4 letters) so team names like
+    // "ASB Injection", "SS Injection", "WSB Injection" and "LN" keep their
+    // casing instead of becoming "Asb"/"Ss"/"Wsb". Only fires when the whole
+    // token is already uppercase letters; mixed/lower-case tokens still get
+    // title-cased and are corrected downstream by the canonical-case map.
+    if (/^[A-Z]{2,4}$/.test(w)) return w
     return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
   }
 
@@ -584,7 +592,7 @@
       // The `id` primary key is unique, so appending it makes the order total
       // and the page cut fully deterministic.
       const { data, error } = await window.sb.from('events')
-        .select('id, staff_id, ts, dir, note')
+        .select('id, staff_id, ts, dir, note, duration_hrs')
         .gte('ts', fromISO).lte('ts', toISO)
         .order('ts', { ascending: true })
         .order('staff_id', { ascending: true })
@@ -674,6 +682,11 @@
       const agentName = nameById.get(staffId) || staffId
       rows.sort((a, b) => a.ts < b.ts ? -1 : a.ts > b.ts ? 1 : 0)
       let openIn = null
+      // End (ms) of the most recent shift we've already PAID for this staffer.
+      // Used to reject a duplicate/legacy OUT whose reconstructed window overlaps
+      // an already-paid shift, so a pre-trigger double-close in the table can't
+      // be billed twice.
+      let lastPaidEndMs = -Infinity
       for (const ev of rows) {
         if (ev.dir === 'in') {
           if (openIn) {
@@ -688,7 +701,35 @@
           if (!openIn) {
             console.warn('[payroll] orphaned out event (no matching in):',
               staffId, ev.ts)
+            // Always flag for correction. Pay it off the cached duration_hrs so
+            // genuine missing-IN hours aren't silently dropped (matches the clock
+            // admin fallback, admin.js ~1058) -- BUT only when its reconstructed
+            // window does NOT overlap a shift we've already paid. That overlap
+            // guard is what stops a legacy/duplicate OUT (a pre-trigger
+            // double-close already in the events table) from being billed a
+            // second time: fetchShiftsForPeriod reprocesses ALL historical rows,
+            // and the clock-side double-out trigger only blocks NEW ones. The
+            // clock-in is reconstructed from the duration purely for display.
             anomalies.push({ agentId: staffId, agentName, kind: 'no-clock-in', at: ev.ts })
+            const dh = Number(ev.duration_hrs)
+            const outMs = new Date(ev.ts).getTime()
+            const startMs = outMs - dh * 3.6e6
+            if (!isNaN(dh) && dh > 0 && startMs >= lastPaidEndMs) {
+              shifts.push({
+                agentId: staffId,
+                agentName: nameById.get(staffId) || staffId,
+                designation: designationById.get(staffId) || '',
+                division: divisionById.get(staffId) || '',
+                hourlyRate: rateById.get(staffId),
+                salary: salaryById.get(staffId),
+                salaryType: salaryTypeById.get(staffId) || 'prorata',
+                clockInAt: new Date(startMs).toISOString(),
+                clockOutAt: ev.ts,
+                shiftHours: dh,
+                note: ev.note || '',
+              })
+              lastPaidEndMs = Math.max(lastPaidEndMs, outMs)
+            }
             continue
           }
           const hrs = hoursDecimal(openIn.ts, ev.ts)
@@ -717,6 +758,7 @@
             shiftHours: hrs,
             note: note,
           })
+          lastPaidEndMs = Math.max(lastPaidEndMs, new Date(ev.ts).getTime())
           openIn = null
         }
       }
@@ -889,6 +931,15 @@
     check('7.14f fixed, no earnings → full salary', chargeBasis(null, 12000, 'fixed'), 12000)
     check('7.14g no salary → raw earnings', chargeBasis(13700, null, 'prorata'), 13700)
     check('7.14h prorata, no earnings → null', chargeBasis(null, 12000, 'prorata'), null)
+
+    // 7.15 — short all-caps acronyms survive title-casing (the ASB/SS/WSB
+    // Injection teams). Without the titleCaseWord fix these became
+    // 'Asb Injection' etc. and dropped out of the canonical roster.
+    check('7.15a ASB Injection', parseTeams('ASB Injection'), ['ASB Injection'])
+    check('7.15b SS Injection', parseTeams('SS Injection'), ['SS Injection'])
+    check('7.15c WSB Injection', parseTeams('WSB Injection'), ['WSB Injection'])
+    check('7.15d lower-case asb injection → canonical', parseTeams('asb injection'), ['ASB Injection'])
+    check('7.15e ordinary word still title-cases', parseTeams('ballers'), ['Ballers'])
 
     const passed = results.filter(r => r.pass).length
     const failed = results.filter(r => !r.pass)
